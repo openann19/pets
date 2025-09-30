@@ -159,7 +159,7 @@ export default function HomePage() {
 
       {/* Premium Navigation */}
       <motion.nav
-        className="glass-light shadow-premium sticky top-0 z-50 border-b border-white/20"
+        className="glass-light backdrop-blur sticky top-0 z-50 border-b border-white/10"
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={SPRING_CONFIG}
@@ -179,7 +179,7 @@ export default function HomePage() {
               >
                 🐾
               </motion.div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+              <span className="text-2xl font-extrabold gradient-text">
                 PawfectMatch
               </span>
               <motion.div
@@ -221,8 +221,8 @@ export default function HomePage() {
 
       {/* Jaw-Dropping Hero Section */}
       <section className="relative pt-32 pb-40 px-6 overflow-hidden">
-        {/* Dynamic Hero Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-pink-900/20" />
+        {/* Holographic background */}
+        <div className="absolute inset-0 bg-mesh-gradient opacity-70" />
         
         <div className="max-w-7xl mx-auto relative z-10">
           <motion.div
@@ -233,7 +233,7 @@ export default function HomePage() {
           >
             {/* Premium Hero Badge */}
             <motion.div
-              className="inline-flex items-center gap-2 px-6 py-3 glass-light rounded-full mb-8"
+              className="inline-flex items-center gap-2 px-6 py-3 glass-light rounded-full mb-8 animate-pulse-soft"
               animate={{ 
                 boxShadow: [
                   "0 0 20px rgba(255, 255, 255, 0.3)",
@@ -254,7 +254,7 @@ export default function HomePage() {
 
             {/* Premium Hero Title */}
             <motion.h1 
-              className="text-6xl md:text-8xl font-bold mb-8 relative"
+              className="text-6xl md:text-8xl font-extrabold mb-8 relative"
               variants={PREMIUM_VARIANTS.fadeInUp}
               transition={{ delay: 0.2 }}
             >
@@ -262,12 +262,9 @@ export default function HomePage() {
                 Find Your Perfect
               </span>
               <motion.span 
-                className="block bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent"
-                animate={{ 
-                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                }}
-                transition={{ duration: 5, repeat: Infinity }}
-                style={{ backgroundSize: "200% 200%" }}
+                className="block gradient-text"
+                animate={{ opacity: [0.9, 1, 0.9] }}
+                transition={{ duration: 4, repeat: Infinity }}
               >
                 Pet Match ✨
               </motion.span>
@@ -282,7 +279,7 @@ export default function HomePage() {
               Revolutionary AI-powered platform that connects pets with their perfect companions.
               <br />
               <motion.span
-                className="text-yellow-300 font-semibold"
+                className="text-white font-semibold"
                 animate={{ opacity: [0.7, 1, 0.7] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
@@ -301,7 +298,6 @@ export default function HomePage() {
                   variant="holographic" 
                   size="lg"
                   glow
-                  magneticEffect
                   icon={<SparklesIcon className="w-5 h-5" />}
                 >
                   Start Your Journey Free
@@ -366,7 +362,7 @@ export default function HomePage() {
                 />
                 
                 {/* Interactive Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-black/30" />
                 
                 {/* Floating Stats */}
                 <motion.div
@@ -399,7 +395,7 @@ export default function HomePage() {
       {/* Premium Features Section */}
       <section id="features" className="py-32 relative">
         {/* Section Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30" />
+        <div className="absolute inset-0 bg-white" />
         
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           {/* Premium Section Header */}
@@ -411,11 +407,7 @@ export default function HomePage() {
             viewport={{ once: true }}
           >
             <motion.h2 
-              className="text-5xl md:text-6xl font-bold gradient-text mb-6"
-              animate={{ 
-                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-              }}
-              transition={{ duration: 8, repeat: Infinity }}
+              className="text-5xl md:text-6xl font-extrabold text-gray-900 mb-6"
             >
               Revolutionary Features
             </motion.h2>
@@ -455,7 +447,7 @@ export default function HomePage() {
                   <div className="relative">
                     {/* Premium Icon */}
                     <motion.div 
-                      className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}
+                      className={`w-16 h-16 rounded-2xl bg-gray-900 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}
                       whileHover={{ rotate: 10, scale: 1.2 }}
                       transition={SPRING_CONFIG}
                     >
@@ -479,29 +471,17 @@ export default function HomePage() {
                     </motion.div>
 
                     {/* Content */}
-                    <h3 className={`text-2xl font-bold mb-4 ${
-                      feature.variant === 'gradient' || feature.variant === 'neon' || feature.variant === 'holographic' 
-                        ? 'text-white' 
-                        : 'text-gray-900 group-hover:gradient-text'
-                    } transition-all`}>
+                    <h3 className={`text-2xl font-extrabold mb-4 text-gray-900 transition-all`}>
                       {feature.title}
                     </h3>
                     
-                    <p className={`leading-relaxed ${
-                      feature.variant === 'gradient' || feature.variant === 'neon' || feature.variant === 'holographic' 
-                        ? 'text-white/90' 
-                        : 'text-gray-600 group-hover:text-gray-700'
-                    }`}>
+                    <p className={`leading-relaxed text-gray-600`}>
                       {feature.description}
                     </p>
 
                     {/* Interactive Arrow */}
                     <motion.div
-                      className={`mt-6 flex items-center text-sm font-semibold ${
-                        feature.variant === 'gradient' || feature.variant === 'neon' || feature.variant === 'holographic'
-                          ? 'text-white/80' 
-                          : 'text-purple-600'
-                      } opacity-0 group-hover:opacity-100 transition-opacity`}
+                      className={`mt-6 flex items-center text-sm font-semibold text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity`}
                       initial={{ x: -10 }}
                       animate={{ x: 0 }}
                       transition={SPRING_CONFIG}
@@ -525,8 +505,8 @@ export default function HomePage() {
 
       {/* Premium Testimonials Section */}
       <section className="py-32 relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 via-pink-900/5 to-blue-900/10" />
+        {/* Solid Background */}
+        <div className="absolute inset-0 bg-gray-50" />
         
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           {/* Premium Section Header */}
@@ -606,7 +586,7 @@ export default function HomePage() {
                     transition={{ delay: 0.6 }}
                   >
                     <motion.div 
-                      className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-lg"
+                      className="w-16 h-16 rounded-full bg-gray-900 flex items-center justify-center text-white font-bold text-lg shadow-lg"
                       whileHover={{ scale: 1.1, rotate: 5 }}
                       transition={SPRING_CONFIG}
                     >
@@ -655,9 +635,9 @@ export default function HomePage() {
 
       {/* Premium CTA Section */}
       <section className="py-40 relative overflow-hidden">
-        {/* Holographic Background */}
-        <div className="absolute inset-0 bg-mesh-gradient opacity-90" />
-        <div className="absolute inset-0 bg-black/20" />
+        {/* Solid Background */}
+        <div className="absolute inset-0 bg-gray-950" />
+        <div className="absolute inset-0 bg-black/30" />
         
         <div className="max-w-6xl mx-auto text-center px-6 relative z-10">
           <motion.div
@@ -695,21 +675,12 @@ export default function HomePage() {
 
             {/* Premium CTA Title */}
             <motion.h2 
-              className="text-5xl md:text-7xl font-bold text-white mb-8 drop-shadow-2xl"
+              className="text-5xl md:text-7xl font-extrabold text-white mb-8 drop-shadow-2xl"
               variants={PREMIUM_VARIANTS.fadeInUp}
               transition={{ delay: 0.2 }}
             >
               Ready to Transform Your Pet's
-              <motion.span 
-                className="block bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent"
-                animate={{ 
-                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                }}
-                transition={{ duration: 6, repeat: Infinity }}
-                style={{ backgroundSize: "200% 200%" }}
-              >
-                Social Life? 🚀
-              </motion.span>
+              <span className="block text-white">Social Life? 🚀</span>
             </motion.h2>
 
             {/* Premium CTA Subtitle */}
@@ -730,7 +701,7 @@ export default function HomePage() {
             >
               <Link href="/register">
                 <PremiumButton 
-                  variant="glass" 
+                  variant="primary" 
                   size="xl"
                   glow
                   magneticEffect
@@ -742,7 +713,7 @@ export default function HomePage() {
               
               <Link href="/premium">
                 <PremiumButton 
-                  variant="neon" 
+                  variant="secondary" 
                   size="xl"
                   glow
                   icon={<StarIcon className="w-6 h-6" />}
@@ -781,29 +752,6 @@ export default function HomePage() {
 
       {/* Premium Footer */}
       <footer className="relative bg-gray-900 text-white py-20 overflow-hidden">
-        {/* Footer Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-gray-900 to-gray-800" />
-        <div className="absolute inset-0 opacity-20">
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-32 h-32 rounded-full bg-gradient-to-r from-purple-500/30 to-pink-500/30"
-              style={{
-                left: `${20 + i * 30}%`,
-                top: `${20 + i * 20}%`,
-              }}
-              animate={{
-                scale: [1, 1.5, 1],
-                opacity: [0.2, 0.4, 0.2],
-              }}
-              transition={{
-                duration: 8 + i * 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          ))}
-        </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <motion.div 
@@ -823,7 +771,7 @@ export default function HomePage() {
                 >
                   🐾
                 </motion.div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
+                <span className="text-2xl font-extrabold text-white">
                   PawfectMatch
                 </span>
               </div>
@@ -898,7 +846,7 @@ export default function HomePage() {
                     >
                       <Link 
                         href={link.href}
-                        className="text-gray-300 hover:text-white transition-colors font-medium hover:gradient-text"
+                        className="text-gray-300 hover:text-white transition-colors font-semibold"
                       >
                         {link.label}
                       </Link>
