@@ -204,6 +204,7 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
           ${sizeClasses[size]}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${fullWidth ? 'w-full' : ''}
+          btn-micro hover-glow
           ${className}
         `}
         style={{

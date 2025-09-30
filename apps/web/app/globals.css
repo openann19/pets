@@ -191,3 +191,122 @@
   .premium-glow {
     box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5); /* Glow for PremiumButton */
   }
+
+  /* High-Impact Micro-Interactions & Animations */
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  }
+
+  .pulse-soft {
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+
+  /* Swipe animations for pet cards */
+  .swipe-right {
+    transform: translateX(100px) rotate(10deg);
+    opacity: 0;
+    transition: all 0.5s ease;
+  }
+  
+  .swipe-left {
+    transform: translateX(-100px) rotate(-10deg);
+    opacity: 0;
+    transition: all 0.5s ease;
+  }
+
+  /* Enhanced hover effects */
+  .hover-scale {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .hover-scale:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+
+  .hover-glow {
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(var(--primary-500), 0.4);
+  }
+
+  /* Button micro-interactions */
+  .btn-micro {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+  }
+  
+  .btn-micro:hover {
+    transform: translateY(-2px) scale(1.02);
+  }
+  
+  .btn-micro:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  /* Card entrance animations */
+  .card-entrance {
+    animation: cardEntrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  
+  @keyframes cardEntrance {
+    0% {
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Loading shimmer effect */
+  .shimmer {
+    background: linear-gradient(90deg, 
+      rgba(255,255,255,0) 0%, 
+      rgba(255,255,255,0.2) 20%, 
+      rgba(255,255,255,0.5) 60%, 
+      rgba(255,255,255,0) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Bounce animation for notifications */
+  .bounce-in {
+    animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }

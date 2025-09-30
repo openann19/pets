@@ -28,6 +28,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
+import { 
+  useSwipeAnimations, 
+  useHoverLift, 
+  useCardEntrance,
+  triggerHaptic 
+} from '../hooks/useAnimations';
 // Local types until core package is properly configured
 interface Pet {
   _id: string;
@@ -84,6 +90,17 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
   // Swipe processing state
   const [isProcessing, setIsProcessing] = useState(false);
   
+  // Enhanced animations
+  const { hoverLiftStyle, onPressIn, onPressOut } = useHoverLift();
+  const { cardEntranceStyle, startEntrance } = useCardEntrance(isTopCard ? 0 : 200);
+  const { 
+    swipeRightStyle, 
+    swipeLeftStyle, 
+    animateSwipeRight: animateRight, 
+    animateSwipeLeft: animateLeft, 
+    resetSwipe 
+  } = useSwipeAnimations();
+  
   // Swipe handlers
   const handleLike = useCallback(async (pet: Pet) => {
     setIsProcessing(true);
@@ -133,10 +150,11 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
   
   const { pan, scale, opacity, likeOpacity, nopeOpacity, superLikeOpacity } = animationValues;
   
-  // Check accessibility settings
+  // Check accessibility settings and start entrance animation
   React.useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setIsAccessibilityEnabled);
-  }, []);
+    startEntrance();
+  }, [startEntrance]);
 
   // Pan responder for gesture handling
   const panResponder = useRef(
@@ -151,10 +169,8 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
         });
         pan.setValue({ x: 0, y: 0 });
         
-        // Haptic feedback on touch
-        if (Platform.OS === 'ios') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
+        // Enhanced haptic feedback on touch
+        triggerHaptic('light');
       },
       onPanResponderMove: (evt, gestureState) => {
         // Update pan values
@@ -217,22 +233,8 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
   const animateSwipeRight = useCallback(() => {
     if (disabled || isProcessing) return;
     
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    const animations = [
-      Animated.timing(pan, {
-        toValue: { x: SCREEN_WIDTH + 100, y: 0 },
-        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-    ];
-    
-    Animated.parallel(animations).start(async () => {
+    triggerHaptic('medium');
+    animateRight(async () => {
       try {
         await handleLike(pet);
         onSwipeRight(pet);
@@ -240,27 +242,13 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
         console.error('Error handling like:', error);
       }
     });
-  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handleLike, onSwipeRight]);
+  }, [disabled, isProcessing, pet, handleLike, onSwipeRight, animateRight]);
 
   const animateSwipeLeft = useCallback(() => {
     if (disabled || isProcessing) return;
     
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    const animations = [
-      Animated.timing(pan, {
-        toValue: { x: -SCREEN_WIDTH - 100, y: 0 },
-        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-    ];
-    
-    Animated.parallel(animations).start(async () => {
+    triggerHaptic('medium');
+    animateLeft(async () => {
       try {
         await handlePass(pet);
         onSwipeLeft(pet);
@@ -268,12 +256,12 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
         console.error('Error handling pass:', error);
       }
     });
-  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handlePass, onSwipeLeft]);
+  }, [disabled, isProcessing, pet, handlePass, onSwipeLeft, animateLeft]);
 
   const animateSwipeUp = useCallback(() => {
     if (disabled || isProcessing) return;
     
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    triggerHaptic('heavy');
     
     const animations = [
       Animated.timing(pan, {
@@ -304,6 +292,8 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
   }, [disabled, isProcessing, isAccessibilityEnabled, pet, handleSuperLike, onSwipeUp]);
 
   const animateReturn = useCallback(() => {
+    resetSwipe();
+    
     const animations = [
       Animated.spring(pan, {
         toValue: { x: 0, y: 0 },
@@ -329,7 +319,7 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
     ];
     
     Animated.parallel(animations).start();
-  }, [pan, likeOpacity, nopeOpacity, superLikeOpacity]);
+  }, [pan, likeOpacity, nopeOpacity, superLikeOpacity, resetSwipe]);
 
   // Calculate rotation based on pan position - memoized for performance
   const rotate = useMemo(() => 
@@ -371,6 +361,8 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
         style,
       ]}
       {...(!disabled ? panResponder.panHandlers : {})}
+      onTouchStart={onPressIn}
+      onTouchEnd={onPressOut}
       accessible={true}
       accessibilityRole="button"
       accessibilityLabel={`Pet profile for ${pet.name}, ${pet.age} years old ${pet.breed}`}

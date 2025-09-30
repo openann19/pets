@@ -167,7 +167,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
         whileHover={premiumEffects ? { scale: 1.02, y: -5 } : {}}
       >
         <div 
-          className="w-full h-full rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing relative transform-gpu"
+          className={`w-full h-full rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing relative transform-gpu hover-lift card-entrance ${dragDirection === 'right' ? 'swipe-right' : ''} ${dragDirection === 'left' ? 'swipe-left' : ''}`}
           onClick={onCardClick}
           style={{
             background: 'rgba(255, 255, 255, 0.95)',
@@ -338,7 +338,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               e.stopPropagation();
               handleButtonClick('pass');
             }}
-            aria-label="Pass button" className="w-14 h-14 bg-white border-2 border-red-500 text-red-500 rounded-full flex items-center justify-center shadow-lg hover:bg-red-50 transition-colors"
+            aria-label="Pass button" className="w-14 h-14 bg-white border-2 border-red-500 text-red-500 rounded-full flex items-center justify-center shadow-lg hover:bg-red-50 transition-colors btn-micro hover-glow"
           >
             <XMarkIcon className="w-7 h-7" />
           </motion.button>
@@ -350,7 +350,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               e.stopPropagation();
               handleButtonClick('superlike');
             }}
-            aria-label="Superlike button" className="w-12 h-12 bg-white border-2 border-blue-500 text-blue-500 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-50 transition-colors"
+            aria-label="Superlike button" className="w-12 h-12 bg-white border-2 border-blue-500 text-blue-500 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-50 transition-colors btn-micro hover-glow pulse-soft"
           >
             <SparklesIcon className="w-6 h-6" />
           </motion.button>
@@ -362,7 +362,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               e.stopPropagation();
               handleButtonClick('like');
             }}
-            aria-label="Like button" className="w-14 h-14 bg-white border-2 border-green-500 text-green-500 rounded-full flex items-center justify-center shadow-lg hover:bg-green-50 transition-colors"
+            aria-label="Like button" className="w-14 h-14 bg-white border-2 border-green-500 text-green-500 rounded-full flex items-center justify-center shadow-lg hover:bg-green-50 transition-colors btn-micro hover-glow"
           >
             <HeartIcon className="w-7 h-7" />
           </motion.button>
