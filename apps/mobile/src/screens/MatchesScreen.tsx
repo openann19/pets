@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -50,6 +50,7 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'matches' | 'likes'>('matches');
+  const fabAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (selectedTab === 'matches') {
@@ -61,6 +62,16 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
 
   useEffect(() => {
     loadMatches();
+  }, []);
+
+  useEffect(() => {
+    fabAnim.setValue(0);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fabAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+        Animated.timing(fabAnim, { toValue: 0, duration: 1000, useNativeDriver: true }),
+      ])
+    ).start();
   }, []);
 
   const loadMatches = async () => {
@@ -454,9 +465,12 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
         style={styles.fab}
         onPress={() => navigation.navigate('Swipe')}
       >
-        <View style={[styles.fabGradient, { backgroundColor: '#0b0b0c', borderWidth: 2, borderColor: '#ec4899' }]}> 
+        <Animated.View style={[
+          styles.fabGradient,
+          { backgroundColor: '#0b0b0c', borderWidth: 2, borderColor: '#ec4899', transform: [{ scale: fabAnim.interpolate({ inputRange: [0,1], outputRange: [1,1.06] }) }] }
+        ]}>
           <Ionicons name="heart" size={24} color="#fff" />
-        </View>
+        </Animated.View>
       </TouchableOpacity>
     </SafeAreaView>
   );

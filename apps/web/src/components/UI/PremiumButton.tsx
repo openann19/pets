@@ -244,6 +244,13 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
         animate={{ opacity: disabled ? 0.5 : 1, scale: 1 }}
         transition={SPRING_CONFIG}
       >
+        {/* Shimmer overlay for holographic variant */}
+        {variant === 'holographic' && (
+          <div
+            className="pointer-events-none absolute inset-0 rounded-xl animate-shimmer"
+            style={{ opacity: 0.18 }}
+          />
+        )}
         {/* Glow effect */}
         {glow && !disabled && (
           <motion.div

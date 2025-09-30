@@ -233,7 +233,7 @@ export default function HomePage() {
           >
             {/* Premium Hero Badge */}
             <motion.div
-              className="inline-flex items-center gap-2 px-6 py-3 glass-light rounded-full mb-8"
+              className="inline-flex items-center gap-2 px-6 py-3 glass-light rounded-full mb-8 animate-pulse-soft"
               animate={{ 
                 boxShadow: [
                   "0 0 20px rgba(255, 255, 255, 0.3)",

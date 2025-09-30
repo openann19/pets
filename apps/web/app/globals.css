@@ -147,6 +147,10 @@
     animation: glow 2s ease-in-out infinite alternate;
   }
 
+  .animate-pulse-soft {
+    animation: pulseSoft 2.2s ease-in-out infinite;
+  }
+
   .animate-shimmer {
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
     background-size: 200% 100%;
@@ -198,6 +202,12 @@
   0% { filter: hue-rotate(0deg) saturate(110%); }
   50% { filter: hue-rotate(180deg) saturate(120%); }
   100% { filter: hue-rotate(360deg) saturate(110%); }
+}
+
+@keyframes pulseSoft {
+  0% { transform: translateZ(0) scale(1); opacity: 0.95; }
+  50% { transform: translateZ(0) scale(1.03); opacity: 1; }
+  100% { transform: translateZ(0) scale(1); opacity: 0.95; }
 }
 
   /* Fallback for unsupported browsers (e.g., older Safari/IE) */

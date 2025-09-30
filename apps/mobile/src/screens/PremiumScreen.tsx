@@ -3,7 +3,7 @@
  * Professional implementation with Stripe integration
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -44,6 +44,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
   const [selectedPlan, setSelectedPlan] = useState<string>('monthly');
   const [isLoading, setIsLoading] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const pulseAnim = useRef(new Animated.Value(0)).current;
 
   const premiumPlans: PremiumPlan[] = [
     {
@@ -128,6 +129,20 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
     setSelectedPlan(planId);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
+
+  const startPulse = () => {
+    pulseAnim.setValue(0);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0, duration: 900, useNativeDriver: true }),
+      ])
+    ).start();
+  };
+
+  useEffect(() => {
+    startPulse();
+  }, []);
 
   const handleSubscribe = async () => {
     if (isLoading) return;
@@ -309,7 +324,11 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
           onPress={handleSubscribe}
           disabled={isLoading}
         >
-          <View style={[styles.subscribeButtonGradient, styles.neonButton, { opacity: isLoading ? 0.7 : 1 }]}> 
+          <Animated.View style={[
+            styles.subscribeButtonGradient,
+            styles.neonButton,
+            { opacity: isLoading ? 0.7 : 1, transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] }) }] }
+          ]}>
             {isLoading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
@@ -318,7 +337,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
             <Text style={styles.subscribeButtonText}>
               {isLoading ? 'Processing...' : `Start ${premiumPlans.find(p => p.id === selectedPlan)?.name} Plan`}
             </Text>
-          </View>
+          </Animated.View>
         </TouchableOpacity>
 
         {/* Terms */}
