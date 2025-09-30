@@ -133,7 +133,11 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // CORS headers for error responses
-  res.set('Access-Control-Allow-Origin', process.env.FRONTEND_URL || '*');
+  const allowedOrigin = process.env.CLIENT_URL || process.env.FRONTEND_URL;
+  if (allowedOrigin) {
+    res.set('Access-Control-Allow-Origin', allowedOrigin);
+    res.set('Vary', 'Origin');
+  }
   res.set('Access-Control-Allow-Credentials', 'true');
 
   res.status(statusCode).json(response);
