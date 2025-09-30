@@ -339,7 +339,7 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
   return (
     <SafeAreaView style={styles.container}>
       {/* Premium Header */}
-      <View style={[styles.header, { backgroundColor: colors.white, borderBottomColor: colors.gray200 }]}>
+      <View style={[styles.header, { backgroundColor: 'rgba(255,255,255,0.08)', borderBottomColor: colors.gray200 }]}>
         <TouchableOpacity 
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -362,7 +362,7 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
       </View>
 
       {/* Enhanced Tab Selector */}
-      <View style={[styles.tabContainer, { backgroundColor: colors.white }]}>
+      <View style={[styles.tabContainer, { backgroundColor: 'rgba(255,255,255,0.08)' }]}>
         <TouchableOpacity
           style={[styles.tab, selectedTab === 'matches' && [styles.activeTab, { backgroundColor: colors.primary }]]}
           onPress={() => {
@@ -454,7 +454,7 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
         style={styles.fab}
         onPress={() => navigation.navigate('Swipe')}
       >
-        <View style={[styles.fabGradient, { backgroundColor: '#ff6b6b' }]}> 
+        <View style={[styles.fabGradient, { backgroundColor: '#0b0b0c', borderWidth: 2, borderColor: '#ec4899' }]}> 
           <Ionicons name="heart" size={24} color="#fff" />
         </View>
       </TouchableOpacity>

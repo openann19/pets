@@ -13,6 +13,7 @@ import {
   Alert,
   ActivityIndicator,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -200,9 +201,9 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.gray900 }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface }]}>
+      <View style={[styles.header, styles.headerBlur, { backgroundColor: Platform.OS === 'ios' ? 'rgba(255,255,255,0.08)' : colors.glassDarkMedium }]}>
         <TouchableOpacity
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -212,25 +213,25 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
         >
           <Ionicons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Go Premium</Text>
+        <Text style={[styles.headerTitle, { color: colors.white }]}>Go Premium</Text>
         <TouchableOpacity onPress={handleRestorePurchases}>
           <Text style={[styles.restoreText, { color: colors.primary }]}>Restore</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Hero Section */}
-        <View style={[styles.heroSection, { backgroundColor: colors.primary }]}> 
+        {/* Holographic Hero */}
+        <View style={[styles.heroSection, styles.holographicBg]}> 
           <Ionicons name="star" size={60} color="#fff" />
-          <Text style={styles.heroTitle}>Unlock Premium Features</Text>
-          <Text style={styles.heroSubtitle}>
+          <Text style={[styles.heroTitle, styles.holoText]}>Unlock Premium Features</Text>
+          <Text style={[styles.heroSubtitle, styles.holoTextSoft]}>
             Find your pet's perfect match faster with premium features
           </Text>
         </View>
 
         {/* Features Grid */}
         <View style={styles.featuresSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          <Text style={[styles.sectionTitle, { color: colors.white }]}> 
             What You'll Get
           </Text>
           <View style={styles.featuresGrid}>
@@ -239,10 +240,10 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
                 <View style={[styles.featureIcon, { backgroundColor: feature.color + '20' }]}>
                   <Ionicons name={feature.icon as any} size={24} color={feature.color} />
                 </View>
-                <Text style={[styles.featureTitle, { color: colors.text }]}>
+                <Text style={[styles.featureTitle, { color: colors.white }]}> 
                   {feature.title}
                 </Text>
-                <Text style={[styles.featureDescription, { color: colors.textSecondary }]}>
+                <Text style={[styles.featureDescription, { color: colors.gray300 }]}> 
                   {feature.description}
                 </Text>
               </View>
@@ -252,7 +253,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
 
         {/* Pricing Plans */}
         <View style={styles.pricingSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          <Text style={[styles.sectionTitle, { color: colors.white }]}> 
             Choose Your Plan
           </Text>
           {premiumPlans.map((plan) => (
@@ -260,8 +261,8 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
               key={plan.id}
               style={[
                 styles.planCard,
-                { backgroundColor: colors.surface },
-                selectedPlan === plan.id && [styles.selectedPlan, { borderColor: colors.primary }],
+                { backgroundColor: colors.gray800 },
+                selectedPlan === plan.id && [styles.selectedPlan, { borderColor: colors.accent }],
                 plan.popular && styles.popularPlan,
               ]}
               onPress={() => handlePlanSelection(plan.id)}
@@ -278,12 +279,12 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
                 </View>
               )}
               <View style={styles.planHeader}>
-                <Text style={[styles.planName, { color: colors.text }]}>{plan.name}</Text>
+                  <Text style={[styles.planName, { color: colors.white }]}>{plan.name}</Text>
                 <View style={styles.planPricing}>
-                  <Text style={[styles.planPrice, { color: colors.text }]}>
+                  <Text style={[styles.planPrice, { color: colors.white }]}> 
                     ${plan.price}
                   </Text>
-                  <Text style={[styles.planDuration, { color: colors.textSecondary }]}>
+                  <Text style={[styles.planDuration, { color: colors.gray400 }]}> 
                     /{plan.duration}
                   </Text>
                 </View>
@@ -292,7 +293,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
                 {plan.features.map((feature, index) => (
                   <View key={index} style={styles.planFeature}>
                     <Ionicons name="checkmark" size={16} color={colors.success} />
-                    <Text style={[styles.planFeatureText, { color: colors.textSecondary }]}>
+                    <Text style={[styles.planFeatureText, { color: colors.gray300 }]}>
                       {feature}
                     </Text>
                   </View>
@@ -308,7 +309,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
           onPress={handleSubscribe}
           disabled={isLoading}
         >
-          <View style={[styles.subscribeButtonGradient, { backgroundColor: isLoading ? '#ccc' : colors.primary }]}> 
+          <View style={[styles.subscribeButtonGradient, styles.neonButton, { opacity: isLoading ? 0.7 : 1 }]}> 
             {isLoading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
@@ -344,6 +345,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerBlur: {
+    ...Platform.select({
+      ios: {
+        // iOS uses native blur behind; keep translucent bg above
+      },
+      android: {
+        // Simulate blur via translucent background
+        backgroundColor: 'rgba(0,0,0,0.3)'
+      }
+    })
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -368,6 +380,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 40,
     paddingHorizontal: 20,
+  },
+  holographicBg: {
+    backgroundColor: '#1f2937',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: 'hidden',
+  },
+  holoText: {
+    textShadowColor: 'rgba(255,255,255,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
+  },
+  holoTextSoft: {
+    textShadowColor: 'rgba(255,255,255,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   heroTitle: {
     fontSize: 28,
@@ -524,6 +552,16 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 25,
     gap: 10,
+  },
+  neonButton: {
+    backgroundColor: '#0b0b0c',
+    borderWidth: 2,
+    borderColor: '#ec4899',
+    shadowColor: '#ec4899',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
+    elevation: 8,
   },
   subscribeButtonText: {
     color: '#fff',
