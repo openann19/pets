@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@pawfectmatch/core';
-import { LinearGradient } from 'expo-linear-gradient';
+// Removed gradients for a more refined, solid-color design
 import { useCallManager } from '../components/calling/CallManager';
 import { useTheme } from '../contexts/ThemeContext';
 import { matchesAPI } from '../services/api';
@@ -311,13 +311,10 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
       activeOpacity={0.8}
     >
       <Image source={{ uri: item.petPhoto }} style={styles.likedImage} />
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.7)']}
-        style={styles.likedOverlay}
-      >
+      <View style={[styles.likedOverlay, { backgroundColor: 'rgba(0,0,0,0.55)' }]}> 
         <Text style={styles.likedName}>{item.petName}</Text>
         <Text style={styles.likedAction}>Liked you!</Text>
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 
@@ -457,12 +454,9 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
         style={styles.fab}
         onPress={() => navigation.navigate('Swipe')}
       >
-        <LinearGradient
-          colors={['#ff6b6b', '#ff8e8e']}
-          style={styles.fabGradient}
-        >
+        <View style={[styles.fabGradient, { backgroundColor: '#ff6b6b' }]}> 
           <Ionicons name="heart" size={24} color="#fff" />
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     </SafeAreaView>
   );

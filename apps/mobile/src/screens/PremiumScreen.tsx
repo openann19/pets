@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+// Removed gradients for a more refined, solid-color design
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuthStore } from '@pawfectmatch/core';
@@ -181,10 +181,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.premiumActiveContainer}>
-          <LinearGradient
-            colors={['#FFD700', '#FFA000']}
-            style={styles.premiumActiveGradient}
-          >
+          <View style={[styles.premiumActiveGradient, { backgroundColor: '#1f2937' }]}> 
             <Ionicons name="star" size={80} color="#fff" />
             <Text style={styles.premiumActiveTitle}>You're Premium!</Text>
             <Text style={styles.premiumActiveSubtitle}>
@@ -196,7 +193,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
             >
               <Text style={styles.manageButtonText}>Manage Subscription</Text>
             </TouchableOpacity>
-          </LinearGradient>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -223,16 +220,13 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Hero Section */}
-        <LinearGradient
-          colors={['#FF6B6B', '#FF8E8E']}
-          style={styles.heroSection}
-        >
+        <View style={[styles.heroSection, { backgroundColor: colors.primary }]}> 
           <Ionicons name="star" size={60} color="#fff" />
           <Text style={styles.heroTitle}>Unlock Premium Features</Text>
           <Text style={styles.heroSubtitle}>
             Find your pet's perfect match faster with premium features
           </Text>
-        </LinearGradient>
+        </View>
 
         {/* Features Grid */}
         <View style={styles.featuresSection}>
@@ -314,10 +308,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
           onPress={handleSubscribe}
           disabled={isLoading}
         >
-          <LinearGradient
-            colors={isLoading ? ['#ccc', '#ccc'] : ['#FF6B6B', '#FF8E8E']}
-            style={styles.subscribeButtonGradient}
-          >
+          <View style={[styles.subscribeButtonGradient, { backgroundColor: isLoading ? '#ccc' : colors.primary }]}> 
             {isLoading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
@@ -326,7 +317,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
             <Text style={styles.subscribeButtonText}>
               {isLoading ? 'Processing...' : `Start ${premiumPlans.find(p => p.id === selectedPlan)?.name} Plan`}
             </Text>
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
 
         {/* Terms */}
