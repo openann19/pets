@@ -1,6 +1,7 @@
+'use client';
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BOUNCY_CONFIG } from '../../constants/animations';
+import { BOUNCY_CONFIG } from '@/constants/animations';
 
 interface LoadingSpinnerProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';

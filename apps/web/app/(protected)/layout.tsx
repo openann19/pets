@@ -3,7 +3,7 @@
 import { useAuthStore } from '../../src/lib/auth-store';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import LoadingSpinner from '../../src/components/UI/LoadingSpinner';
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
 
 export default function ProtectedLayout({
   children,
@@ -22,7 +22,7 @@ export default function ProtectedLayout({
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="large" />
+        <LoadingSpinner size="lg" variant="gradient" />
       </div>
     );
   }
