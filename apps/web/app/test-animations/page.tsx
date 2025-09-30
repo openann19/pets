@@ -1,4 +1,4 @@
-import AnimationTest from '../src/components/AnimationTest';
+import AnimationTest from '@/components/AnimationTest';
 
 export default function TestAnimationsPage() {
   return <AnimationTest />;
