@@ -1,3 +1,5 @@
+'use client';
+
 // Animation Test Component
 // Tests the new micro-interactions and animations
 
