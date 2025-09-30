@@ -130,7 +130,7 @@ export default function HomePage() {
 
 
   return (
-    <div className="min-h-screen bg-gray-950 relative overflow-hidden">
+    <div className="min-h-screen bg-mesh-gradient relative overflow-hidden">
       {/* Interactive Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(6)].map((_, i) => (
@@ -159,7 +159,7 @@ export default function HomePage() {
 
       {/* Premium Navigation */}
       <motion.nav
-        className="bg-gray-950/90 backdrop-blur sticky top-0 z-50 border-b border-white/10"
+        className="glass-light backdrop-blur sticky top-0 z-50 border-b border-white/10"
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={SPRING_CONFIG}
@@ -179,7 +179,7 @@ export default function HomePage() {
               >
                 🐾
               </motion.div>
-              <span className="text-2xl font-extrabold text-white">
+              <span className="text-2xl font-extrabold gradient-text">
                 PawfectMatch
               </span>
               <motion.div
@@ -221,8 +221,8 @@ export default function HomePage() {
 
       {/* Jaw-Dropping Hero Section */}
       <section className="relative pt-32 pb-40 px-6 overflow-hidden">
-        {/* Subtle solid background */}
-        <div className="absolute inset-0 bg-gray-950" />
+        {/* Holographic background */}
+        <div className="absolute inset-0 bg-mesh-gradient opacity-70" />
         
         <div className="max-w-7xl mx-auto relative z-10">
           <motion.div
@@ -261,19 +261,25 @@ export default function HomePage() {
               <span className="block text-white drop-shadow-2xl">
                 Find Your Perfect
               </span>
-              <span className="block text-white">Pet Match</span>
+              <motion.span 
+                className="block gradient-text"
+                animate={{ opacity: [0.9, 1, 0.9] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              >
+                Pet Match ✨
+              </motion.span>
             </motion.h1>
 
             {/* Premium Subtitle */}
             <motion.p 
-              className="text-xl md:text-2xl text-gray-200 max-w-4xl mx-auto mb-12 leading-relaxed"
+              className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto mb-12 leading-relaxed"
               variants={PREMIUM_VARIANTS.fadeInUp}
               transition={{ delay: 0.4 }}
             >
               Revolutionary AI-powered platform that connects pets with their perfect companions.
               <br />
               <motion.span
-                className="text-gray-300 font-semibold"
+                className="text-white font-semibold"
                 animate={{ opacity: [0.7, 1, 0.7] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
@@ -289,7 +295,7 @@ export default function HomePage() {
             >
               <Link href="/register">
                 <PremiumButton 
-                  variant="primary" 
+                  variant="holographic" 
                   size="lg"
                   glow
                   icon={<SparklesIcon className="w-5 h-5" />}
@@ -300,7 +306,7 @@ export default function HomePage() {
               
               <Link href="#features">
                 <PremiumButton 
-                  variant="secondary" 
+                  variant="glass" 
                   size="lg"
                   icon={<EyeIcon className="w-5 h-5" />}
                 >

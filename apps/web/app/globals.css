@@ -178,6 +178,28 @@
   }
 }
 
+/* Premium motion and holographic keyframes */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 12px rgba(236, 72, 153, 0.3); }
+  100% { box-shadow: 0 0 28px rgba(236, 72, 153, 0.6); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes holographic {
+  0% { filter: hue-rotate(0deg) saturate(110%); }
+  50% { filter: hue-rotate(180deg) saturate(120%); }
+  100% { filter: hue-rotate(360deg) saturate(110%); }
+}
+
   /* Fallback for unsupported browsers (e.g., older Safari/IE) */
   @supports not (text-wrap: balance) {
     text-wrap: pretty; /* Alternative mode if available */
