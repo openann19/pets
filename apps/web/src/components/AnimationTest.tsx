@@ -28,13 +28,17 @@ const AnimationTest: React.FC = () => {
       {/* Pulse Animation Test */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Pulse Animation</h2>
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           <div className="pulse-soft bg-yellow-100 p-6 rounded-xl shadow-lg">
             <p>I pulse softly!</p>
           </div>
           <div className="bg-red-100 p-6 rounded-xl shadow-lg">
             <p>I don't pulse</p>
           </div>
+          <button className="fab pulse-soft" type="button">
+            <span className="fab-tooltip">Get the App</span>
+            Install
+          </button>
         </div>
       </div>
 
@@ -51,14 +55,14 @@ const AnimationTest: React.FC = () => {
         </div>
       </div>
 
-      {/* Card Entrance Test */}
+      {/* Card Entrance + 3D Test */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Card Entrance Animation</h2>
+        <h2 className="text-xl font-semibold">Card Entrance + 3D Tilt</h2>
         <div className="grid grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <div 
               key={i}
-              className="card-entrance bg-white p-6 rounded-xl shadow-lg"
+              className="card-entrance card-3d bg-white p-6 rounded-xl shadow-lg"
               style={{ animationDelay: `${i * 0.1}s` }}
             >
               <p>Card {i}</p>
@@ -67,11 +71,45 @@ const AnimationTest: React.FC = () => {
         </div>
       </div>
 
-      {/* Shimmer Loading Test */}
+      {/* Shimmer + Skeleton Loading Test */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Shimmer Loading Effect</h2>
-        <div className="shimmer bg-gray-200 h-8 rounded-lg relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-50"></div>
+        <h2 className="text-xl font-semibold">Shimmer + Skeleton Loading</h2>
+        <div className="grid grid-cols-3 gap-4">
+          {[1,2,3].map(i => (
+            <div key={i} className="bg-white p-4 rounded-xl shadow-md">
+              <div className="skeleton h-40 rounded-lg mb-4"></div>
+              <div className="skeleton h-4 rounded mb-2"></div>
+              <div className="skeleton h-4 w-1/2 rounded"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Typography + Tags + Steps */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Typography + Tags + Steps</h2>
+        <div className="space-y-2">
+          <div className="display-large gradient-text">Premium Display Large</div>
+          <div className="display-small">Display Small</div>
+          <div className="pet-tags">
+            <span className="pet-tag playful">🎾 Playful</span>
+            <span className="pet-tag friendly">❤️ Friendly</span>
+            <span className="pet-tag energetic">⚡ Energetic</span>
+          </div>
+          <div className="progress-steps">
+            <div className="step active">
+              <div className="step-number">1</div>
+              <span>Profile</span>
+            </div>
+            <div className="step">
+              <div className="step-number">2</div>
+              <span>Preferences</span>
+            </div>
+            <div className="step">
+              <div className="step-number">3</div>
+              <span>Match</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -85,7 +123,7 @@ const AnimationTest: React.FC = () => {
         </div>
       </div>
 
-      {/* Swipe Animation Test */}
+      {/* Swipe Animation Test + Demo */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Swipe Animations</h2>
         <div className="flex gap-4">
@@ -95,6 +133,37 @@ const AnimationTest: React.FC = () => {
           <div className="swipe-left bg-red-100 p-6 rounded-xl shadow-lg">
             <p>Swipe Left</p>
           </div>
+        </div>
+        <div className="swipe-demo-container">
+          <div className="swipe-instruction">
+            <span>Swipe to see how it works!</span>
+          </div>
+          <motion.div
+            className="pet-card-swipeable"
+            drag
+            dragConstraints={{ left: -120, right: 120, top: 0, bottom: 0 }}
+            dragElastic={0.2}
+            onDrag={(event, info) => {
+              const el = event.currentTarget as HTMLElement;
+              if (!el) return;
+              const dir = info.point.x - info.offset.x > 0 ? 'right' : 'left';
+              el.classList.toggle('is-right', dir === 'right' && info.offset.x > 20);
+              el.classList.toggle('is-left', dir === 'left' && info.offset.x < -20);
+            }}
+            onDragEnd={(event) => {
+              const el = event.currentTarget as HTMLElement;
+              if (!el) return;
+              el.classList.remove('is-left');
+              el.classList.remove('is-right');
+            }}
+          >
+            <div className="swipe-overlay left">
+              <span>Nope</span>
+            </div>
+            <div className="swipe-overlay right">
+              <span>Like</span>
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>

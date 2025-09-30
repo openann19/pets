@@ -310,3 +310,109 @@
       transform: scale(1);
     }
   }
+
+  /* Enhanced Visual Hierarchy and Utilities */
+  .card-3d {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    transition: transform var(--spring-duration) var(--spring-timing), box-shadow 0.3s ease;
+  }
+  
+  .card-3d:hover {
+    transform: rotateY(5deg) rotateX(5deg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Swipe demo helpers */
+  .swipe-demo-container { position: relative; max-width: 420px; margin: 0 auto; }
+  .swipe-instruction { display: flex; align-items: center; gap: 8px; justify-content: center; color: #6b7280; margin-bottom: 12px; }
+  .pet-card-swipeable { position: relative; width: 100%; height: 480px; border-radius: 24px; overflow: hidden; background: #fff; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.25); }
+  .swipe-overlay { position: absolute; top: 16px; padding: 8px 12px; border-radius: 9999px; display: inline-flex; gap: 8px; align-items: center; color: #fff; font-weight: 700; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; }
+  .swipe-overlay.left { left: 16px; background: rgba(239, 68, 68, 0.9); }
+  .swipe-overlay.right { right: 16px; background: rgba(34, 197, 94, 0.9); }
+  .pet-card-swipeable.is-left .swipe-overlay.left { opacity: 1; }
+  .pet-card-swipeable.is-right .swipe-overlay.right { opacity: 1; }
+
+  /* Pet Personality Tags */
+  .pet-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pet-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 9999px; font-weight: 600; font-size: 12px; background: #f3f4f6; color: #374151; }
+  .pet-tag.playful { background: #ecfeff; color: #06b6d4; }
+  .pet-tag.friendly { background: #fce7f3; color: #db2777; }
+  .pet-tag.energetic { background: #fef3c7; color: #f59e0b; }
+
+  /* Skeleton loading */
+  .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+  @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* Semantic colors */
+  :root {
+    --success: #16a34a;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --info: #0ea5e9;
+    --success-soft: #E8F5E8;
+    --warning-soft: #FFF4E5;
+    --error-soft: #FFE5E5;
+    --info-soft: #E5F3FF;
+    --gray-400: #9ca3af;
+    --font-light: 300;
+    --font-regular: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-extrabold: 800;
+  }
+
+  .status-online { background: var(--success); }
+  .status-away { background: var(--warning); }
+  .status-offline { background: var(--gray-400); }
+
+  /* Display typography */
+  .display-large { font-size: 3.5rem; font-weight: var(--font-extrabold); line-height: 1.1; letter-spacing: -0.02em; }
+  .display-small { font-size: 2.5rem; font-weight: var(--font-bold); line-height: 1.2; letter-spacing: -0.01em; }
+
+  /* Floating action button */
+  .fab { position: fixed; right: 24px; bottom: 24px; display: inline-flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 9999px; background: var(--gradient-primary); color: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 50; }
+  .fab-tooltip { position: absolute; right: 100%; margin-right: 8px; background: rgba(0,0,0,0.8); color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 12px; opacity: 0; transform: translateY(-50%) scale(0.95); transition: all 0.2s ease; top: 50%; white-space: nowrap; }
+  .fab:hover .fab-tooltip { opacity: 1; transform: translateY(-50%) scale(1); }
+
+  /* Progress steps */
+  .progress-steps { display: flex; align-items: center; gap: 16px; }
+  .progress-steps .step { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #6b7280; }
+  .progress-steps .step .step-number { width: 36px; height: 36px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; background: #e5e7eb; color: #374151; font-weight: 700; }
+  .progress-steps .step.active .step-number { background: linear-gradient(135deg, rgb(236, 72, 153), rgb(14, 165, 233)); color: #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+
+  /* Theme switch */
+  .theme-toggle { position: relative; width: 60px; height: 32px; background: #e5e7eb; border-radius: 9999px; cursor: pointer; transition: background 0.2s ease; }
+  .theme-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; background: #fff; border-radius: 9999px; transition: transform 0.2s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+  [data-theme="dark"] .theme-toggle { background: #374151; }
+  [data-theme="dark"] .theme-toggle::after { transform: translateX(28px); }
+
+  /* Optional paw cursors (opt-in) */
+  .cursor-paw { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23FF6B8B" d="M12 2c-2.21 0-4 1.79-4 4 0 1.06.41 2.02 1.09 2.75L12 12l2.91-3.25C15.59 8.02 16 7.06 16 6c0-2.21-1.79-4-4-4z"/></svg>'), auto; }
+  .cursor-paw-clickable { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%236EC3C6" d="M12 2c-2.21 0-4 1.79-4 4 0 1.06.41 2.02 1.09 2.75L12 12l2.91-3.25C15.59 8.02 16 7.06 16 6c0-2.21-1.79-4-4-4z"/></svg>'), pointer; }
+
+  /* Custom radio buttons for pet preferences */
+  .pet-preference input[type="radio"] { display: none; }
+  .pet-preference label { padding: 10px 14px; border: 2px solid #e5e7eb; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; }
+  .pet-preference input[type="radio"]:checked + label { border-color: rgb(var(--primary-500)); background: rgba(236, 72, 153, 0.1); }
+
+  /* Lazy load helper */
+  .lazy-load { filter: blur(8px); transition: filter 0.3s ease; }
+  .lazy-load.loaded { filter: blur(0); }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  }
+
+  /* Error boundary styling */
+  .error-boundary { background: var(--error-soft); border: 1px solid var(--error); border-radius: 16px; padding: 24px; text-align: center; }
+
+  /* Explicit dark theme variables (opt-in with data-theme="dark") */
+  [data-theme="dark"] {
+    --background: #0F0F0F;
+    --surface: #1A1A1A;
+    --text-primary: #FFFFFF;
+    --text-secondary: #A0A0A0;
+  }
