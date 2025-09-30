@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import PageTransition from '@/components/Layout/PageTransition';
 
 const inter = Inter({
   subsets: ['latin'], // Optimized subset for perf
@@ -73,7 +74,9 @@ export default function RootLayout({
       >
         <Providers>
           <main role="main">
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
           </main>
         </Providers>
       </body>

@@ -7,8 +7,8 @@
 
 import React, { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { SPRING_CONFIG, PREMIUM_VARIANTS } from '../../constants/animations';
-import { transitions } from '../../constants/design-tokens';
+import { SPRING_CONFIG, PREMIUM_VARIANTS } from '@/constants/animations';
+import { transitions } from '@/constants/design-tokens';
 
 interface PremiumCardProps {
   children: React.ReactNode;

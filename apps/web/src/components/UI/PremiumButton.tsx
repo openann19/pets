@@ -1,7 +1,8 @@
+'use client';
 import React, { useRef, useState, useCallback } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
-import { SPRING_CONFIG } from '../../constants/animations';
-import { COLORS, GRADIENTS, SHADOWS } from '../../constants/design-tokens';
+import { SPRING_CONFIG } from '@/constants/animations';
+import { COLORS, GRADIENTS, SHADOWS } from '@/constants/design-tokens';
 
 interface PremiumButtonProps {
   children?: React.ReactNode;
