@@ -5,6 +5,7 @@
 
 const requiredEnvVars = [
   'JWT_SECRET',
+  'JWT_REFRESH_SECRET',
   'MONGODB_URI',
   'CLIENT_URL'
 ];
@@ -46,6 +47,16 @@ function validateEnv() {
   // Validate JWT_SECRET strength (minimum 32 characters)
   if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
     errors.push('JWT_SECRET is too weak! Must be at least 32 characters.');
+  }
+
+  // Validate JWT_REFRESH_SECRET strength (minimum 32 characters)
+  if (process.env.JWT_REFRESH_SECRET && process.env.JWT_REFRESH_SECRET.length < 32) {
+    errors.push('JWT_REFRESH_SECRET is too weak! Must be at least 32 characters.');
+  }
+
+  // Prevent using the same secret for access and refresh tokens in production
+  if (process.env.NODE_ENV === 'production' && process.env.JWT_SECRET && process.env.JWT_REFRESH_SECRET && process.env.JWT_SECRET === process.env.JWT_REFRESH_SECRET) {
+    errors.push('JWT_REFRESH_SECRET must be different from JWT_SECRET in production.');
   }
   
   // Validate MongoDB URI format

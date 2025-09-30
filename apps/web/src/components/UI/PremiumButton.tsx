@@ -7,7 +7,7 @@ import { COLORS, GRADIENTS, SHADOWS } from '@/constants/design-tokens';
 interface PremiumButtonProps {
   children?: React.ReactNode;
   onClick?: () => void;
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'glass' | 'gradient' | 'neon' | 'holographic';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'glass' | 'solid' | 'outline' | 'holographic' | 'neon';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
@@ -58,26 +58,26 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
   
   const variantClasses = {
     primary: {
-      background: GRADIENTS.primary,
+      background: COLORS.primary[700],
       color: COLORS.neutral[0],
       boxShadow: glow ? SHADOWS.primaryGlow : SHADOWS.lg,
       border: 'none',
     },
     secondary: {
-      background: GRADIENTS.secondary,
+      background: COLORS.secondary[700],
       color: COLORS.neutral[0],
       boxShadow: glow ? SHADOWS.secondaryGlow : SHADOWS.lg,
       border: 'none',
     },
     danger: {
-      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      background: COLORS.error[600],
       color: COLORS.neutral[0],
       boxShadow: glow ? SHADOWS.errorGlow : SHADOWS.lg,
       border: 'none',
     },
     ghost: {
       background: 'transparent',
-      color: COLORS.neutral[700],
+      color: COLORS.neutral[800],
       border: `1px solid ${COLORS.neutral[300]}`,
       boxShadow: 'none',
     },
@@ -88,27 +88,34 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
       color: COLORS.neutral[800],
       boxShadow: SHADOWS.glass,
     },
-    gradient: {
-      background: GRADIENTS.mesh.warm,
-      color: COLORS.neutral[0],
-      boxShadow: glow ? SHADOWS['2xl'] : SHADOWS.xl,
-      border: 'none',
-    },
-    neon: {
+    solid: {
       background: COLORS.neutral[900],
-      color: COLORS.primary[400],
-      border: `2px solid ${COLORS.primary[400]}`,
-      boxShadow: `0 0 20px ${COLORS.primary[400]}40`,
+      color: COLORS.neutral[0],
+      border: 'none',
+      boxShadow: SHADOWS.lg,
+    },
+    outline: {
+      background: 'transparent',
+      color: COLORS.neutral[900],
+      border: `2px solid ${COLORS.neutral[900]}`,
+      boxShadow: 'none',
     },
     holographic: {
       background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7b8, #96ceb4, #ffeaa7)',
-      color: '#ffffff',
-      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+      color: COLORS.neutral[0],
       border: 'none',
+      boxShadow: SHADOWS['2xl'],
       backgroundSize: '400% 400%',
-      animation: 'holographic 4s ease infinite',
+      animation: 'holographic 6s ease infinite',
+      filter: 'saturate(115%)',
     },
-  };
+    neon: {
+      background: COLORS.neutral[950] ?? COLORS.neutral[900],
+      color: COLORS.primary[400],
+      border: `2px solid ${COLORS.primary[400]}`,
+      boxShadow: `0 0 20px ${COLORS.primary[400]}40, inset 0 0 10px ${COLORS.primary[400]}20`,
+    },
+  } as const;
 
   const sizeClasses = {
     sm: "px-4 py-2 text-sm min-h-[36px]",
@@ -239,6 +246,13 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
         animate={{ opacity: disabled ? 0.5 : 1, scale: 1 }}
         transition={SPRING_CONFIG}
       >
+        {/* Shimmer overlay for holographic variant */}
+        {variant === 'holographic' && (
+          <div
+            className="pointer-events-none absolute inset-0 rounded-xl animate-shimmer"
+            style={{ opacity: 0.18 }}
+          />
+        )}
         {/* Glow effect */}
         {glow && !disabled && (
           <motion.div

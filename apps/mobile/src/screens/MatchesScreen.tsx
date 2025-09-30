@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@pawfectmatch/core';
-import { LinearGradient } from 'expo-linear-gradient';
+// Removed gradients for a more refined, solid-color design
 import { useCallManager } from '../components/calling/CallManager';
 import { useTheme } from '../contexts/ThemeContext';
 import { matchesAPI } from '../services/api';
@@ -50,6 +50,7 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'matches' | 'likes'>('matches');
+  const fabAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (selectedTab === 'matches') {
@@ -61,6 +62,16 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
 
   useEffect(() => {
     loadMatches();
+  }, []);
+
+  useEffect(() => {
+    fabAnim.setValue(0);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(fabAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+        Animated.timing(fabAnim, { toValue: 0, duration: 1000, useNativeDriver: true }),
+      ])
+    ).start();
   }, []);
 
   const loadMatches = async () => {
@@ -311,13 +322,10 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
       activeOpacity={0.8}
     >
       <Image source={{ uri: item.petPhoto }} style={styles.likedImage} />
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.7)']}
-        style={styles.likedOverlay}
-      >
+      <View style={[styles.likedOverlay, { backgroundColor: 'rgba(0,0,0,0.55)' }]}> 
         <Text style={styles.likedName}>{item.petName}</Text>
         <Text style={styles.likedAction}>Liked you!</Text>
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 
@@ -342,7 +350,7 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
   return (
     <SafeAreaView style={styles.container}>
       {/* Premium Header */}
-      <View style={[styles.header, { backgroundColor: colors.white, borderBottomColor: colors.gray200 }]}>
+      <View style={[styles.header, { backgroundColor: 'rgba(255,255,255,0.08)', borderBottomColor: colors.gray200 }]}>
         <TouchableOpacity 
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -365,7 +373,7 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
       </View>
 
       {/* Enhanced Tab Selector */}
-      <View style={[styles.tabContainer, { backgroundColor: colors.white }]}>
+      <View style={[styles.tabContainer, { backgroundColor: 'rgba(255,255,255,0.08)' }]}>
         <TouchableOpacity
           style={[styles.tab, selectedTab === 'matches' && [styles.activeTab, { backgroundColor: colors.primary }]]}
           onPress={() => {
@@ -457,12 +465,12 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
         style={styles.fab}
         onPress={() => navigation.navigate('Swipe')}
       >
-        <LinearGradient
-          colors={['#ff6b6b', '#ff8e8e']}
-          style={styles.fabGradient}
-        >
+        <Animated.View style={[
+          styles.fabGradient,
+          { backgroundColor: '#0b0b0c', borderWidth: 2, borderColor: '#ec4899', transform: [{ scale: fabAnim.interpolate({ inputRange: [0,1], outputRange: [1,1.06] }) }] }
+        ]}>
           <Ionicons name="heart" size={24} color="#fff" />
-        </LinearGradient>
+        </Animated.View>
       </TouchableOpacity>
     </SafeAreaView>
   );

@@ -9,9 +9,10 @@ const generateTokens = (userId) => {
     { expiresIn: process.env.JWT_ACCESS_EXPIRY || process.env.JWT_EXPIRE || '15m' }
   );
   
+  const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
   const refreshToken = jwt.sign(
     { userId },
-    process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+    refreshSecret,
     { expiresIn: process.env.JWT_REFRESH_EXPIRY || process.env.JWT_REFRESH_EXPIRE || '7d' }
   );
   
@@ -142,8 +143,9 @@ const refreshAccessToken = async (req, res, next) => {
       });
     }
     
-    // Verify refresh token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    // Verify refresh token with refresh secret (fallback to JWT_SECRET only if explicitly configured)
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+    const decoded = jwt.verify(refreshToken, refreshSecret);
     
     // Get user and check if refresh token exists
     const user = await User.findById(decoded.userId);
