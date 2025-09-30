@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from 'react';
 import { Pet, SwipeAction, SwipeResult } from '../types/swipe';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '../stores/useAuthStore';
 
 export interface UseSwipeLogicProps {
   onMatch?: (result: SwipeResult) => void;
@@ -29,8 +29,8 @@ export const useSwipeLogic = ({
     type,
     petId: pet._id,
     timestamp: new Date(),
-    userId: user?.id || '',
-  }), [user?.id]);
+    userId: user?._id || '',
+  }), [user?._id]);
 
   const processSwipe = useCallback(async (
     action: SwipeAction,
@@ -40,7 +40,7 @@ export const useSwipeLogic = ({
 
     try {
       // Add to local history
-      setSwipeHistory(prev => [...prev, action]);
+      setSwipeHistory((prev: SwipeAction[]) => [...prev, action]);
 
       // Send to analytics if enabled
       if (analyticsEnabled) {
@@ -48,7 +48,7 @@ export const useSwipeLogic = ({
         console.log('Swipe Analytics:', {
           action: action.type,
           petId: pet._id,
-          userId: user?.id,
+          userId: user?._id,
           timestamp: action.timestamp,
         });
       }
@@ -77,7 +77,7 @@ export const useSwipeLogic = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [user?.id, analyticsEnabled, onMatch, onSwipeComplete]);
+  }, [user?._id, analyticsEnabled, onMatch, onSwipeComplete]);
 
   const handleLike = useCallback(async (pet: Pet) => {
     const action = createSwipeAction('like', pet);
@@ -96,9 +96,9 @@ export const useSwipeLogic = ({
 
   const getSwipeStats = useCallback(() => {
     const total = swipeHistory.length;
-    const likes = swipeHistory.filter(s => s.type === 'like').length;
-    const passes = swipeHistory.filter(s => s.type === 'pass').length;
-    const superLikes = swipeHistory.filter(s => s.type === 'superlike').length;
+    const likes = swipeHistory.filter((s: SwipeAction) => s.type === 'like').length;
+    const passes = swipeHistory.filter((s: SwipeAction) => s.type === 'pass').length;
+    const superLikes = swipeHistory.filter((s: SwipeAction) => s.type === 'superlike').length;
 
     return {
       total,
