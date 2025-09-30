@@ -22,6 +22,8 @@ interface PremiumCardProps {
   onClick?: () => void;
   entrance?: 'fadeInUp' | 'scaleIn' | 'slideInLeft' | 'slideInRight';
   delay?: number;
+  shimmer?: boolean;
+  magnetic?: boolean;
 }
 
 export default function PremiumCard({
@@ -36,6 +38,8 @@ export default function PremiumCard({
   onClick,
   entrance = 'fadeInUp',
   delay = 0,
+  shimmer = false,
+  magnetic = false,
 }: PremiumCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -63,6 +67,14 @@ export default function PremiumCard({
     if (tilt) {
       x.set(0);
       y.set(0);
+    }
+  };
+
+  // Magnetic effect
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (magnetic && cardRef.current) {
+      cardRef.current.style.transition = 'transform 0.3s ease';
     }
   };
 
@@ -118,10 +130,14 @@ export default function PremiumCard({
           ...(PREMIUM_VARIANTS[entrance]?.transition || SPRING_CONFIG),
           delay,
         }}
-        whileHover={hover && !onClick ? { scale: 1.02, y: -4 } : {}}
+        whileHover={hover && !onClick ? { 
+          scale: magnetic ? 1.05 : 1.02, 
+          y: magnetic ? -8 : -4,
+          transition: SPRING_CONFIG
+        } : {}}
         whileTap={onClick ? { scale: 0.98, transition: SPRING_CONFIG } : {}}
         onMouseMove={handleMouseMove}
-        onMouseEnter={() => setIsHovered(true)}
+        onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={onClick}
       >
@@ -141,6 +157,22 @@ export default function PremiumCard({
           <motion.div
             className="absolute inset-0 rounded-2xl pointer-events-none backdrop-blur-xl bg-white/10"
           />
+        )}
+
+        {/* Shimmer effect */}
+        {shimmer && (
+          <motion.div
+            className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12"
+              animate={{ x: ['0%', '100%'] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            />
+          </motion.div>
         )}
 
         {/* Content */}

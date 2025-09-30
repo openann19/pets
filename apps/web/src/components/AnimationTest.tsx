@@ -5,6 +5,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import PremiumCard from './UI/PremiumCard';
+import PremiumInput from './UI/PremiumInput';
+import PremiumSkeleton, { SkeletonCard, SkeletonProfile, SkeletonList } from './UI/PremiumSkeleton';
 
 const AnimationTest: React.FC = () => {
   return (
@@ -166,6 +169,101 @@ const AnimationTest: React.FC = () => {
               <span>Like</span>
             </div>
           </motion.div>
+        </div>
+      </div>
+
+      {/* Premium Components Showcase */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Premium Components</h2>
+        
+        {/* Premium Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <PremiumCard variant="glass" hover tilt>
+            <h3 className="font-semibold mb-2">Glass Card</h3>
+            <p className="text-gray-600">Beautiful glassmorphism effect with 3D tilt</p>
+          </PremiumCard>
+          
+          <PremiumCard variant="gradient" shimmer magnetic>
+            <h3 className="font-semibold mb-2">Gradient Card</h3>
+            <p className="text-white/90">Shimmer effect with magnetic hover</p>
+          </PremiumCard>
+          
+          <PremiumCard variant="neon" glow>
+            <h3 className="font-semibold mb-2">Neon Card</h3>
+            <p className="text-pink-400">Glowing neon border effect</p>
+          </PremiumCard>
+        </div>
+
+        {/* Premium Inputs */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <h3 className="font-semibold">Premium Inputs</h3>
+            <PremiumInput
+              variant="floating"
+              label="Floating Label"
+              placeholder="Enter your name"
+              icon={<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+              </svg>}
+            />
+            <PremiumInput
+              variant="outlined"
+              label="Outlined Input"
+              placeholder="Enter your email"
+              type="email"
+              icon={<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+              </svg>}
+              iconPosition="right"
+            />
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="font-semibold">Input States</h3>
+            <PremiumInput
+              variant="filled"
+              label="Filled Input"
+              placeholder="With helper text"
+              helperText="This is helpful information"
+            />
+            <PremiumInput
+              variant="default"
+              label="Error State"
+              placeholder="This has an error"
+              error="This field is required"
+              value="invalid@"
+            />
+          </div>
+        </div>
+
+        {/* Premium Skeletons */}
+        <div className="space-y-6">
+          <h3 className="font-semibold">Premium Skeleton Loaders</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-sm font-medium mb-3">Card Skeleton</h4>
+              <SkeletonCard />
+            </div>
+            
+            <div>
+              <h4 className="text-sm font-medium mb-3">Profile Skeleton</h4>
+              <SkeletonProfile />
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="text-sm font-medium mb-3">List Skeleton</h4>
+            <SkeletonList count={3} />
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <PremiumSkeleton variant="rectangular" height={100} animation="shimmer" />
+            <PremiumSkeleton variant="circular" width={80} height={80} animation="wave" />
+            <PremiumSkeleton variant="text" width="80%" animation="glow" />
+            <PremiumSkeleton variant="button" width={120} animation="pulse" />
+          </div>
         </div>
       </div>
     </div>
