@@ -25,14 +25,14 @@ const {
 
 const app = express();
 
-// Initialize Sentry
-initSentry(app);
+// Initialize Sentry (disabled for demo)
+// initSentry(app);
 
-// Sentry request handler (must be first)
-if (process.env.SENTRY_DSN) {
-  app.use(sentryRequestHandler());
-  app.use(sentryTracingHandler());
-}
+// Sentry request handler (must be first) - disabled for demo
+// if (process.env.SENTRY_DSN) {
+//   app.use(sentryRequestHandler());
+//   app.use(sentryTracingHandler());
+// }
 
 // Import routes
 const authRoutes = require('./src/routes/auth');
@@ -240,7 +240,7 @@ try {
 
 // Sentry error handler (must be before other error handlers)
 if (process.env.SENTRY_DSN) {
-  app.use(sentryErrorHandler());
+  // app.use(sentryErrorHandler()); // Disabled for demo
 }
 
 // Error handling middleware (must be last)

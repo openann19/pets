@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import PremiumLayout from '@/components/Layout/PremiumLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../../src/lib/auth-store';
 import { useDashboardData, useWebSocket } from '../../../src/hooks/api-hooks';
@@ -9,9 +10,8 @@ import PremiumCard from '../../../src/components/UI/PremiumCard';
 import PremiumButton from '../../../src/components/UI/PremiumButton';
 import { 
   PREMIUM_VARIANTS, 
-  STAGGER_CONFIG,
-  SPRING_CONFIG,
-} from '../../../src/constants/animations';
+  STAGGER_CONFIG
+} from '@/constants/animations';
 import {
   HeartIcon,
   ChatBubbleLeftRightIcon,
@@ -23,15 +23,12 @@ import {
   FireIcon,
   StarIcon,
   VideoCameraIcon,
-  ChartBarIcon,
-  CameraIcon,
-  BeakerIcon,
-  EyeIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 export default function DashboardPage() {
   const { user: authUser } = useAuthStore();
-  const { user, pets, matches, notifications, subscription, isLoading } = useDashboardData();
+  const { user, pets, matches, subscription } = useDashboardData();
   const [timeOfDay, setTimeOfDay] = useState('');
   const [isOnline, setIsOnline] = useState(true);
   
@@ -88,11 +85,11 @@ export default function DashboardPage() {
     },
     { 
       label: 'Premium Status', 
-      value: subscription?.isActive ? 'Active' : 'Free', 
+      value: subscription?.status === 'active' ? 'Active' : 'Free', 
       icon: StarIcon, 
       variant: 'holographic' as const,
-      description: subscription?.isActive ? 'Premium member' : 'Upgrade available',
-      trend: subscription?.isActive ? '30 days left' : 'Special offer',
+      description: subscription?.status === 'active' ? 'Premium member' : 'Upgrade available',
+      trend: subscription?.status === 'active' ? '30 days left' : 'Special offer',
       color: 'purple' 
     },
   ];
@@ -163,29 +160,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="text-2xl">🐾</div>
-              <span className="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
-                PawfectMatch
-              </span>
-            </div>
-            <nav className="flex items-center space-x-4">
-              <Link href="/profile" className="text-gray-600 hover:text-gray-800">
-                Profile
-              </Link>
-              <Link href="/premium" className="text-purple-600 hover:text-purple-700 font-medium">
-                Go Premium
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-
+    <PremiumLayout>
       {/* Enhanced Welcome Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <motion.div
@@ -225,7 +200,7 @@ export default function DashboardPage() {
           </motion.p>
           
           {/* Premium status banner */}
-          {!subscription?.isActive && (
+          {subscription?.status !== 'active' && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -402,7 +377,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Enhanced Premium Showcase */}
-        {!subscription?.isActive && (
+        {subscription?.status !== 'active' && (
           <motion.div
             variants={PREMIUM_VARIANTS.scaleIn}
             transition={{ delay: 0.6 }}
@@ -545,6 +520,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </div>
+    </PremiumLayout>
   );
 }

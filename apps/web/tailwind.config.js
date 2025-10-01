@@ -208,6 +208,18 @@ module.exports = {
           backgroundSize: '400% 400%',
           animation: 'holographic 4s ease infinite',
         },
+        // Subtle pastel gradient for a sleeker colourful theme
+        '.smooth-gradient': {
+          background: 'linear-gradient(135deg, hsl(215,100%,97%) 0%, hsl(203,100%,95%) 35%, hsl(192,100%,93%) 65%, hsl(180,100%,91%) 100%)',
+          backgroundSize: '300% 300%',
+          animation: 'holographic 20s ease-in-out infinite',
+        },
+        '.shadow-sleek': {
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
+        },
+        '.border-sleek': {
+          border: '1px solid rgba(255, 255, 255, 0.25)',
+        },
       };
       
       addUtilities(newUtilities);

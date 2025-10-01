@@ -4,9 +4,10 @@ import React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { ChatBubbleLeftRightIcon, PhoneIcon, VideoCameraIcon, HeartIcon } from '@heroicons/react/24/outline';
-import LoadingSpinner from '../../../src/components/UI/LoadingSpinner';
-import PremiumButton from '../../../src/components/UI/PremiumButton';
-import PremiumCard from '../../../src/components/UI/PremiumCard';
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
+import PremiumButton from '@/components/UI/PremiumButton';
+import PremiumCard from '@/components/UI/PremiumCard';
+import PremiumLayout from '@/components/Layout/PremiumLayout';
 
 export default function MatchesPage() {
   const { data: matches, isLoading, error } = useQuery({
@@ -41,9 +42,11 @@ export default function MatchesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" variant="gradient" />
-      </div>
+      <PremiumLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <LoadingSpinner size="lg" variant="holographic" />
+        </div>
+      </PremiumLayout>
     );
   }
 
@@ -54,7 +57,7 @@ export default function MatchesPage() {
           <p className="text-red-600 mb-4">Error loading matches</p>
           <PremiumButton
             onClick={() => window.location.reload()}
-            variant="gradient"
+            variant="glass"
             size="md"
             glow
           >
@@ -66,18 +69,13 @@ export default function MatchesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-bold text-gray-900">Your Matches</h1>
-            <span className="text-sm text-gray-600">
-              {matches?.length || 0} active matches
-            </span>
-          </div>
-        </div>
-      </header>
+    <PremiumLayout>
+      {/* Title */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <h1 className="text-3xl font-bold">
+          <span className="bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">Your Matches</span>
+        </h1>
+      </div>
 
       {/* Matches Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -148,18 +146,17 @@ export default function MatchesPage() {
                   </div>
                 </div>
               </PremiumCard>
-            )))}
+            ))}
           </div>
         ) : (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🐶</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No matches yet</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">No matches yet</h2>
             <Link href="/swipe">
               <PremiumButton
-                variant="gradient"
+                variant="glass"
                 size="lg"
                 icon={<HeartIcon className="w-5 h-5" />}
-                glow
                 magneticEffect
                 haptic
               >
@@ -169,6 +166,6 @@ export default function MatchesPage() {
           </div>
         )}
       </div>
-    </div>
+    </PremiumLayout>
   );
 }

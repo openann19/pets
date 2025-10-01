@@ -13,7 +13,6 @@ import {
   VideoCameraIcon,
   ChartBarIcon,
   GlobeAltIcon,
-  UserGroupIcon,
   BoltIcon
 } from '@heroicons/react/24/solid';
 import { useAuthStore } from '@/lib/auth-store';
@@ -61,7 +60,7 @@ export default function PremiumPage() {
     global_elite: GlobeAltIcon,
   };
 
-  const tierColors = {
+  const tierColors: Record<PremiumTier, string> = {
     free: 'from-gray-400 to-gray-500',
     premium_plus: 'from-pink-500 to-purple-600',
     enterprise: 'from-blue-500 to-indigo-600',
@@ -92,7 +91,7 @@ export default function PremiumPage() {
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {allPlans.map((tierPlan, index) => {
-            const Icon = tierIcons[tierPlan.tier];
+            const Icon = tierIcons[tierPlan.tier as PremiumTier];
             const isCurrentTier = tierPlan.tier === currentTier;
             const isSelected = tierPlan.tier === selectedTier;
             const isPremium = tierPlan.tier !== 'free';
@@ -107,13 +106,12 @@ export default function PremiumPage() {
                 <PremiumCard
                   hover
                   glow={isSelected}
-                  gradient={tierColors[tierPlan.tier]}
                   className={`p-6 h-full ${isSelected ? 'ring-4 ring-purple-500' : ''}`}
                 >
                   <div className="flex flex-col h-full">
                     {/* Header */}
                     <div className="mb-6">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${tierColors[tierPlan.tier]} flex items-center justify-center mb-4`}>
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${tierColors[tierPlan.tier as PremiumTier]} flex items-center justify-center mb-4`}>
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                       <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">

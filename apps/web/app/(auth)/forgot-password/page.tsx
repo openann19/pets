@@ -7,8 +7,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { EnvelopeIcon, ArrowLeftIcon, CheckCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
-import PremiumButton from '../../../src/components/UI/PremiumButton';
-import apiClient from '../../../src/lib/api-client';
+import PremiumButton from '@/components/UI/PremiumButton';
+import apiClient from '@/lib/api-client';
+import PremiumLayout from '@/components/Layout/PremiumLayout';
+import HoloLogo from '@/components/Brand/HoloLogo';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -49,7 +51,8 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-50 to-pink-100 flex items-center justify-center px-4 py-12 relative overflow-hidden">
+    <PremiumLayout showHeader={false}>
+      <div className="min-h-screen flex items-center justify-center px-4 py-12">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -91,21 +94,16 @@ export default function ForgotPasswordPage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <Link href="/" className="inline-flex justify-center items-center space-x-2 mb-8">
-            <div className="text-5xl">
-              🐾
-            </div>
-            <span className="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
-              PawfectMatch
-            </span>
+          <Link href="/" className="inline-flex justify-center items-center mb-8">
+            <HoloLogo size={60} withText monochrome />
           </Link>
           
           {!isSuccess ? (
             <>
-              <h2 className="text-4xl font-extrabold text-gray-900 mb-3">
-                Forgot Password?
+              <h2 className="text-4xl font-extrabold mb-3">
+                <span className="bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">Forgot Password?</span>
               </h2>
-              <p className="text-base text-gray-600">
+              <p className="text-base text-white/70">
                 No worries! Enter your email and we'll send you reset instructions.
               </p>
             </>
@@ -114,10 +112,10 @@ export default function ForgotPasswordPage() {
               <div className="flex justify-center mb-4">
                 <CheckCircleIcon className="h-16 w-16 text-green-500" />
               </div>
-              <h2 className="text-4xl font-extrabold text-gray-900 mb-3">
-                Check Your Email
+              <h2 className="text-4xl font-extrabold mb-3">
+                <span className="bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">Check Your Email</span>
               </h2>
-              <p className="text-base text-gray-600">
+              <p className="text-base text-white/70">
                 We've sent password reset instructions to your email address.
               </p>
             </>
@@ -133,7 +131,7 @@ export default function ForgotPasswordPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-2xl space-y-6 border border-white/20">
+            <div className="glass-light p-8 rounded-3xl shadow-2xl space-y-6 border border-white/20">
               <AnimatePresence>
                 {error && (
                   <motion.div 
@@ -149,18 +147,18 @@ export default function ForgotPasswordPage() {
               </AnimatePresence>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-semibold text-white/90 mb-2">
                   Email address
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors">
-                    <EnvelopeIcon className="h-5 w-5 text-gray-400 group-focus-within:text-purple-500" />
+                    <EnvelopeIcon className="h-5 w-5 text-white/60 group-focus-within:text-white/80" />
                   </div>
                   <input
                     {...register('email')}
                     type="email"
                     autoComplete="email"
-                    className="appearance-none relative block w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white/50 backdrop-blur-sm hover:border-gray-300"
+                    className="appearance-none relative block w-full pl-12 pr-4 py-3.5 border border-white/20 placeholder-white/50 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all bg-white/10 backdrop-blur-sm hover:border-white/30"
                     placeholder="your@email.com"
                   />
                 </div>
@@ -170,7 +168,7 @@ export default function ForgotPasswordPage() {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
-                      className="mt-2 text-sm text-red-600 flex items-center gap-1"
+                      className="mt-2 text-sm text-red-300 flex items-center gap-1"
                     >
                       {errors.email.message}
                     </motion.p>
@@ -194,7 +192,7 @@ export default function ForgotPasswordPage() {
               <div className="text-center">
                 <Link 
                   href="/login" 
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 transition-all"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition-colors underline"
                 >
                   <ArrowLeftIcon className="h-4 w-4 text-purple-600" />
                   Back to login
@@ -207,13 +205,13 @@ export default function ForgotPasswordPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-2xl space-y-6 border border-white/20"
+            className="glass-light p-8 rounded-3xl shadow-2xl space-y-6 border border-white/20"
           >
             <div className="space-y-4 text-center">
-              <p className="text-gray-600">
+              <p className="text-white/80">
                 If an account exists with that email, you'll receive password reset instructions shortly.
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-white/70">
                 Didn't receive the email? Check your spam folder or try again.
               </p>
             </div>
@@ -247,14 +245,15 @@ export default function ForgotPasswordPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="flex items-center justify-center gap-6 text-sm text-gray-600"
+          className="flex items-center justify-center gap-6 text-sm text-white/70"
         >
           <div className="flex items-center gap-2">
-            <ShieldCheckIcon className="h-5 w-5 text-green-500" />
+            <ShieldCheckIcon className="h-5 w-5 text-emerald-400" />
             <span>Secure & Encrypted</span>
           </div>
         </motion.div>
       </motion.div>
-    </div>
+      </div>
+    </PremiumLayout>
   );
 }

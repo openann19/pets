@@ -18,6 +18,7 @@ import {
   UserIcon as UserSolid,
   MapPinIcon as MapPinSolid,
 } from '@heroicons/react/24/solid';
+import ThemeToggle from '../ThemeToggle';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -101,6 +102,8 @@ const Header: React.FC = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Theme Toggle */}
+            <ThemeToggle />
             {/* Add Pet Button */}
             <Link
               to="/pets/new"

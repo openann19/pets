@@ -16,10 +16,10 @@ import {
 import MapView, { Marker, Circle, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { BlurView } from '@react-native-blur/blur';
+import { BlurView } from '@react-native-community/blur';
 import LinearGradient from 'react-native-linear-gradient';
-import { useAuthStore } from '@pawfectmatch/core/stores';
-import { PulsePin } from '@pawfectmatch/core/types/realtime';
+import { useAuthStore } from '@pawfectmatch/core';
+import { PulsePin } from '@pawfectmatch/core';
 import io, { Socket } from 'socket.io-client';
 
 const { width, height } = Dimensions.get('window');

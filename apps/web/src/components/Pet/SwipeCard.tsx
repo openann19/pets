@@ -1,9 +1,11 @@
+"use client";
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { HeartIcon, XMarkIcon, SparklesIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
-import { SPRING_CONFIG } from '../../constants/animations';
-import { Pet } from '../../types';
+import { SPRING_CONFIG } from '@/constants/animations';
+import { Pet } from '@/types';
 
 interface SwipeCardProps {
   pet: Pet;
@@ -22,18 +24,13 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   pet,
   onSwipe,
   onCardClick,
-  isLiked = false,
-  isPassed = false,
   style,
   dragConstraints,
-  hapticFeedback = true,
-  soundEffects = true,
   premiumEffects = true,
 }) => {
   const cardRef = React.useRef<HTMLDivElement>(null);
-  const [dragDirection, setDragDirection] = useState<'left' | 'right' | 'super' | null>(null);
   const [isExiting, setIsExiting] = useState(false);
-  const [showParticles, setShowParticles] = useState(false);
+  const [showParticles] = useState(false);
 
   // Enhanced motion values for smooth interactions
   const x = useMotionValue(0);
@@ -41,20 +38,12 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   const rotate = useTransform(x, [-300, 300], [-30, 30]);
   const opacity = useTransform(x, [-300, -150, 0, 150, 300], [0, 1, 1, 1, 0]);
 
-  const handleDrag = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const threshold = 50;
-    const superThreshold = 120;
-    
-    if (info.offset.y < -superThreshold && Math.abs(info.offset.x) < 50) {
-      setDragDirection('super'); // Super like on swipe up
-    } else if (info.offset.x > threshold) {
-      setDragDirection('right'); // Like on swipe right
-    } else if (info.offset.x < -threshold) {
-      setDragDirection('left'); // Pass on swipe left
-    } else {
-      setDragDirection(null);
-    }
-  };
+  // Overlay opacities derived from motion values (no setState on drag)
+  const likeOverlayOpacity = useTransform(x, [60, 140], [0, 1]);
+  const passOverlayOpacity = useTransform(x, [-140, -60], [1, 0]);
+  // const superLikeOverlayOpacity = useTransform(y, [-160, -80], [1, 0]);
+
+  // onDrag not needed; rely on motion values
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const threshold = 100;
@@ -63,13 +52,27 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
     const offset = info.offset.x;
     const yOffset = info.offset.y;
 
-    // Check for super like (swipe up)
+    // Enhanced haptic feedback for swipe actions
+    const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium') => {
+      if ('vibrate' in navigator) {
+        const patterns = {
+          light: [10],
+          medium: [20],
+          heavy: [30, 10, 30]
+        };
+        navigator.vibrate(patterns[type]);
+      }
+    };
+
+    // Check for super like (swipe up) - Enhanced with haptics
     if (yOffset < -superThreshold && Math.abs(offset) < 50) {
+      triggerHaptic('heavy');
       setIsExiting(true);
       setTimeout(() => onSwipe('superlike'), 200);
     } 
-    // Strong swipe or drag beyond threshold
+    // Strong swipe or drag beyond threshold - Enhanced with haptics
     else if (Math.abs(velocity) > 500 || Math.abs(offset) > threshold) {
+      triggerHaptic('medium');
       setIsExiting(true);
       
       if (offset > 0 || velocity > 0) {
@@ -78,21 +81,38 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
         setTimeout(() => onSwipe('pass'), 200);
       }
     } else {
-      // Snap back
-      setDragDirection(null);
+      // Snap back with light haptic
+      triggerHaptic('light');
       x.set(0);
       y.set(0);
     }
   };
 
   const handleButtonClick = (action: 'like' | 'pass' | 'superlike') => {
+    // Enhanced haptic feedback for button clicks
+    const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium') => {
+      if ('vibrate' in navigator) {
+        const patterns = {
+          light: [10],
+          medium: [20],
+          heavy: [30, 10, 30]
+        };
+        navigator.vibrate(patterns[type]);
+      }
+    };
+
+    // Different haptic patterns for different actions
+    if (action === 'superlike') {
+      triggerHaptic('heavy');
+    } else {
+      triggerHaptic('medium');
+    }
+
     setIsExiting(true);
     setTimeout(() => onSwipe(action), 200);
   };
 
-  const getSwipeIndicatorOpacity = () => {
-    return dragDirection ? 1 : 0;
-  };
+  // Helper retained for compatibility (not used with motion values)
 
   // Get primary photo
   const primaryPhoto = pet.photos.find((photo: { isPrimary: boolean; url: string }) => photo.isPrimary) || pet.photos[0];
@@ -107,7 +127,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
 
   return (
     <div className="relative">
-      {/* Particle effects for premium interactions */}
+      {/* Particle effects for premium interactions (kept minimal, gated) */}
       {premiumEffects && showParticles && (
         <div className="absolute inset-0 pointer-events-none z-50">
           {[...Array(8)].map((_, i) => (
@@ -115,11 +135,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               key={i}
               className="absolute w-3 h-3 rounded-full"
               style={{
-                background: dragDirection === 'right' 
-                  ? 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)'
-                  : dragDirection === 'super' 
-                    ? 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)'
-                    : '#ef4444',
+                background: 'linear-gradient(135deg, rgba(14,165,233,0.8), rgba(56,189,248,0.6))',
               }}
               initial={{
                 x: '50%',
@@ -148,7 +164,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
         drag
         dragConstraints={dragConstraints}
         dragElastic={0.15}
-        onDrag={handleDrag}
+        // Derive overlays from motion values; no state in onDrag
         onDragEnd={handleDragEnd}
         className="absolute inset-0"
         style={{ 
@@ -164,54 +180,53 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
         }}
         transition={SPRING_CONFIG}
         whileTap={{ scale: 0.98 }}
-        whileHover={premiumEffects ? { scale: 1.02, y: -5 } : {}}
+        whileHover={premiumEffects ? { 
+          scale: 1.02, 
+          y: -5,
+          rotateY: 2,
+          transition: { type: "spring", stiffness: 400, damping: 25 }
+        } : {}}
       >
         <div 
           className="w-full h-full rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing relative transform-gpu"
           onClick={onCardClick}
           style={{
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.25)',
+            background: 'rgba(255, 255, 255, 0.06)',
+            backdropFilter: 'blur(12px) saturate(140%)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 20px 40px -16px rgba(0, 0, 0, 0.35)',
           }}
         >
-        {/* Swipe Indicators */}
+        {/* Swipe Indicators - neutral, glassy */}
         <motion.div
-          className="absolute top-8 left-8 z-20 bg-green-500 text-white px-6 py-3 rounded-full font-bold text-lg shadow-lg"
-          animate={{ 
-            opacity: dragDirection === 'right' ? getSwipeIndicatorOpacity() : 0,
-            scale: dragDirection === 'right' ? 1.1 : 0.8,
-          }}
-          transition={{ duration: 0.2 }}
+          className="absolute top-6 left-6 z-20 px-5 py-2 rounded-full font-bold text-sm shadow-lg backdrop-blur-md border border-white/10 bg-white/10 text-white"
+          style={{ opacity: likeOverlayOpacity }}
         >
-          <div className="flex items-center space-x-2">
-            <HeartSolidIcon className="w-6 h-6" />
+          <div className="flex items-center gap-2">
+            <HeartSolidIcon className="w-5 h-5" />
             <span>LIKE</span>
           </div>
         </motion.div>
 
         <motion.div
-          className="absolute top-8 right-8 z-20 bg-red-500 text-white px-6 py-3 rounded-full font-bold text-lg shadow-lg"
-          animate={{ 
-            opacity: dragDirection === 'left' ? getSwipeIndicatorOpacity() : 0,
-            scale: dragDirection === 'left' ? 1.1 : 0.8,
-          }}
-          transition={{ duration: 0.2 }}
+          className="absolute top-6 right-6 z-20 px-5 py-2 rounded-full font-bold text-sm shadow-lg backdrop-blur-md border border-white/10 bg-white/10 text-white"
+          style={{ opacity: passOverlayOpacity }}
         >
-          <div className="flex items-center space-x-2">
-            <XMarkIcon className="w-6 h-6" />
+          <div className="flex items-center gap-2">
+            <XMarkIcon className="w-5 h-5" />
             <span>PASS</span>
           </div>
         </motion.div>
 
         {/* Main Photo */}
         <div className="relative h-2/3">
-          <img
+          <Image
             src={photoUrl}
             alt={pet.name}
-            className="w-full h-full object-cover"
-            draggable={false}
+            fill
+            sizes="(max-width: 768px) 100vw, 480px"
+            className="object-cover"
+            priority={false}
           />
           
           {/* Photo overlay gradient */}
@@ -259,21 +274,21 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
             {/* Basic Info */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm">Breed</p>
-                <p className="font-semibold">{pet.breed || 'Mixed'}</p>
+                <p className="text-white/70 text-sm">Breed</p>
+                <p className="font-semibold text-white">{pet.breed || 'Mixed'}</p>
               </div>
               <div>
-                <p className="text-gray-600 text-sm">Size</p>
-                <p className="font-semibold capitalize">{pet.size || 'Medium'}</p>
+                <p className="text-white/70 text-sm">Size</p>
+                <p className="font-semibold capitalize text-white">{pet.size || 'Medium'}</p>
               </div>
               <div>
-                <p className="text-gray-600 text-sm">Age</p>
-                <p className="font-semibold">{ageText}</p>
+                <p className="text-white/70 text-sm">Age</p>
+                <p className="font-semibold text-white">{ageText}</p>
               </div>
             </div>
 
             {/* Location */}
-            <div className="flex items-center space-x-2 text-gray-600">
+            <div className="flex items-center space-x-2 text-white/70">
               <MapPinIcon className="w-4 h-4" />
               <span className="text-sm">{distance}</span>
             </div>
@@ -281,7 +296,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
             {/* Description/Bio */}
             {(pet.description || (pet as any).bio) && (
               <div>
-                <p className="text-gray-800 text-sm leading-relaxed">
+                <p className="text-white/85 text-sm leading-relaxed">
                   {pet.description || (pet as any).bio}
                 </p>
               </div>
@@ -290,18 +305,18 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
             {/* Personality Tags (with fallback) */}
             {(pet as any).personalityTags?.length > 0 && (
               <div>
-                <p className="text-gray-600 text-sm mb-2">Personality</p>
+                <p className="text-white/70 text-sm mb-2">Personality</p>
                 <div className="flex flex-wrap gap-2">
                   {(pet as any).personalityTags.slice(0, 4).map((tag: string, index: number) => (
                     <span
                       key={index}
-                      className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-medium"
+                      className="border border-white/10 bg-white/5 text-white/90 px-3 py-1 rounded-full text-xs font-medium"
                     >
                       {tag}
                     </span>
                   ))}
                   {(pet as any).personalityTags.length > 4 && (
-                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs">
+                    <span className="border border-white/10 bg-white/5 text-white/80 px-3 py-1 rounded-full text-xs">
                       +{(pet as any).personalityTags.length - 4} more
                     </span>
                   )}
@@ -311,16 +326,16 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
 
             {/* Health Info (with fallback) */}
             {(pet as any).healthInfo && (
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
+              <div className="flex items-center space-x-4 text-sm text-white/70">
                 {(pet as any).healthInfo.vaccinated && (
                   <span className="flex items-center space-x-1">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
                     <span>Vaccinated</span>
                   </span>
                 )}
                 {(pet as any).healthInfo.spayedNeutered && (
                   <span className="flex items-center space-x-1">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    <span className="w-2 h-2 bg-sky-400 rounded-full"></span>
                     <span>Spayed/Neutered</span>
                   </span>
                 )}
@@ -338,7 +353,8 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               e.stopPropagation();
               handleButtonClick('pass');
             }}
-            aria-label="Pass button" className="w-14 h-14 bg-white border-2 border-red-500 text-red-500 rounded-full flex items-center justify-center shadow-lg hover:bg-red-50 transition-colors"
+            aria-label="Pass"
+            className="w-14 h-14 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-white/20 transition-colors"
           >
             <XMarkIcon className="w-7 h-7" />
           </motion.button>
@@ -350,7 +366,8 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               e.stopPropagation();
               handleButtonClick('superlike');
             }}
-            aria-label="Superlike button" className="w-12 h-12 bg-white border-2 border-blue-500 text-blue-500 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-50 transition-colors"
+            aria-label="Super Like"
+            className="w-12 h-12 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-white/20 transition-colors"
           >
             <SparklesIcon className="w-6 h-6" />
           </motion.button>
@@ -362,7 +379,8 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               e.stopPropagation();
               handleButtonClick('like');
             }}
-            aria-label="Like button" className="w-14 h-14 bg-white border-2 border-green-500 text-green-500 rounded-full flex items-center justify-center shadow-lg hover:bg-green-50 transition-colors"
+            aria-label="Like"
+            className="w-14 h-14 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-white/20 transition-colors"
           >
             <HeartIcon className="w-7 h-7" />
           </motion.button>

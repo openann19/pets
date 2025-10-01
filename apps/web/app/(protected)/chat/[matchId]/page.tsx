@@ -11,7 +11,6 @@ import {
   VideoCameraIcon,
   InformationCircleIcon,
   ArrowLeftIcon,
-  EllipsisVerticalIcon,
   CheckIcon,
   HeartIcon,
   SparklesIcon
@@ -20,7 +19,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { chatAPI, api } from '@/services/api';
 import { useSocket } from '@/hooks/useSocket';
 import { logger } from '@/services/logger';
-import Image from 'next/image';
+import PremiumLayout from '@/components/Layout/PremiumLayout';
 
 interface Message {
   id: string;
@@ -79,7 +78,9 @@ export default function ChatPage() {
       socket.on('new_message', handleNewMessage);
       socket.on('typing', handleTypingIndicator);
       socket.on('read_receipt', handleReadReceipt);
-      socket.on('user_status', handleUserStatus);
+      socket.on('user_status', ({ isOnline }: { isOnline: boolean }) => {
+        setMatch(prev => (prev ? { ...prev, isOnline } : prev));
+      });
       
       return () => {
         socket.off('new_message');
@@ -99,17 +100,17 @@ export default function ChatPage() {
     try {
       // Load match info
       const matchData = await api.matches.getMatch(matchId);
-      setMatch(matchData);
+      setMatch(matchData as unknown as Match);
       
       // Load messages
       const messagesData = await chatAPI.getMessages(matchId);
-      setMessages(messagesData);
+      setMessages(messagesData as unknown as Message[]);
       
       // Mark as read
       await chatAPI.markAsRead(matchId);
       
       // Get AI suggestions for conversation starters
-      if (messagesData.length === 0) {
+      if ((messagesData as unknown as Message[]).length === 0) {
         loadAiSuggestions();
       }
       
@@ -156,6 +157,11 @@ export default function ChatPage() {
     if (message.senderId !== user?.id) {
       playNotificationSound();
       showNotification(message);
+      
+      // Enhanced haptic feedback for new messages
+      if ('vibrate' in navigator) {
+        navigator.vibrate([20, 10, 20]);
+      }
     }
   };
 
@@ -177,6 +183,11 @@ export default function ChatPage() {
     
     if (!content || !socket) return;
 
+    // Enhanced haptic feedback for sending messages
+    if ('vibrate' in navigator) {
+      navigator.vibrate([10]);
+    }
+
     const newMessage: Message = {
       id: Date.now().toString(),
       senderId: user?.id || '',
@@ -187,7 +198,7 @@ export default function ChatPage() {
       metadata: messageData?.metadata,
     };
 
-    // Optimistic update
+    // Optimistic update with enhanced animation
     setMessages(prev => [...prev, newMessage]);
     setInputMessage('');
 
@@ -275,13 +286,13 @@ export default function ChatPage() {
       clearTimeout(typingTimeoutRef.current);
     }
     
-    // Set new timeout
+    // Set new timeout with debouncing
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
       if (socket) {
         socket.emit('typing', { matchId, userId: user?.id, isTyping: false });
       }
-    }, 2000);
+    }, 1500); // Reduced from 2000ms for more responsive typing indicators
   };
 
   const scrollToBottom = () => {
@@ -289,8 +300,22 @@ export default function ChatPage() {
   };
 
   const playNotificationSound = () => {
-    const audio = new Audio('/sounds/notification.mp3');
-    audio.play().catch(() => {});
+    // Enhanced notification sound with fallback
+    try {
+      const audio = new Audio('/sounds/notification.mp3');
+      audio.volume = 0.3; // Reduced volume for better UX
+      audio.play().catch(() => {
+        // Fallback to system sound
+        if ('vibrate' in navigator) {
+          navigator.vibrate([100, 50, 100]);
+        }
+      });
+    } catch (error) {
+      // Fallback to haptic feedback only
+      if ('vibrate' in navigator) {
+        navigator.vibrate([100, 50, 100]);
+      }
+    }
   };
 
   const showNotification = (message: Message) => {
@@ -316,22 +341,25 @@ export default function ChatPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          >
-            <HeartIcon className="h-12 w-12 text-pink-500 mx-auto" />
-          </motion.div>
-          <p className="mt-4 text-gray-600">Loading chat...</p>
+      <PremiumLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            >
+              <HeartIcon className="h-12 w-12 text-pink-500 mx-auto" />
+            </motion.div>
+            <p className="mt-4 text-white/80">Loading chat...</p>
+          </div>
         </div>
-      </div>
+      </PremiumLayout>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <PremiumLayout>
+      <div className="flex flex-col h-[calc(100vh-6rem)] bg-transparent">
       {/* Header */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
@@ -683,5 +711,6 @@ export default function ChatPage() {
         )}
       </AnimatePresence>
     </div>
+    </PremiumLayout>
   );
 }

@@ -7,8 +7,8 @@
 
 import React, { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { SPRING_CONFIG, PREMIUM_VARIANTS } from '../../constants/animations';
-import { transitions } from '../../constants/design-tokens';
+import { SPRING_CONFIG, PREMIUM_VARIANTS } from '@/constants/animations';
+import { transitions } from '@/constants/design-tokens';
 
 interface PremiumCardProps {
   children: React.ReactNode;
@@ -27,7 +27,7 @@ interface PremiumCardProps {
 export default function PremiumCard({
   children,
   variant = 'default',
-  hover = true,
+  hover = false,
   tilt = false,
   glow = false,
   blur = false,
@@ -69,12 +69,12 @@ export default function PremiumCard({
   // Get enhanced variant styles with premium effects
   const getVariantClasses = () => {
     const variants = {
-      default: "bg-white shadow-premium border border-gray-200 hover:shadow-premium-lg",
-      glass: "glass-light shadow-glass border border-white/30 backdrop-blur-premium",
-      elevated: "bg-white shadow-premium-lg hover:shadow-2xl transform hover:-translate-y-2",
-      gradient: "bg-mesh-gradient text-white shadow-premium-lg border-none hover:animate-glow",
-      neon: "bg-gray-900 border-2 border-pink-400 text-pink-400 hover:shadow-neon hover:border-pink-300",
-      holographic: "bg-mesh-gradient text-white shadow-premium-lg border-none animate-holographic hover:animate-glow",
+      default: "bg-[rgba(255,255,255,0.06)] border border-white/10 text-white",
+      glass: "glass-light shadow-glass",
+      elevated: "bg-[rgba(255,255,255,0.08)] border border-white/10 text-white shadow-premium-lg hover:shadow-2xl transform hover:-translate-y-2",
+      gradient: "bg-gradient-to-b from-white/10 to-white/5 text-white border border-white/10",
+      neon: "bg-slate-950/60 border border-blue-500/40 text-blue-300 hover:shadow-[0_0_24px_rgba(59,130,246,0.25)]",
+      holographic: "bg-gradient-to-br from-blue-500/20 to-indigo-500/10 text-white border border-white/10",
     };
     
     return variants[variant];
@@ -112,14 +112,11 @@ export default function PremiumCard({
           rotateX: tilt ? rotateX : 0,
           rotateY: tilt ? rotateY : 0,
         }}
-        initial={PREMIUM_VARIANTS[entrance]?.initial || PREMIUM_VARIANTS.fadeInUp.initial}
-        animate={PREMIUM_VARIANTS[entrance]?.animate || PREMIUM_VARIANTS.fadeInUp.animate}
-        transition={{
-          ...(PREMIUM_VARIANTS[entrance]?.transition || SPRING_CONFIG),
-          delay,
-        }}
-        whileHover={hover && !onClick ? { scale: 1.02, y: -4 } : {}}
-        whileTap={onClick ? { scale: 0.98, transition: SPRING_CONFIG } : {}}
+        initial={PREMIUM_VARIANTS[entrance]?.initial || { opacity: 0, y: 10 }}
+        animate={PREMIUM_VARIANTS[entrance]?.animate || { opacity: 1, y: 0 }}
+        transition={{ ...(PREMIUM_VARIANTS[entrance]?.transition || SPRING_CONFIG), delay }}
+        whileHover={hover ? { scale: 1.02, y: -4 } : {}}
+        whileTap={onClick ? { scale: 0.98 } : {}}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={handleMouseLeave}
@@ -128,7 +125,7 @@ export default function PremiumCard({
         {/* Glow effect */}
         {glow && isHovered && (
           <motion.div
-            className="absolute inset-0 rounded-2xl pointer-events-none bg-purple-500 opacity-20 blur-xl scale-110 -z-10"
+            className="absolute inset-0 rounded-2xl pointer-events-none bg-blue-500/20 blur-xl scale-110 -z-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -139,7 +136,7 @@ export default function PremiumCard({
         {/* Blur overlay */}
         {blur && (
           <motion.div
-            className="absolute inset-0 rounded-2xl pointer-events-none backdrop-blur-xl bg-white/10"
+            className="absolute inset-0 rounded-2xl pointer-events-none backdrop-blur-lg bg-white/5"
           />
         )}
 

@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   compress: true,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
@@ -24,6 +23,7 @@ const nextConfig = {
   },
   
   images: {
+    domains: ['images.unsplash.com', 'i.pravatar.cc'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -48,23 +48,15 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: '/((?!_next/static|_next/image|favicon.ico).*)',
         headers: [
           {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'
           },
           {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload'
-          },
-          {
             key: 'X-Frame-Options',
             value: 'SAMEORIGIN'
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
           },
           {
             key: 'X-XSS-Protection',

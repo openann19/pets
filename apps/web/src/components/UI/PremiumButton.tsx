@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
-import { SPRING_CONFIG } from '../../constants/animations';
-import { COLORS, GRADIENTS, SHADOWS } from '../../constants/design-tokens';
+import { SPRING_CONFIG } from '@/constants/animations';
+import { COLORS, SHADOWS } from '@/constants/design-tokens';
 
 interface PremiumButtonProps {
   children?: React.ReactNode;
@@ -53,14 +53,14 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
   const springX = useSpring(x, { stiffness: 400, damping: 25 });
   const springY = useSpring(y, { stiffness: 400, damping: 25 });
   
-  const baseClasses = "relative inline-flex items-center justify-center font-semibold rounded-xl transition-all focus:outline-none transform-gpu overflow-hidden";
+  const baseClasses = "relative inline-flex items-center justify-center font-semibold rounded-xl transition-all focus:outline-none transform-gpu overflow-hidden backdrop-blur";
   
   const variantClasses = {
     primary: {
-      background: COLORS.primary[700],
+      background: 'rgba(59, 130, 246, 0.12)',
       color: COLORS.neutral[0],
       boxShadow: glow ? SHADOWS.primaryGlow : SHADOWS.lg,
-      border: 'none',
+      border: '1px solid rgba(255,255,255,0.12)',
     },
     secondary: {
       background: COLORS.secondary[700],
@@ -76,15 +76,15 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
     },
     ghost: {
       background: 'transparent',
-      color: COLORS.neutral[800],
-      border: `1px solid ${COLORS.neutral[300]}`,
+      color: '#e5e7eb',
+      border: '1px solid rgba(255,255,255,0.12)',
       boxShadow: 'none',
     },
     glass: {
-      background: GRADIENTS.glass.light,
-      backdropFilter: 'blur(16px) saturate(180%)',
-      border: '1px solid rgba(255, 255, 255, 0.3)',
-      color: COLORS.neutral[800],
+      background: 'rgba(255,255,255,0.08)',
+      backdropFilter: 'blur(12px) saturate(140%)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      color: '#f1f5f9',
       boxShadow: SHADOWS.glass,
     },
     solid: {
@@ -95,24 +95,24 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
     },
     outline: {
       background: 'transparent',
-      color: COLORS.neutral[900],
-      border: `2px solid ${COLORS.neutral[900]}`,
+      color: '#e5e7eb',
+      border: '1px solid rgba(255,255,255,0.12)',
       boxShadow: 'none',
     },
     holographic: {
-      background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7b8, #96ceb4, #ffeaa7)',
-      color: COLORS.neutral[0],
-      border: 'none',
+      background: 'linear-gradient(135deg, rgba(59,130,246,0.25), rgba(37,99,235,0.25))',
+      color: '#f8fafc',
+      border: '1px solid rgba(255,255,255,0.12)',
       boxShadow: SHADOWS['2xl'],
-      backgroundSize: '400% 400%',
-      animation: 'holographic 6s ease infinite',
-      filter: 'saturate(115%)',
+      backgroundSize: '200% 200%',
+      animation: 'holographic 8s ease infinite',
+      filter: 'saturate(105%)',
     },
     neon: {
-      background: COLORS.neutral[950] ?? COLORS.neutral[900],
-      color: COLORS.primary[400],
-      border: `2px solid ${COLORS.primary[400]}`,
-      boxShadow: `0 0 20px ${COLORS.primary[400]}40, inset 0 0 10px ${COLORS.primary[400]}20`,
+      background: 'rgba(2,6,23,0.6)',
+      color: COLORS.primary[500],
+      border: '1px solid rgba(59,130,246,0.4)',
+      boxShadow: `0 0 20px rgba(59,130,246,0.25)`,
     },
   } as const;
 
@@ -202,8 +202,10 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
 
   const variantStyle = variantClasses[variant];
 
+  const wrapperClass = fullWidth ? "relative block w-full" : "relative inline-block";
+
   return (
-    <div className="relative inline-block">
+    <div className={wrapperClass}>
       <motion.button
         ref={buttonRef}
         className={`

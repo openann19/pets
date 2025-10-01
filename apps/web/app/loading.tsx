@@ -8,7 +8,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
-import { SPRING_CONFIG } from '../src/constants/animations';
+import { SPRING_CONFIG } from '@/constants/animations';
+import HoloLogo from '@/components/Brand/HoloLogo';
 
 export default function Loading() {
   return (
@@ -52,16 +53,7 @@ export default function Loading() {
           transition={{ duration: 2, repeat: Infinity }}
         >
           <div className="flex items-center justify-center gap-4 mb-4">
-            <motion.div 
-              className="text-6xl"
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-            >
-              🐾
-            </motion.div>
-            <span className="text-4xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-              PawfectMatch
-            </span>
+            <HoloLogo size={64} withText monochrome />
           </div>
           
           <motion.div
@@ -118,7 +110,7 @@ export default function Loading() {
                 ease: "easeInOut" 
               }}
             >
-              <span className="text-3xl">🐕</span>
+              <HoloLogo size={32} withText={false} monochrome />
             </motion.div>
           </div>
         </motion.div>

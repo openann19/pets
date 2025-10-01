@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import PremiumLayout from '@/components/Layout/PremiumLayout';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPinIcon, HeartIcon, ChatBubbleLeftRightIcon, AdjustmentsHorizontalIcon, BellIcon } from '@heroicons/react/24/outline';
+import { ChatBubbleLeftRightIcon, AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 import { MapPinIcon as MapPinSolid, HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import MapView from '@/components/Map/MapView';
 import AIMapFeatures from '@/components/Map/AIMapFeatures';
@@ -25,7 +26,7 @@ interface MapStats {
 }
 
 const MapPage: React.FC = () => {
-  const { user } = useAuthStore();
+  useAuthStore();
   const [filters, setFilters] = useState<MapFilters>({
     showMyPets: true,
     showMatches: true,
@@ -41,7 +42,7 @@ const MapPage: React.FC = () => {
     recentActivity: 0
   });
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [pins, setPins] = useState<any[]>([]);
+  const [pins] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -113,7 +114,8 @@ const MapPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
+    <PremiumLayout>
+      <div className="min-h-screen bg-transparent">
       {/* Header */}
       <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-pink-200/50 dark:border-purple-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -399,7 +401,8 @@ const MapPage: React.FC = () => {
           )}
         </AnimatePresence>
       </div>
-    </div>
+      </div>
+    </PremiumLayout>
   );
 };
 

@@ -56,7 +56,7 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
   const animatedGlow = useRef(new Animated.Value(0)).current;
   const [isPressed, setIsPressed] = useState(false);
 
-  // Enhanced haptic feedback
+  // Enhanced haptic feedback with optimized patterns
   const triggerHaptic = async (type: 'light' | 'medium' | 'heavy' = 'medium') => {
     if (!haptic) return;
     
@@ -69,7 +69,11 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           break;
         case 'heavy':
+          // Enhanced heavy haptic with pattern
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          setTimeout(async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }, 100);
           break;
       }
     } catch (error) {
@@ -77,7 +81,7 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
     }
   };
 
-  // Enhanced press animations
+  // Enhanced press animations with optimized spring physics
   const handlePressIn = () => {
     setIsPressed(true);
     triggerHaptic('light');
@@ -86,12 +90,12 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
       Animated.spring(animatedScale, {
         toValue: 0.95,
         useNativeDriver: true,
-        tension: 300,
-        friction: 10,
+        tension: 400, // Increased for more responsive feel
+        friction: 8,  // Reduced for smoother animation
       }),
       glow && Animated.timing(animatedGlow, {
         toValue: 1,
-        duration: 150,
+        duration: 120, // Faster response
         useNativeDriver: false,
       }),
     ]).start();
@@ -104,12 +108,12 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
       Animated.spring(animatedScale, {
         toValue: 1,
         useNativeDriver: true,
-        tension: 300,
-        friction: 8,
+        tension: 400, // Increased for more responsive feel
+        friction: 6,  // Reduced for smoother animation
       }),
       glow && Animated.timing(animatedGlow, {
         toValue: 0,
-        duration: 200,
+        duration: 180, // Faster response
         useNativeDriver: false,
       }),
     ]).start();

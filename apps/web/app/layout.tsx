@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const inter = Inter({
   subsets: ['latin'], // Optimized subset for perf
@@ -72,6 +73,10 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
+          {/* Global floating theme toggle - always visible */}
+          <div className="fixed top-4 right-4 z-[1000]">
+            <ThemeToggle />
+          </div>
           <main role="main">
             {children}
           </main>

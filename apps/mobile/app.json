@@ -84,25 +84,6 @@
           "locationAlwaysAndWhenInUsePermission": "Allow PawfectMatch to use your location to find pets near you and suggest nearby meetup locations."
         }
       ],
-      [
-        "expo-haptics",
-        {
-          "ios": {
-            "infoPlist": {
-              "NSHapticsUsageDescription": "PawfectMatch uses haptic feedback to enhance user interactions"
-            }
-          }
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#ec4899",
-          "sounds": ["./assets/sounds/notification.wav"],
-          "mode": "production"
-        }
-      ]
     ],
     "extra": {
       "eas": {

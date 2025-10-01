@@ -8,8 +8,9 @@ import {
   LightBulbIcon, 
   HeartIcon,
   ClockIcon,
-  WeatherIcon,
-  ExclamationTriangleIcon
+  CloudIcon,
+  ExclamationTriangleIcon,
+  MapPinIcon
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '@/lib/auth-store';
 
@@ -308,7 +309,7 @@ const AIMapFeatures: React.FC<AIMapFeaturesProps> = ({
     const icons = {
       hotspot: SparklesIcon,
       timing: ClockIcon,
-      weather: WeatherIcon,
+      weather: CloudIcon,
       safety: ExclamationTriangleIcon,
       match: HeartIcon,
       activity: MapPinIcon
