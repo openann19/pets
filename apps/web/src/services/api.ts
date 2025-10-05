@@ -567,3 +567,50 @@ export const api = {
 };
 
 export default api;
+
+// Additional API methods for complete feature coverage
+export const extendedAPI = {
+  // Video calling
+  async initiateVideoCall(matchId: string) {
+    return apiInstance.request(`/matches/${matchId}/video-call`, {
+      method: 'POST',
+    });
+  },
+  
+  // Voice notes
+  async sendVoiceNote(matchId: string, audioBlob: Blob) {
+    const formData = new FormData();
+    formData.append('audio', audioBlob);
+    return apiInstance.request(`/matches/${matchId}/voice-note`, {
+      method: 'POST',
+      body: formData,
+    });
+  },
+  
+  // Advanced search
+  async searchPets(filters: any) {
+    return apiInstance.request('/pets/search', {
+      method: 'POST',
+      body: JSON.stringify(filters),
+    });
+  },
+  
+  // Analytics
+  async getAnalytics(period: string = '7d') {
+    return apiInstance.request(`/analytics?period=${period}`);
+  },
+  
+  // Notifications
+  async getNotifications() {
+    return apiInstance.request('/notifications');
+  },
+  
+  async markNotificationRead(id: string) {
+    return apiInstance.request(`/notifications/${id}/read`, {
+      method: 'PATCH',
+    });
+  },
+};
+
+// Merge extended API into main export
+Object.assign(api, extendedAPI);

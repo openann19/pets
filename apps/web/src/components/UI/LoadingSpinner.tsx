@@ -1,6 +1,6 @@
+'use client';
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BOUNCY_CONFIG } from '../../constants/animations';
 
 interface LoadingSpinnerProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -9,109 +9,46 @@ interface LoadingSpinnerProps {
   className?: string;
 }
 
-export default function LoadingSpinner({ 
-  size = 'md', 
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  size = 'md',
   variant = 'default',
-  color = '#ec4899', 
-  className 
-}: LoadingSpinnerProps) {
-  const sizeMap = {
-    xs: 20,
-    sm: 28,
-    md: 40,
-    lg: 56,
-    xl: 72
-  } as const;
-
-  // Variant colors
-  const variantColors = {
-    default: color,
-    gradient: 'url(#gradient)',
-    neon: '#ec4899',
-    holographic: 'url(#holographic)',
+  color,
+  className = '',
+}) => {
+  const sizeClasses = {
+    xs: 'w-4 h-4',
+    sm: 'w-6 h-6',
+    md: 'w-8 h-8',
+    lg: 'w-12 h-12',
+    xl: 'w-16 h-16',
   };
 
-  const pawSize = sizeMap[size];
-  const mainPawScale = 1;
-  const sidePawScale = 0.7;
-
-  // Paw print SVG component
-  const PawPrint = ({ scale = 1, delay = 0 }: { scale?: number; delay?: number }) => (
-    <motion.div
-      animate={{ 
-        opacity: [0, 1, 1, 0],
-        scale: [0.5, scale, scale, 0.5],
-        y: [0, -5, 0],
-      }}
-      transition={{
-        duration: 1.5,
-        repeat: Infinity,
-        delay: delay,
-        ...BOUNCY_CONFIG,
-      }}
-      style={{
-        width: pawSize * scale,
-        height: pawSize * scale,
-      }}
-      suppressHydrationWarning
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill={variantColors[variant]}
-        style={{ width: '100%', height: '100%' }}
-        className={variant === 'neon' ? 'drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]' : ''}
-      >
-        <defs>
-          {/* Gradient definition */}
-          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ec4899" />
-            <stop offset="50%" stopColor="#a855f7" />
-            <stop offset="100%" stopColor="#6366f1" />
-          </linearGradient>
-          {/* Holographic gradient */}
-          <linearGradient id="holographic" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ff6b6b">
-              <animate attributeName="stop-color" values="#ff6b6b;#4ecdc4;#45b7b8;#96ceb4;#ff6b6b" dur="3s" repeatCount="indefinite" />
-            </stop>
-            <stop offset="100%" stopColor="#4ecdc4">
-              <animate attributeName="stop-color" values="#4ecdc4;#45b7b8;#96ceb4;#ff6b6b;#4ecdc4" dur="3s" repeatCount="indefinite" />
-            </stop>
-          </linearGradient>
-        </defs>
-        {/* Main pad */}
-        <ellipse cx="12" cy="16" rx="5" ry="6" />
-        {/* Toe pads */}
-        <ellipse cx="8" cy="9" rx="2" ry="3" />
-        <ellipse cx="12" cy="8" rx="2" ry="3" />
-        <ellipse cx="16" cy="9" rx="2" ry="3" />
-        <ellipse cx="6" cy="13" rx="1.5" ry="2.5" />
-      </svg>
-    </motion.div>
-  );
+  const variantStyles = {
+    default: {
+      borderColor: color || '#e5e7eb',
+      borderTopColor: color || '#3b82f6',
+    },
+    gradient: {
+      background: 'conic-gradient(from 180deg at 50% 50%, #667eea 0deg, #ec4899 180deg, #667eea 360deg)',
+    },
+    neon: {
+      borderColor: '#3b82f6',
+      borderTopColor: '#60a5fa',
+      boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)',
+    },
+    holographic: {
+      background: 'conic-gradient(from 0deg at 50% 50%, #ff6b6b, #4ecdc4, #45b7b8, #96ceb4, #ffeaa7, #ff6b6b)',
+    },
+  };
 
   return (
-    <div 
-      className={className ? `flex items-center justify-center ${className}` : 'flex items-center justify-center'}
-      data-testid="loading-spinner"
-      role="img"
-      aria-label="Loading"
-    >
-      <div className="relative" style={{ width: pawSize * 2.5, height: pawSize * 2 }}>
-        {/* Center paw */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <PawPrint scale={mainPawScale} delay={0} />
-        </div>
-        
-        {/* Left paw */}
-        <div className="absolute top-1/2 left-0 transform -translate-y-1/2">
-          <PawPrint scale={sidePawScale} delay={0.3} />
-        </div>
-        
-        {/* Right paw */}
-        <div className="absolute top-1/2 right-0 transform -translate-y-1/2">
-          <PawPrint scale={sidePawScale} delay={0.6} />
-        </div>
-      </div>
-    </div>
+    <motion.div
+      className={`${sizeClasses[size]} ${className} border-2 border-solid rounded-full animate-spin`}
+      style={variantStyles[variant]}
+      animate={{ rotate: 360 }}
+      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+    />
   );
-}
+};
+
+export default LoadingSpinner;

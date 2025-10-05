@@ -7,7 +7,7 @@ import { COLORS, SHADOWS } from '@/constants/design-tokens';
 interface PremiumButtonProps {
   children?: React.ReactNode;
   onClick?: () => void;
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'glass' | 'solid' | 'outline' | 'holographic' | 'neon';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'glass' | 'solid' | 'outline' | 'holographic' | 'neon' | 'gradient';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
@@ -116,6 +116,12 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
       color: COLORS.primary[500],
       border: '1px solid rgba(59,130,246,0.4)',
       boxShadow: `0 0 20px rgba(59,130,246,0.25)`,
+    },
+    gradient: {
+      background: 'linear-gradient(135deg, #667eea, #ec4899)',
+      color: '#ffffff',
+      border: 'none',
+      boxShadow: SHADOWS['2xl'],
     },
   } as const;
 

@@ -289,6 +289,7 @@ app.use('/api/health', healthRoutes); // Also available under /api prefix
 const { cacheMiddleware, invalidateOnMutation } = require('./src/middleware/caching');
 
 // API Routes
+app.use('/health', require('./src/routes/health'));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/pets', invalidateOnMutation('/api/pets'), petRoutes);

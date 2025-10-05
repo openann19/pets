@@ -54,7 +54,7 @@ export default function PremiumPage() {
     }
   };
 
-  const tierIcons = {
+  const tierIcons: Record<string, any> = {
     free: BoltIcon,
     premium_plus: VideoCameraIcon,
     enterprise: ChartBarIcon,
@@ -107,7 +107,7 @@ export default function PremiumPage() {
                 <PremiumCard
                   hover
                   glow={isSelected}
-                  gradient={tierColors[tierPlan.tier]}
+                  variant={isPremium ? 'gradient' : 'default'}
                   className={`p-6 h-full ${isSelected ? 'ring-4 ring-purple-500' : ''}`}
                 >
                   <div className="flex flex-col h-full">

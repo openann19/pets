@@ -143,8 +143,8 @@ export function PremiumCard({
           rotateY: tilt ? rotateY : 0,
           transformStyle: tilt ? 'preserve-3d' : 'flat',
         }}
-        initial={entranceVariants[entrance]?.initial}
-        animate={entranceVariants[entrance]?.animate}
+        initial={entranceVariants[entrance]?.initial as any}
+        animate={entranceVariants[entrance]?.animate as any}
         transition={{
           ...entranceVariants[entrance]?.transition,
           delay,
