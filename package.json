@@ -1,0 +1,35 @@
+{
+  "name": "pawfectmatch-premium",
+  "version": "1.0.0",
+  "description": "PawfectMatch Premium - AI-powered pet matching platform",
+  "private": true,
+  "scripts": {
+    "dev": "./dev.sh",
+    "build": "turbo build",
+    "test": "turbo test",
+    "test:watch": "turbo test:watch",
+    "test:coverage": "turbo test:coverage",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "clean": "turbo clean && rm -rf node_modules",
+    "deploy": "./scripts/deploy-production.sh",
+    "health-check": "./scripts/health-check.sh"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/luxon": "^3.7.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "turbo": "^1.10.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "dependencies": {
+    "critters": "^0.0.25",
+    "firebase": "^12.3.0",
+    "lucide-react": "^0.544.0"
+  }
+}

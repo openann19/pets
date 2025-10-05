@@ -1,0 +1,63 @@
+import React from 'react';
+import { useButton } from '@react-aria/button';
+import { AriaButtonProps } from '@react-types/button';
+import { useFocusRing } from '@react-aria/focus';
+import { useHover } from '@react-aria/interactions';
+import { mergeProps } from '@react-aria/utils';
+
+export interface ButtonProps extends AriaButtonProps {
+  /**
+   * The visual style of the button
+   */
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  
+  /**
+   * Additional CSS class names
+   */
+  className?: string;
+  
+  /**
+   * The size of the button
+   */
+  size?: 'small' | 'medium' | 'large';
+}
+
+/**
+ * A headless button component built with react-aria
+ */
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (props, forwardedRef) => {
+    const { 
+      variant = 'primary', 
+      size = 'medium', 
+      className = '', 
+      children,
+      ...otherProps 
+    } = props;
+    
+    const ref = React.useRef<HTMLButtonElement>(null);
+    const { buttonProps, isPressed } = useButton(otherProps, ref);
+    const { focusProps, isFocused } = useFocusRing();
+    const { hoverProps, isHovered } = useHover({});
+
+    // Merge the refs
+    React.useImperativeHandle(forwardedRef, () => ref.current!);
+
+    return (
+      <button
+        {...mergeProps(buttonProps, focusProps, hoverProps)}
+        ref={ref}
+        data-pressed={isPressed || undefined}
+        data-focused={isFocused || undefined}
+        data-hovered={isHovered || undefined}
+        data-variant={variant}
+        data-size={size}
+        className={className}
+      >
+        {children}
+      </button>
+    );
+  }
+);
+
+Button.displayName = 'Button';
