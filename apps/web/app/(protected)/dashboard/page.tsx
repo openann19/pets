@@ -79,7 +79,7 @@ export default function DashboardPage() {
     },
     { 
       label: 'Messages', 
-      value: matches?.reduce((acc, match) => acc + (match.unreadCount || 0), 0)?.toString() || '0', 
+      value: matches?.reduce((acc: number, match: any) => acc + (match.unreadCount || 0), 0)?.toString() || '0', 
       icon: FireIcon, 
       variant: 'neon' as const,
       description: 'Unread chats',

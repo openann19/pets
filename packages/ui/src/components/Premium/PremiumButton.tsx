@@ -380,7 +380,7 @@ export function PremiumButton({
 
       {/* Holographic animation styles */}
       {variant === 'holographic' && (
-        <style jsx>{`
+        <style>{`
           @keyframes holographic {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }

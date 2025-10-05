@@ -544,6 +544,8 @@ export const api = {
   login: apiInstance.login.bind(apiInstance),
   register: apiInstance.register.bind(apiInstance),
   logout: apiInstance.logout.bind(apiInstance),
+  forgotPassword: apiInstance.forgotPassword.bind(apiInstance),
+  resetPassword: apiInstance.resetPassword.bind(apiInstance),
   getPets: apiInstance.getPets.bind(apiInstance),
   getPet: apiInstance.getPet.bind(apiInstance),
   createPet: apiInstance.createPet.bind(apiInstance),

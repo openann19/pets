@@ -54,9 +54,9 @@ function ResetPasswordContent() {
     setError(null);
     
     try {
-      const response = await apiClient.resetPassword(token, data.password);
+      const response: any = await apiClient.resetPassword(token, data.password);
       
-      if (response.success) {
+      if (response?.success) {
         setIsSuccess(true);
         // Redirect to login after 3 seconds
         setTimeout(() => {

@@ -99,17 +99,17 @@ export default function ChatPage() {
     try {
       // Load match info
       const matchData = await api.matches.getMatch(matchId);
-      setMatch(matchData);
+      setMatch(matchData as Match);
       
       // Load messages
       const messagesData = await chatAPI.getMessages(matchId);
-      setMessages(messagesData);
+      setMessages(messagesData as Message[]);
       
       // Mark as read
       await chatAPI.markAsRead(matchId);
       
       // Get AI suggestions for conversation starters
-      if (messagesData.length === 0) {
+      if ((messagesData as Message[]).length === 0) {
         loadAiSuggestions();
       }
       
@@ -169,6 +169,12 @@ export default function ChatPage() {
     setMessages(prev => prev.map(msg => 
       messageIds.includes(msg.id) ? { ...msg, read: true } : msg
     ));
+  };
+
+  const handleUserStatus = ({ userId, status }: any) => {
+    if (userId !== user?.id && match) {
+      setMatch({ ...match, isOnline: status === 'online' });
+    }
   };
 
   const sendMessage = async (messageData?: Partial<Message>) => {

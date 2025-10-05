@@ -8,7 +8,7 @@
 import React, { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { COLORS, GRADIENTS, SHADOWS, RADIUS, BACKDROP } from '../../theme/design-system';
-import { transitions, entranceVariants, hoverVariants } from '../../animations/premium-motion';
+import { transitions, entranceVariants, hoverVariants, tapVariants } from '../../animations/premium-motion';
 
 interface PremiumCardProps {
   children: React.ReactNode;
@@ -210,7 +210,7 @@ export function PremiumCard({
 
       {/* Holographic animation styles */}
       {variant === 'holographic' && (
-        <style jsx>{`
+        <style>{`
           @keyframes holographic {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }

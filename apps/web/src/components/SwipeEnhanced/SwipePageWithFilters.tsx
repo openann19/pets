@@ -476,6 +476,7 @@ export default function SwipePageWithFilters() {
           matchedUser={lastMatch.users?.[1]}
         />
       )}
+      </div>
     </PremiumLayout>
   );
 }

@@ -474,7 +474,7 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
       </LinearGradient>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

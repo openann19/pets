@@ -292,7 +292,7 @@ export function PremiumInput({
         )}
 
         {/* Glow effect */}
-        {glow && isFocused && !hasError && (
+        {variant === 'neon' && isFocused && !hasError && (
           <motion.div
             className="absolute inset-0 rounded-inherit pointer-events-none"
             initial={{ opacity: 0 }}
@@ -331,16 +331,6 @@ export function PremiumInput({
         )}
       </AnimatePresence>
 
-      {/* Holographic animation styles */}
-      {variant === 'holographic' && (
-        <style jsx>{`
-          @keyframes holographic {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-        `}</style>
-      )}
     </motion.div>
   );
 }

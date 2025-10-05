@@ -383,4 +383,16 @@ const startServer = async () => {
     .listen(PORT, () => {
       logger.info(`🌟 PawfectMatch Premium Server running on port ${PORT}`);
       logger.info(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`
+      logger.info(`🚀 Server ready to accept connections`);
+    })
+    .on('error', (err) => {
+      logger.error('Server failed to start:', err);
+      process.exit(1);
+    });
+};
+
+// Start the server
+startServer().catch(err => {
+  logger.error('Failed to start server:', err);
+  process.exit(1);
+});
