@@ -1,33 +1,32 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useParams, useRouter } from 'next/navigation';
-import { 
-  PaperAirplaneIcon,
-  PhotoIcon,
-  FaceSmileIcon,
-  PhoneIcon,
-  VideoCameraIcon,
-  InformationCircleIcon,
+import {
   ArrowLeftIcon,
-  EllipsisVerticalIcon,
   CheckIcon,
+  FaceSmileIcon,
   HeartIcon,
-  SparklesIcon
+  InformationCircleIcon,
+  PaperAirplaneIcon,
+  PhoneIcon,
+  PhotoIcon,
+  SparklesIcon,
+  VideoCameraIcon
 } from '@heroicons/react/24/outline';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useParams, useRouter } from 'next/navigation';
+import React, { useEffect, useRef, useState } from 'react';
+
 import { useAuth } from '@/components/providers/AuthProvider';
-import { chatAPI, api } from '@/services/api';
 import { useSocket } from '@/hooks/useSocket';
+import { api, chatAPI } from '@/services/api';
 import { logger } from '@/services/logger';
-import Image from 'next/image';
-import { Message, Match, MessageMetadata, MessageAttachment, SocketTypingData, SocketUserStatusData } from '@/types';
+import type { Match, Message, MessageAttachment, SocketTypingData, SocketUserStatusData } from '@/types';
 
 
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const matchId = (params?.matchId as string) || '';
+  const matchId = (params?.['matchId'] as string) || '';
   const { user } = useAuth();
   const socket = useSocket();
   
@@ -57,14 +56,14 @@ export default function ChatPage() {
   }, [matchId]);
 
   useEffect(() => {
-    if (socket && socket.on) {
+    if (socket?.on) {
       socket.on('new_message', handleNewMessage);
       socket.on('user_typing', handleTypingIndicator);
       socket.on('messages_read', handleReadReceipt);
       socket.on('user_status', handleUserStatus);
       
       return () => {
-        if (socket && socket.off) {
+        if (socket?.off) {
           socket.off('new_message');
           socket.off('user_typing');
           socket.off('messages_read');
@@ -356,7 +355,7 @@ export default function ChatPage() {
                 className="w-10 h-10 rounded-full object-cover"
               />
               {match?.isOnline && (
-                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
               )}
             </div>
             
@@ -473,9 +472,9 @@ export default function ChatPage() {
             className="flex items-center text-gray-500 text-sm"
           >
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
             <span className="ml-2">{match.petName} is typing...</span>
           </motion.div>

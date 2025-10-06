@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useForm } from 'react-hook-form';
+import { ArrowLeftIcon, CheckCircleIcon, EnvelopeIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { AnimatePresence, motion } from 'framer-motion';
+import Link from 'next/link';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { EnvelopeIcon, ArrowLeftIcon, CheckCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+
 import PremiumButton from '../../../src/components/UI/PremiumButton';
 import apiClient from '../../../src/lib/api-client';
 
@@ -36,10 +37,11 @@ export default function ForgotPasswordPage() {
     try {
       const response = await apiClient.forgotPassword(data.email);
       
-      if (response?.success) {
+      if (response && typeof response === 'object' && 'success' in response && response.success) {
         setIsSuccess(true);
       } else {
-        setError(response?.error || 'Failed to send reset email');
+        const errorResponse = response as { error?: string };
+        setError(errorResponse?.error || 'Failed to send reset email');
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send reset email. Please try again.';

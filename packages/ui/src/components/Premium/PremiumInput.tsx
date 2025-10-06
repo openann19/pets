@@ -256,7 +256,7 @@ export function PremiumInput({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             style={{
-              color: value.length > maxLength * 0.8
+              color: value.length > (maxLength ?? 0) * 0.8
                 ? COLORS.warning[500]
                 : COLORS.neutral[400],
             }}

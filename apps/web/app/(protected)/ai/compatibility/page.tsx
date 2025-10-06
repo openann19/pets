@@ -49,7 +49,7 @@ export default function AiCompatibilityPage() {
       </motion.div>
 
       <div className="py-8">
-        <CompatibilityAnalyzer targetPetId={targetPetId || undefined} />
+        <CompatibilityAnalyzer targetPetId={targetPetId ?? ''} />
       </div>
 
       {/* Stats Section */}
