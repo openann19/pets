@@ -1,12 +1,13 @@
 'use client';
-import React, { useState } from 'react';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import PremiumButton from '@/components/UI/PremiumButton';
-import { SPRING_CONFIG } from '@/constants/animations';
+import Link from 'next/link';
+import { useState } from 'react';
+
 import HoloLogo from '@/components/Brand/HoloLogo';
 import LanguageSelect from '@/components/UI/LanguageSelect';
+import PremiumButton from '@/components/UI/PremiumButton';
+import { SPRING_CONFIG } from '@/constants/animations';
 
 export default function PremiumLanding() {
   // Handle missing translations gracefully
