@@ -1,14 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-interface User {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  name?: string;
-  avatar?: string;
-}
+import type { User } from '../types';
 
 interface AuthState {
   user: User | null;
@@ -66,6 +58,14 @@ export const useAuthStore = create<AuthState>()(
           setCookie('auth-token', accessToken, 24 * 60 * 60);
           setCookie('accessToken', accessToken, 24 * 60 * 60);
           if (refreshToken) setCookie('refreshToken', refreshToken, 7 * 24 * 60 * 60);
+
+          // Sync with API service
+          try {
+            const { api } = require('../services/api');
+            api.setToken(accessToken, refreshToken);
+          } catch (error) {
+            // Ignore if API service not available
+          }
         }
       },
 
@@ -104,8 +104,8 @@ export const useAuthStore = create<AuthState>()(
       initializeAuth: () => {
         // Check if we have stored tokens on mount
         if (typeof window !== 'undefined') {
-      const storedToken = localStorage.getItem('accessToken') || localStorage.getItem('auth_token');
-      const storedRefreshToken = localStorage.getItem('refreshToken') || localStorage.getItem('refresh_token');
+          const storedToken = localStorage.getItem('accessToken') || localStorage.getItem('auth_token');
+          const storedRefreshToken = localStorage.getItem('refreshToken') || localStorage.getItem('refresh_token');
           
           if (storedToken) {
             // Verify token is still valid (you can add API call here)
@@ -121,6 +121,14 @@ export const useAuthStore = create<AuthState>()(
             };
             setCookie('auth-token', storedToken, 24 * 60 * 60);
             setCookie('accessToken', storedToken, 24 * 60 * 60);
+
+            // Sync with API service
+            try {
+              const { api } = require('../services/api');
+              api.setToken(storedToken, storedRefreshToken);
+            } catch (error) {
+              // Ignore if API service not available
+            }
           }
         }
       },

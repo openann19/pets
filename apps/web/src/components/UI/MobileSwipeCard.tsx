@@ -270,11 +270,11 @@ export default function MobileSwipeCard({
         }}
         whileTap={{ scale: 0.98 }}
         transition={isReducedMotion ? { duration: 0 } : SPRING_CONFIGS.standard}
-        role="button"
         tabIndex={0}
         onKeyDown={handleKeyDown}
         aria-label={`Pet profile: ${pet.name}, ${pet.breed}, ${pet.age} years old. Use arrow keys to like, pass, or super like.`}
-        aria-describedby={`pet-info-${pet.id}`}
+        aria-describedby={`pet-info-${pet._id}`}
+        role="region"
       >
         {/* Pet Image */}
         <div className="relative h-96 bg-gray-200">
@@ -344,7 +344,7 @@ export default function MobileSwipeCard({
         </div>
 
         {/* Pet Info */}
-        <div className="p-4" id={`pet-info-${pet.id}`}>
+        <div className="p-4" id={`pet-info-${pet._id}`}>
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xl font-bold text-gray-900">{pet.name}</h3>
             <span className="text-gray-500">{pet.age} years old</span>
@@ -371,7 +371,7 @@ export default function MobileSwipeCard({
 
         {/* Action Buttons */}
         {showActions && (
-          <div className="flex justify-center gap-4 p-4 bg-gray-50">
+          <div className="flex justify-center gap-3 sm:gap-4 p-4 bg-gray-50">
             <button
               className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               onClick={() => onSwipeLeft(pet)}

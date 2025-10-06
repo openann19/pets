@@ -1,32 +1,32 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useParams, useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
-import { 
-  PaperAirplaneIcon,
-  PhotoIcon,
-  FaceSmileIcon,
-  PhoneIcon,
-  VideoCameraIcon,
-  InformationCircleIcon,
+import {
   ArrowLeftIcon,
   CheckIcon,
+  FaceSmileIcon,
   HeartIcon,
-  SparklesIcon
+  InformationCircleIcon,
+  PhoneIcon,
+  PhotoIcon,
+  SparklesIcon,
+  VideoCameraIcon
 } from '@heroicons/react/24/outline';
-import { useAuth } from '@/components/providers/AuthProvider';
-import { chatAPI, api } from '@/services/api';
-import { useSocket } from '@/hooks/useSocket';
-import { logger } from '@/services/logger';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useLocale } from 'next-intl';
+import { useParams, useRouter } from 'next/navigation';
+import React, { useEffect, useRef, useState } from 'react';
+
+import MessageInput from '@/components/Chat/MessageInput';
 import PremiumLayout from '@/components/Layout/PremiumLayout';
+import { useAuth } from '@/components/providers/AuthProvider';
 import SafeImage from '@/components/UI/SafeImage';
-import { formatMessageTime, getDateSeparatorLabel, shouldShowDateSeparator, formatLastSeen } from '@/utils/dateHelpers';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
-import MessageInput from '@/components/Chat/MessageInput';
+import { useSocket } from '@/hooks/useSocket';
+import { api, chatAPI } from '@/services/api';
+import { logger } from '@/services/logger';
+import { formatLastSeen, formatMessageTime, getDateSeparatorLabel, shouldShowDateSeparator } from '@/utils/dateHelpers';
 
 interface Message {
   id: string;
@@ -52,7 +52,7 @@ export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
   const locale = useLocale?.() || (typeof navigator !== 'undefined' ? navigator.language : 'en');
-  const matchId = (params?.matchId as string) || '';
+  const matchId = (params?.['matchId'] as string) || '';
   const { user } = useAuth();
   const socket = useSocket();
   
@@ -90,21 +90,21 @@ export default function ChatPage() {
   }, [matchId]);
 
   useEffect(() => {
-    if (socket) {
-      socket.on('new_message', handleNewMessage);
-      socket.on('typing', handleTypingIndicator);
-      socket.on('read_receipt', handleReadReceipt);
-      socket.on('user_status', ({ isOnline }: { isOnline: boolean }) => {
-        setMatch(prev => (prev ? { ...prev, isOnline } : prev));
-      });
-      
-      return () => {
-        socket.off('new_message');
-        socket.off('typing');
-        socket.off('read_receipt');
-        socket.off('user_status');
-      };
-    }
+    if (!socket) return;
+    
+    socket.on?.('new_message', handleNewMessage);
+    socket.on?.('typing', handleTypingIndicator);
+    socket.on?.('read_receipt', handleReadReceipt);
+    socket.on?.('user_status', ({ isOnline }: { isOnline: boolean }) => {
+      setMatch(prev => (prev ? { ...prev, isOnline } : prev));
+    });
+    
+    return () => {
+      socket.off?.('new_message');
+      socket.off?.('typing');
+      socket.off?.('read_receipt');
+      socket.off?.('user_status');
+    };
   }, [socket, messages]);
 
   useEffect(() => {
@@ -226,13 +226,13 @@ export default function ChatPage() {
 
   const joinChatRoom = () => {
     if (socket) {
-      socket.emit('join_chat', { matchId, userId: user?.id });
+      socket.joinMatch?.(matchId);
     }
   };
 
   const leaveChatRoom = () => {
     if (socket) {
-      socket.emit('leave_chat', { matchId, userId: user?.id });
+      socket.leaveMatch?.(matchId);
     }
   };
 
@@ -290,10 +290,7 @@ export default function ChatPage() {
     requestAnimationFrame(() => scrollToBottom());
 
     // Send via socket
-    socket.emit('send_message', {
-      matchId,
-      message: newMessage,
-    });
+    socket.sendMessage?.(content, matchId);
 
     // Mark as sent
     try {
@@ -328,7 +325,7 @@ export default function ChatPage() {
       const formData = new FormData();
       formData.append('image', file);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/api/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
@@ -365,7 +362,7 @@ export default function ChatPage() {
     if (!isTyping) {
       setIsTyping(true);
       if (socket) {
-        socket.emit('typing', { matchId, userId: user?.id, isTyping: true });
+        socket.startTyping?.(matchId);
       }
     }
     
@@ -378,7 +375,7 @@ export default function ChatPage() {
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
       if (socket) {
-        socket.emit('typing', { matchId, userId: user?.id, isTyping: false });
+        socket.stopTyping?.(matchId);
       }
     }, 1500); // Reduced from 2000ms for more responsive typing indicators
   };
@@ -410,7 +407,7 @@ export default function ChatPage() {
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(`New message from ${match?.petName}`, {
         body: message.content,
-        icon: match?.petPhoto
+        ...(match?.petPhoto && { icon: match.petPhoto })
       });
     }
   };
@@ -471,7 +468,7 @@ export default function ChatPage() {
                 className="w-10 h-10 rounded-full object-cover"
               />
               {match?.isOnline && (
-                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
               )}
             </div>
             
@@ -614,9 +611,9 @@ export default function ChatPage() {
             className="flex items-center text-gray-500 text-sm"
           >
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
             <span className="ml-2">{match.petName} is typing...</span>
           </motion.div>
@@ -712,7 +709,11 @@ export default function ChatPage() {
               onTyping={(typing: boolean) => {
                 setIsTyping(typing);
                 if (socket) {
-                  socket.emit('typing', { matchId, userId: user?.id, isTyping: typing });
+                  if (typing) {
+                    socket.startTyping?.(matchId);
+                  } else {
+                    socket.stopTyping?.(matchId);
+                  }
                 }
               }}
               disabled={isLoading}

@@ -362,7 +362,7 @@ export default function SwipePage() {
               setShowMatchModal(false);
               clearMatch();
             }}
-            matchId={lastMatch.id}
+            matchId={lastMatch._id}
             currentUserPet={(lastMatch as any).pets[0] as any}
             matchedPet={(lastMatch as any).pets[1] as any}
             matchedUser={(lastMatch as any).users[1] as any}

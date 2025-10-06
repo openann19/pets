@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { AdjustmentsHorizontalIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolid, MapPinIcon as MapPinSolid } from '@heroicons/react/24/solid';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+
 import PremiumLayout from '@/components/Layout/PremiumLayout';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChatBubbleLeftRightIcon, AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
-import { MapPinIcon as MapPinSolid, HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
-import MapView from '@/components/Map/MapView';
 import AIMapFeatures from '@/components/Map/AIMapFeatures';
+import MapView from '@/components/Map/MapView';
 import { useAuthStore } from '@/lib/auth-store';
 import { geofencingService } from '@/services/GeofencingService';
 
@@ -50,7 +51,7 @@ const MapPage: React.FC = () => {
 
   // Initialize geofencing and location services
   useEffect(() => {
-    const initializeServices = async () => {
+    const initializeServices = async (): Promise<void> => {
       try {
         const initialized = await geofencingService.initialize();
         if (!initialized) return;
@@ -64,17 +65,18 @@ const MapPage: React.FC = () => {
           setNotifications(prev => [event.detail, ...prev].slice(0, 10));
         };
         window.addEventListener('geofence-notification', handleNotification as EventListener);
-
-        return () => {
-          geofencingService.unsubscribe('map-page');
-          window.removeEventListener('geofence-notification', handleNotification as EventListener);
-        };
       } catch (e) {
         console.warn('Geofencing init skipped in dev:', e);
       }
     };
     
     initializeServices();
+
+    // Cleanup function
+    return () => {
+      geofencingService.unsubscribe('map-page');
+      window.removeEventListener('geofence-notification', () => {});
+    };
   }, []);
 
   // Simulated real-time stats updates
@@ -277,7 +279,12 @@ const MapPage: React.FC = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                // Navigate to swipe page for liking pets
+                window.location.href = './swipe';
+              }}
               className="p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200"
+              aria-label="Like pets"
             >
               <HeartSolid className="h-5 w-5 text-pink-500" />
             </motion.button>
@@ -285,7 +292,12 @@ const MapPage: React.FC = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                // Navigate to matches page for chatting
+                window.location.href = './matches';
+              }}
               className="p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200"
+              aria-label="View matches"
             >
               <ChatBubbleLeftRightIcon className="h-5 w-5 text-purple-500" />
             </motion.button>

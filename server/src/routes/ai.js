@@ -6,8 +6,8 @@ const { body, validationResult } = require('express-validator');
 const router = express.Router();
 
 // Enhanced AI Service Configuration
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://ai.pawfectmatch.com';
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-53af1f0560c54499aa5d6d39b02dd109';
 const DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1';
 
 // Cache for AI responses (simple in-memory cache)

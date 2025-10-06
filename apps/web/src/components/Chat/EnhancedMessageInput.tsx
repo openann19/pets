@@ -441,9 +441,9 @@ export default function EnhancedMessageInput({
         )}
       </AnimatePresence>
 
-      <form onSubmit={handleSubmit} className="flex items-end space-x-3" aria-label="Message input">
+      <form onSubmit={handleSubmit} className="flex items-end space-x-2 sm:space-x-3" aria-label="Message input">
         {/* Action buttons */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2">
           {/* Photo Upload */}
           <motion.button
             type="button"

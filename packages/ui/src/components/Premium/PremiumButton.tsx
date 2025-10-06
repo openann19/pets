@@ -92,7 +92,7 @@ export function PremiumButton({
     if (!haptic || typeof window === 'undefined') return;
     
     // Web Haptic API (if available)
-    if ('vibrate' in navigator) {
+    if (typeof navigator.vibrate !== 'undefined') {
       const patterns = {
         light: [10],
         medium: [20],
@@ -102,14 +102,43 @@ export function PremiumButton({
     }
   }, [haptic]);
 
-  // Advanced sound feedback
+  // Advanced sound feedback with user gesture handling
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [audioInitialized, setAudioInitialized] = useState(false);
+
+  // Initialize audio context on first user interaction
+  const initializeAudio = useCallback(() => {
+    if (audioInitialized || typeof window === 'undefined') return;
+    
+    try {
+      const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextClass === undefined || AudioContextClass === null) return;
+      
+      const ctx = new AudioContextClass();
+      setAudioContext(ctx);
+      setAudioInitialized(true);
+    } catch (error) {
+      // Audio feedback not available - silently fail
+    }
+  }, [audioInitialized]);
+
   const triggerSound = useCallback((type: 'hover' | 'press' | 'success') => {
     if (sound === false || typeof window === 'undefined') return;
     
+    // Initialize audio on first use
+    if (!audioInitialized) {
+      initializeAudio();
+      return; // Skip this sound, will work on next interaction
+    }
+    
+    if (!audioContext) return;
+    
     try {
-      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioContextClass === null || AudioContextClass === undefined) return;
-      const audioContext = new AudioContextClass();
+      // Resume audio context if suspended
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -126,8 +155,9 @@ export function PremiumButton({
       oscillator.stop(audioContext.currentTime + 0.1);
     } catch (error) {
       // Audio feedback not available - silently fail
+      console.debug('Audio feedback not available:', error);
     }
-  }, [sound]);
+  }, [sound, audioContext, audioInitialized, initializeAudio]);
 
   // Magnetic mouse tracking
   const handleMouseMove = useCallback((event: React.MouseEvent) => {
@@ -421,7 +451,7 @@ export function PremiumButton({
           }}
           transition={transitions.micro}
         >
-          {icon != null && iconPosition === 'left' && (
+          {icon !== undefined && icon !== null && iconPosition === 'left' && (
             <motion.span
               className="flex-shrink-0"
               whileHover={{ rotate: 10 }}
@@ -434,7 +464,7 @@ export function PremiumButton({
           
           <span>{children}</span>
           
-          {icon != null && iconPosition === 'right' && (
+          {icon !== undefined && icon !== null && iconPosition === 'right' && (
             <motion.span
               className="flex-shrink-0"
               whileHover={{ rotate: -10 }}

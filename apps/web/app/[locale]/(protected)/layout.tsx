@@ -4,6 +4,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
+import { isAuthDisabled } from '@/config/dev';
 
 export default function ProtectedLayout({
   children,
@@ -14,12 +15,12 @@ export default function ProtectedLayout({
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isAuthDisabled() && !isLoading && !isAuthenticated) {
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);
 
-  if (isLoading) {
+  if (!isAuthDisabled() && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -27,9 +28,10 @@ export default function ProtectedLayout({
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthDisabled() && !isAuthenticated) {
     return null;
   }
 
+  // In development, always render children
   return <>{children}</>;
 }

@@ -6,7 +6,7 @@
 'use client';
 
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import { entranceVariants, hoverVariants, tapVariants, transitions } from '../../animations/premium-motion';
 import { BACKDROP, COLORS, GRADIENTS, RADIUS, SHADOWS } from '../../theme/design-system';
@@ -61,8 +61,8 @@ export function PremiumCard({
   const rotateX = useSpring(useTransform(y, [-100, 100], [15, -15]), transitions.micro);
   const rotateY = useSpring(useTransform(x, [-100, 100], [-15, 15]), transitions.micro);
 
-  // Handle mouse move for tilt effect
-  const handleMouseMove = (event: React.MouseEvent) => {
+
+  const handleMouseMoveWrapper = useCallback((event: React.MouseEvent) => {
     if (!tilt || !cardRef.current) return;
     
     const rect = cardRef.current.getBoundingClientRect();
@@ -71,41 +71,25 @@ export function PremiumCard({
     
     x.set(event.clientX - centerX);
     y.set(event.clientY - centerY);
-  };
+  }, [tilt, x, y]);
 
-  const handleMouseEnter = () => {
+  const handleMouseEnterWrapper = useCallback(() => {
     setIsHovered(true);
-  };
+  }, []);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeaveWrapper = useCallback(() => {
     setIsHovered(false);
     if (tilt) {
       x.set(0);
       y.set(0);
     }
-  };
+  }, [tilt, x, y]);
 
-  const handleClick = () => {
+  const handleClickWrapper = useCallback(() => {
     if (onClick) {
       onClick();
     }
-  };
-
-  const handleMouseMoveWrapper = (event: React.MouseEvent) => {
-    handleMouseMove(event);
-  };
-
-  const handleMouseEnterWrapper = () => {
-    handleMouseEnter();
-  };
-
-  const handleMouseLeaveWrapper = () => {
-    handleMouseLeave();
-  };
-
-  const handleClickWrapper = () => {
-    handleClick();
-  };
+  }, [onClick]);
 
   // Get variant styles
   const getVariantStyles = () => {

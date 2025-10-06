@@ -6,7 +6,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import { transitions } from '../../animations/premium-motion';
 import { BACKDROP, COLORS, GRADIENTS, RADIUS, SHADOWS } from '../../theme/design-system';
@@ -54,20 +54,20 @@ export function PremiumInput({
   const [isHovered, setIsHovered] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const isFloating = isFocused || Boolean(value && value.length > 0);
-  const hasError = !!error;
+  const isFloating = isFocused || (value !== '' && value.length > 0);
+  const hasError = error !== undefined && error !== '';
 
   // Focus management
-  const handleFocus = () => {
+  const handleFocus = useCallback(() => {
     setIsFocused(true);
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  };
+  }, [setIsFocused]);
 
-  const handleBlur = () => {
+  const handleBlur = useCallback(() => {
     setIsFocused(false);
-  };
+  }, [setIsFocused]);
 
   // Get variant styles
   const getVariantStyles = () => {
@@ -150,8 +150,8 @@ export function PremiumInput({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={transitions.spring}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={useCallback(() => setIsHovered(true), [setIsHovered])}
+      onMouseLeave={useCallback(() => setIsHovered(false), [setIsHovered])}
     >
       {/* Input Container */}
       <motion.div
@@ -168,7 +168,7 @@ export function PremiumInput({
         transition={transitions.micro}
       >
         {/* Left Icon */}
-        {Boolean(icon) && (
+        {icon !== undefined && icon !== null && (
           <motion.div
             className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
             animate={{
@@ -187,7 +187,7 @@ export function PremiumInput({
         <motion.label
           className="absolute pointer-events-none select-none"
           style={{
-            left: icon ? '48px' : '16px',
+            left: icon !== undefined && icon !== null ? '48px' : '16px',
             color: hasError 
               ? COLORS.error[500]
               : isFocused 
@@ -213,7 +213,9 @@ export function PremiumInput({
           ref={inputRef}
           type={type}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+            onChange(e.target.value);
+          }, [onChange])}
           onFocus={handleFocus}
           onBlur={handleBlur}
           disabled={disabled}
@@ -224,8 +226,8 @@ export function PremiumInput({
           style={{
             paddingTop: isFloating ? '20px' : '0',
             paddingBottom: isFloating ? '4px' : '0',
-            paddingLeft: icon ? '48px' : '16px',
-            paddingRight: rightIcon ? '48px' : '16px',
+            paddingLeft: icon !== undefined && icon !== null ? '48px' : '16px',
+            paddingRight: rightIcon !== undefined && rightIcon !== null ? '48px' : '16px',
             fontSize: sizeStyles.fontSize,
             color: variant === 'gradient' || variant === 'neon' 
               ? COLORS.neutral[0] 
@@ -234,7 +236,7 @@ export function PremiumInput({
         />
 
         {/* Right Icon */}
-        {rightIcon && (
+        {rightIcon !== undefined && rightIcon !== null && (
           <motion.div
             className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
             animate={{
@@ -250,7 +252,7 @@ export function PremiumInput({
         )}
 
         {/* Character Count */}
-        {Boolean(maxLength) && value.length > 0 && (
+        {maxLength !== undefined && value.length > 0 && (
           <motion.div
             className="absolute bottom-1 right-3 text-xs"
             initial={{ opacity: 0 }}
@@ -295,7 +297,7 @@ export function PremiumInput({
         )}
 
         {/* Glow effect */}
-        {glow === true && isFocused && !hasError && (
+        {glow && isFocused && !hasError && (
           <motion.div
             className="absolute inset-0 rounded-inherit pointer-events-none"
             initial={{ opacity: 0 }}
@@ -314,7 +316,7 @@ export function PremiumInput({
 
       {/* Helper Text */}
       <AnimatePresence>
-        {(Boolean(helperText) || Boolean(error)) && (
+        {((helperText !== undefined && helperText !== '') || (error !== undefined && error !== '')) && (
           <motion.div
             className="mt-2 px-1"
             initial={{ opacity: 0, y: -5 }}

@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import '../src/polyfills'; // Import polyfills first
 import { Providers } from './providers';
 import ThemeToggle from '@/components/ThemeToggle';
 import BackgroundProvider from '@/components/Background/BackgroundProvider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { SafeAreaProvider } from '@/components/SafeAreaProvider';
+import { MobileOptimizationInit } from '@/components/MobileOptimizationInit';
 
 const inter = Inter({
   subsets: ['latin'], // Optimized subset for perf
@@ -16,6 +20,12 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover', // Enable safe area handling for iOS
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ec4899' },
+    { media: '(prefers-color-scheme: dark)', color: '#8b5cf6' },
+  ],
+  colorScheme: 'light dark',
 };
 
 export const metadata: Metadata = {
@@ -32,6 +42,21 @@ export const metadata: Metadata = {
     email: false,
     address: false,
     telephone: false,
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'PawfectMatch',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': 'PawfectMatch',
+    'application-name': 'PawfectMatch',
+    'msapplication-TileColor': '#ec4899',
+    'msapplication-config': '/browserconfig.xml',
   },
   robots: 'index, follow', // SEO: Allow crawling
   openGraph: {
@@ -74,15 +99,20 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
-          <BackgroundProvider>
-            {/* Global floating theme toggle - always visible */}
-            <div className="fixed top-4 right-4 z-[1000]">
-              <ThemeToggle />
-            </div>
-            <main role="main">
-              {children}
-            </main>
-          </BackgroundProvider>
+          <SafeAreaProvider>
+            <BackgroundProvider>
+              <MobileOptimizationInit />
+              {/* Global floating theme toggle - always visible */}
+              <div className="fixed top-4 right-4 z-[1000]">
+                <ThemeToggle />
+              </div>
+              <main role="main">
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
+              </main>
+            </BackgroundProvider>
+          </SafeAreaProvider>
         </Providers>
       </body>
     </html>

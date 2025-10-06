@@ -179,10 +179,13 @@ module.exports = {
         '5xl': '2.5rem',
       },
 
-      // Responsive breakpoints
+      // UHD/4K Responsive breakpoints
       screens: {
         'xs': '375px',
         '3xl': '1600px',
+        'uhd': '1920px',      // UHD (1920x1080)
+        '4k': '3840px',       // 4K UHD (3840x2160)
+        '8k': '7680px',       // 8K UHD (7680x4320)
       },
     },
   },
@@ -219,6 +222,26 @@ module.exports = {
         },
         '.border-sleek': {
           border: '1px solid rgba(255, 255, 255, 0.25)',
+        },
+        // UHD/4K Optimizations
+        '.uhd-high-dpi': {
+          imageRendering: '-webkit-optimize-contrast',
+          imageRendering: 'crisp-edges',
+        },
+        '.uhd-gpu-accelerated': {
+          transform: 'translateZ(0)',
+          willChange: 'transform, opacity',
+          backfaceVisibility: 'hidden',
+        },
+        '.uhd-crisp-text': {
+          WebkitFontSmoothing: 'antialiased',
+          MozOsxFontSmoothing: 'grayscale',
+          textRendering: 'optimizeLegibility',
+        },
+        '.uhd-smooth-animation': {
+          transform: 'translateZ(0)',
+          willChange: 'transform',
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         },
       };
       

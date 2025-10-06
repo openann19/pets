@@ -129,7 +129,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
 
   private handleGoHome = () => {
     if (typeof window !== 'undefined') {
-      window.location.href = '/dashboard';
+      window.location.href = './dashboard';
     }
   };
 

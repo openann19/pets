@@ -136,24 +136,24 @@ const PremiumInput: React.FC<PremiumInputProps> = ({
   const sizeStyles = {
     sm: {
       container: 'h-10',
-      input: 'text-sm',
-      label: 'text-xs',
-      padding: leftIcon ? 'pl-10 pr-4' : rightIcon ? 'pl-4 pr-10' : 'px-4',
-      icon: 'w-4 h-4',
+      input: 'text-sm sm:text-base', // Mobile-first responsive text sizing
+      label: 'text-xs sm:text-sm',
+      padding: leftIcon ? 'pl-8 sm:pl-10 pr-3 sm:pr-4' : rightIcon ? 'pl-3 sm:pl-4 pr-8 sm:pr-10' : 'px-3 sm:px-4',
+      icon: 'w-4 h-4 sm:w-5 sm:h-5',
     },
     md: {
       container: 'h-12',
-      input: 'text-base',
-      label: 'text-sm',
-      padding: leftIcon ? 'pl-12 pr-4' : rightIcon ? 'pl-4 pr-12' : 'px-4',
-      icon: 'w-5 h-5',
+      input: 'text-base sm:text-lg', // Mobile-first responsive text sizing
+      label: 'text-sm sm:text-base',
+      padding: leftIcon ? 'pl-10 sm:pl-12 pr-3 sm:pr-4' : rightIcon ? 'pl-3 sm:pl-4 pr-10 sm:pr-12' : 'px-3 sm:px-4',
+      icon: 'w-5 h-5 sm:w-6 sm:h-6',
     },
     lg: {
       container: 'h-14',
-      input: 'text-lg',
-      label: 'text-base',
-      padding: leftIcon ? 'pl-14 pr-5' : rightIcon ? 'pl-5 pr-14' : 'px-5',
-      icon: 'w-6 h-6',
+      input: 'text-lg sm:text-xl', // Mobile-first responsive text sizing
+      label: 'text-base sm:text-lg',
+      padding: leftIcon ? 'pl-12 sm:pl-14 pr-4 sm:pr-5' : rightIcon ? 'pl-4 sm:pl-5 pr-12 sm:pr-14' : 'px-4 sm:px-5',
+      icon: 'w-6 h-6 sm:w-7 sm:h-7',
     },
   };
 

@@ -143,7 +143,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           </label>
         )}
         <div className="relative">
-        {Boolean(leftIcon) && (
+        {leftIcon !== undefined && leftIcon !== null && (
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
             {leftIcon}
           </div>
@@ -151,6 +151,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             {...mergeProps(focusProps, otherProps)}
             ref={ref}
+            // eslint-disable-next-line react/jsx-props-no-spreading
             id={inputId}
             type={type}
             value={value}
@@ -162,14 +163,14 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               ${baseClasses}
               ${variantClasses[variant]}
               ${sizeClasses[size]}
-              ${leftIcon ? 'pl-10' : ''}
-              ${rightIcon ? 'pr-10' : ''}
+              ${leftIcon !== undefined && leftIcon !== null ? 'pl-10' : ''}
+              ${rightIcon !== undefined && rightIcon !== null ? 'pr-10' : ''}
               ${stateClasses}
               ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
               ${className}
             `}
           />
-          {Boolean(rightIcon) && (
+          {rightIcon !== undefined && rightIcon !== null && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
               {rightIcon}
             </div>

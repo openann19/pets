@@ -2,7 +2,10 @@
 import type React from 'react';
 
 // Mock React Native before any other imports
-jest.mock('react-native', () => ({
+jest.mock('react-native', () => {
+  const RN = jest.requireActual('react-native');
+  return {
+    ...RN,
   Dimensions: {
     get: jest.fn((dimension) => {
       if (dimension === 'window') {
@@ -47,7 +50,11 @@ jest.mock('react-native', () => ({
   Alert: {
     alert: jest.fn(),
   },
-}));
+  UIManager: {
+    setLayoutAnimationEnabledExperimental: jest.fn(),
+  },
+  };
+});
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -91,23 +98,25 @@ jest.mock('react-native-webrtc', () => ({
 }));
 
 // Mock InCallManager
-jest.mock('react-native-incall-manager', () => ({
-  default: {
+jest.mock('react-native-incall-manager', () => {
+  const mockInCallManager = {
     setSpeakerphoneOn: jest.fn(),
     setKeepScreenOn: jest.fn(),
     setForceSpeakerphoneOn: jest.fn(),
     start: jest.fn(),
     stop: jest.fn(),
     displayIncomingCall: jest.fn(),
-    getSpeakerphoneOn: jest.fn(),
+    getSpeakerphoneOn: jest.fn(() => false),
     setMicrophoneMute: jest.fn(),
     turnScreenOn: jest.fn(),
     turnScreenOff: jest.fn(),
     setWiredHeadsetHfpOn: jest.fn(),
     setBluetoothScoOn: jest.fn(),
     setBluetoothScoOff: jest.fn(),
-  },
-}));
+  };
+  
+  return mockInCallManager;
+});
 
 // Mock Socket.IO
 jest.mock('socket.io-client', () => ({
@@ -130,20 +139,20 @@ jest.mock('@react-navigation/native', () => ({
   useRoute: () => ({
     params: {},
   }),
-  NavigationContainer: ({ children }: { children?: any }) => children as React.ReactElement | null,
+  NavigationContainer: ({ children }: { children?: React.ReactNode }) => children,
 }));
 
 jest.mock('@react-navigation/native-stack', () => ({
   createNativeStackNavigator: () => ({
-    Navigator: ({ children }: { children?: any }) => children as React.ReactElement | null,
-    Screen: ({ children }: { children?: any }) => children as React.ReactElement | null,
+    Navigator: ({ children }: { children?: React.ReactNode }) => children,
+    Screen: ({ children }: { children?: React.ReactNode }) => children,
   }),
 }));
 
 jest.mock('@react-navigation/bottom-tabs', () => ({
   createBottomTabNavigator: () => ({
-    Navigator: ({ children }: { children?: any }) => children as React.ReactElement | null,
-    Screen: ({ children }: { children?: any }) => children as React.ReactElement | null,
+    Navigator: ({ children }: { children?: React.ReactNode }) => children,
+    Screen: ({ children }: { children?: React.ReactNode }) => children,
   }),
 }));
 
@@ -165,15 +174,15 @@ jest.mock('@expo/vector-icons', () => ({
 
 // Mock Safe Area Context
 jest.mock('react-native-safe-area-context', () => ({
-  SafeAreaProvider: ({ children }: { children?: any }) => children as React.ReactElement | null,
-  SafeAreaView: ({ children }: { children?: any }) => children as React.ReactElement | null,
+  SafeAreaProvider: ({ children }: { children?: React.ReactNode }) => children,
+  SafeAreaView: ({ children }: { children?: React.ReactNode }) => children,
   useSafeAreaInsets: () => ({ top: 44, bottom: 34, left: 0, right: 0 }),
 }));
 
 // Mock React Query
 jest.mock('@tanstack/react-query', () => ({
   QueryClient: jest.fn(),
-  QueryClientProvider: ({ children }: { children?: any }) => children as React.ReactElement | null,
+  QueryClientProvider: ({ children }: { children?: React.ReactNode }) => children,
   useQuery: jest.fn(() => ({
     data: null,
     isLoading: false,
@@ -212,7 +221,7 @@ jest.mock('./src/contexts/ThemeContext', () => ({
     setThemeMode: jest.fn(),
     toggleTheme: jest.fn(),
   }),
-  ThemeProvider: ({ children }: { children?: any }) => children as React.ReactElement | null,
+  ThemeProvider: ({ children }: { children?: React.ReactNode }) => children,
 }));
 
 // Mock Theme Toggle Component

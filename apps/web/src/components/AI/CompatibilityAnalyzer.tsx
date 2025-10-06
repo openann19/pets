@@ -326,6 +326,7 @@ export function CompatibilityAnalyzer({
   if (!report) {
     return (
       <div className="text-center p-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">AI Compatibility Analyzer</h1>
         <HeartIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-500">Select pets to analyze compatibility</p>
         {pet1 && pet2 && (
@@ -685,7 +686,7 @@ export function CompatibilityAnalyzer({
         </motion.div>
 
         {/* Action Buttons */}
-        <div className="mt-6 flex gap-4">
+        <div className="mt-6 flex gap-3 sm:gap-4">
           <motion.button
             onClick={() => setShowDetails(!showDetails)}
             whileHover={{ scale: 1.02 }}

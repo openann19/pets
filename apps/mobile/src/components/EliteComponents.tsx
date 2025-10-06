@@ -2,37 +2,33 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import type { ReactNode } from 'react';
-import React from 'react';
-import type {
-  ViewStyle,
-  TouchableOpacityProps,
-  ScrollViewProps} from 'react-native';
+import React, { type ReactNode } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  ScrollView,
   Text,
   TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  TextStyle
+  View,
+  type ScrollViewProps,
+  type TouchableOpacityProps,
+  type ViewStyle
 } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
   runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '../contexts/ThemeContext';
-import { 
-  Colors, 
-  GlobalStyles, 
-  Shadows, 
-  Spacing, 
-  BorderRadius, 
-  AnimationConfigs 
+import {
+  AnimationConfigs,
+  BorderRadius,
+  Colors,
+  GlobalStyles,
+  Shadows,
+  Spacing
 } from '../styles/GlobalStyles';
 
 // === ELITE CONTAINER COMPONENTS ===
@@ -50,13 +46,18 @@ export const EliteContainer: React.FC<EliteContainerProps> = ({
 }) => {
   const { colors, styles } = useTheme();
   
+  const gradientColors = (colors[gradient as keyof typeof colors] as string[]) ?? colors.gradientPrimary;
+  const containerStyle: ViewStyle = (styles.container as ViewStyle) ?? {};
+  const backgroundGradientStyle: ViewStyle = (styles.backgroundGradient as ViewStyle) ?? {};
+  const safeAreaStyle: ViewStyle = (styles.safeArea as ViewStyle) ?? {};
+  
   return (
-    <View style={[styles.container, style]}>
+    <View style={[containerStyle, style]}>
       <LinearGradient
-        colors={colors[gradient as keyof typeof colors] as string[] || colors.gradientPrimary}
-        style={styles.backgroundGradient}
+        colors={gradientColors}
+        style={backgroundGradientStyle}
       />
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={safeAreaStyle}>
         {children}
       </SafeAreaView>
     </View>
@@ -101,23 +102,25 @@ interface EliteHeaderProps {
 export const EliteHeader: React.FC<EliteHeaderProps> = ({
   title,
   subtitle,
-  showLogo = false,
+  showLogo: _showLogo = false,
   onBack,
   rightComponent,
   blur = true,
 }) => {
   const triggerHaptic = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleBackPress = () => {
+    runOnJS(triggerHaptic)();
+    onBack?.();
   };
 
   const HeaderContent = (
     <View style={GlobalStyles.headerContent}>
       {onBack && (
         <TouchableOpacity
-          onPress={() => {
-            runOnJS(triggerHaptic)();
-            onBack();
-          }}
+          onPress={handleBackPress}
           style={styles.backButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
@@ -127,7 +130,7 @@ export const EliteHeader: React.FC<EliteHeaderProps> = ({
       
       <View style={styles.headerTitleContainer}>
         <Text style={GlobalStyles.heading2}>{title}</Text>
-        {subtitle && (
+        {subtitle != null && subtitle.length > 0 && (
           <Text style={GlobalStyles.bodySmall}>{subtitle}</Text>
         )}
       </View>
@@ -170,7 +173,7 @@ export const ElitePageHeader: React.FC<ElitePageHeaderProps> = ({
         </BlurView>
       )}
       <Text style={GlobalStyles.title}>{title}</Text>
-      {subtitle && (
+      {subtitle != null && subtitle.length > 0 && (
         <Text style={GlobalStyles.subtitle}>{subtitle}</Text>
       )}
     </Animated.View>
@@ -349,10 +352,10 @@ export const EliteButton: React.FC<EliteButtonProps> = ({
     }
   };
 
-  const buttonGradient = gradient || (variant === 'primary' ? [Colors.primary, Colors.primaryLight] : undefined);
+  const buttonGradient = gradient ?? (variant === 'primary' ? [Colors.primary, Colors.primaryLight] : undefined);
 
   const ButtonContent = (
-    <View style={[getSizeStyle(), { opacity: disabled ? 0.6 : 1 }]}>
+    <View style={[getSizeStyle(), { opacity: (disabled ?? false) ? 0.6 : 1 }]}>
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? Colors.white : Colors.primary} />
       ) : (
@@ -379,7 +382,7 @@ export const EliteButton: React.FC<EliteButtonProps> = ({
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        disabled={disabled || loading}
+        disabled={disabled ?? loading}
         {...props}
       >
         {buttonGradient && variant === 'primary' ? (
@@ -409,7 +412,7 @@ export const EliteLoading: React.FC<EliteLoadingProps> = ({
     <View style={GlobalStyles.loadingContainer}>
       <ActivityIndicator size="large" color={Colors.primary} />
       <Text style={GlobalStyles.loadingText}>{title}</Text>
-      {subtitle && (
+      {subtitle != null && subtitle.length > 0 && (
         <Text style={[GlobalStyles.bodySmall, GlobalStyles.textCenter, GlobalStyles.mt2]}>
           {subtitle}
         </Text>
@@ -440,7 +443,7 @@ export const EliteEmptyState: React.FC<EliteEmptyStateProps> = ({
       <Ionicons name={icon} size={80} color={Colors.gray300} />
       <Text style={GlobalStyles.emptyTitle}>{title}</Text>
       <Text style={GlobalStyles.emptySubtitle}>{subtitle}</Text>
-      {actionTitle && onAction && (
+      {actionTitle != null && actionTitle.length > 0 && onAction && (
         <EliteButton
           title={actionTitle}
           onPress={onAction}

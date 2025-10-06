@@ -1,14 +1,14 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  StyleSheet, 
-  TouchableOpacity, 
-  KeyboardAvoidingView, 
+import {
+  KeyboardAvoidingView,
   Platform,
-  ScrollView 
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -52,7 +52,7 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
       
       // For demo purposes, navigate to Home
       // In a real app, you would authenticate first
-      // navigation.navigate('Home');
+      navigation.navigate('Home');
     }
   };
   

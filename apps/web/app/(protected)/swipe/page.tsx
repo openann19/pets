@@ -179,17 +179,17 @@ export default function SwipePage() {
       </div>
 
       {/* Match Modal */}
-      {showMatchModal && lastMatch && lastMatch.pet1 && lastMatch.pet2 && (
+      {showMatchModal && lastMatch && (
         <MatchModal
           isOpen={showMatchModal}
           onClose={() => {
             setShowMatchModal(false);
             clearMatch();
           }}
-          matchId={lastMatch.id}
-          currentUserPet={lastMatch.pet1 as any}
-          matchedPet={lastMatch.pet2 as any}
-          matchedUser={lastMatch.user2 as any}
+          matchId={(lastMatch as any).id}
+          currentUserPet={(lastMatch as any).pet1}
+          matchedPet={(lastMatch as any).pet2}
+          matchedUser={(lastMatch as any).user2}
         />
       )}
     </div>

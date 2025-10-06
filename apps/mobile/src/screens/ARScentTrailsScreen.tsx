@@ -1,764 +1,471 @@
 import { Ionicons } from '@expo/vector-icons';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BlurView } from 'expo-blur';
-import { Camera, CameraType } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  Animated,
-  StatusBar,
   Alert,
-  Platform,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 
-import { useTheme } from '../contexts/ThemeContext';
-import { arAPI } from '../services/api';
+type MapStackParamList = {
+  ARScentTrails: undefined;
+};
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+type ARScentTrailsScreenProps = NativeStackScreenProps<MapStackParamList, 'ARScentTrails'>;
 
-interface ScentTrail {
-  id: string;
-  petName: string;
-  petType: 'dog' | 'cat';
-  path: { x: number; y: number }[];
-  timestamp: string;
-  intensity: number; // 0-1
-  color: string;
-  isActive: boolean;
-}
+const ARScentTrailsScreen = ({ navigation }: ARScentTrailsScreenProps) => {
+  const [isScanning, setIsScanning] = useState(false);
+  const [scentTrails, setScentTrails] = useState([
+    {
+      id: '1',
+      petName: 'Buddy',
+      petBreed: 'Golden Retriever',
+      distance: '150m',
+      direction: 'north',
+      intensity: 'strong',
+      lastSeen: '5 minutes ago',
+      petPhoto: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=200',
+    },
+    {
+      id: '2',
+      petName: 'Luna',
+      petBreed: 'Siberian Husky',
+      distance: '280m',
+      direction: 'east',
+      intensity: 'medium',
+      lastSeen: '12 minutes ago',
+      petPhoto: 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=200',
+    },
+    {
+      id: '3',
+      petName: 'Max',
+      petBreed: 'Beagle',
+      distance: '420m',
+      direction: 'southwest',
+      intensity: 'weak',
+      lastSeen: '25 minutes ago',
+      petPhoto: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200',
+    },
+  ]);
 
-interface ARScentTrailsScreenProps {
-  navigation: any;
-  route?: {
-    params?: {
-      initialLocation?: { latitude: number; longitude: number };
-    };
-  };
-}
-
-export default function ARScentTrailsScreen({ navigation, route }: ARScentTrailsScreenProps) {
-  const { isDark, colors } = useTheme();
-  
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [cameraType, setCameraType] = useState(CameraType.back);
-  const [isScanning, setIsScanning] = useState(true);
-  const [trails, setTrails] = useState<ScentTrail[]>([]);
-  const [selectedTrail, setSelectedTrail] = useState<ScentTrail | null>(null);
-  const [scanProgress, setScanProgress] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Get initial location from route params
-  const initialLocation = route?.params?.initialLocation;
-
-  // Animation refs
-  const scanAnimation = useRef(new Animated.Value(0)).current;
-  const trailAnimations = useRef<{ [key: string]: Animated.Value }>({}).current;
-  const pulseAnimation = useRef(new Animated.Value(0)).current;
-  const fadeInAnimation = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    requestCameraPermission();
-    initializeTrails();
-    startAnimations();
-    
-    StatusBar.setBarStyle('light-content');
-    
-    return () => {
-      StatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content');
-    };
-  }, []);
-
-  const requestCameraPermission = async () => {
-    try {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-      
-      if (status !== 'granted') {
-        Alert.alert(
-          'Camera Permission Required',
-          'AR Scent Trails needs camera access to overlay scent paths on the real world.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Grant Permission', onPress: requestCameraPermission }
-          ]
-        );
-      }
-    } catch (error) {
-      console.error('Camera permission error:', error);
-      setHasPermission(false);
-    }
-  };
-
-  const initializeTrails = async () => {
-    // ✅ REAL API - Fetch scent trails from backend
-    try {
-      setIsLoading(true);
-      
-      if (!initialLocation) {
-        console.warn('No location available for trails');
-        setTrails([]);
-        return;
-      }
-
-      const realTrails = await arAPI.getTrails(
-        { latitude: initialLocation.latitude, longitude: initialLocation.longitude },
-        5 // 5km radius
-      ) as ScentTrail[];
-
-      // Initialize animations for each trail
-      realTrails.forEach((trail: ScentTrail) => {
-        trailAnimations[trail.id] = new Animated.Value(0);
-      });
-
-      setTrails(realTrails);
-      
-      if (realTrails.length === 0) {
-        console.log('No scent trails found in this area');
-      }
-    } catch (error) {
-      console.error('Failed to load scent trails:', error);
-      Alert.alert(
-        'Connection Error',
-        'Unable to load scent trails. Please check your connection and try again.'
-      );
-      setTrails([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const startAnimations = () => {
-    // Fade in animation
-    Animated.timing(fadeInAnimation, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
-
-    // Scanning animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(scanAnimation, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scanAnimation, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // Pulse animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnimation, {
-          toValue: 1,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnimation, {
-          toValue: 0,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // Staggered trail animations
-    trails.forEach((trail, index) => {
-      setTimeout(() => {
-        Animated.timing(trailAnimations[trail.id], {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }).start();
-      }, index * 500);
-    });
-  };
-
-  const startScanning = useCallback(() => {
-    setIsScanning(true);
-    setScanProgress(0);
-    
+  const startScanning = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setIsScanning(true);
     
-    // Simulate scanning progress
-    const progressInterval = setInterval(() => {
-      setScanProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          setIsScanning(false);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          return 100;
-        }
-        return prev + 2;
-      });
-    }, 50);
-  }, []);
+    // Simulate scanning process
+    setTimeout(() => {
+      setIsScanning(false);
+      Alert.alert('Scan Complete', 'Found 3 scent trails nearby!');
+    }, 3000);
+  };
 
-  const selectTrail = useCallback((trail: ScentTrail) => {
-    setSelectedTrail(trail);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    // Animate trail selection
-    Animated.sequence([
-      Animated.timing(trailAnimations[trail.id], {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(trailAnimations[trail.id], {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [trailAnimations]);
-
-  const formatTimeAgo = (timestamp: string) => {
-    const now = new Date();
-    const time = new Date(timestamp);
-    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes} min ago`;
-    } else {
-      const hours = Math.floor(diffInMinutes / 60);
-      return `${hours}h ago`;
+  const getIntensityColor = (intensity: string) => {
+    switch (intensity) {
+      case 'strong': return '#10b981';
+      case 'medium': return '#f59e0b';
+      case 'weak': return '#ef4444';
+      default: return '#6b7280';
     }
   };
 
-  const generateSVGPath = (points: { x: number; y: number }[]) => {
-    if (points.length < 2) return '';
-    
-    let path = `M ${points[0].x} ${points[0].y}`;
-    
-    for (let i = 1; i < points.length; i++) {
-      const prevPoint = points[i - 1];
-      const currentPoint = points[i];
-      
-      // Create smooth curves using quadratic bezier
-      const controlX = (prevPoint.x + currentPoint.x) / 2;
-      const controlY = (prevPoint.y + currentPoint.y) / 2;
-      
-      path += ` Q ${controlX} ${controlY} ${currentPoint.x} ${currentPoint.y}`;
+  const getDirectionIcon = (direction: string) => {
+    switch (direction) {
+      case 'north': return '↑';
+      case 'south': return '↓';
+      case 'east': return '→';
+      case 'west': return '←';
+      case 'northeast': return '↗';
+      case 'northwest': return '↖';
+      case 'southeast': return '↘';
+      case 'southwest': return '↙';
+      default: return '•';
     }
-    
-    return path;
   };
-
-  const renderScentTrails = () => {
-    return (
-      <Svg style={StyleSheet.absoluteFillObject} width={screenWidth} height={screenHeight}>
-        <Defs>
-          {trails.map(trail => (
-            <SvgLinearGradient key={`gradient-${trail.id}`} id={`gradient-${trail.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor={trail.color} stopOpacity={trail.intensity * 0.8} />
-              <Stop offset="50%" stopColor={trail.color} stopOpacity={trail.intensity} />
-              <Stop offset="100%" stopColor={trail.color} stopOpacity={trail.intensity * 0.3} />
-            </SvgLinearGradient>
-          ))}
-        </Defs>
-        
-        {trails.map((trail, index) => {
-          const pathData = generateSVGPath(trail.path);
-          const animatedValue = trailAnimations[trail.id] || new Animated.Value(0);
-          
-          return (
-            <Animated.View key={trail.id} style={{ opacity: animatedValue }}>
-              <Path
-                d={pathData}
-                stroke={`url(#gradient-${trail.id})`}
-                strokeWidth={trail.isActive ? 6 : 4}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeDasharray={trail.isActive ? undefined : "10,5"}
-              />
-              
-              {/* Trail points */}
-              {trail.path.map((point, pointIndex) => (
-                <Circle
-                  key={`${trail.id}-point-${pointIndex}`}
-                  cx={point.x}
-                  cy={point.y}
-                  r={trail.isActive && pointIndex === trail.path.length - 1 ? 8 : 4}
-                  fill={trail.color}
-                  opacity={trail.intensity}
-                  onPress={() => selectTrail(trail)}
-                />
-              ))}
-            </Animated.View>
-          );
-        })}
-      </Svg>
-    );
-  };
-
-  const renderScanningOverlay = () => {
-    if (!isScanning) return null;
-
-    const scanLineY = scanAnimation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [screenHeight * 0.2, screenHeight * 0.8],
-    });
-
-    return (
-      <Animated.View style={styles.scanningOverlay}>
-        <Animated.View 
-          style={[
-            styles.scanLine,
-            {
-              transform: [{ translateY: scanLineY }],
-            },
-          ]}
-        >
-          <LinearGradient
-            colors={['transparent', '#00FF88', 'transparent']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.scanLineGradient}
-          />
-        </Animated.View>
-        
-        <View style={styles.scanningInfo}>
-          <BlurView intensity={20} style={styles.scanningInfoBlur}>
-            <Text style={styles.scanningText}>Scanning for scent trails...</Text>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${scanProgress}%` }]} />
-            </View>
-            <Text style={styles.progressText}>{scanProgress}%</Text>
-          </BlurView>
-        </View>
-      </Animated.View>
-    );
-  };
-
-  const renderTrailInfo = () => {
-    if (!selectedTrail) return null;
-
-    return (
-      <Animated.View style={[styles.trailInfo, { opacity: fadeInAnimation }]}>
-        <BlurView intensity={30} style={styles.trailInfoBlur}>
-          <View style={styles.trailInfoHeader}>
-            <View style={[styles.trailColorDot, { backgroundColor: selectedTrail.color }]} />
-            <View style={styles.trailInfoText}>
-              <Text style={styles.trailPetName}>{selectedTrail.petName}'s Trail</Text>
-              <Text style={styles.trailTimestamp}>{formatTimeAgo(selectedTrail.timestamp)}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.closeTrailInfo}
-              onPress={() => setSelectedTrail(null)}
-            >
-              <Ionicons name="close" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.trailStats}>
-            <View style={styles.trailStat}>
-              <Text style={styles.trailStatLabel}>Intensity</Text>
-              <View style={styles.intensityBar}>
-                <View 
-                  style={[
-                    styles.intensityFill, 
-                    { 
-                      width: `${selectedTrail.intensity * 100}%`,
-                      backgroundColor: selectedTrail.color 
-                    }
-                  ]} 
-                />
-              </View>
-            </View>
-            
-            <View style={styles.trailStat}>
-              <Text style={styles.trailStatLabel}>Status</Text>
-              <View style={[
-                styles.statusBadge,
-                { backgroundColor: selectedTrail.isActive ? '#4CAF50' : '#FF9800' }
-              ]}>
-                <Text style={styles.statusText}>
-                  {selectedTrail.isActive ? 'Active' : 'Fading'}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </BlurView>
-      </Animated.View>
-    );
-  };
-
-  if (hasPermission === null) {
-    return (
-      <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>Requesting camera permission...</Text>
-      </View>
-    );
-  }
-
-  if (hasPermission === false) {
-    return (
-      <View style={styles.permissionContainer}>
-        <Ionicons name="camera-outline" size={64} color="#666" />
-        <Text style={styles.permissionText}>Camera access is required for AR features</Text>
-        <TouchableOpacity style={styles.permissionButton} onPress={requestCameraPermission}>
-          <Text style={styles.permissionButtonText}>Grant Permission</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
 
   return (
-    <View style={styles.container}>
-      {/* Camera View */}
-      <Camera style={styles.camera} type={cameraType}>
-        {/* AR Overlay */}
-        <Animated.View style={[styles.arOverlay, { opacity: fadeInAnimation }]}>
-          {renderScentTrails()}
-        </Animated.View>
-
-        {/* Scanning Overlay */}
-        {renderScanningOverlay()}
-
-        {/* Header */}
-        <SafeAreaView style={styles.header}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.goBack();
-              }}
-            >
-              <BlurView intensity={20} style={styles.headerButtonBlur}>
-                <Ionicons name="arrow-back" size={24} color="#fff" />
-              </BlurView>
-            </TouchableOpacity>
-            
-            <View style={styles.headerTitle}>
-              <Text style={styles.headerTitleText}>AR Scent Trails</Text>
-              <Animated.View style={[styles.liveBadge, { opacity: pulseAnimation }]}>
-                <Text style={styles.liveBadgeText}>LIVE</Text>
-              </Animated.View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.scanButton}
-              onPress={startScanning}
-              disabled={isScanning}
-            >
-              <BlurView intensity={20} style={styles.headerButtonBlur}>
-                <Ionicons 
-                  name={isScanning ? "hourglass-outline" : "scan-outline"} 
-                  size={24} 
-                  color="#fff" 
-                />
-              </BlurView>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-
-        {/* Trail Info Panel */}
-        {renderTrailInfo()}
-
-        {/* Bottom Controls */}
-        <View style={styles.bottomControls}>
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={() => {
-              setCameraType(
-                cameraType === CameraType.back ? CameraType.front : CameraType.back
-              );
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }}
-          >
-            <BlurView intensity={20} style={styles.controlButtonBlur}>
-              <Ionicons name="camera-reverse-outline" size={24} color="#fff" />
-            </BlurView>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>AR Scent Trails</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerButton}>
+            <Ionicons name="information-circle-outline" size={20} color="#333" />
           </TouchableOpacity>
+        </View>
+      </View>
 
-          <TouchableOpacity
-            style={styles.centerButton}
-            onPress={() => {
-              // Center on user location or reset view
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            }}
+      {/* AR View Container */}
+      <View style={styles.arContainer}>
+        <BlurView intensity={30} style={styles.arView}>
+          <View style={styles.arContent}>
+            <Ionicons name="camera" size={80} color="#fff" />
+            <Text style={styles.arTitle}>Augmented Reality</Text>
+            <Text style={styles.arSubtitle}>
+              Point your camera to detect scent trails in your area
+            </Text>
+            
+            {isScanning ? (
+              <View style={styles.scanningContainer}>
+                <View style={styles.scanningAnimation}>
+                  <Ionicons name="scan" size={40} color="#ec4899" />
+                </View>
+                <Text style={styles.scanningText}>Scanning for scent trails...</Text>
+              </View>
+            ) : (
+              <TouchableOpacity 
+                style={styles.scanButton}
+                onPress={startScanning}
+              >
+                <LinearGradient
+                  colors={['#ec4899', '#db2777']}
+                  style={styles.scanButtonGradient}
+                >
+                  <Ionicons name="search" size={24} color="#fff" />
+                  <Text style={styles.scanButtonText}>Start Scanning</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+          </View>
+        </BlurView>
+      </View>
+
+      {/* Scent Trails List */}
+      <View style={styles.trailsSection}>
+        <Text style={styles.sectionTitle}>Detected Scent Trails</Text>
+        
+        {scentTrails.length === 0 ? (
+          <BlurView intensity={20} style={styles.emptyState}>
+            <Ionicons name="paw-outline" size={60} color="#9ca3af" />
+            <Text style={styles.emptyTitle}>No Scent Trails Found</Text>
+            <Text style={styles.emptySubtitle}>
+              Start scanning to detect nearby pet scent trails
+            </Text>
+          </BlurView>
+        ) : (
+          <View style={styles.trailsList}>
+            {scentTrails.map((trail) => (
+              <TouchableOpacity
+                key={trail.id}
+                style={styles.trailCard}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  Alert.alert(
+                    'Follow Trail',
+                    `Follow ${trail.petName}'s scent trail?`,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Follow',
+                        onPress: () => {
+                          Alert.alert('Navigation', 'Starting navigation to scent trail...');
+                        },
+                      },
+                    ]
+                  );
+                }}
+              >
+                <Image source={{ uri: trail.petPhoto }} style={styles.petImage} />
+                
+                <View style={styles.trailInfo}>
+                  <View style={styles.trailHeader}>
+                    <Text style={styles.petName}>{trail.petName}</Text>
+                    <View style={[
+                      styles.intensityBadge,
+                      { backgroundColor: `${getIntensityColor(trail.intensity)}20` }
+                    ]}>
+                      <Text style={[
+                        styles.intensityText,
+                        { color: getIntensityColor(trail.intensity) }
+                      ]}>
+                        {trail.intensity.toUpperCase()}
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  <Text style={styles.petBreed}>{trail.petBreed}</Text>
+                  
+                  <View style={styles.trailDetails}>
+                    <View style={styles.detailItem}>
+                      <Ionicons name="navigate" size={16} color="#6b7280" />
+                      <Text style={styles.detailText}>
+                        {getDirectionIcon(trail.direction)} {trail.distance}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.detailItem}>
+                      <Ionicons name="time" size={16} color="#6b7280" />
+                      <Text style={styles.detailText}>{trail.lastSeen}</Text>
+                    </View>
+                  </View>
+                </View>
+                
+                <View style={styles.followButton}>
+                  <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+
+      {/* Quick Actions */}
+      <View style={styles.actionsSection}>
+        <View style={styles.actionsGrid}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => Alert.alert('Filter', 'Filter scent trails by intensity')}
           >
             <LinearGradient
-              colors={['#FF69B4', '#8B5CF6']}
-              style={styles.centerButtonGradient}
+              colors={['#3b82f6', '#1d4ed8']}
+              style={styles.actionGradient}
             >
-              <Ionicons name="locate-outline" size={28} color="#fff" />
+              <Ionicons name="filter" size={20} color="#fff" />
+              <Text style={styles.actionText}>Filter</Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={() => {
-              // Toggle AR mode or settings
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }}
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => Alert.alert('Map View', 'Switch to map view')}
           >
-            <BlurView intensity={20} style={styles.controlButtonBlur}>
-              <Ionicons name="options-outline" size={24} color="#fff" />
-            </BlurView>
+            <LinearGradient
+              colors={['#10b981', '#047857']}
+              style={styles.actionGradient}
+            >
+              <Ionicons name="map" size={20} color="#fff" />
+              <Text style={styles.actionText}>Map</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => Alert.alert('Settings', 'AR settings')}
+          >
+            <LinearGradient
+              colors={['#8b5cf6', '#7c3aed']}
+              style={styles.actionGradient}
+            >
+              <Ionicons name="settings" size={20} color="#fff" />
+              <Text style={styles.actionText}>Settings</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
-      </Camera>
-    </View>
+      </View>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
-  },
-  camera: {
-    flex: 1,
-  },
-  arOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 1,
-  },
-  permissionContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#000',
-    padding: 20,
-  },
-  permissionText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-    marginVertical: 20,
-  },
-  permissionButton: {
-    backgroundColor: '#FF69B4',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-    marginTop: 20,
-  },
-  permissionButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    backgroundColor: '#f8f9fa',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    zIndex: 10,
-  },
-  headerContent: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: 'hidden',
-  },
-  scanButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: 'hidden',
-  },
-  headerButtonBlur: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
   },
   headerTitle: {
-    flex: 1,
-    alignItems: 'center',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  headerActions: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    gap: 12,
   },
-  headerTitleText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginRight: 8,
+  headerButton: {
+    padding: 8,
   },
-  liveBadge: {
-    backgroundColor: '#FF4444',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+  backButton: {
+    padding: 8,
   },
-  liveBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
+  arContainer: {
+    height: 300,
+    backgroundColor: '#000',
   },
-  scanningOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 5,
-  },
-  scanLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 2,
-  },
-  scanLineGradient: {
+  arView: {
     flex: 1,
-  },
-  scanningInfo: {
-    position: 'absolute',
-    top: screenHeight * 0.3,
-    left: 20,
-    right: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  scanningInfoBlur: {
-    padding: 16,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  scanningText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
+  arContent: {
+    alignItems: 'center',
+    padding: 20,
   },
-  progressBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 2,
+  arTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 16,
     marginBottom: 8,
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#00FF88',
-    borderRadius: 2,
+  arSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
+    marginBottom: 24,
   },
-  progressText: {
+  scanningContainer: {
+    alignItems: 'center',
+  },
+  scanningAnimation: {
+    marginBottom: 16,
+  },
+  scanningText: {
+    fontSize: 16,
     color: '#fff',
-    fontSize: 14,
+    fontWeight: '500',
   },
-  trailInfo: {
-    position: 'absolute',
-    bottom: 120,
-    left: 20,
-    right: 20,
-    borderRadius: 16,
+  scanButton: {
+    borderRadius: 25,
     overflow: 'hidden',
-    zIndex: 10,
   },
-  trailInfoBlur: {
-    padding: 16,
-  },
-  trailInfoHeader: {
+  scanButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    gap: 8,
   },
-  trailColorDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 12,
-  },
-  trailInfoText: {
-    flex: 1,
-  },
-  trailPetName: {
+  scanButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  trailTimestamp: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
-  },
-  closeTrailInfo: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  trailStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  trailStat: {
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  trailStatLabel: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  intensityBar: {
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 3,
-  },
-  intensityFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
     fontWeight: '600',
   },
-  bottomControls: {
-    position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: 0,
+  trailsSection: {
+    flex: 1,
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 16,
+  },
+  emptyState: {
+    borderRadius: 12,
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#6b7280',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#9ca3af',
+    textAlign: 'center',
+  },
+  trailsList: {
+    gap: 12,
+  },
+  trailCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 40,
-    zIndex: 10,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  controlButton: {
+  petImage: {
     width: 50,
     height: 50,
     borderRadius: 25,
+    marginRight: 12,
+  },
+  trailInfo: {
+    flex: 1,
+  },
+  trailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  petName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  intensityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  intensityText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  petBreed: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 8,
+  },
+  trailDetails: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  detailText: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  followButton: {
+    padding: 8,
+  },
+  actionsSection: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  actionsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    borderRadius: 12,
     overflow: 'hidden',
   },
-  controlButtonBlur: {
-    flex: 1,
+  actionGradient: {
+    padding: 16,
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 8,
   },
-  centerButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    overflow: 'hidden',
-  },
-  centerButtonGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  actionText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
+
+export default ARScentTrailsScreen;

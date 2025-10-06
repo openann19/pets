@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MapPinIcon, HeartIcon, ChatBubbleLeftRightIcon, AdjustmentsHorizontalIcon, BellIcon } from '@heroicons/react/24/outline';
-import { MapPinIcon as MapPinSolid, HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
-import MapView from '@/components/Map/MapView';
+import { AdjustmentsHorizontalIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolid, MapPinIcon as MapPinSolid } from '@heroicons/react/24/solid';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+
 import AIMapFeatures from '@/components/Map/AIMapFeatures';
+import MapView from '@/components/Map/MapView';
 import { useAuthStore } from '@/lib/auth-store';
 import { geofencingService } from '@/services/GeofencingService';
 
@@ -47,7 +48,7 @@ const MapPage: React.FC = () => {
 
   // Initialize geofencing and location services
   useEffect(() => {
-    const initializeServices = async () => {
+    const initializeServices = async (): Promise<void> => {
       try {
         const initialized = await geofencingService.initialize();
         if (!initialized) return;
@@ -56,22 +57,22 @@ const MapPage: React.FC = () => {
         geofencingService.subscribe('map-page', (data: any) => {
           setUserLocation({ latitude: data.location.lat, longitude: data.location.lng });
         });
-
-        const handleNotification = (event: CustomEvent) => {
-          setNotifications(prev => [event.detail, ...prev].slice(0, 10));
-        };
-        window.addEventListener('geofence-notification', handleNotification as EventListener);
-
-        return () => {
-          geofencingService.unsubscribe('map-page');
-          window.removeEventListener('geofence-notification', handleNotification as EventListener);
-        };
       } catch (e) {
         console.warn('Geofencing init skipped in dev:', e);
       }
     };
     
+    const handleNotification = (event: CustomEvent) => {
+      setNotifications(prev => [event.detail, ...prev].slice(0, 10));
+    };
+    
     initializeServices();
+    window.addEventListener('geofence-notification', handleNotification as EventListener);
+
+    return () => {
+      geofencingService.unsubscribe('map-page');
+      window.removeEventListener('geofence-notification', handleNotification as EventListener);
+    };
   }, []);
 
   // Simulated real-time stats updates

@@ -128,7 +128,7 @@ export default function MatchesPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <Link href="/swipe">
+                <Link href="./swipe">
                   <PremiumButton
                     variant="outline"
                     size="md"
@@ -239,7 +239,7 @@ export default function MatchesPage() {
                       {/* Action Buttons */}
                       <div className="flex gap-2 pt-2">
                         <Link
-                          href={`/chat/${match.id}`}
+                          href={`./chat/${match.id}`}
                           className="flex-1"
                         >
                           <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-pink-500/50 transition-all duration-300 transform hover:scale-[1.02]">
@@ -249,8 +249,13 @@ export default function MatchesPage() {
                         </Link>
                         
                         <button 
+                          onClick={() => {
+                            // Navigate to video call
+                            window.location.href = `./video-call/${match.id}`;
+                          }}
                           className="p-3 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 rounded-xl transition-all duration-300 group/btn"
                           title="Call"
+                          aria-label="Start video call"
                         >
                           <PhoneIcon className="w-5 h-5 text-green-400 group-hover/btn:scale-110 transition-transform" />
                         </button>

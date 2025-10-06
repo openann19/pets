@@ -95,6 +95,7 @@ export const Dialog: React.FC<DialogProps> = ({
       <FocusScope contain restoreFocus autoFocus>
         <div
           {...mergeProps(overlayProps, dialogProps)}
+          // eslint-disable-next-line react/jsx-props-no-spreading
           ref={ref}
           className={`
             bg-white rounded-lg shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-auto
@@ -104,7 +105,11 @@ export const Dialog: React.FC<DialogProps> = ({
           {((title != null && title !== '') ?? (description != null && description !== '')) && (
             <div className="px-6 py-4 border-b border-gray-200">
               {title != null && title !== '' && (
-                <h2 {...titleProps} className="text-lg font-semibold text-gray-900">
+                <h2 
+                  {...titleProps} 
+                  // eslint-disable-next-line react/jsx-props-no-spreading
+                  className="text-lg font-semibold text-gray-900"
+                >
                   {title}
                 </h2>
               )}

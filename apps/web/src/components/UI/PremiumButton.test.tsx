@@ -17,31 +17,42 @@ describe('PremiumButton Component', () => {
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 
-  it('applies correct variant classes', () => {
+  it('applies correct variant styles', () => {
     const { rerender } = render(<PremiumButton variant="primary">Primary</PremiumButton>);
-    expect(screen.getByText('Primary')).toHaveClass('from-pink-500', 'to-purple-600');
+    const primaryButton = screen.getByText('Primary').closest('button');
+    expect(primaryButton).toHaveStyle('background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)');
 
     rerender(<PremiumButton variant="secondary">Secondary</PremiumButton>);
-    expect(screen.getByText('Secondary')).toHaveClass('bg-white', 'border-gray-300');
+    const secondaryButton = screen.getByText('Secondary').closest('button');
+    expect(secondaryButton).toHaveStyle('background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)');
 
     rerender(<PremiumButton variant="danger">Danger</PremiumButton>);
-    expect(screen.getByText('Danger')).toHaveClass('from-red-500', 'to-red-600');
+    const dangerButton = screen.getByText('Danger').closest('button');
+    expect(dangerButton).toHaveStyle('background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%)');
   });
 
   it('applies correct size classes', () => {
     const { rerender } = render(<PremiumButton size="sm">Small</PremiumButton>);
-    expect(screen.getByText('Small')).toHaveClass('px-3', 'py-1.5');
+    const smallButton = screen.getByText('Small').closest('button');
+    expect(smallButton).toHaveClass('px-3', 'sm:px-4', 'py-2', 'text-sm', 'min-h-[36px]');
 
     rerender(<PremiumButton size="md">Medium</PremiumButton>);
-    expect(screen.getByText('Medium')).toHaveClass('px-4', 'py-2');
+    const mediumButton = screen.getByText('Medium').closest('button');
+    expect(mediumButton).toHaveClass('px-4', 'sm:px-6', 'py-3', 'text-base', 'min-h-[44px]');
 
     rerender(<PremiumButton size="lg">Large</PremiumButton>);
-    expect(screen.getByText('Large')).toHaveClass('px-6', 'py-3');
+    const largeButton = screen.getByText('Large').closest('button');
+    expect(largeButton).toHaveClass('px-6', 'sm:px-8', 'py-4', 'text-lg', 'min-h-[52px]');
   });
 
   it('shows loading state correctly', () => {
     render(<PremiumButton loading>Loading</PremiumButton>);
-    expect(screen.getByText('Loading')).toHaveClass('opacity-0');
+    const loadingButton = screen.getByText('Loading').closest('button');
+    expect(loadingButton).toBeDisabled();
+    
+    // Check if loading spinner is present
+    const loadingSpinner = loadingButton?.querySelector('[data-testid="loading-spinner"]');
+    expect(loadingSpinner).toBeInTheDocument();
   });
 
   it('is disabled when loading', () => {

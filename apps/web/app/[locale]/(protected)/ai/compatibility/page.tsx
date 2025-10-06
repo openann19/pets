@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { CompatibilityAnalyzer } from '@/components/AI/CompatibilityAnalyzer';
-import { motion } from 'framer-motion';
 import { ArrowLeftIcon, HeartIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+import { CompatibilityAnalyzer } from '@/components/AI/CompatibilityAnalyzer';
 
 export default function AiCompatibilityPage() {
   const searchParams = useSearchParams();
@@ -48,7 +49,7 @@ export default function AiCompatibilityPage() {
       </motion.div>
 
       <div className="py-8">
-        <CompatibilityAnalyzer targetPetId={targetPetId || undefined} />
+        {targetPetId && <CompatibilityAnalyzer targetPetId={targetPetId} />}
       </div>
 
       {/* Stats Section */}

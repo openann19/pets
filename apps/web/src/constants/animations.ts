@@ -37,6 +37,14 @@ export const SPRING_CONFIG = {
     mass: 0.8,
   },
   
+  // Instant spring for immediate feedback
+  instant: {
+    type: 'spring' as const,
+    stiffness: 1000,
+    damping: 50,
+    mass: 0.5,
+  },
+  
   // Slow spring for dramatic reveals
   slow: {
     type: 'spring' as const,
@@ -535,6 +543,32 @@ export const MICRO_CONFIG = {
   ease: EASING.easeOut,
 };
 
+// Gesture configuration for swipe interactions
+export const GESTURE_CONFIGS = {
+  swipe: {
+    dragConstraints: { left: -200, right: 200, top: -200, bottom: 200 },
+    dragElastic: 0.2,
+    dragTransition: {
+      min: 0,
+      max: 100,
+      bounceStiffness: 600,
+      bounceDamping: 10
+    },
+    swipeThreshold: 50,
+    velocityThreshold: 500,
+    rotationFactor: 0.1,
+    scaleFactor: 0.95
+  },
+  tap: {
+    tapThreshold: 3,
+    tapTime: 300
+  },
+  pan: {
+    panThreshold: 10,
+    panTime: 100
+  }
+};
+
 // Export default configuration
 export const ANIMATION_CONFIG = {
   spring: SPRING_CONFIG,
@@ -549,6 +583,7 @@ export const ANIMATION_CONFIG = {
   modal: MODAL_VARIANTS,
   toast: TOAST_VARIANTS,
   spinner: SPINNER_VARIANTS,
+  gesture: GESTURE_CONFIGS,
 } as const;
 
 export default ANIMATION_CONFIG;

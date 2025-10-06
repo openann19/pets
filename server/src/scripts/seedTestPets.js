@@ -14,8 +14,20 @@ const seedTestPets = async () => {
       // Create basic users (use bcrypt for real hash, but simple for test)
       const bcrypt = require('bcryptjs');
       const hashedPass = await bcrypt.hash('testpass', 10);
-      const user1 = new User({ email: 'test1@example.com', password: hashedPass, firstName: 'Test', lastName: 'User1' });
-      const user2 = new User({ email: 'test2@example.com', password: hashedPass, firstName: 'Test', lastName: 'User2' });
+      const user1 = new User({ 
+        email: 'test1@example.com', 
+        password: hashedPass, 
+        firstName: 'Test', 
+        lastName: 'User1',
+        dateOfBirth: '1990-01-01'
+      });
+      const user2 = new User({ 
+        email: 'test2@example.com', 
+        password: hashedPass, 
+        firstName: 'Test', 
+        lastName: 'User2',
+        dateOfBirth: '1990-01-01'
+      });
       await user1.save();
       await user2.save();
     }

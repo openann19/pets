@@ -33,7 +33,12 @@ class VisualRegressionTester {
     });
 
     this.page = await this.browser.newPage();
-    await this.page.setViewport({ width: 1920, height: 1080 });
+    // UHD/4K Viewport Configuration
+    await this.page.setViewport({ 
+      width: 3840, 
+      height: 2160,
+      deviceScaleFactor: 2 // High DPI for crisp visuals
+    });
     
     // Ensure directories exist
     [this.baselineDir, this.diffDir].forEach(dir => {

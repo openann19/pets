@@ -5,6 +5,11 @@
 		}
 	],
 	"settings": {
-		"git.ignoreLimitWarning": true
+		"git.ignoreLimitWarning": true,
+		"jest.disabledWorkspaceFolders": [
+			"packages/ui",
+			"packages/core"
+		],
+		"jest.rootPath": "apps/web"
 	}
 }

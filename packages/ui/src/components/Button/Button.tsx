@@ -42,7 +42,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const { hoverProps, isHovered } = useHover({});
 
     // Merge the refs
-    React.useImperativeHandle(forwardedRef, () => ref.current!);
+    React.useImperativeHandle(forwardedRef, () => ref.current as HTMLButtonElement);
 
     // Get variant styles
     const getVariantClasses = () => {
@@ -72,6 +72,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         {...mergeProps(buttonProps, focusProps, hoverProps)}
+        // eslint-disable-next-line react/jsx-props-no-spreading
         ref={ref}
         disabled={isDisabled}
         data-pressed={isPressed || undefined}

@@ -1,26 +1,25 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  HeartIcon, 
-  XMarkIcon, 
-  ChatBubbleLeftRightIcon,
-  UserIcon,
-  SparklesIcon,
-  ExclamationTriangleIcon,
-  ArrowPathIcon,
-  AdjustmentsHorizontalIcon,
-  MagnifyingGlassIcon
-} from '@heroicons/react/24/outline';
-import { HeartIcon as HeartSolid, CheckCircleIcon } from '@heroicons/react/24/solid';
-import PremiumCard from '@/components/UI/PremiumCard';
-import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumLayout from '@/components/Layout/PremiumLayout';
-import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import LikeAnimation, { MatchAnimation } from '@/components/UI/LikeAnimation';
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
+import PremiumButton from '@/components/UI/PremiumButton';
+import PremiumCard from '@/components/UI/PremiumCard';
 import { petsAPI } from '@/services/api';
-import type { Pet as PetType } from '@/types';
+import {
+    AdjustmentsHorizontalIcon,
+    ArrowPathIcon,
+    ChatBubbleLeftRightIcon,
+    ExclamationTriangleIcon,
+    HeartIcon,
+    MagnifyingGlassIcon,
+    SparklesIcon,
+    UserIcon,
+    XMarkIcon
+} from '@heroicons/react/24/outline';
+import { CheckCircleIcon, HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 interface BrowsePet {
   _id: string;
@@ -151,7 +150,7 @@ export default function BrowsePage() {
         // 🎉 Show massive match celebration!
         setShowMatchAnimation(true);
         setTimeout(() => {
-          window.location.href = `/matches`;
+          window.location.href = `./matches`;
         }, 3000); // Give time for celebration animation
         return;
       }
@@ -204,8 +203,8 @@ export default function BrowsePage() {
   };
 
   const handleLoginSuccess = () => {
-    if (actionType === 'chat') {
-      window.location.href = `/chat/${currentPet._id}`;
+    if (actionType === 'chat' && currentPet) {
+      window.location.href = `./chat/${currentPet._id}`;
     }
     setShowLoginModal(false);
     setActionType(null);
@@ -757,7 +756,7 @@ export default function BrowsePage() {
                 <div className="space-y-3">
                   <PremiumButton
                     size="lg"
-                    onClick={() => window.location.href = '/register'}
+                    href="./register"
                     className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-bold shadow-xl border-none"
                     icon={<UserIcon className="w-6 h-6" />}
                   >
@@ -767,7 +766,7 @@ export default function BrowsePage() {
                   <PremiumButton
                     variant="outline"
                     size="lg"
-                    onClick={() => window.location.href = '/login'}
+                    href="./login"
                     className="w-full bg-white/20 border-2 border-white/80 text-white hover:bg-white/30 hover:border-white font-semibold backdrop-blur-md"
                     icon={<SparklesIcon className="w-6 h-6" />}
                   >
@@ -777,6 +776,7 @@ export default function BrowsePage() {
                   <button
                     onClick={() => setShowLoginModal(false)}
                     className="w-full text-white/80 hover:text-white text-sm transition-colors py-2 font-medium"
+                    aria-label="Continue browsing without signing up"
                   >
                     Continue browsing
                   </button>

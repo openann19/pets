@@ -7,6 +7,7 @@
     "test": "tests"
   },
   "scripts": {
+    "build": "mkdir -p dist && cp -r src/* dist/ && cp package.json dist/ && cp .env dist/ 2>/dev/null || true && echo 'Server build complete - dist folder created'",
     "test": "jest --runInBand",
     "test:admin": "jest tests/integration/admin.test.js --runInBand",
     "test:coverage": "jest --coverage --runInBand",

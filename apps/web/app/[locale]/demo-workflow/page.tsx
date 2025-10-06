@@ -26,7 +26,7 @@ export default function DemoWorkflowPage() {
       color: "text-blue-500",
       bgColor: "bg-blue-50",
       action: "Browse Now",
-      href: "/browse"
+      href: "./browse"
     },
     {
       number: 2,
@@ -36,7 +36,7 @@ export default function DemoWorkflowPage() {
       color: "text-red-500",
       bgColor: "bg-red-50",
       action: "Try It",
-      href: "/browse"
+      href: "./browse"
     },
     {
       number: 3,
@@ -46,7 +46,7 @@ export default function DemoWorkflowPage() {
       color: "text-green-500",
       bgColor: "bg-green-50",
       action: "Sign Up",
-      href: "/register"
+      href: "./register"
     },
     {
       number: 4,
@@ -56,7 +56,7 @@ export default function DemoWorkflowPage() {
       color: "text-purple-500",
       bgColor: "bg-purple-50",
       action: "Get Started",
-      href: "/browse"
+      href: "./browse"
     }
   ];
 
@@ -157,7 +157,7 @@ export default function DemoWorkflowPage() {
           </h2>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/browse">
+            <Link href="./browse">
               <PremiumButton
                 size="lg"
                 variant="primary"
@@ -167,7 +167,7 @@ export default function DemoWorkflowPage() {
               </PremiumButton>
             </Link>
             
-            <Link href="/demo-chat-video">
+            <Link href="./demo-chat-video">
               <PremiumButton
                 size="lg"
                 variant="secondary"

@@ -1,30 +1,32 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import {
+  BoltIcon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  FireIcon,
+  HeartIcon,
+  MagnifyingGlassIcon,
+  PlusCircleIcon,
+  SparklesIcon,
+  StarIcon,
+  UserGroupIcon,
+  VideoCameraIcon
+} from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
 import PremiumLayout from '@/components/Layout/PremiumLayout';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore } from '@/lib/auth-store';
-import { useDashboardData, useWebSocket } from '@/hooks/api-hooks';
-import PremiumCard from '@/components/UI/PremiumCard';
 import PremiumButton from '@/components/UI/PremiumButton';
-import { 
-  PREMIUM_VARIANTS, 
+import PremiumCard from '@/components/UI/PremiumCard';
+import {
+  PREMIUM_VARIANTS,
   STAGGER_CONFIG
 } from '@/constants/animations';
-import {
-  HeartIcon,
-  ChatBubbleLeftRightIcon,
-  UserGroupIcon,
-  SparklesIcon,
-  PlusCircleIcon,
-  MagnifyingGlassIcon,
-  BoltIcon,
-  FireIcon,
-  StarIcon,
-  VideoCameraIcon,
-  ChartBarIcon
-} from '@heroicons/react/24/outline';
+import { useDashboardData, useWebSocket } from '@/hooks/api-hooks';
+import { useAuthStore } from '@/lib/auth-store';
+
 
 export default function DashboardPage() {
   const { user: authUser } = useAuthStore();
@@ -58,7 +60,7 @@ export default function DashboardPage() {
   const enhancedStats = [
     { 
       label: 'My Pets', 
-      value: pets?.length?.toString() || '0', 
+      value: Array.isArray(pets) ? pets.length.toString() : '0', 
       icon: BoltIcon, 
       variant: 'glass' as const,
       description: 'Active profiles',
@@ -67,7 +69,7 @@ export default function DashboardPage() {
     },
     { 
       label: 'Active Matches', 
-      value: matches?.length?.toString() || '0', 
+      value: Array.isArray(matches) ? matches.length.toString() : '0', 
       icon: HeartIcon, 
       variant: 'gradient' as const,
       description: 'Mutual connections',
@@ -76,7 +78,7 @@ export default function DashboardPage() {
     },
     { 
       label: 'Messages', 
-      value: matches?.reduce((acc: number, match: { unreadCount?: number }) => acc + (match.unreadCount || 0), 0)?.toString() || '0', 
+      value: Array.isArray(matches) ? matches.reduce((acc: number, match: { unreadCount?: number }) => acc + (match.unreadCount ?? 0), 0).toString() : '0', 
       icon: FireIcon, 
       variant: 'neon' as const,
       description: 'Unread chats',
@@ -98,49 +100,49 @@ export default function DashboardPage() {
     {
       title: 'Discover Pets',
       description: 'Start swiping to find new matches',
-      href: '/swipe',
+      href: './swipe',
       icon: MagnifyingGlassIcon,
       gradient: 'from-pink-500 to-purple-600',
     },
     {
       title: 'Video Call',
       description: 'Start a video call with matches',
-      href: '/video-call/demo-room',
+      href: './video-call/demo-room',
       icon: VideoCameraIcon,
       gradient: 'from-blue-500 to-cyan-500',
     },
     {
       title: 'Analytics',
       description: 'View your performance insights',
-      href: '/analytics',
+      href: './analytics',
       icon: ChartBarIcon,
       gradient: 'from-green-500 to-emerald-500',
     },
     {
       title: 'Upgrade Premium',
       description: 'Unlock all premium features',
-      href: '/premium',
+      href: './premium',
       icon: SparklesIcon,
       gradient: 'from-yellow-500 to-orange-500',
     },
     {
       title: 'View Matches',
       description: 'Chat with your matched pets',
-      href: '/matches',
+      href: './matches',
       icon: ChatBubbleLeftRightIcon,
       gradient: 'from-purple-500 to-indigo-600',
     },
     {
       title: 'Add a Pet',
       description: 'Create a profile for your pet',
-      href: '/pets/new',
+      href: './pets/new',
       icon: PlusCircleIcon,
       gradient: 'from-green-500 to-teal-600',
     },
     {
       title: 'My Pets',
       description: 'Manage your pet profiles',
-      href: '/my-pets',
+      href: './my-pets',
       icon: UserGroupIcon,
       gradient: 'from-orange-500 to-red-600',
     },
@@ -233,7 +235,7 @@ export default function DashboardPage() {
         <motion.div
           initial="initial"
           animate="animate"
-          transition={{ staggerChildren: STAGGER_CONFIG }}
+          transition={{ staggerChildren: STAGGER_CONFIG.normal }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
           {enhancedStats.map((stat, index) => (
@@ -302,7 +304,7 @@ export default function DashboardPage() {
           className="mb-8"
           initial="initial"
           animate="animate"
-          transition={{ staggerChildren: STAGGER_CONFIG }}
+          transition={{ staggerChildren: STAGGER_CONFIG.normal }}
         >
           <motion.h2 
             className="text-2xl font-bold gradient-text mb-6"
@@ -385,7 +387,7 @@ export default function DashboardPage() {
         {/* Enhanced Premium Showcase */}
         {subscription?.status !== 'active' && (
           <motion.div
-            variants={PREMIUM_VARIANTS.scaleIn}
+            variants={PREMIUM_VARIANTS.scale}
             transition={{ delay: 0.6 }}
             className="mb-8"
           >

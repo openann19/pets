@@ -115,7 +115,7 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   // Helper retained for compatibility (not used with motion values)
 
   // Get primary photo
-  const primaryPhoto = pet.photos.find((photo: { isPrimary: boolean; url: string }) => photo.isPrimary) || pet.photos[0];
+  const primaryPhoto = pet.photos.find((photo) => photo.isPrimary) || pet.photos[0];
   const photoUrl = primaryPhoto?.url || 'https://via.placeholder.com/400x500?text=No+Photo';
 
   // Calculate age display
@@ -292,10 +292,6 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
                 <p className="text-white/70 text-sm">Size</p>
                 <p className="font-semibold capitalize text-white">{pet.size || 'Medium'}</p>
               </div>
-              <div>
-                <p className="text-white/70 text-sm">Age</p>
-                <p className="font-semibold text-white">{ageText}</p>
-              </div>
             </div>
 
             {/* Location */}
@@ -355,8 +351,8 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
+        {/* Action Buttons - Responsive */}
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-3 sm:space-x-4">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -364,15 +360,15 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               e.stopPropagation();
               handleButtonClick('pass');
             }}
-            aria-label="Pass"
-            className="w-14 h-14 border border-white/30 text-white rounded-full flex items-center justify-center shadow-xl transition-all"
+            aria-label="Pass button"
+            className="w-12 h-12 sm:w-14 sm:h-14 border border-white/30 text-white rounded-full flex items-center justify-center shadow-xl transition-all"
             style={{
               background: 'rgba(239, 68, 68, 0.15)',
               backdropFilter: 'blur(12px) saturate(180%)',
               WebkitBackdropFilter: 'blur(12px) saturate(180%)',
             }}
           >
-            <XMarkIcon className="w-7 h-7" />
+            <XMarkIcon className="w-5 h-5 sm:w-7 sm:h-7" />
           </motion.button>
 
           <motion.button
@@ -382,15 +378,15 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               e.stopPropagation();
               handleButtonClick('superlike');
             }}
-            aria-label="Super Like"
-            className="w-12 h-12 border border-white/30 text-white rounded-full flex items-center justify-center shadow-xl transition-all"
+            aria-label="Superlike button"
+            className="w-10 h-10 sm:w-12 sm:h-12 border border-white/30 text-white rounded-full flex items-center justify-center shadow-xl transition-all"
             style={{
               background: 'rgba(59, 130, 246, 0.15)',
               backdropFilter: 'blur(12px) saturate(180%)',
               WebkitBackdropFilter: 'blur(12px) saturate(180%)',
             }}
           >
-            <SparklesIcon className="w-6 h-6" />
+            <SparklesIcon className="w-4 h-4 sm:w-6 sm:h-6" />
           </motion.button>
 
           <motion.button
@@ -400,15 +396,15 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               e.stopPropagation();
               handleButtonClick('like');
             }}
-            aria-label="Like"
-            className="w-14 h-14 border border-white/30 text-white rounded-full flex items-center justify-center shadow-xl transition-all"
+            aria-label="Like button"
+            className="w-12 h-12 sm:w-14 sm:h-14 border border-white/30 text-white rounded-full flex items-center justify-center shadow-xl transition-all"
             style={{
               background: 'rgba(236, 72, 153, 0.15)',
               backdropFilter: 'blur(12px) saturate(180%)',
               WebkitBackdropFilter: 'blur(12px) saturate(180%)',
             }}
           >
-            <HeartIcon className="w-7 h-7" />
+            <HeartIcon className="w-5 h-5 sm:w-7 sm:h-7" />
           </motion.button>
         </div>
       </div>

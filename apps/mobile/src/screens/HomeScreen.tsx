@@ -3,16 +3,16 @@ import { useAuthStore } from '@pawfectmatch/core';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  RefreshControl,
-  Dimensions,
+    Dimensions,
+    Image,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,9 +22,11 @@ type RootStackParamList = {
   Home: undefined;
   Swipe: undefined;
   Matches: undefined;
-  Messages: undefined;
   Profile: undefined;
-  Premium: undefined;
+  AdoptionManager: undefined;
+  Settings: undefined;
+  MyPets: undefined;
+  CreatePet: undefined;
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -56,13 +58,24 @@ export default function HomeScreen() {
         navigation.navigate('Matches');
         break;
       case 'messages':
-        navigation.navigate('Messages');
+        // Navigate to Matches screen since Messages is not a separate screen
+        navigation.navigate('Matches');
         break;
       case 'profile':
         navigation.navigate('Profile');
         break;
+      case 'settings':
+        navigation.navigate('Settings');
+        break;
+      case 'my-pets':
+        navigation.navigate('MyPets');
+        break;
+      case 'create-pet':
+        navigation.navigate('CreatePet');
+        break;
       case 'premium':
-        navigation.navigate('Premium');
+        // Navigate to Profile screen since Premium is part of profile
+        navigation.navigate('Profile');
         break;
       default:
         console.warn(`Unknown action: ${action}`);

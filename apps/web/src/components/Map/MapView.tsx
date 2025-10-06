@@ -1,15 +1,14 @@
-import React, { useEffect, useState, useMemo, memo, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline } from 'react-leaflet';
-import L, { LatLngExpression, Icon, DivIcon } from 'leaflet';
-import { io, Socket } from 'socket.io-client';
+import L, { DivIcon, LatLngExpression } from 'leaflet';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { Socket, io } from 'socket.io-client';
 // import { PulsePin } from '@pawfectmatch/core/types/realtime';
-import { useAuthStore } from '../../lib/auth-store';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ChatBubbleLeftRightIcon, HeartIcon, MapPinIcon } from '@heroicons/react/24/solid';
+import { motion } from 'framer-motion';
+import 'leaflet/dist/leaflet.css';
+import LoadingSpinner from '../UI/LoadingSpinner';
 // import { SPRING_CONFIG } from '@pawfectmatch/core/constants/animations';
 const SPRING_CONFIG = { type: "spring", stiffness: 260, damping: 20 };
-import { HeartIcon, ChatBubbleLeftRightIcon, MapPinIcon } from '@heroicons/react/24/solid';
-import LoadingSpinner from '../UI/LoadingSpinner';
-import 'leaflet/dist/leaflet.css';
 // Local dev stub for PulsePin type (remove when shared types are available)
 type PulsePin = {
   _id: string;
@@ -247,7 +246,9 @@ const MapView: React.FC<MapViewProps> = ({ filters }) => {
       rememberUpgrade: true,
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
+      timeout: 10000,
+      forceNew: true
     });
 
     // Connection established
@@ -278,9 +279,35 @@ const MapView: React.FC<MapViewProps> = ({ filters }) => {
 
     // Connection error
     socket.on('connect_error', (error) => {
-      console.error('❌ MapView connection error:', error);
+      console.warn('⚠️ MapView connection error:', error.message);
       setIsConnected(false);
       setConnectionError('Unable to connect to live updates. Retrying...');
+      
+      // Add some mock data for development when connection fails
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 Adding mock data for development');
+        const mockPins: PulsePin[] = [
+          {
+            _id: 'mock-1',
+            petId: 'pet-1',
+            ownerId: 'user-1',
+            coordinates: [-73.98, 40.75],
+            activity: 'walking',
+            message: 'Taking a walk in Central Park',
+            createdAt: new Date().toISOString()
+          },
+          {
+            _id: 'mock-2',
+            petId: 'pet-2',
+            ownerId: 'user-2',
+            coordinates: [-73.99, 40.76],
+            activity: 'playing',
+            message: 'Playing fetch at the dog park',
+            createdAt: new Date().toISOString()
+          }
+        ];
+        setPins(mockPins);
+      }
     });
 
     // Reconnection successful
@@ -381,14 +408,15 @@ const MapView: React.FC<MapViewProps> = ({ filters }) => {
       {/* Connection Status Indicator */}
       <ConnectionStatus />
       
-      <MapContainer
-        center={center}
-        zoom={13}
-        className="h-full w-full rounded-2xl overflow-hidden shadow-lg"
-        aria-label="Interactive map of pet locations"
-        zoomControl={false}
-        key="leaflet-map"
-      >
+      <div key="map-wrapper">
+        <MapContainer
+          center={center}
+          zoom={13}
+          className="h-full w-full rounded-2xl overflow-hidden shadow-lg"
+          aria-label="Interactive map of pet locations"
+          zoomControl={false}
+          key="leaflet-map"
+        >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -434,7 +462,8 @@ const MapView: React.FC<MapViewProps> = ({ filters }) => {
         ))}
         
         <AutoCenter pins={filteredPins} />
-      </MapContainer>
+        </MapContainer>
+      </div>
       
       {/* Custom zoom controls */}
       <div className="absolute top-4 left-4 z-[1000] space-y-2">

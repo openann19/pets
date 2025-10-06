@@ -3,10 +3,11 @@
  * Provides testing helpers and utilities for component testing
  */
 
-import React, { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { RenderOptions } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { ThemeProvider } from 'next-themes';
+import React, { type ReactElement } from 'react';
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -260,7 +261,7 @@ export const createMockUser = (overrides = {}) => ({
 export const waitFor = (ms: number) => 
   new Promise(resolve => setTimeout(resolve, ms));
 
-export const mockApiResponse = <T>(data: T, success = true) => ({
+export const mockApiResponse = <T,>(data: T, success = true) => ({
   success,
   data,
   message: success ? 'Success' : 'Error',
@@ -388,5 +389,5 @@ export const cleanupTestEnvironment = () => {
 
 // Re-export everything from testing-library
 export * from '@testing-library/react';
-export { customRender as render };
-export { AllTheProviders };
+export { AllTheProviders, customRender as render };
+

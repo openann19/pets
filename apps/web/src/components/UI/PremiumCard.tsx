@@ -9,8 +9,8 @@
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import React, { useCallback, useRef, useState } from 'react';
 
-import { PREMIUM_VARIANTS, SPRING_CONFIG } from '@/constants/animations';
-import { transitions } from '@/constants/design-tokens';
+import { SPRING_CONFIG } from '@/constants/animations';
+import { BLUR, COLORS, GRADIENTS, RADIUS, SHADOWS, transitions } from '@/constants/design-tokens';
 
 interface PremiumCardProps {
   children: React.ReactNode;
@@ -102,15 +102,43 @@ export default function PremiumCard({
     }
   }, [haptic, disabled]);
 
-  // Enhanced sound feedback
-  const triggerSound = useCallback((type: 'hover' | 'press' = 'press') => {
-    if (!sound || typeof window === 'undefined' || disabled) return;
+  // Enhanced sound feedback with user gesture handling
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [audioInitialized, setAudioInitialized] = useState(false);
+
+  // Initialize audio context on first user interaction
+  const initializeAudio = useCallback(() => {
+    if (audioInitialized || typeof window === 'undefined') return;
     
     try {
       const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioContextClass) return;
       
-      const audioContext = new AudioContextClass();
+      const ctx = new AudioContextClass();
+      setAudioContext(ctx);
+      setAudioInitialized(true);
+    } catch {
+      // Audio feedback not available
+    }
+  }, [audioInitialized]);
+
+  const triggerSound = useCallback((type: 'hover' | 'press' = 'press') => {
+    if (!sound || typeof window === 'undefined' || disabled) return;
+    
+    // Initialize audio on first use
+    if (!audioInitialized) {
+      initializeAudio();
+      return; // Skip this sound, will work on next interaction
+    }
+    
+    if (!audioContext) return;
+    
+    try {
+      // Resume audio context if suspended
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -128,7 +156,7 @@ export default function PremiumCard({
     } catch {
       // Audio feedback not available
     }
-  }, [sound, disabled]);
+  }, [sound, disabled, audioContext, audioInitialized, initializeAudio]);
 
   // Handle mouse move for tilt effect
   const handleMouseMove = (event: React.MouseEvent) => {
@@ -258,6 +286,8 @@ export default function PremiumCard({
           ${onClick && !disabled ? 'cursor-pointer' : disabled ? 'cursor-not-allowed opacity-50' : ''}
           ${tilt ? 'perspective-1000 preserve-3d' : ''}
           ${className}
+          w-full max-w-full
+          sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl
         `}
         style={{
           ...backgroundStyle,
@@ -265,9 +295,9 @@ export default function PremiumCard({
           rotateY: tilt ? rotateY : 0,
           borderRadius: RADIUS['2xl'],
         }}
-        initial={PREMIUM_VARIANTS[entrance]?.initial || { opacity: 0, y: 10 }}
-        animate={PREMIUM_VARIANTS[entrance]?.animate || { opacity: disabled ? 0.5 : 1, y: 0 }}
-        transition={{ ...(PREMIUM_VARIANTS[entrance]?.transition || SPRING_CONFIG.default), delay }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: disabled ? 0.5 : 1, y: 0 }}
+        transition={{ ...SPRING_CONFIG.default, delay }}
         whileHover={hover && !disabled ? { scale: 1.02, y: -4 } : {}}
         whileTap={onClick && !disabled ? { scale: 0.98 } : {}}
         onMouseMove={handleMouseMove}

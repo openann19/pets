@@ -92,6 +92,22 @@ class ApiService {
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('accessToken') || localStorage.getItem('auth_token');
       this.refreshToken = localStorage.getItem('refreshToken') || localStorage.getItem('refresh_token');
+      
+      // Also check Zustand store for tokens
+      try {
+        const authStorage = localStorage.getItem('auth-storage');
+        if (authStorage) {
+          const parsed = JSON.parse(authStorage);
+          if (parsed.state?.accessToken && !this.token) {
+            this.token = parsed.state.accessToken;
+          }
+          if (parsed.state?.refreshToken && !this.refreshToken) {
+            this.refreshToken = parsed.state.refreshToken;
+          }
+        }
+      } catch (error) {
+        // Ignore parsing errors
+      }
     }
   }
 
@@ -143,6 +159,26 @@ class ApiService {
     return this.token;
   }
 
+  // Sync tokens from auth store
+  syncTokensFromStore() {
+    if (typeof window !== 'undefined') {
+      try {
+        const authStorage = localStorage.getItem('auth-storage');
+        if (authStorage) {
+          const parsed = JSON.parse(authStorage);
+          if (parsed.state?.accessToken) {
+            this.token = parsed.state.accessToken;
+          }
+          if (parsed.state?.refreshToken) {
+            this.refreshToken = parsed.state.refreshToken;
+          }
+        }
+      } catch (error) {
+        // Ignore parsing errors
+      }
+    }
+  }
+
   private async refreshAccessToken(): Promise<boolean> {
     if (!this.refreshToken) return false;
     
@@ -173,6 +209,9 @@ class ApiService {
     options: RequestOptions = {},
     retryCount = 0
   ): Promise<T> {
+    // Sync tokens from store before making request
+    this.syncTokensFromStore();
+    
     const url = `${API_BASE_URL}${endpoint}`;
     const token = this.getToken();
 
@@ -570,6 +609,7 @@ export const api = {
   setToken: apiInstance.setToken.bind(apiInstance),
   clearToken: apiInstance.clearToken.bind(apiInstance),
   getToken: apiInstance.getToken.bind(apiInstance),
+  syncTokensFromStore: apiInstance.syncTokensFromStore.bind(apiInstance),
   login: apiInstance.login.bind(apiInstance),
   register: apiInstance.register.bind(apiInstance),
   logout: apiInstance.logout.bind(apiInstance),
