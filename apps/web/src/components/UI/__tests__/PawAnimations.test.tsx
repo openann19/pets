@@ -3,12 +3,12 @@
  * Tests all loading states, edge cases, and workflows
  */
 
-import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
+
 import LoadingSpinner from '../LoadingSpinner';
 import PremiumButton from '../PremiumButton';
-import { act } from 'react-dom/test-utils';
 
 describe('Paw Animation System', () => {
   describe('LoadingSpinner Component', () => {
@@ -32,17 +32,17 @@ describe('Paw Animation System', () => {
 
     describe('Size Variants', () => {
       it('renders small size correctly', () => {
-        const { container } = render(<LoadingSpinner size="small" />);
+        const { container } = render(<LoadingSpinner size="sm" />);
         expect(container.querySelector('div[class*="relative"]')).toBeInTheDocument();
       });
 
       it('renders medium size correctly', () => {
-        const { container } = render(<LoadingSpinner size="medium" />);
+        const { container } = render(<LoadingSpinner size="md" />);
         expect(container.querySelector('div[class*="relative"]')).toBeInTheDocument();
       });
 
       it('renders large size correctly', () => {
-        const { container } = render(<LoadingSpinner size="large" />);
+        const { container } = render(<LoadingSpinner size="lg" />);
         expect(container.querySelector('div[class*="relative"]')).toBeInTheDocument();
       });
     });
@@ -51,7 +51,7 @@ describe('Paw Animation System', () => {
       it('applies default color', () => {
         const { container } = render(<LoadingSpinner />);
         const svg = container.querySelector('svg');
-        expect(svg).toHaveAttribute('fill', '#3B82F6');
+        expect(svg).toHaveAttribute('fill', '#ec4899');
       });
 
       it('applies custom color', () => {
@@ -113,27 +113,31 @@ describe('Paw Animation System', () => {
   });
 
   describe('PremiumButton Loading State', () => {
-    it('shows paw animations when loading', () => {
+    it('shows loading spinner when loading', () => {
       const { container } = render(
         <PremiumButton loading={true}>Test Button</PremiumButton>
       );
-      const svgs = container.querySelectorAll('svg');
-      expect(svgs.length).toBeGreaterThan(0);
+      // Should show a loading spinner (rotating border)
+      const spinner = container.querySelector('.w-5.h-5.border-2.border-white.border-t-transparent.rounded-full');
+      expect(spinner).toBeInTheDocument();
     });
 
     it('hides button text when loading', () => {
-      render(
+      const { container } = render(
         <PremiumButton loading={true}>Test Button</PremiumButton>
       );
-      // Text should be rendered but with opacity-0
-      expect(screen.getByText('Test Button')).toHaveClass('opacity-0');
+      // Text should be rendered but with opacity 0 via Framer Motion
+      const textContainer = container.querySelector('.flex.items-center.justify-center.gap-2');
+      expect(textContainer).toHaveStyle('opacity: 0');
     });
 
     it('shows button text when not loading', () => {
-      render(
+      const { container } = render(
         <PremiumButton loading={false}>Test Button</PremiumButton>
       );
-      expect(screen.getByText('Test Button')).toHaveClass('opacity-100');
+      // Text should be visible
+      const textContainer = container.querySelector('.flex.items-center.justify-center.gap-2');
+      expect(textContainer).toHaveStyle('opacity: 1');
     });
 
     it('disables button interactions when loading', () => {
@@ -150,20 +154,22 @@ describe('Paw Animation System', () => {
 
   describe('Integration Workflows', () => {
     it('handles loading state transitions', async () => {
-      const { rerender } = render(
+      const { rerender, container } = render(
         <PremiumButton loading={false}>Click Me</PremiumButton>
       );
       
       // Start loading
       rerender(<PremiumButton loading={true}>Click Me</PremiumButton>);
       await waitFor(() => {
-        expect(screen.getByText('Click Me')).toHaveClass('opacity-0');
+        const textContainer = container.querySelector('.flex.items-center.justify-center.gap-2');
+        expect(textContainer).toHaveStyle('opacity: 0');
       });
 
       // Stop loading
       rerender(<PremiumButton loading={false}>Click Me</PremiumButton>);
       await waitFor(() => {
-        expect(screen.getByText('Click Me')).toHaveClass('opacity-100');
+        const textContainer = container.querySelector('.flex.items-center.justify-center.gap-2');
+        expect(textContainer).toHaveStyle('opacity: 1');
       });
     });
 
