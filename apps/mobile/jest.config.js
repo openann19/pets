@@ -1,19 +1,23 @@
 module.exports = {
-  testEnvironment: 'jsdom',
-  setupFilesAfterEnv: [
-    '<rootDir>/src/setupTests.js'
+  preset: 'react-native',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.tsx'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(jest-)?react-native' +
+      '|@react-native' +
+      '|expo-linear-gradient' +
+      '|expo-status-bar' +
+      '|expo-blur' +
+      '|expo-haptics' +
+      '|@expo/vector-icons' +
+      '|@pawfectmatch' +
+      '|socket.io-client' +
+      '|@react-navigation)/'
   ],
   testMatch: [
     '**/__tests__/**/*.(js|jsx|ts|tsx)',
     '**/*.(test|spec).(js|jsx|ts|tsx)'
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest'
-  },
-  transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|expo|@expo|@pawfectmatch|socket.io-client|@react-navigation)/)'
-  ],
   moduleNameMapper: {
     '^@pawfectmatch/core$': '<rootDir>/../../packages/core/src',
     '^@/(.*)$': '<rootDir>/src/$1',
