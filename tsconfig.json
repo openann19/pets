@@ -28,6 +28,10 @@
     "noImplicitThis": true,
     "alwaysStrict": true,
     
+    // JSX Configuration
+    "jsx": "preserve",
+    "jsxImportSource": "react",
+    
     // Module Resolution - Performance Optimized
     "skipLibCheck": true,
     "esModuleInterop": true,

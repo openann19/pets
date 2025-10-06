@@ -10,7 +10,9 @@
     "declarationMap": true,
     "sourceMap": true,
     "composite": true,
-    "incremental": true
+    "incremental": true,
+    "jsx": "preserve",
+    "jsxImportSource": "react"
   },
   "exclude": ["node_modules", "dist"]
 }
