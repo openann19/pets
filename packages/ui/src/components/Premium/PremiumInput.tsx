@@ -5,10 +5,11 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { COLORS, GRADIENTS, SHADOWS, RADIUS, BACKDROP } from '../../theme/design-system';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useRef, useState } from 'react';
+
 import { transitions } from '../../animations/premium-motion';
+import { BACKDROP, COLORS, GRADIENTS, RADIUS, SHADOWS } from '../../theme/design-system';
 
 interface PremiumInputProps {
   label: string;
@@ -19,7 +20,7 @@ interface PremiumInputProps {
   error?: string;
   disabled?: boolean;
   required?: boolean;
-  variant?: 'default' | 'glass' | 'gradient' | 'neon';
+  variant?: 'default' | 'glass' | 'gradient' | 'neon' | 'holographic' | 'floating';
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -27,6 +28,7 @@ interface PremiumInputProps {
   className?: string;
   autoComplete?: string;
   maxLength?: number;
+  glow?: boolean;
 }
 
 export function PremiumInput({
@@ -46,12 +48,13 @@ export function PremiumInput({
   className = '',
   autoComplete,
   maxLength,
+  glow = false,
 }: PremiumInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const isFloating = isFocused || value.length > 0;
+  const isFloating = isFocused || Boolean(value && value.length > 0);
   const hasError = !!error;
 
   // Focus management
@@ -64,6 +67,42 @@ export function PremiumInput({
 
   const handleBlur = () => {
     setIsFocused(false);
+  };
+
+  const handleMouseEnter = () => setIsHovered(true);
+  const handleMouseLeave = () => setIsHovered(false);
+  const handleLabelClick = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+  };
+
+  const handleMouseEnterWrapper = () => {
+    handleMouseEnter();
+  };
+
+  const handleMouseLeaveWrapper = () => {
+    handleMouseLeave();
+  };
+
+  const handleLabelClickWrapper = () => {
+    handleLabelClick();
+  };
+
+  const handleInputChangeWrapper = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange(e);
+  };
+
+  const handleFocusWrapper = () => {
+    handleFocus();
+  };
+
+  const handleBlurWrapper = () => {
+    handleBlur();
   };
 
   // Get variant styles
@@ -110,6 +149,21 @@ export function PremiumInput({
           : 'none',
         color: COLORS.neutral[0],
       },
+      holographic: {
+        background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3)',
+        backgroundSize: '400% 400%',
+        animation: 'holographic 3s ease infinite',
+        border: 'none',
+        color: COLORS.neutral[0],
+        boxShadow: '0 0 30px rgba(255, 107, 107, 0.5)',
+      },
+      floating: {
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        border: `1px solid ${hasError ? COLORS.error[400] : isFocused ? COLORS.primary[400] : 'rgba(255, 255, 255, 0.2)'}`,
+        color: COLORS.neutral[0],
+        boxShadow: isFocused ? `0 0 20px ${hasError ? COLORS.error[400] : COLORS.primary[400]}40` : 'none',
+      },
     };
     
     return variants[variant];
@@ -147,8 +201,8 @@ export function PremiumInput({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={transitions.spring}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnterWrapper}
+      onMouseLeave={handleMouseLeaveWrapper}
     >
       {/* Input Container */}
       <motion.div
@@ -165,7 +219,7 @@ export function PremiumInput({
         transition={transitions.micro}
       >
         {/* Left Icon */}
-        {icon && (
+        {Boolean(icon) && (
           <motion.div
             className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
             animate={{
@@ -199,7 +253,7 @@ export function PremiumInput({
             scale: isFloating ? 1 : 1,
           }}
           transition={transitions.micro}
-          onClick={handleFocus}
+          onClick={handleLabelClickWrapper}
         >
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
@@ -210,9 +264,9 @@ export function PremiumInput({
           ref={inputRef}
           type={type}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          onChange={handleInputChangeWrapper}
+          onFocus={handleFocusWrapper}
+          onBlur={handleBlurWrapper}
           disabled={disabled}
           placeholder={isFocused ? placeholder : ''}
           autoComplete={autoComplete}
@@ -231,7 +285,7 @@ export function PremiumInput({
         />
 
         {/* Right Icon */}
-        {rightIcon && (
+        {Boolean(rightIcon) && (
           <motion.div
             className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
             animate={{
@@ -247,13 +301,13 @@ export function PremiumInput({
         )}
 
         {/* Character Count */}
-        {maxLength && value.length > 0 && (
+        {Boolean(maxLength) && value.length > 0 && (
           <motion.div
             className="absolute bottom-1 right-3 text-xs"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             style={{
-              color: value.length > maxLength * 0.8
+              color: Boolean(maxLength) && value.length > maxLength * 0.8
                 ? COLORS.warning[500]
                 : COLORS.neutral[400],
             }}
@@ -325,15 +379,15 @@ export function PremiumInput({
                 color: hasError ? COLORS.error[500] : COLORS.neutral[600],
               }}
             >
-              {error || helperText}
+              {error ?? helperText}
             </p>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Holographic animation styles */}
-      {variant === 'holographic' && (
-        <style jsx>{`
+      {Boolean(variant === 'holographic') && (
+        <style>{`
           @keyframes holographic {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }

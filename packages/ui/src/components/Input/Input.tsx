@@ -1,10 +1,8 @@
-import React from 'react';
-import { useTextField } from '@react-aria/textfield';
 import { useFocusRing } from '@react-aria/focus';
 import { mergeProps } from '@react-aria/utils';
-import { AriaTextFieldProps } from '@react-types/textfield';
+import React from 'react';
 
-export interface InputProps extends AriaTextFieldProps {
+export interface InputProps {
   /**
    * Input type
    */
@@ -31,6 +29,26 @@ export interface InputProps extends AriaTextFieldProps {
   rightIcon?: React.ReactNode;
 
   /**
+   * Input value
+   */
+  value?: string;
+
+  /**
+   * Change handler
+   */
+  onChange?: (value: string) => void;
+
+  /**
+   * Label text
+   */
+  label?: string;
+
+  /**
+   * Placeholder text
+   */
+  placeholder?: string;
+
+  /**
    * Additional CSS classes
    */
   className?: string;
@@ -44,10 +62,25 @@ export interface InputProps extends AriaTextFieldProps {
    * Success state
    */
   success?: boolean;
+
+  /**
+   * Error message to display
+   */
+  errorMessage?: string;
+
+  /**
+   * Disabled state
+   */
+  disabled?: boolean;
+
+  /**
+   * Read-only state
+   */
+  readOnly?: boolean;
 }
 
 /**
- * A headless input component built with react-aria
+ * A headless input component
  */
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (props, forwardedRef) => {
@@ -60,15 +93,27 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       className = '',
       error = false,
       success = false,
+      errorMessage,
+      label,
+      value = '',
+      onChange,
+      placeholder,
+      disabled = false,
+      readOnly = false,
       ...otherProps
     } = props;
 
     const ref = React.useRef<HTMLInputElement>(null);
-    const { inputProps, labelProps, descriptionProps, errorMessageProps } = useTextField(otherProps, ref);
-    const { focusProps, isFocused } = useFocusRing();
+    const { focusProps } = useFocusRing();
+    const inputId = React.useId();
 
     // Merge the refs
-    React.useImperativeHandle(forwardedRef, () => ref.current!);
+    React.useImperativeHandle(forwardedRef, () => ref.current as HTMLInputElement);
+
+    // Handle change events
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange?.(e.target.value);
+    };
 
     const baseClasses = 'w-full transition-colors duration-200';
 
@@ -91,29 +136,48 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         : 'border-gray-300 focus:ring-blue-500';
 
     return (
-      <div className="relative">
-        {leftIcon && (
+      <div className="w-full">
+        {Boolean(label) && (
+          <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
+            {label}
+          </label>
+        )}
+        <div className="relative">
+        {Boolean(leftIcon) && (
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
             {leftIcon}
           </div>
         )}
-        <input
-          {...mergeProps(inputProps, focusProps)}
-          ref={ref}
-          type={type}
-          className={`
-            ${baseClasses}
-            ${variantClasses[variant]}
-            ${sizeClasses[size]}
-            ${leftIcon ? 'pl-10' : ''}
-            ${rightIcon ? 'pr-10' : ''}
-            ${stateClasses}
-            ${className}
-          `}
-        />
-        {rightIcon && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-            {rightIcon}
+          <input
+            {...mergeProps(focusProps, otherProps)}
+            ref={ref}
+            id={inputId}
+            type={type}
+            value={value}
+            onChange={React.useCallback(handleChange, [onChange])}
+            placeholder={placeholder}
+            disabled={disabled}
+            readOnly={readOnly}
+            className={`
+              ${baseClasses}
+              ${variantClasses[variant]}
+              ${sizeClasses[size]}
+              ${leftIcon ? 'pl-10' : ''}
+              ${rightIcon ? 'pr-10' : ''}
+              ${stateClasses}
+              ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+              ${className}
+            `}
+          />
+          {Boolean(rightIcon) && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              {rightIcon}
+            </div>
+          )}
+        </div>
+        {error && Boolean(errorMessage) && (
+          <div className="mt-1 text-sm text-red-600">
+            {errorMessage}
           </div>
         )}
       </div>
