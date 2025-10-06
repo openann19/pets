@@ -6,10 +6,11 @@
 
 'use client';
 
-import React, { useRef, useState, useCallback } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { COLORS, GRADIENTS, SHADOWS, RADIUS } from '../../theme/design-system';
-import { transitions, hoverVariants, tapVariants } from '../../animations/premium-motion';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
+import React, { useCallback, useRef, useState } from 'react';
+
+import { transitions } from '../../animations/premium-motion';
+import { COLORS, GRADIENTS, RADIUS, SHADOWS } from '../../theme/design-system';
 
 interface PremiumButtonProps {
   children: React.ReactNode;
@@ -28,6 +29,20 @@ interface PremiumButtonProps {
   magneticEffect?: boolean;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
+  // WCAG 2.1 AA Accessibility Props
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-pressed'?: boolean;
+  'aria-expanded'?: boolean;
+  'aria-haspopup'?: boolean | 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
+  'aria-controls'?: string;
+  'aria-live'?: 'polite' | 'assertive' | 'off';
+  'aria-atomic'?: boolean;
+  'aria-relevant'?: 'additions' | 'removals' | 'text' | 'all';
+  role?: string;
+  tabIndex?: number;
+  // Enhanced accessibility for screen readers
+  'data-testid'?: string;
 }
 
 export function PremiumButton({
@@ -47,6 +62,20 @@ export function PremiumButton({
   magneticEffect = false,
   className = '',
   type = 'button',
+  // Accessibility props
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
+  'aria-pressed': ariaPressed,
+  'aria-expanded': ariaExpanded,
+  'aria-haspopup': ariaHasPopup,
+  'aria-controls': ariaControls,
+  'aria-live': ariaLive,
+  'aria-atomic': ariaAtomic,
+  'aria-relevant': ariaRelevant,
+  role,
+  tabIndex,
+  'data-testid': testId,
+  ..._restProps
 }: PremiumButtonProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [isPressed, setIsPressed] = useState(false);
@@ -75,10 +104,12 @@ export function PremiumButton({
 
   // Advanced sound feedback
   const triggerSound = useCallback((type: 'hover' | 'press' | 'success') => {
-    if (!sound || typeof window === 'undefined') return;
+    if (sound === false || typeof window === 'undefined') return;
     
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextClass === null || AudioContextClass === undefined) return;
+      const audioContext = new AudioContextClass();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -94,7 +125,7 @@ export function PremiumButton({
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.1);
     } catch (error) {
-      console.debug('Audio feedback not available');
+      // Audio feedback not available - silently fail
     }
   }, [sound]);
 
@@ -126,6 +157,19 @@ export function PremiumButton({
     }
   }, [magneticEffect, x, y]);
 
+  const handleMouseEnter = useCallback(() => {
+    triggerHaptic('light');
+    triggerSound('hover');
+  }, [triggerHaptic, triggerSound]);
+
+  const handleMouseDown = useCallback(() => {
+    setIsPressed(true);
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    setIsPressed(false);
+  }, []);
+
   // Enhanced click handler
   const handleClick = useCallback(() => {
     if (disabled || loading) return;
@@ -140,6 +184,33 @@ export function PremiumButton({
     
     onClick?.();
   }, [disabled, loading, onClick, triggerHaptic, triggerSound, particles]);
+
+  // Comprehensive keyboard navigation
+  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+    if (disabled || loading) return;
+    
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        handleClick();
+        break;
+      case 'Escape':
+        // Remove focus from button
+        buttonRef.current?.blur();
+        break;
+      default:
+        break;
+    }
+  }, [disabled, loading, handleClick]);
+
+  // Focus management for accessibility
+  const handleFocus = useCallback(() => {
+    if (!disabled && !loading) {
+      triggerHaptic('light');
+      triggerSound('hover');
+    }
+  }, [disabled, loading, triggerHaptic, triggerSound]);
 
   // Get variant styles
   const getVariantStyles = () => {
@@ -229,7 +300,7 @@ export function PremiumButton({
       {/* Particle Effect */}
       {showParticles && (
         <div className="absolute inset-0 pointer-events-none">
-          {[...Array(6)].map((_, i) => (
+          {Array.from({ length: 6 }, (_, i) => (
             <motion.div
               key={i}
               className="absolute w-2 h-2 bg-white rounded-full"
@@ -260,14 +331,13 @@ export function PremiumButton({
         type={type}
         disabled={disabled || loading}
         onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        onFocus={handleFocus}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        onMouseEnter={() => {
-          triggerHaptic('light');
-          triggerSound('hover');
-        }}
-        onMouseDown={() => setIsPressed(true)}
-        onMouseUp={() => setIsPressed(false)}
+        onMouseEnter={handleMouseEnter}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
         style={{
           x: magneticEffect ? springX : 0,
           y: magneticEffect ? springY : 0,
@@ -280,12 +350,29 @@ export function PremiumButton({
         className={`
           relative inline-flex items-center justify-center
           font-semibold transition-all duration-200
-          transform-gpu outline-none focus:outline-none
+          transform-gpu outline-none
+          focus-visible:outline-2 focus-visible:outline-purple-500 
+          focus-visible:outline-offset-2 focus-visible:ring-2
+          focus-visible:ring-purple-500 focus-visible:ring-opacity-50
           ${disabled ? 'pointer-events-none' : ''}
           ${className}
         `}
-        whileHover={!disabled ? hoverVariants.glow : {}}
-        whileTap={!disabled ? tapVariants.press : {}}
+        // WCAG 2.1 AA Accessibility Attributes
+        aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
+        aria-pressed={ariaPressed}
+        aria-expanded={ariaExpanded}
+        aria-haspopup={ariaHasPopup}
+        aria-controls={ariaControls}
+        aria-live={ariaLive}
+        aria-atomic={ariaAtomic}
+        aria-relevant={ariaRelevant}
+        aria-disabled={disabled || loading}
+        role={role ?? 'button'}
+        tabIndex={tabIndex ?? (disabled ? -1 : 0)}
+        data-testid={testId}
+        whileHover={!disabled ? hoverVariants.glow : undefined}
+        whileTap={!disabled ? tapVariants.press : undefined}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: disabled ? 0.5 : 1, scale: 1 }}
         transition={transitions.spring}
@@ -334,11 +421,12 @@ export function PremiumButton({
           }}
           transition={transitions.micro}
         >
-          {icon && iconPosition === 'left' && (
+          {icon != null && iconPosition === 'left' && (
             <motion.span
               className="flex-shrink-0"
               whileHover={{ rotate: 10 }}
               transition={transitions.micro}
+              aria-hidden="true"
             >
               {icon}
             </motion.span>
@@ -346,16 +434,24 @@ export function PremiumButton({
           
           <span>{children}</span>
           
-          {icon && iconPosition === 'right' && (
+          {icon != null && iconPosition === 'right' && (
             <motion.span
               className="flex-shrink-0"
               whileHover={{ rotate: -10 }}
               transition={transitions.micro}
+              aria-hidden="true"
             >
               {icon}
             </motion.span>
           )}
         </motion.div>
+
+        {/* Screen reader only loading text */}
+        {loading && (
+          <span className="sr-only" aria-live="polite">
+            Loading, please wait...
+          </span>
+        )}
 
         {/* Ripple effect */}
         <motion.div
@@ -380,7 +476,7 @@ export function PremiumButton({
 
       {/* Holographic animation styles */}
       {variant === 'holographic' && (
-        <style jsx>{`
+        <style>{`
           @keyframes holographic {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
