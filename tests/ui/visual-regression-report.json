@@ -1,0 +1,46 @@
+{
+  "timestamp": "2025-10-05T21:57:56.498Z",
+  "summary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "new": 0,
+    "successRate": 0
+  },
+  "details": [
+    {
+      "name": "admin-header",
+      "description": "Admin panel header",
+      "status": "ERROR",
+      "error": "Element not found: h1"
+    },
+    {
+      "name": "admin-sidebar",
+      "description": "Navigation sidebar",
+      "status": "ERROR",
+      "error": "Element not found: nav"
+    },
+    {
+      "name": "stats-cards",
+      "description": "Statistics cards",
+      "status": "ERROR",
+      "error": "Element not found: [class*=\"grid\"]:first-child"
+    },
+    {
+      "name": "system-health",
+      "description": "System health section",
+      "status": "ERROR",
+      "error": "Element not found: [class*=\"gradient\"]"
+    },
+    {
+      "name": "quick-actions",
+      "description": "Quick action buttons",
+      "status": "ERROR",
+      "error": "Element not found: button"
+    }
+  ],
+  "recommendations": [
+    "Consider implementing automated visual testing in CI/CD pipeline",
+    "Regular baseline updates recommended for design system evolution"
+  ]
+}

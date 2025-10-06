@@ -1,35 +1,33 @@
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
   Dimensions,
-  Haptics,
-  StatusBar,
   InteractionManager,
+  StatusBar,
+  Text,
+  View
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  withSequence,
-  withDelay,
   runOnJS,
-  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { 
-  EliteContainer, 
-  ElitePageHeader, 
-  EliteButton 
+
+import {
+  EliteButton,
+  EliteContainer
 } from '../../components/EliteComponents';
-import { Spacing, AnimationConfigs } from '../../styles/GlobalStyles';
 import { useTheme } from '../../contexts/ThemeContext';
+import { AnimationConfigs, Spacing } from '../../styles/GlobalStyles';
 
 const { width, height } = Dimensions.get('window');
 
@@ -50,7 +48,8 @@ const SPRING_CONFIG = {
 
 const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
   // Theme context
-  const { colors, styles } = useTheme();
+  const { colors, styles, isDark } = useTheme();
+  const localStyles = createLocalStyles(colors);
   
   // Animation values
   const logoScale = useSharedValue(0);
@@ -175,7 +174,7 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
         <Animated.View style={[localStyles.eliteLogoContainer, logoAnimatedStyle]}>
           <BlurView intensity={30} style={localStyles.eliteLogoBlur}>
             <LinearGradient
-              colors={[colors.success, colors.success + 'DD']}
+              colors={[colors.success, `${colors.success  }DD`]}
               style={localStyles.eliteLogoGradient}
             >
               <Text style={localStyles.eliteLogo}>🐾</Text>
@@ -240,7 +239,7 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
 
             <View style={styles.eliteFeature}>
               <LinearGradient
-                colors={[colors.warning, colors.warning + 'DD']}
+                colors={[colors.warning, `${colors.warning  }DD`]}
                 style={styles.eliteFeatureIconContainer}
               >
                 <Ionicons name="shield-checkmark" size={24} color={colors.white} />
@@ -285,7 +284,7 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
           size="large"
           icon="rocket"
           onPress={handleGetStarted}
-          gradient={[colors.success, colors.success + 'DD']}
+          gradient={[colors.success, `${colors.success  }DD`]}
           style={styles.eliteGetStartedButton}
         />
         
@@ -297,7 +296,7 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
   );
 };
 
-const localStyles = {
+const createLocalStyles = (colors: any) => ({
   // === ELITE WELCOME STYLES ===
   eliteContent: {
     flex: 1,
@@ -346,7 +345,7 @@ const localStyles = {
   eliteTitleAccent: {
     width: 60,
     height: 4,
-    backgroundColor: Colors.success,
+    backgroundColor: colors.success,
     borderRadius: 2,
     alignSelf: 'center' as const,
     marginTop: Spacing.md,
@@ -363,9 +362,9 @@ const localStyles = {
     borderRadius: 20,
     padding: Spacing['2xl'],
     overflow: 'hidden' as const,
-    backgroundColor: Colors.glassWhiteLight,
+    backgroundColor: colors.glassWhiteLight,
     borderWidth: 1,
-    borderColor: Colors.glassWhiteDark,
+    borderColor: colors.glassWhiteDark,
   },
   eliteFeature: {
     flexDirection: 'row' as const,
@@ -386,12 +385,12 @@ const localStyles = {
   eliteFeatureTitle: {
     fontSize: 18,
     fontWeight: '700' as const,
-    color: Colors.gray800,
+    color: colors.gray800,
     marginBottom: Spacing.xs,
   },
   eliteFeatureDescription: {
     fontSize: 14,
-    color: Colors.gray600,
+    color: colors.gray600,
     lineHeight: 20,
   },
   
@@ -403,9 +402,9 @@ const localStyles = {
     borderRadius: 16,
     padding: Spacing.xl,
     overflow: 'hidden' as const,
-    backgroundColor: Colors.glassWhiteLight,
+    backgroundColor: colors.glassWhiteLight,
     borderWidth: 1,
-    borderColor: Colors.glassWhiteDark,
+    borderColor: colors.glassWhiteDark,
   },
   eliteTipsHeader: {
     flexDirection: 'row' as const,
@@ -415,7 +414,7 @@ const localStyles = {
   eliteTipsTitle: {
     fontSize: 16,
     fontWeight: '700' as const,
-    color: Colors.gray800,
+    color: colors.gray800,
     marginLeft: Spacing.sm,
   },
   eliteTipsList: {
@@ -428,7 +427,7 @@ const localStyles = {
   },
   eliteTipText: {
     fontSize: 14,
-    color: Colors.gray600,
+    color: colors.gray600,
     marginLeft: Spacing.md,
     flex: 1,
   },
@@ -443,10 +442,10 @@ const localStyles = {
   },
   eliteFooterText: {
     fontSize: 12,
-    color: Colors.gray500,
+    color: colors.gray500,
     textAlign: 'center' as const,
     fontWeight: '500' as const,
   },
-};
+});
 
 export default WelcomeScreen;

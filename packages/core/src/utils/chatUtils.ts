@@ -1,4 +1,4 @@
-import { Match, User } from '../types';
+import type { Match, User } from '../types';
 
 /**
  * Determines the other user in a match (not the current user)
@@ -30,7 +30,7 @@ export const getTypingUsers = (
   otherUser: User
 ): string[] => {
   return Object.keys(isTyping)
-    .filter(userId => isTyping[userId] && userId !== currentUserId)
+    .filter(userId => isTyping[userId] === true && userId !== currentUserId)
     .map(userId => {
       if (userId === otherUser._id) {
         return otherUser.firstName;

@@ -1,7 +1,6 @@
-import React from 'react';
-import { useTextField } from '@react-aria/textfield';
 import { useFocusRing } from '@react-aria/focus';
 import { mergeProps } from '@react-aria/utils';
+import React from 'react';
 
 export interface TextareaProps {
   /**
@@ -99,10 +98,10 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     } = props;
 
     const ref = React.useRef<HTMLTextAreaElement>(null);
-    const { focusProps, isFocused } = useFocusRing();
+    const { focusProps } = useFocusRing();
 
     // Merge the refs
-    React.useImperativeHandle(forwardedRef, () => ref.current!);
+    React.useImperativeHandle(forwardedRef, () => ref.current as HTMLTextAreaElement);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       onChange?.(e.target.value);
@@ -141,7 +140,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...mergeProps(focusProps, otherProps)}
           ref={ref}
           value={value}
-          onChange={handleChange}
+          onChange={React.useCallback(handleChange, [onChange])}
           placeholder={placeholder}
           rows={rows}
           maxLength={maxLength}
@@ -157,7 +156,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             ${className}
           `}
         />
-        {showCharCount && maxLength && (
+        {showCharCount && Boolean(maxLength) && (
           <div className="absolute bottom-2 right-2 text-xs text-gray-500">
             {value.length}/{maxLength}
           </div>

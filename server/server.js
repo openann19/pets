@@ -288,16 +288,58 @@ app.use('/api/health', healthRoutes); // Also available under /api prefix
 // Caching middleware (for public routes)
 const { cacheMiddleware, invalidateOnMutation } = require('./src/middleware/caching');
 
-// API Routes
+// Public API Routes (no authentication required)
+app.use('/api/premium', premiumRoutes); // Premium routes with mixed auth requirements
+
+// Protected API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', authenticateToken, userRoutes);
 app.use('/api/pets', invalidateOnMutation('/api/pets'), petRoutes);
 app.use('/api/matches', authenticateToken, matchRoutes);
 app.use('/api/chat', authenticateToken, chatRoutes);
 app.use('/api/ai', authenticateToken, aiRoutes);
-app.use('/api/premium', authenticateToken, premiumRoutes);
 app.use('/api/breeds', cacheMiddleware(600), breedRoutes); // Cache breeds for 10 minutes
 app.use('/api/admin', authenticateToken, adminRoutes); // Admin endpoints (add admin-only middleware in production)
+
+// General upload route for chat images
+const multer = require('multer');
+const { uploadToCloudinary } = require('./src/services/cloudinaryService');
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
+
+app.post('/api/upload', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No image file uploaded' });
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer, 'chat-images');
+    
+    res.json({ 
+      success: true, 
+      message: 'Image uploaded successfully',
+      data: { 
+        url: result.secure_url,
+        publicId: result.public_id
+      }
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ success: false, message: 'Failed to upload image' });
+  }
+});
 
 // Error reporting routes
 app.use('/api/errors', require('./src/routes/errorRoutes'));
@@ -383,4 +425,15 @@ const startServer = async () => {
     .listen(PORT, () => {
       logger.info(`🌟 PawfectMatch Premium Server running on port ${PORT}`);
       logger.info(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`
+      logger.info(`🚀 Server ready to accept connections`);
+    })
+    .on('error', (err) => {
+      logger.error('Server failed to start:', err);
+      process.exit(1);
+    });
+  };
+  
+  startServer().catch(err => {
+    logger.error('Failed to start server:', err);
+    process.exit(1);
+  });

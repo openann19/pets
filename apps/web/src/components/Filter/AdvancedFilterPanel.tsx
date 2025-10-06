@@ -119,8 +119,8 @@ export default function AdvancedFilterPanel({
     setLocalFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const toggleArrayFilter = <K extends keyof FilterState>(key: K, value: any) => {
-    const currentArray = Array.isArray(localFilters[key]) ? localFilters[key] as any[] : [];
+  const toggleArrayFilter = <K extends keyof FilterState>(key: K, value: string) => {
+    const currentArray = Array.isArray(localFilters[key]) ? localFilters[key] as string[] : [];
     const newArray = currentArray.includes(value)
       ? currentArray.filter(item => item !== value)
       : [...currentArray, value];
@@ -147,7 +147,7 @@ export default function AdvancedFilterPanel({
       case 'characteristics':
         return filters.sizes.length + filters.ageRange[0] !== defaultFilters.ageRange[0] || filters.ageRange[1] !== defaultFilters.ageRange[1] ? 1 : 0;
       case 'preferences':
-        return filters.energyLevels.length + filters.temperatures.length + filters.familyFriendly.length;
+        return filters.energyLevels.length + filters.temperaments.length + filters.familyFriendly.length;
       case 'advanced':
         return filters.trainability.length + filters.groomingNeeds.length + filters.exerciseNeeds.length;
       default:

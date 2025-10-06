@@ -142,6 +142,7 @@ export default function RegisterPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
+          data-testid="register-form"
         >
           <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-2xl space-y-5 border border-white/20">
             <AnimatePresence>

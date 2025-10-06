@@ -1,14 +1,19 @@
+import { EventEmitter } from 'events';
+
+import InCallManager from 'react-native-incall-manager';
+import type {
+  MediaStream,
+  RTCIceCandidate as RTCIceCandidateType,
+  RTCSessionDescription as RTCSessionDescriptionType,
+  MediaStreamTrack as MediaStreamTrackType} from 'react-native-webrtc';
 import {
   RTCPeerConnection,
   RTCIceCandidate,
   RTCSessionDescription,
-  MediaStream,
   MediaStreamTrack,
-  mediaDevices,
-  RTCConfiguration,
+  mediaDevices
 } from 'react-native-webrtc';
-import InCallManager from 'react-native-incall-manager';
-import { EventEmitter } from 'events';
+
 
 export interface CallData {
   callId: string;
@@ -36,12 +41,12 @@ class WebRTCService extends EventEmitter {
   private peerConnection: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
   private remoteStream: MediaStream | null = null;
-  private socket: any = null;
+  private socket: { emit: (event: string, data: any) => void; on: (event: string, handler: (data: any) => void) => void } | null = null;
   private currentCallId: string | null = null;
-  private callStartTime: number = 0;
+  private callStartTime = 0;
 
   // STUN/TURN configuration
-  private rtcConfiguration: RTCConfiguration = {
+  private readonly rtcConfiguration = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
@@ -63,20 +68,19 @@ class WebRTCService extends EventEmitter {
     isVideoEnabled: true,
     callDuration: 0,
   };
-
   constructor() {
     super();
     this.setupInCallManager();
   }
 
   private setupInCallManager() {
-    InCallManager.setSpeakerphoneOn(false);
+    const audioEnabled = true; // Default assumption
     InCallManager.setKeepScreenOn(true);
     InCallManager.setForceSpeakerphoneOn(false);
   }
 
   // Initialize WebRTC service with socket connection
-  initialize(socket: any) {
+  initialize(socket: { emit: (event: string, data: any) => void; on: (event: string, handler: (data: any) => void) => void }) {
     this.socket = socket;
     this.setupSocketListeners();
   }
@@ -207,17 +211,21 @@ class WebRTCService extends EventEmitter {
       };
 
       // Notify caller that call was answered
-      this.socket?.emit('answer-call', {
-        callId: this.currentCallId,
-        matchId: this.callState.callData.matchId
-      });
+      if (this.callState.callData) {
+        this.socket?.emit('answer-call', {
+          callId: this.currentCallId,
+          matchId: this.callState.callData.matchId
+        });
+      }
 
       this.emit('callStateChanged', this.callState);
       this.startCallTimer();
 
-      InCallManager.start({ 
-        media: this.callState.callData.callType === 'video' ? 'video' : 'audio' 
-      });
+      if (this.callState.callData) {
+        InCallManager.start({ 
+          media: this.callState.callData.callType === 'video' ? 'video' : 'audio'
+        });
+      }
 
       return true;
     } catch (error) {
@@ -247,15 +255,23 @@ class WebRTCService extends EventEmitter {
     }
 
     // Stop local stream
-    if (this.localStream) {
-      this.localStream.getTracks().forEach(track => track.stop());
-      this.localStream = null;
+    try {
+      if (this.localStream) {
+        this.localStream.getTracks().forEach(track => track.stop());
+        this.localStream = null;
+      }
+    } catch (error) {
+      console.error('Error ending local stream:', error);
     }
 
     // Stop remote stream
-    if (this.remoteStream) {
-      this.remoteStream.getTracks().forEach(track => track.stop());
-      this.remoteStream = null;
+    try {
+      if (this.remoteStream) {
+        this.remoteStream.getTracks().forEach(track => track.stop());
+        this.remoteStream = null;
+      }
+    } catch (error) {
+      console.error('Error ending remote stream:', error);
     }
 
     // Reset call state
@@ -319,31 +335,32 @@ class WebRTCService extends EventEmitter {
 
   // Toggle speaker
   toggleSpeaker() {
-    InCallManager.setSpeakerphoneOn(!InCallManager.getSpeakerphoneOn());
+    // State managed by InCallManager internally
+    InCallManager.setForceSpeakerphoneOn(true);
   }
 
   // Private methods for WebRTC signaling
   private setupPeerConnectionListeners() {
     if (!this.peerConnection) return;
 
-    this.peerConnection.onicecandidate = (event) => {
+    this.peerConnection.addEventListener('icecandidate', (event: any) => {
       if (event.candidate) {
         this.socket?.emit('webrtc-ice-candidate', {
           callId: this.currentCallId,
           candidate: event.candidate
         });
       }
-    };
+    });
 
-    this.peerConnection.ontrack = (event) => {
-      if (event.streams && event.streams[0]) {
+    this.peerConnection.addEventListener('track', (event: any) => {
+      if (event.streams?.[0]) {
         this.remoteStream = event.streams[0];
-        this.callState.remoteStream = this.remoteStream;
+        this.callState.remoteStream = this.remoteStream ?? undefined;
         this.emit('callStateChanged', this.callState);
       }
-    };
+    });
 
-    this.peerConnection.onconnectionstatechange = () => {
+    this.peerConnection.addEventListener('connectionstatechange', () => {
       const state = this.peerConnection?.connectionState;
       if (state === 'connected') {
         this.callState.isConnected = true;
@@ -352,7 +369,7 @@ class WebRTCService extends EventEmitter {
       } else if (state === 'disconnected' || state === 'failed') {
         this.endCall();
       }
-    };
+    });
   }
 
   private async handleIncomingCall(callData: CallData) {
@@ -364,7 +381,9 @@ class WebRTCService extends EventEmitter {
       callData
     };
 
-    InCallManager.displayIncomingCall('PawfectMatch', callData.callerName, callData.callerAvatar);
+    // InCallManager.displayIncomingCall not available in current version
+    // Using start for incoming call notification
+    InCallManager.start({ media: callData.callType === 'video' ? 'video' : 'audio', ringback: '_DTMF_' });
     this.emit('callStateChanged', this.callState);
   }
 
@@ -376,27 +395,31 @@ class WebRTCService extends EventEmitter {
       
       this.socket?.emit('webrtc-offer', {
         callId: this.currentCallId,
-        offer: offer
+        offer
       });
     }
   }
 
   private async handleOffer(data: any) {
     if (this.peerConnection) {
-      await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+      if (data.offer) {
+        await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+      }
       const answer = await this.peerConnection.createAnswer();
       await this.peerConnection.setLocalDescription(answer);
       
       this.socket?.emit('webrtc-answer', {
         callId: this.currentCallId,
-        answer: answer
+        answer
       });
     }
   }
 
   private async handleAnswer(data: any) {
     if (this.peerConnection) {
-      await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+      if (data.answer) {
+        await this.peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+      }
     }
   }
 

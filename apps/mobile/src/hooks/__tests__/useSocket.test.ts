@@ -1,11 +1,14 @@
-import { renderHook, act } from '@testing-library/react-hooks';
-import { useSocket, useSocketWithStatus, useSocketEmit } from '../useSocket';
 import { useAuthStore } from '@pawfectmatch/core';
+import { act, renderHook } from '@testing-library/react-hooks';
 import { io } from 'socket.io-client';
+
+import { useSocket, useSocketEmit, useSocketWithStatus } from '../useSocket';
 
 // Mock dependencies
 jest.mock('socket.io-client');
-jest.mock('@pawfectmatch/core');
+jest.mock('@pawfectmatch/core', () => ({
+  useAuthStore: jest.fn(),
+}));
 
 const mockSocket = {
   on: jest.fn(),

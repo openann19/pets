@@ -32,7 +32,7 @@ interface Match {
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 class ApiService {
-  private async request<T>(
+  async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
@@ -159,7 +159,7 @@ export const matchesAPI = {
 
 export const userAPI = {
   getProfile: (userId: string) => api.getUserProfile(userId),
-  updateProfile: (data: any) => api.updateProfile(data),
+  updateProfile: (data: any) => api.updateUserProfile(data),
 };
 
 // ✅ NEW: Adoption API module  
@@ -186,7 +186,7 @@ export const adoptionAPI = {
 
 // ✅ NEW: AR Trails API module
 export const arAPI = {
-  getTrails: async (location: { latitude: number; longitude: number }, radius: number = 5) => {
+  getTrails: async (location: { latitude: number; longitude: number }, radius = 5) => {
     return await api.request(`/ar/trails?lat=${location.latitude}&lng=${location.longitude}&radius=${radius}`, {
       method: 'GET',
     });

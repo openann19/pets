@@ -1,7 +1,8 @@
 import { renderHook, act } from '@testing-library/react';
+
 import { useAuthStore } from '../useAuthStore';
-import { useUIStore } from '../useUIStore';
 import { useMatchStore } from '../useMatchStore';
+import { useUIStore } from '../useUIStore';
 
 // Mock localStorage for auth store persistence
 const localStorageMock = {

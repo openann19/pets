@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import createIntlMiddleware from 'next-intl/middleware';
-import { locales } from './src/i18n';
+// import createIntlMiddleware from 'next-intl/middleware';
+// import { locales } from './src/i18n';
 
 // Create the intl middleware
-const intlMiddleware = createIntlMiddleware({
-  locales,
-  defaultLocale: 'en',
-  localePrefix: 'always'
-});
+// const intlMiddleware = createIntlMiddleware({
+//   locales,
+//   defaultLocale: 'en',
+//   localePrefix: 'always'
+// });
 
 // Define protected routes (without locale prefix)
 const protectedRoutes = [
@@ -28,49 +28,31 @@ const publicOnlyRoutes = ['/login', '/register'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // First, handle internationalization
-  const intlResponse = intlMiddleware(request);
-  
-  // If intl middleware returns a response (redirect), use it
-  if (intlResponse) {
-    return intlResponse;
-  }
-  
-  // Extract locale from pathname for auth checks
-  const pathnameIsMissingLocale = locales.every(
-    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
-  );
-  
-  // If no locale in pathname, let intl middleware handle it
-  if (pathnameIsMissingLocale) {
-    return intlMiddleware(request);
-  }
-  
-  // Get the path without locale prefix for auth checks
-  const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '') || '/';
+  // Skip internationalization for now
+  // const intlResponse = intlMiddleware(request);
+  // if (intlResponse) {
+  //   return intlResponse;
+  // }
   
   // Get the token from cookies (we'll set this when user logs in)
   const token = request.cookies.get('accessToken')?.value || request.cookies.get('auth-token')?.value;
   
   // Check if the route is protected
-  const isProtectedRoute = protectedRoutes.some(route => pathWithoutLocale.startsWith(route));
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
   
   // Check if the route is public-only
-  const isPublicOnlyRoute = publicOnlyRoutes.some(route => pathWithoutLocale.startsWith(route));
-  
-  // Get current locale from pathname
-  const locale = pathname.split('/')[1];
+  const isPublicOnlyRoute = publicOnlyRoutes.some(route => pathname.startsWith(route));
   
   // If trying to access protected route without token, redirect to login
   if (isProtectedRoute && !token) {
-    const loginUrl = new URL(`/${locale}/login`, request.url);
-    loginUrl.searchParams.set('from', pathWithoutLocale);
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(loginUrl);
   }
   
   // If logged in and trying to access public-only routes, redirect to dashboard
   if (isPublicOnlyRoute && token) {
-    return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
   
   // Create response with security headers

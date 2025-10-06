@@ -1,12 +1,15 @@
+import { Ionicons } from '@expo/vector-icons';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as Haptics from 'expo-haptics';
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  ScrollView,
   TouchableOpacity,
   RefreshControl,
   Alert,
   Modal,
-  Haptics,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -14,8 +17,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
 import { 
   EliteContainer, 
   EliteScrollContainer, 
@@ -25,8 +27,8 @@ import {
   EliteLoading,
   EliteEmptyState 
 } from '../../components/EliteComponents';
-import { GlobalStyles, Colors, Spacing } from '../../styles/GlobalStyles';
 import { adoptionAPI } from '../../services/api';
+import { GlobalStyles, Colors, Spacing, Shadows } from '../../styles/GlobalStyles';
 
 type AdoptionStackParamList = {
   AdoptionManager: undefined;
@@ -191,7 +193,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
               <Text style={styles.petBreed}>{pet.breed} • {pet.age} years old</Text>
             </View>
             <TouchableOpacity
-              style={[styles.statusBadge, { backgroundColor: getStatusColor(pet.status) + '20' }]}
+              style={[styles.statusBadge, { backgroundColor: `${getStatusColor(pet.status)  }20` }]}
               onPress={() => {
                 setSelectedPet(pet);
                 setShowStatusModal(true);
@@ -244,7 +246,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
       {petListings.map((pet) => (
         <EliteCard key={pet.id} gradient blur style={GlobalStyles.mb4}>
           <View style={styles.eliteListingHeader}>
-            <View style={GlobalStyles.flex1}>
+            <View style={{ flex: 1 }}>
               <Text style={GlobalStyles.heading3}>{pet.name}</Text>
               <Text style={GlobalStyles.body}>
                 {pet.breed} • {pet.age} years old
@@ -253,7 +255,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
             <TouchableOpacity
               style={[
                 styles.eliteStatusBadge,
-                { backgroundColor: getStatusColor(pet.status) + '20' }
+                { backgroundColor: `${getStatusColor(pet.status)  }20` }
               ]}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -289,7 +291,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
               size="small"
               icon="eye"
               onPress={() => navigation.navigate('PetDetails', { petId: pet.id })}
-              style={GlobalStyles.flex1}
+              style={{ flex: 1 }}
             />
             <View style={GlobalStyles.mx2} />
             <EliteButton
@@ -298,7 +300,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
               size="small"
               icon="document-text"
               onPress={() => navigation.navigate('ApplicationReview', { applicationId: pet.id })}
-              style={GlobalStyles.flex1}
+              style={{ flex: 1 }}
             />
           </View>
         </EliteCard>
@@ -311,13 +313,13 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
       {applications.map((app) => (
         <EliteCard key={app.id} gradient blur style={GlobalStyles.mb4}>
           <View style={styles.eliteApplicationHeader}>
-            <View style={GlobalStyles.flex1}>
+            <View style={{ flex: 1 }}>
               <Text style={GlobalStyles.heading3}>{app.applicantName}</Text>
               <Text style={GlobalStyles.body}>Applying for: {app.petName}</Text>
             </View>
             <View style={[
               styles.eliteStatusBadge,
-              { backgroundColor: getStatusColor(app.status) + '20' }
+              { backgroundColor: `${getStatusColor(app.status)  }20` }
             ]}>
               <Text style={[styles.eliteStatusText, { color: getStatusColor(app.status) }]}>
                 {getStatusIcon(app.status)} {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
@@ -352,7 +354,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
                 size="small"
                 icon="close"
                 onPress={() => handleApplicationAction(app.id, 'reject')}
-                style={[GlobalStyles.flex1, { borderColor: Colors.error }]}
+                style={[{ flex: 1 }, { borderColor: Colors.error }]}
               />
               <View style={GlobalStyles.mx2} />
               <EliteButton
@@ -361,7 +363,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
                 size="small"
                 icon="checkmark"
                 onPress={() => handleApplicationAction(app.id, 'approve')}
-                style={GlobalStyles.flex1}
+                style={{ flex: 1 }}
                 gradient={[Colors.success, '#10b981']}
               />
             </View>
@@ -516,6 +518,100 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
 };
 
 const styles = {
+  // === BASIC STYLES ===
+  tabContent: {
+    flex: 1,
+    padding: Spacing.lg,
+  },
+  listingCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.gray200,
+    ...Shadows.sm,
+  },
+  listingHeader: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'flex-start' as const,
+    marginBottom: Spacing.md,
+  },
+  petInfo: {
+    flex: 1,
+  },
+  petName: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: Colors.gray900,
+    marginBottom: 4,
+  },
+  petBreed: {
+    fontSize: 14,
+    color: Colors.gray600,
+  },
+  statusBadge: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.gray300,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+  },
+  listingStats: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-around' as const,
+    paddingVertical: Spacing.md,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: Colors.gray200,
+    marginVertical: Spacing.md,
+  },
+  stat: {
+    alignItems: 'center' as const,
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: Colors.primary,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: Colors.gray600,
+    textAlign: 'center' as const,
+  },
+  listingActions: {
+    flexDirection: 'row' as const,
+    gap: Spacing.md,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.gray300,
+    backgroundColor: Colors.white,
+    alignItems: 'center' as const,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: Colors.gray700,
+  },
+  primaryButton: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  primaryButtonText: {
+    color: Colors.white,
+  },
+
   // === ELITE TAB SYSTEM ===
   tabContainer: {
     flexDirection: 'row' as const,

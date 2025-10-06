@@ -1,0 +1,68 @@
+---
+trigger: always_on
+description: Core project architecture and common pitfalls to avoid
+globs:
+---
+
+# PawfectMatch Project Architecture
+
+## Project Structure
+- **Monorepo**: Uses pnpm workspaces and TurboRepo
+- **Frontend**: Next.js 15 in `apps/web/`
+- **Backend**: Express.js in `server/`
+- **Database**: MongoDB (must use IPv4: `127.0.0.1:27017`)
+
+## Critical Configuration
+
+### Environment Variables
+- **Frontend** (`apps/web/.env.local`):
+  - `NEXT_PUBLIC_API_URL=http://localhost:5001` (NOT 5000!)
+- **Backend** (`server/.env`):
+  - `PORT=5001` (default port)
+  - `MONGODB_URI=mongodb://127.0.0.1:27017/pawfectmatch` (IPv4, NOT localhost!)
+  - `CLIENT_URL=http://localhost:3000`
+
+### Port Configuration
+- Frontend: `3000`
+- Backend: `5001` (NOT 5000)
+- MongoDB: `27017`
+
+**CRITICAL**: The backend runs on port **5001** by default. Always check `server/.env` for the actual port.
+
+## Common Issues and Solutions
+
+### 1. MongoDB Connection Issues
+**Problem**: `ECONNREFUSED ::1:27017`
+**Solution**: Always use IPv4 (`127.0.0.1`) instead of `localhost` in MongoDB connection strings
+```
+❌ mongodb://localhost:27017/pawfectmatch
+✅ mongodb://127.0.0.1:27017/pawfectmatch
+```
+
+### 2. Multiple Backend Processes
+**Problem**: Port conflicts, memory leaks
+**Solution**: Kill all processes before starting:
+```bash
+pkill -9 -f "node.*server"; pkill -9 -f "nodemon"
+sleep 3
+npm start
+```
+
+### 3. API Port Mismatch
+**Problem**: Frontend calling wrong backend port
+**Solution**: Always verify `.env.local` matches backend port (5001)
+
+### 4. Infinite Refresh Loops
+**Problem**: Hooks causing re-render cycles
+**Solution**: Disable problematic hooks (like WebSocket) until fully implemented
+
+## Service Dependencies
+1. MongoDB must be running first: `mongod --config /opt/homebrew/etc/mongod.conf --fork`
+2. Backend starts second: `cd server && npm start`
+3. Frontend starts last: `cd apps/web && pnpm dev`
+
+## File References
+- Backend server: [server.js](mdc:server/server.js)
+- Frontend API client: [api-client.ts](mdc:apps/web/src/lib/api-client.ts)
+- API service: [api.ts](mdc:apps/web/src/services/api.ts)
+- Auth store: [auth-store.ts](mdc:apps/web/src/lib/auth-store.ts)

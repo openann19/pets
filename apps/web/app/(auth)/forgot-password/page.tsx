@@ -36,13 +36,14 @@ export default function ForgotPasswordPage() {
     try {
       const response = await apiClient.forgotPassword(data.email);
       
-      if (response.success) {
+      if (response?.success) {
         setIsSuccess(true);
       } else {
-        setError(response.error || 'Failed to send reset email');
+        setError(response?.error || 'Failed to send reset email');
       }
-    } catch (err: any) {
-      setError('Failed to send reset email. Please try again.');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send reset email. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -21,67 +21,49 @@ import PremiumButton from '../UI/PremiumButton';
 import PremiumLayout from '../Layout/PremiumLayout';
 import { petsAPI } from '../../services/api';
 import { useAuthStore } from '../../lib/auth-store';
+import { Pet, FilterState, SwipeParams, MatchData, ApiResponse } from '../../types';
 
-interface Pet {
-  _id: string;
-  name: string;
-  breed: string;
-  age: number;
-  size: string;
-  species: string;
-  gender: string;
-  photos: Array<{ url: string; isPrimary?: boolean }>;
-  description?: string;
-  personalityTags?: string[];
-  location?: {
-    coordinates: [number, number];
-    address?: { city?: string; state?: string };
-  };
-  owner?: {
-    firstName: string;
-    lastName: string;
-    avatar?: string;
-    premium?: { isActive: boolean };
-  };
-  featured?: { isFeatured: boolean };
-  isVerified?: boolean;
-  healthInfo?: {
-    vaccinated: boolean;
-    spayedNeutered: boolean;
-  };
-  analytics?: {
-    views: number;
-    likes: number;
-    matches: number;
-  };
-}
 
 export default function SwipePageWithFilters() {
-  const { user, isPremium } = useAuthStore();
+  const { user } = useAuthStore();
   const [pets, setPets] = useState<Pet[]>([]);
   const [currentPetIndex, setCurrentPetIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
   const [isPassing, setIsPassing] = useState(false);
-  const [lastMatch, setLastMatch] = useState<any>(null);
+  const [lastMatch, setLastMatch] = useState<MatchData | null>(null);
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   
   // Filter states
   const [filtersApplied, setFiltersApplied] = useState(false);
-  const [activeFilters, setActiveFilters] = useState({
-    species: [] as string[],
-    breeds: [] as string[],
+  const [activeFilters, setActiveFilters] = useState<FilterState>({
+    species: [],
+    breeds: [],
     ages: { min: 0, max: 20 },
-    sizes: [] as string[],
-    gender: [] as string[],
-    temperament: [] as string[],
-    energyLevels: [] as string[],
-    apartmentFriendly: null as boolean | null,
-    familyFriendly: [] as string[],
+    sizes: [],
+    genders: [],
+    colors: [],
+    temperaments: [],
+    energyLevels: [],
+    trainability: [],
+    familyFriendly: [],
+    petFriendly: [],
+    strangerFriendly: [],
+    apartmentFriendly: null,
+    houseSafe: null,
+    yardRequired: null,
+    groomingNeeds: [],
+    exerciseNeeds: [],
+    barkiness: [],
+    healthStatus: [],
+    vaccinationStatus: [],
+    availability: [],
     locationRadius: 25,
     sortBy: 'relevance',
+    sortDirection: 'desc',
+    resultLimit: 20,
     premiumFeatures: {
       trending: false,
       verified: false,
@@ -96,7 +78,7 @@ export default function SwipePageWithFilters() {
     setError(null);
     
     try {
-      const params: any = {
+      const params: SwipeParams = {
         limit: 20,
         page: 1
       };
@@ -114,11 +96,11 @@ export default function SwipePageWithFilters() {
       if (activeFilters.sizes.length > 0) {
         params.sizes = activeFilters.sizes.join(',');
       }
-      if (activeFilters.gender.length > 0) {
-        params.gender = activeFilters.gender.join(',');
+      if (activeFilters.genders.length > 0) {
+        params.gender = activeFilters.genders.join(',');
       }
-      if (activeFilters.temperament.length > 0) {
-        params.temperament = activeFilters.temperament.join(',');
+      if (activeFilters.temperaments.length > 0) {
+        params.temperament = activeFilters.temperaments.join(',');
       }
       if (activeFilters.energyLevels.length > 0) {
         params.energyLevel = activeFilters.energyLevels.join(',');
@@ -141,7 +123,7 @@ export default function SwipePageWithFilters() {
         params.verifiedOnly = 'true';
       }
 
-      const response = await petsAPI.getSwipeablePets(params);
+      const response = await petsAPI.getSwipeablePets(params) as ApiResponse<{ pets: Pet[] }>;
       
       if (response.success && response.data?.pets) {
         const fetchedPets = response.data.pets as Pet[];
@@ -154,9 +136,10 @@ export default function SwipePageWithFilters() {
       } else {
         setError('Unable to load pets. Please try again.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load pets:', err);
-      setError(err.message || 'Network error. Please check your connection.');
+      const errorMessage = err instanceof Error ? err.message : 'Network error. Please check your connection.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -167,16 +150,23 @@ export default function SwipePageWithFilters() {
   }, [loadPets]);
 
   const handleSwipe = async (action: 'like' | 'pass' | 'superlike') => {
-    const currentPet = Pets[currentPetIndex];
+    const currentPet = pets[currentPetIndex];
     if (!currentPet) return;
 
     const loadingState = action === 'pass' ? setIsPassing : setIsLiking;
     loadingState(true);
 
     try {
-      const response = await petsAPI.swipePet(currentPet._id, action);
+      let response: ApiResponse<MatchData> | undefined;
+      if (action === 'like') {
+        response = await petsAPI.likePet(currentPet._id) as ApiResponse<MatchData>;
+      } else if (action === 'pass') {
+        response = await petsAPI.passPet(currentPet._id) as ApiResponse<MatchData>;
+      } else if (action === 'superlike') {
+        response = await petsAPI.superLikePet(currentPet._id) as ApiResponse<MatchData>;
+      }
       
-      if (response.data?.isMatch) {
+      if (response?.data?.isMatch) {
         setLastMatch(response.data);
         setShowMatchModal(true);
       }
@@ -196,7 +186,7 @@ export default function SwipePageWithFilters() {
     }
   };
 
-  const applyFilters = (newFilters: any) => {
+  const applyFilters = (newFilters: FilterState) => {
     setActiveFilters(newFilters);
     setFiltersApplied(Object.values(newFilters).some(value => 
       Array.isArray(value) ? value.length > 0 : 
@@ -246,7 +236,7 @@ export default function SwipePageWithFilters() {
               
               {/* Right Section */}
               <div className="flex items-center gap-4">
-                {isPremium && (
+                {false && (
                   <span className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold rounded-full">
                     <SparklesIcon className="w-3.5 h-3.5" />
                     ULTRA-PREMIUM
@@ -421,7 +411,7 @@ export default function SwipePageWithFilters() {
             </motion.button>
 
             {/* Super Like Button (Premium) */}
-            {isPremium && (
+            {false && (
               <motion.button
                 onClick={() => handleSwipe('superlike')}
                 disabled={isLoading}
@@ -470,12 +460,13 @@ export default function SwipePageWithFilters() {
             setShowMatchModal(false);
             setLastMatch(null);
           }}
-          matchId={lastMatch.matchId || lastMatch._id}
+          matchId={lastMatch.matchId || (lastMatch as MatchData & { _id?: string })._id || ''}
           currentUserPet={lastMatch.pets?.[0]}
           matchedPet={lastMatch.pets?.[1]}
           matchedUser={lastMatch.users?.[1]}
         />
       )}
+      </div>
     </PremiumLayout>
   );
 }

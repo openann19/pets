@@ -75,9 +75,10 @@ export default function LoginPage() {
       setTimeout(() => {
         router.push('/dashboard');
       }, 500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Login error:', err);
-      console.error('Error message:', err?.message);
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      console.error('Error message:', errorMessage);
       console.error('Error details:', err);
       // Error will be displayed from the useAuth hook's error state
     }
@@ -133,7 +134,7 @@ export default function LoginPage() {
             transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
             <PremiumCard variant="glass" className="p-10 space-y-8 shadow-2xl border-2 border-white/30">
-              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)} data-testid="login-form">
             <AnimatePresence>
               {error && (
                   <motion.div 

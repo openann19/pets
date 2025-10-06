@@ -26,5 +26,5 @@ export interface SuggestionEvent {
   matchId: string;
   senderId: string;
   suggestionType: 'schedule_playdate' | 'share_photo' | 'share_location';
-  payload: Record<string, any>; // e.g. { location:'Central Park', time:'Tomorrow 17:00' }
+  payload: Record<string, unknown>; // e.g. { location:'Central Park', time:'Tomorrow 17:00' }
 }

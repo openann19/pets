@@ -3,6 +3,20 @@
  * Production-ready with full type safety, error handling, and real-time features
  */
 
+import { 
+  ApiResponse, 
+  User, 
+  Pet, 
+  UserRegistrationData, 
+  PetCreationData, 
+  SwipeParams, 
+  UserPreferences, 
+  MessageAttachment, 
+  BioGenerationData, 
+  CompatibilityOptions, 
+  BehaviorAnalysisData 
+} from '../types';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 // Dev-time sanity check for port configuration
@@ -17,18 +31,18 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
 
 // Logger utility
 const logger = {
-  info: (...args: any[]) => console.log('[INFO]', ...args),
-  error: (...args: any[]) => console.error('[ERROR]', ...args),
-  warn: (...args: any[]) => console.warn('[WARN]', ...args),
+  info: (...args: unknown[]) => console.log('[INFO]', ...args),
+  error: (...args: unknown[]) => console.error('[ERROR]', ...args),
+  warn: (...args: unknown[]) => console.warn('[WARN]', ...args),
 };
 
 interface RequestOptions extends RequestInit {
-  params?: Record<string, any>;
+  params?: Record<string, unknown>;
 }
 class ApiService {
   private token: string | null = null;
   private refreshToken: string | null = null;
-  private cache: Map<string, { data: any; timestamp: number; ttl: number }> = new Map();
+  private cache: Map<string, { data: unknown; timestamp: number; ttl: number }> = new Map();
   private retryAttempts = 3;
   private retryDelay = 1000;
 
@@ -50,11 +64,11 @@ class ApiService {
     }, 60000); // Cleanup every minute
   }
 
-  private getCacheKey(endpoint: string, options: any): string {
+  private getCacheKey(endpoint: string, options: Record<string, unknown>): string {
     return `${endpoint}_${JSON.stringify(options)}`;
   }
 
-  private setCache(key: string, data: any, ttl: number = 300000) { // 5 minutes default
+  private setCache(key: string, data: unknown, ttl: number = 300000) { // 5 minutes default
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
@@ -62,7 +76,7 @@ class ApiService {
     });
   }
 
-  private getCache(key: string): any | null {
+  private getCache(key: string): unknown | null {
     const cached = this.cache.get(key);
     if (!cached) return null;
     
@@ -165,8 +179,16 @@ class ApiService {
     // Build query string from params
     let finalUrl = url;
     if (options.params) {
-      const queryString = new URLSearchParams(options.params).toString();
-      finalUrl = `${url}?${queryString}`;
+      const searchParams = new URLSearchParams();
+      Object.entries(options.params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value));
+        }
+      });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        finalUrl = `${url}?${queryString}`;
+      }
     }
 
     const config: RequestInit = {
@@ -199,7 +221,7 @@ class ApiService {
       }
 
       return await response.json();
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (retryCount < this.retryAttempts) {
         logger.warn(`Retrying request to ${endpoint} (attempt ${retryCount + 1})`);
         await new Promise(resolve => setTimeout(resolve, this.retryDelay * (retryCount + 1)));
@@ -213,7 +235,7 @@ class ApiService {
 
   // Auth endpoints
   async login(email: string, password: string) {
-    const response = await this.request<{ success: boolean; data: { accessToken: string; refreshToken: string; user: any } }>('/auth/login', {
+    const response = await this.request<{ success: boolean; data: { accessToken: string; refreshToken: string; user: User } }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -221,8 +243,8 @@ class ApiService {
     return response.data;
   }
 
-  async register(data: any) {
-    const response = await this.request<{ success: boolean; data: { accessToken: string; refreshToken: string; user: any } }>('/auth/register', {
+  async register(data: UserRegistrationData) {
+    const response = await this.request<{ success: boolean; data: { accessToken: string; refreshToken: string; user: User } }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -252,6 +274,13 @@ class ApiService {
     });
   }
 
+  async forgotPassword(email: string) {
+    return this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
   // Pet endpoints
   async getPets() {
     return this.request('/pets/my-pets');
@@ -261,14 +290,14 @@ class ApiService {
     return this.request(`/pets/${id}`);
   }
 
-  async createPet(data: any) {
+  async createPet(data: PetCreationData) {
     return this.request('/pets', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updatePet(id: string, data: any) {
+  async updatePet(id: string, data: Partial<Pet>) {
     return this.request(`/pets/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -286,11 +315,11 @@ class ApiService {
     return this.request('/pets/my-pets');
   }
 
-  async getSwipeQueue(params?: any) {
+  async getSwipeQueue(params?: SwipeParams) {
     return this.request('/pets/discover', { params });
   }
 
-  async updatePetProfile(data: any) {
+  async updatePetProfile(data: Partial<Pet>) {
     return this.request('/users/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -335,7 +364,7 @@ class ApiService {
     });
   }
 
-  async updateProfile(data: any) {
+  async updateProfile(data: Partial<User>) {
     return this.request('/users/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -347,7 +376,7 @@ class ApiService {
   }
 
   // Preferences endpoints
-  async syncPreferences(preferences: any) {
+  async syncPreferences(preferences: UserPreferences) {
     return this.request('/users/preferences', {
       method: 'PUT',
       body: JSON.stringify(preferences),
@@ -360,13 +389,13 @@ const apiInstance = new ApiService();
 
 // Pets API endpoints
 export const petsAPI = {
-  async getSwipeablePets(filters?: any) {
+  async getSwipeablePets(filters?: SwipeParams) {
     return apiInstance.request('/pets/discover', {
       params: filters,
     });
   },
   
-  async discoverPets(filters?: any) {
+  async discoverPets(filters?: SwipeParams) {
     return apiInstance.request('/pets/discover', {
       params: filters,
     });
@@ -429,7 +458,7 @@ export const chatAPI = {
     return apiInstance.request(`/matches/${conversationId}/messages`);
   },
   
-  async sendMessage(conversationId: string, message: string, attachments?: any[]) {
+  async sendMessage(conversationId: string, message: string, attachments?: MessageAttachment[]) {
     return apiInstance.request(`/matches/${conversationId}/messages`, {
       method: 'POST',
       body: JSON.stringify({ content: message, attachments }),
@@ -445,7 +474,7 @@ export const chatAPI = {
 
 // AI API endpoints
 export const aiAPI = {
-  async generateBio(data: any) {
+  async generateBio(data: BioGenerationData) {
     return apiInstance.request('/ai/generate-bio', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -463,7 +492,7 @@ export const aiAPI = {
     }).then(res => res.json());
   },
   
-  async analyzeCompatibility(petAId: string, petBId: string, options?: any) {
+  async analyzeCompatibility(petAId: string, petBId: string, options?: CompatibilityOptions) {
     return apiInstance.request('/ai/analyze-compatibility', {
       method: 'POST',
       body: JSON.stringify({ petAId, petBId, ...options }),
@@ -482,7 +511,7 @@ export const aiAPI = {
     });
   },
   
-  async analyzeBehavior(petId: string, data: any) {
+  async analyzeBehavior(petId: string, data: BehaviorAnalysisData) {
     return apiInstance.request('/ai/behavior-analysis', {
       method: 'POST',
       body: JSON.stringify({ petId, ...data }),
@@ -544,6 +573,8 @@ export const api = {
   login: apiInstance.login.bind(apiInstance),
   register: apiInstance.register.bind(apiInstance),
   logout: apiInstance.logout.bind(apiInstance),
+  forgotPassword: apiInstance.forgotPassword.bind(apiInstance),
+  resetPassword: apiInstance.resetPassword.bind(apiInstance),
   getPets: apiInstance.getPets.bind(apiInstance),
   getPet: apiInstance.getPet.bind(apiInstance),
   createPet: apiInstance.createPet.bind(apiInstance),

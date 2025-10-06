@@ -180,14 +180,14 @@ export const typography = {
 };
 
 // === UTILITY FUNCTIONS ===
-export const getResponsiveFontSize = (baseSize: number, scale: number = 1.2) => ({
+export const getResponsiveFontSize = (baseSize: number, scale = 1.2) => ({
   fontSize: baseSize,
   '@media (min-width: 768px)': {
     fontSize: baseSize * scale,
   },
 });
 
-export const truncateText = (lines: number = 1) => ({
+export const truncateText = (lines = 1) => ({
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   display: '-webkit-box',

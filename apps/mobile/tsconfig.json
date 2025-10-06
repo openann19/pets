@@ -9,12 +9,14 @@
     "noEmit": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,
     "target": "es2017",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
-    "types": ["jest", "@types/react-native", "@types/node"]
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "types": ["jest", "@types/node"]
   },
   "include": [
     "**/*.ts",

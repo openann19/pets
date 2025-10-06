@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@pawfectmatch/core';
+import { useEffect, useState, useRef } from 'react';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 
 interface UseSocketReturn {
   socket: Socket | null;

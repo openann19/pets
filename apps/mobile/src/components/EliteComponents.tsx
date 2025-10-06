@@ -1,19 +1,21 @@
-import React, { ReactNode } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import type { ReactNode } from 'react';
+import React from 'react';
+import type {
+  ViewStyle,
+  TouchableOpacityProps,
+  ScrollViewProps} from 'react-native';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  ViewStyle,
-  TextStyle,
-  TouchableOpacityProps,
-  ScrollViewProps,
-  Haptics,
+  TextStyle
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -21,9 +23,17 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { Spacing, BorderRadius, AnimationConfigs } from '../styles/GlobalStyles';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { useTheme } from '../contexts/ThemeContext';
+import { 
+  Colors, 
+  GlobalStyles, 
+  Shadows, 
+  Spacing, 
+  BorderRadius, 
+  AnimationConfigs 
+} from '../styles/GlobalStyles';
 
 // === ELITE CONTAINER COMPONENTS ===
 

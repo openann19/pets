@@ -5,11 +5,11 @@
 
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import React, { useState, useRef, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useRef, useState } from 'react';
 
 import { transitions } from '../../animations/premium-motion';
-import { COLORS, GRADIENTS, SHADOWS, RADIUS, BACKDROP } from '../../theme/design-system';
+import { BACKDROP, COLORS, GRADIENTS, RADIUS, SHADOWS } from '../../theme/design-system';
 
 interface PremiumInputProps {
   label: string;
@@ -20,7 +20,7 @@ interface PremiumInputProps {
   error?: string;
   disabled?: boolean;
   required?: boolean;
-  variant?: 'default' | 'glass' | 'gradient' | 'neon' | 'holographic';
+  variant?: 'default' | 'glass' | 'gradient' | 'neon';
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -187,7 +187,7 @@ export function PremiumInput({
         <motion.label
           className="absolute pointer-events-none select-none"
           style={{
-            left: Boolean(icon) ? '48px' : '16px',
+            left: icon ? '48px' : '16px',
             color: hasError 
               ? COLORS.error[500]
               : isFocused 
@@ -224,8 +224,8 @@ export function PremiumInput({
           style={{
             paddingTop: isFloating ? '20px' : '0',
             paddingBottom: isFloating ? '4px' : '0',
-            paddingLeft: Boolean(icon) ? '48px' : '16px',
-            paddingRight: Boolean(rightIcon) ? '48px' : '16px',
+            paddingLeft: icon ? '48px' : '16px',
+            paddingRight: rightIcon ? '48px' : '16px',
             fontSize: sizeStyles.fontSize,
             color: variant === 'gradient' || variant === 'neon' 
               ? COLORS.neutral[0] 
@@ -234,7 +234,7 @@ export function PremiumInput({
         />
 
         {/* Right Icon */}
-        {Boolean(rightIcon) && (
+        {rightIcon && (
           <motion.div
             className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
             animate={{
@@ -250,7 +250,7 @@ export function PremiumInput({
         )}
 
         {/* Character Count */}
-        {maxLength && value.length > 0 && (
+        {Boolean(maxLength) && value.length > 0 && (
           <motion.div
             className="absolute bottom-1 right-3 text-xs"
             initial={{ opacity: 0 }}
@@ -295,7 +295,7 @@ export function PremiumInput({
         )}
 
         {/* Glow effect */}
-        {glow && isFocused && !hasError && (
+        {glow === true && isFocused && !hasError && (
           <motion.div
             className="absolute inset-0 rounded-inherit pointer-events-none"
             initial={{ opacity: 0 }}
@@ -334,16 +334,6 @@ export function PremiumInput({
         )}
       </AnimatePresence>
 
-      {/* Holographic animation styles */}
-      {variant === 'holographic' && (
-        <style>{`
-          @keyframes holographic {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-        `}</style>
-      )}
     </motion.div>
   );
 }

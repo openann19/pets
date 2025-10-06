@@ -35,21 +35,21 @@ export default function TestPawsPage() {
             <div className="text-center">
               <h3 className="text-lg font-semibold mb-4 text-gray-700">Small</h3>
               <div className="bg-gray-50 rounded-xl p-6 min-h-[150px] flex items-center justify-center">
-                <LoadingSpinner size="small" color="#EC4899" />
+                <LoadingSpinner size="sm" color="#EC4899" />
               </div>
             </div>
 
             <div className="text-center">
               <h3 className="text-lg font-semibold mb-4 text-gray-700">Medium</h3>
               <div className="bg-gray-50 rounded-xl p-6 min-h-[150px] flex items-center justify-center">
-                <LoadingSpinner size="medium" color="#9333EA" />
+                <LoadingSpinner size="md" color="#9333EA" />
               </div>
             </div>
 
             <div className="text-center">
               <h3 className="text-lg font-semibold mb-4 text-gray-700">Large</h3>
               <div className="bg-gray-50 rounded-xl p-6 min-h-[150px] flex items-center justify-center">
-                <LoadingSpinner size="large" color="#3B82F6" />
+                <LoadingSpinner size="lg" color="#3B82F6" />
               </div>
             </div>
           </div>
@@ -62,28 +62,28 @@ export default function TestPawsPage() {
           <div className="grid grid-cols-4 gap-6">
             <div className="text-center">
               <div className="bg-pink-50 rounded-xl p-4 min-h-[120px] flex items-center justify-center">
-                <LoadingSpinner size="medium" color="#EC4899" />
+                <LoadingSpinner size="md" color="#EC4899" />
               </div>
               <p className="mt-2 text-sm text-gray-600">Pink</p>
             </div>
 
             <div className="text-center">
               <div className="bg-purple-50 rounded-xl p-4 min-h-[120px] flex items-center justify-center">
-                <LoadingSpinner size="medium" color="#9333EA" />
+                <LoadingSpinner size="md" color="#9333EA" />
               </div>
               <p className="mt-2 text-sm text-gray-600">Purple</p>
             </div>
 
             <div className="text-center">
               <div className="bg-blue-50 rounded-xl p-4 min-h-[120px] flex items-center justify-center">
-                <LoadingSpinner size="medium" color="#3B82F6" />
+                <LoadingSpinner size="md" color="#3B82F6" />
               </div>
               <p className="mt-2 text-sm text-gray-600">Blue</p>
             </div>
 
             <div className="text-center">
               <div className="bg-green-50 rounded-xl p-4 min-h-[120px] flex items-center justify-center">
-                <LoadingSpinner size="medium" color="#10B981" />
+                <LoadingSpinner size="md" color="#10B981" />
               </div>
               <p className="mt-2 text-sm text-gray-600">Green</p>
             </div>
@@ -126,15 +126,15 @@ export default function TestPawsPage() {
           
           <div className="grid grid-cols-3 gap-6">
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 min-h-[120px] flex items-center justify-center">
-              <LoadingSpinner size="medium" color="#ffffff" />
+              <LoadingSpinner size="md" color="#ffffff" />
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 min-h-[120px] flex items-center justify-center">
-              <LoadingSpinner size="medium" color="#FCD34D" />
+              <LoadingSpinner size="md" color="#FCD34D" />
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 min-h-[120px] flex items-center justify-center">
-              <LoadingSpinner size="medium" color="#34D399" />
+              <LoadingSpinner size="md" color="#34D399" />
             </div>
           </div>
         </div>

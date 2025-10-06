@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions, Platform } from 'react-native';
+
 import { Typography, Spacing, BorderRadius } from './GlobalStyles';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -55,6 +56,14 @@ export const ColorsDark = {
   gradientSuccess: ['#064e3b', '#047857', '#22c55e'],
   gradientWarning: ['#78350f', '#b45309', '#fbbf24'],
   gradientError: ['#7f1d1d', '#b91c1c', '#f87171'],
+  
+  // Additional UI Colors
+  background: '#111827',
+  surface: '#1f2937',
+  text: '#f9fafb',
+  textSecondary: '#9ca3af',
+  border: '#374151',
+  borderLight: '#273449',
 };
 
 // Dark Theme Shadows

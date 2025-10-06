@@ -613,6 +613,37 @@ router.post('/cache/clear', authenticateToken, async (req, res) => {
   }
 });
 
+// Chat suggestions endpoint
+router.get('/chat-suggestions/:matchId', authenticateToken, async (req, res) => {
+  try {
+    const { matchId } = req.params;
+    
+    // For now, return default suggestions since we don't have match data
+    const suggestions = [
+      "Hi! Your pet looks adorable! 😊",
+      "Would love to arrange a playdate! 🐾", 
+      "What's your pet's favorite activity?",
+      "Your pet seems so friendly! 🥰",
+      "Do you have any tips for pet care?",
+      "Would love to meet up sometime! 🎾"
+    ];
+    
+    res.json({
+      success: true,
+      suggestions: suggestions,
+      matchId: matchId
+    });
+    
+  } catch (error) {
+    console.error('Chat suggestions error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get chat suggestions',
+      error: error.message
+    });
+  }
+});
+
 // AI service health check
 router.get('/health', async (req, res) => {
   try {

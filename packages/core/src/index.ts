@@ -5,8 +5,8 @@
  */
 
 // Export all types
-export * from './types';
 export * from './schemas';
+export * from './types';
 
 // Export utility functions
 export * from './utils';
@@ -19,6 +19,7 @@ export * from './services';
 
 // Export API client and hooks
 export * from './api';
+export * from './hooks';
 
 // Version
 export const VERSION = '1.0.0';

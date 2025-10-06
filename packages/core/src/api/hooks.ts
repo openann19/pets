@@ -1,24 +1,26 @@
-import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
-import { apiClient, ApiClientResponse } from './client';
+import { useMutation, useQuery, useQueryClient, type UseMutationOptions, type UseMutationResult, type UseQueryOptions, type UseQueryResult } from '@tanstack/react-query';
+
+import type { Match, Message, Pet, User } from '../types';
+
+import { apiClient, type ApiClientResponse } from './client';
 
 // Query hook factory
 export function useApiQuery<TData = unknown, TError = Error>(
   queryKey: string[],
   endpoint: string,
   options?: Omit<UseQueryOptions<ApiClientResponse<TData>, TError>, 'queryKey' | 'queryFn'>
-) {
+): UseQueryResult<ApiClientResponse<TData>, TError> {
   return useQuery<ApiClientResponse<TData>, TError>({
     queryKey,
     queryFn: () => apiClient.get<TData>(endpoint),
     ...options,
   });
 }
-
 // Mutation hook factory
 export function useApiMutation<TData = unknown, TVariables = void, TError = Error>(
   endpoint: string,
   options?: Omit<UseMutationOptions<ApiClientResponse<TData>, TError, TVariables>, 'mutationFn'>
-) {
+): UseMutationResult<ApiClientResponse<TData>, TError, TVariables> {
   const queryClient = useQueryClient();
 
   return useMutation<ApiClientResponse<TData>, TError, TVariables>({
@@ -30,7 +32,7 @@ export function useApiMutation<TData = unknown, TVariables = void, TError = Erro
     },
     onSuccess: (data, variables, context, mutationContext) => {
       // Invalidate related queries
-      queryClient.invalidateQueries();
+      void queryClient.invalidateQueries();
 
       // Call the original onSuccess if provided
       options?.onSuccess?.(data, variables, context, mutationContext);
@@ -42,11 +44,11 @@ export function useApiMutation<TData = unknown, TVariables = void, TError = Erro
 // Specific hooks for common operations
 
 // Auth hooks
-export function useLogin() {
-  return useApiMutation('/auth/login', {
-    onSuccess: (data: any) => {
-      if (data.success && data.data) {
-        const { accessToken, refreshToken } = data.data;
+export function useLogin(): UseMutationResult<ApiClientResponse<{ accessToken: string; refreshToken: string }>, Error, { email: string; password: string }> {
+  return useApiMutation<{ accessToken: string; refreshToken: string }, { email: string; password: string }>('/auth/login', {
+    onSuccess: (data) => {
+      if (data.success && data.data != null) {
+        const { accessToken, refreshToken } = data.data as { accessToken: string; refreshToken: string };
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
       }
@@ -54,11 +56,11 @@ export function useLogin() {
   });
 }
 
-export function useRegister() {
-  return useApiMutation('/auth/register', {
-    onSuccess: (data: any) => {
-      if (data.success && data.data) {
-        const { accessToken, refreshToken } = data.data;
+export function useRegister(): UseMutationResult<ApiClientResponse<{ accessToken: string; refreshToken: string }>, Error, { email: string; password: string; firstName: string; lastName: string; dateOfBirth: string; phone?: string }> {
+  return useApiMutation<{ accessToken: string; refreshToken: string }, { email: string; password: string; firstName: string; lastName: string; dateOfBirth: string; phone?: string }>('/auth/register', {
+    onSuccess: (data) => {
+      if (data.success && data.data != null) {
+        const { accessToken, refreshToken } = data.data as { accessToken: string; refreshToken: string };
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
       }
@@ -66,7 +68,7 @@ export function useRegister() {
   });
 }
 
-export function useLogout() {
+export function useLogout(): UseMutationResult<ApiClientResponse<void>, Error, void> {
   const queryClient = useQueryClient();
 
   return useApiMutation('/auth/logout', {
@@ -79,103 +81,92 @@ export function useLogout() {
 }
 
 // User hooks
-export function useUser(userId?: string) {
-  return useApiQuery(
-    ['user', userId || 'me'],
-    userId ? `/users/${userId}` : '/users/me'
+export function useUser(userId?: string): UseQueryResult<ApiClientResponse<User>, Error> {
+  return useApiQuery<User>(
+    ['user', userId ?? 'me'],
+    userId != null && userId !== '' ? `/users/${userId}` : '/users/me'
   );
 }
 
-export function useUpdateUser() {
+export function useUpdateUser(): UseMutationResult<ApiClientResponse<User>, Error, Partial<User>> {
   const queryClient = useQueryClient();
 
   return useApiMutation('/users/me', {
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+      void queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
 }
 
 // Pet hooks
-export function usePets(filters?: Record<string, any>) {
-  const queryKey = ['pets', JSON.stringify(filters || {})];
-  const queryString = filters ? `?${new URLSearchParams(filters).toString()}` : '';
+export function usePets(filters?: Record<string, unknown>): UseQueryResult<ApiClientResponse<Pet[]>, Error> {
+  const queryKey = ['pets', JSON.stringify(filters ?? {})];
+  const queryString = filters != null ? `?${new URLSearchParams(filters as Record<string, string>).toString()}` : '';
 
-  return useApiQuery(queryKey, `/pets${queryString}`);
+  return useApiQuery<Pet[]>(queryKey, `/pets${queryString}`);
 }
 
-export function usePet(petId: string) {
-  return useApiQuery(['pet', petId], `/pets/${petId}`);
+export function usePet(petId: string): UseQueryResult<ApiClientResponse<Pet>, Error> {
+  return useApiQuery<Pet>(['pet', petId], `/pets/${petId}`);
 }
 
-export function useCreatePet() {
+export function useCreatePet(): UseMutationResult<ApiClientResponse<Pet>, Error, Partial<Pet>> {
   const queryClient = useQueryClient();
 
   return useApiMutation('/pets', {
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pets'] });
-    },
-  });
-}
-
-export function useUpdatePet() {
-  const queryClient = useQueryClient();
-
-  return useApiMutation('/pets', {
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pets'] });
-      queryClient.invalidateQueries({ queryKey: ['pet'] });
+      void queryClient.invalidateQueries({ queryKey: ['pets'] });
     },
   });
 }
 
 // Match hooks
-export function useMatches() {
-  return useApiQuery(['matches'], '/matches');
+export function useMatches(): UseQueryResult<ApiClientResponse<Match[]>, Error> {
+  return useApiQuery<Match[]>(['matches'], '/matches');
 }
 
-export function useMatch(matchId: string) {
-  return useApiQuery(['match', matchId], `/matches/${matchId}`);
+export function useMatch(matchId: string): UseQueryResult<ApiClientResponse<Match>, Error> {
+  return useApiQuery<Match>(['match', matchId], `/matches/${matchId}`);
 }
 
-export function useCreateMatch() {
+export function useCreateMatch(): UseMutationResult<ApiClientResponse<Match>, Error, { petId: string; targetPetId: string }> {
   const queryClient = useQueryClient();
 
   return useApiMutation('/matches', {
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['matches'] });
+      void queryClient.invalidateQueries({ queryKey: ['matches'] });
     },
   });
 }
 
 // Chat hooks
-export function useChat(matchId: string) {
-  return useApiQuery(['chat', matchId], `/chat/${matchId}`);
+export function useChat(matchId: string): UseQueryResult<ApiClientResponse<Message[]>, Error> {
+  return useApiQuery<Message[]>(['chat', matchId], `/chat/${matchId}`);
 }
 
-export function useSendMessage() {
+export function useSendMessage(): UseMutationResult<ApiClientResponse<Message>, Error, { matchId: string; content: string }> {
   const queryClient = useQueryClient();
 
   return useApiMutation('/chat', {
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chat'] });
+      void queryClient.invalidateQueries({ queryKey: ['chat'] });
     },
   });
 }
 
 // AI hooks
-export function useGenerateBio() {
+export function useGenerateBio(): UseMutationResult<ApiClientResponse<{ bio: string }>, Error, { petId: string; species: string; breed: string; age: number; personality?: string[] }> {
   return useApiMutation('/ai/generate-bio');
 }
 
-export function useAnalyzePhotos() {
+export function useAnalyzePhotos(): UseMutationResult<ApiClientResponse<{ analysis: string }>, Error, { urls: string[]; petType?: string }> {
   return useApiMutation('/ai/analyze-photos');
 }
 
-export function useCompatibilityAnalysis() {
+export function useCompatibilityAnalysis(): UseMutationResult<ApiClientResponse<{ compatibility: number; factors: string[] }>, Error, { pet1Id: string; pet2Id: string }> {
   return useApiMutation('/ai/compatibility');
 }
 
-export function useApplicationAssistance() {
+export function useApplicationAssistance(): UseMutationResult<ApiClientResponse<{ assistance: string }>, Error, { applicationId: string; question: string }> {
   return useApiMutation('/ai/assist-application');
 }

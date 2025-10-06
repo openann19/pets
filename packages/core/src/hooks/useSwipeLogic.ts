@@ -5,10 +5,11 @@
  * ✅ PRODUCTION READY - Real API Integration
  */
 
-import { useState, useCallback } from 'react';
-import { Pet, SwipeAction, SwipeResult } from '../types/swipe';
-import { useAuthStore } from '../stores/useAuthStore';
+import { useCallback, useState } from 'react';
+
 import { apiClient } from '../api/client';
+import { useAuthStore } from '../stores/useAuthStore';
+import type { Pet, SwipeAction, SwipeResult } from '../types/swipe';
 
 export interface UseSwipeLogicProps {
   onMatch?: (result: SwipeResult) => void;
@@ -32,7 +33,7 @@ export const useSwipeLogic = ({
     type,
     petId: pet._id,
     timestamp: new Date(),
-    userId: user?._id || '',
+    userId: user?._id ?? '',
   }), [user?._id]);
 
   const processSwipe = useCallback(async (
@@ -48,6 +49,7 @@ export const useSwipeLogic = ({
       // Send to analytics if enabled
       if (analyticsEnabled) {
         // Track swipe action
+        // eslint-disable-next-line no-console
         console.log('Swipe Analytics:', {
           action: action.type,
           petId: pet._id,
@@ -70,7 +72,7 @@ export const useSwipeLogic = ({
       }>(`/pets/${pet._id}/swipe`, { action: action.type });
 
       // Parse real match status from backend response
-      const isMatch = response.data?.isMatch || false;
+      const isMatch = response.data?.isMatch ?? false;
       const matchId = response.data?.match?._id;
 
       const result: SwipeResult = {
@@ -87,14 +89,14 @@ export const useSwipeLogic = ({
       }
 
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error processing swipe:', error);
       
       // Re-throw with user-friendly message
-      throw new Error(
-        error.message || 
-        'Failed to process swipe. Please check your connection and try again.'
-      );
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to process swipe. Please check your connection and try again.';
+      throw new Error(errorMessage);
     } finally {
       setIsProcessing(false);
     }

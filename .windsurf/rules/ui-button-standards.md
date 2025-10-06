@@ -1,0 +1,139 @@
+---
+trigger: model_decision
+description: UI styling standards for buttons and interactive elements
+globs: **/app/**/*.tsx,**/components/**/*.tsx
+---
+
+# UI Styling Standards
+
+## Button Visibility and Styling
+
+**CRITICAL**: All buttons must be clearly visible with proper contrast.
+
+### Primary Action Buttons
+
+✅ **Standard Pattern**:
+```tsx
+<PremiumButton
+  size="lg"
+  variant="primary"
+  glow
+  magneticEffect
+  className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 font-bold shadow-xl border-none justify-center"
+  icon={<Icon className="w-6 h-6" />}
+>
+  Button Text
+</PremiumButton>
+```
+
+**Key Requirements**:
+- Gradient background: `from-pink-500 to-purple-600`
+- Hover state: `hover:from-pink-400 hover:to-purple-500`
+- Font: `font-bold`
+- Shadow: `shadow-xl`
+- Icon size: `w-6 h-6`
+- Center content: `justify-center`
+- Add `glow` and `magneticEffect` props
+
+### Secondary/Outline Buttons
+
+```tsx
+<PremiumButton
+  variant="outline"
+  className="bg-white/20 border-2 border-white/50 hover:bg-white/30 hover:border-white font-semibold justify-center"
+  icon={<Icon className="w-5 h-5" />}
+>
+  Button Text
+</PremiumButton>
+```
+
+**Key Requirements**:
+- Background: `bg-white/20`
+- Border: `border-2 border-white/50`
+- Hover: `hover:bg-white/30 hover:border-white`
+- Font: `font-semibold`
+
+### Button Centering
+
+Always center buttons in their container:
+
+```tsx
+<div className="flex justify-center">
+  <PremiumButton className="w-full">
+    Centered Button
+  </PremiumButton>
+</div>
+```
+
+### Error Messages
+
+Error messages must be BOLD and VISIBLE:
+
+```tsx
+{error && (
+  <motion.div 
+    initial={{ opacity: 0, height: 0 }}
+    animate={{ opacity: 1, height: 'auto' }}
+    className="bg-red-500/30 border-2 border-red-500/60 text-red-100 p-4 rounded-xl backdrop-blur-md shadow-lg"
+  >
+    <ShieldCheckIcon className="h-6 w-6 flex-shrink-0" />
+    <div className="flex-1">
+      <p className="font-bold mb-1">Error Title</p>
+      <p className="text-xs text-red-200">{error.message}</p>
+    </div>
+  </motion.div>
+)}
+```
+
+**Key Requirements**:
+- Strong background: `bg-red-500/30`
+- Thick border: `border-2`
+- Bold text: `font-bold`
+- Large icon: `h-6 w-6`
+- Clear structure with title + message
+
+## Accessibility
+
+### Minimum Requirements
+- Text contrast: WCAG AA (4.5:1 for normal text)
+- Click target size: 44×44px minimum
+- Keyboard navigation: All buttons focusable
+- Screen reader: Proper ARIA labels
+
+### Color Contrast
+- Primary buttons: White text on pink/purple gradient ✅
+- Secondary buttons: White text on semi-transparent backgrounds ✅
+- Error messages: Light text on red backgrounds ✅
+
+## Common Mistakes to Avoid
+
+❌ **Low opacity backgrounds**:
+```tsx
+className="bg-white/10" // Too faint!
+```
+
+❌ **Small icons**:
+```tsx
+<Icon className="h-4 w-4" /> // Too small!
+```
+
+❌ **Weak borders**:
+```tsx
+className="border border-white/20" // Not visible enough!
+```
+
+❌ **No hover states**:
+```tsx
+className="bg-pink-500" // Add hover!
+```
+
+## Testing Checklist
+
+Before committing UI changes:
+- [ ] All buttons clearly visible on dark backgrounds
+- [ ] Hover states work and are noticeable
+- [ ] Icons are properly sized (5-6 units)
+- [ ] Text is bold for primary actions
+- [ ] Error messages are visible and persistent
+- [ ] Mobile responsive (test at 375px width)
+- [ ] Keyboard navigation works

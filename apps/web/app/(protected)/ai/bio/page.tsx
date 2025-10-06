@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
-import { BioGenerator } from '../../../../src/components/AI/BioGenerator';
+import { ArrowLeftIcon, BeakerIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
-import { ArrowLeftIcon, SparklesIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import { SPRING_CONFIG, PREMIUM_VARIANTS } from '../../../../src/constants/animations';
+
+import { BioGenerator } from '../../../../src/components/AI/BioGenerator';
+import PremiumCard from '../../../../src/components/UI/PremiumCard';
+import { PREMIUM_VARIANTS, SPRING_CONFIG } from '../../../../src/constants/animations';
 
 export default function AiBioPage() {
   return (
@@ -71,7 +72,7 @@ export default function AiBioPage() {
         <BioGenerator />
       </motion.div>
 
-      {/* Feature Cards */}
+      {/* Premium Feature Cards */}
       <div className="max-w-6xl mx-auto px-6 pb-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -79,29 +80,53 @@ export default function AiBioPage() {
           transition={{ delay: 0.3 }}
           className="grid md:grid-cols-3 gap-6"
         >
-          <div className="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg">
+          <PremiumCard
+            variant="glass"
+            hover
+            glow
+            tilt
+            entrance="fadeInUp"
+            delay={0.1}
+            className="text-center"
+          >
             <div className="text-4xl mb-3">🎯</div>
-            <h3 className="font-bold text-lg mb-2">Match Optimization</h3>
-            <p className="text-gray-600 text-sm">
+            <h3 className="font-bold text-lg mb-2 text-white">Match Optimization</h3>
+            <p className="text-white/80 text-sm">
               AI-generated bios increase match rates by up to 73% based on our analysis of successful profiles.
             </p>
-          </div>
+          </PremiumCard>
 
-          <div className="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg">
+          <PremiumCard
+            variant="gradient"
+            hover
+            glow
+            tilt
+            entrance="fadeInUp"
+            delay={0.2}
+            className="text-center"
+          >
             <div className="text-4xl mb-3">🧠</div>
-            <h3 className="font-bold text-lg mb-2">Smart Suggestions</h3>
-            <p className="text-gray-600 text-sm">
+            <h3 className="font-bold text-lg mb-2 text-white">Smart Suggestions</h3>
+            <p className="text-white/80 text-sm">
               Our AI learns from millions of pet profiles to suggest the perfect words for your furry friend.
             </p>
-          </div>
+          </PremiumCard>
 
-          <div className="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-lg">
+          <PremiumCard
+            variant="holographic"
+            hover
+            glow
+            tilt
+            entrance="fadeInUp"
+            delay={0.3}
+            className="text-center"
+          >
             <div className="text-4xl mb-3">📸</div>
-            <h3 className="font-bold text-lg mb-2">Photo Intelligence</h3>
-            <p className="text-gray-600 text-sm">
+            <h3 className="font-bold text-lg mb-2 text-white">Photo Intelligence</h3>
+            <p className="text-white/80 text-sm">
               Upload a photo and let AI analyze breed, age, and personality traits automatically.
             </p>
-          </div>
+          </PremiumCard>
         </motion.div>
       </div>
     </div>

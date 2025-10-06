@@ -1,11 +1,13 @@
 const createNextIntlPlugin = require('next-intl/plugin');
+const path = require('path');
 
 const withNextIntl = createNextIntlPlugin('./src/i18n.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: process.env.NODE_ENV === 'development',
   },
   eslint: {
     ignoreDuringBuilds: true,
@@ -15,9 +17,6 @@ const nextConfig = {
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
   transpilePackages: ['@pawfectmatch/core', '@pawfectmatch/ui'],
-  typescript: {
-    ignoreBuildErrors: process.env.NODE_ENV === 'development',
-  },
   
   experimental: {
     optimizeCss: true,

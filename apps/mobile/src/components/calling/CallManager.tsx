@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Alert, AppState, AppStateStatus } from 'react-native';
-import WebRTCService, { CallState, CallData } from '../../services/WebRTCService';
-import IncomingCallScreen from '../../screens/calling/IncomingCallScreen';
-import ActiveCallScreen from '../../screens/calling/ActiveCallScreen';
+import type { AppStateStatus } from 'react-native';
+import { Modal, Alert, AppState } from 'react-native';
+
 import { useSocket } from '../../hooks/useSocket';
+import ActiveCallScreen from '../../screens/calling/ActiveCallScreen';
+import IncomingCallScreen from '../../screens/calling/IncomingCallScreen';
+import type { CallState} from '../../services/WebRTCService';
+import WebRTCService, { CallData } from '../../services/WebRTCService';
 
 interface CallManagerProps {
   children: React.ReactNode;

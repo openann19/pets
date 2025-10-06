@@ -1,3 +1,4 @@
+import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import {
   View,
@@ -9,7 +10,6 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

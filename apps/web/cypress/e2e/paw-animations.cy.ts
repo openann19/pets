@@ -229,7 +229,7 @@ describe('Paw Animations - E2E Tests', () => {
       cy.visit('/test-paws');
       
       // Get initial memory (if available)
-      cy.window().then((win: any) => {
+      cy.window().then((win: Window) => {
         const initialMemory = win.performance?.memory?.usedJSHeapSize;
         
         // Navigate away and back multiple times
@@ -239,7 +239,7 @@ describe('Paw Animations - E2E Tests', () => {
         }
         
         // Memory should not grow unbounded
-        cy.window().then((finalWin: any) => {
+        cy.window().then((finalWin: Window) => {
           const finalMemory = finalWin.performance?.memory?.usedJSHeapSize;
           if (initialMemory && finalMemory) {
             // Allow some growth but not excessive

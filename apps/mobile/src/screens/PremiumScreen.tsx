@@ -3,24 +3,27 @@
  * Professional implementation with Stripe integration
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '@pawfectmatch/core';
+import * as Haptics from 'expo-haptics';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
   ActivityIndicator,
+  Alert,
+  Animated,
   Dimensions,
   Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 // Removed gradients for a more refined, solid-color design
-import * as Haptics from 'expo-haptics';
+
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuthStore } from '@pawfectmatch/core';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -252,7 +255,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
           <View style={styles.featuresGrid}>
             {premiumFeatures.map((feature, index) => (
               <View key={index} style={[styles.featureCard, { backgroundColor: colors.surface }]}>
-                <View style={[styles.featureIcon, { backgroundColor: feature.color + '20' }]}>
+                <View style={[styles.featureIcon, { backgroundColor: `${feature.color  }20` }]}>
                   <Ionicons name={feature.icon as any} size={24} color={feature.color} />
                 </View>
                 <Text style={[styles.featureTitle, { color: colors.white }]}> 
@@ -342,14 +345,14 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
 
         {/* Terms */}
         <View style={styles.termsSection}>
-          <Text style={[styles.termsText, { color: colors.textTertiary }]}>
+          <Text style={[styles.termsText, { color: colors.gray500 }]}>
             Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.
           </Text>
           <View style={styles.termsLinks}>
             <TouchableOpacity>
               <Text style={[styles.termsLink, { color: colors.primary }]}>Terms of Service</Text>
             </TouchableOpacity>
-            <Text style={[styles.termsSeparator, { color: colors.textTertiary }]}> • </Text>
+            <Text style={[styles.termsSeparator, { color: colors.gray500 }]}> • </Text>
             <TouchableOpacity>
               <Text style={[styles.termsLink, { color: colors.primary }]}>Privacy Policy</Text>
             </TouchableOpacity>

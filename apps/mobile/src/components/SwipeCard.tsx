@@ -12,6 +12,9 @@
  * - TypeScript strict mode
  */
 
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -24,9 +27,7 @@ import {
   Platform,
   AccessibilityInfo,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+
 import { useTheme } from '../contexts/ThemeContext';
 // Local types until core package is properly configured
 interface Pet {
@@ -49,7 +50,7 @@ interface SwipeCardProps {
   onSwipeUp: (pet: Pet) => void;
   isTopCard?: boolean;
   disabled?: boolean;
-  style?: any;
+  style?: Record<string, unknown>;
 }
 
 const DEFAULT_SWIPE_CONFIG = {
@@ -146,8 +147,8 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
       },
       onPanResponderGrant: () => {
         pan.setOffset({
-          x: pan.x._value,
-          y: pan.y._value,
+          x: (pan.x as any)._value,
+          y: (pan.y as any)._value,
         });
         pan.setValue({ x: 0, y: 0 });
         
@@ -460,7 +461,7 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
           {/* Tags */}
           <View style={styles.tagsContainer}>
             {pet.tags.slice(0, 3).map((tag, index) => (
-              <View key={index} style={[styles.tag, { backgroundColor: colors.primary + '20' }]}>
+              <View key={index} style={[styles.tag, { backgroundColor: `${colors.primary  }20` }]}>
                 <Text style={[styles.tagText, { color: colors.primary }]}>{tag}</Text>
               </View>
             ))}
@@ -474,7 +475,7 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
       </LinearGradient>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

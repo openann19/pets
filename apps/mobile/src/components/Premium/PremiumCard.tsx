@@ -4,18 +4,20 @@
  * Cross-platform consistency with web premium experience
  */
 
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef, useEffect } from 'react';
+import type {
+  ViewStyle} from 'react-native';
 import {
   View,
   StyleSheet,
   Animated,
   PanResponder,
   Dimensions,
-  ViewStyle,
+  TouchableOpacity,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -112,35 +114,45 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     
-    Animated.parallel([
+    const animations = [
       Animated.spring(animatedScale, {
         toValue: 0.98,
         useNativeDriver: true,
         tension: 300,
         friction: 10,
       }),
-      glow && Animated.timing(animatedGlow, {
+    ];
+    
+    if (glow) {
+      animations.push(Animated.timing(animatedGlow, {
         toValue: 1,
         duration: 150,
         useNativeDriver: false,
-      }),
-    ]).start();
+      }));
+    }
+    
+    Animated.parallel(animations).start();
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
+    const animations = [
       Animated.spring(animatedScale, {
         toValue: 1,
         useNativeDriver: true,
         tension: 300,
         friction: 8,
       }),
-      glow && Animated.timing(animatedGlow, {
+    ];
+    
+    if (glow) {
+      animations.push(Animated.timing(animatedGlow, {
         toValue: 0,
         duration: 200,
         useNativeDriver: false,
-      }),
-    ]).start();
+      }));
+    }
+    
+    Animated.parallel(animations).start();
   };
 
   const handlePress = () => {
@@ -151,6 +163,38 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
     }
     
     onPress?.();
+  };
+
+  // Get variant styles
+  const getVariantStyles = () => {
+    const variants = {
+      default: {
+        colors: ['#ffffff', '#f8fafc'],
+        shadowColor: '#000000',
+      },
+      glass: {
+        colors: ['transparent', 'transparent'],
+        shadowColor: '#000000',
+      },
+      elevated: {
+        colors: ['#ffffff', '#f8fafc'],
+        shadowColor: '#000000',
+      },
+      gradient: {
+        colors: ['#667eea', '#764ba2'],
+        shadowColor: '#667eea',
+      },
+      neon: {
+        colors: ['#1a1a1a', '#1a1a1a'],
+        shadowColor: '#ec4899',
+      },
+      holographic: {
+        colors: ['#ff6b6b', '#4ecdc4', '#45b7b8', '#96ceb4', '#ffeaa7'],
+        shadowColor: '#ff6b6b',
+      },
+    };
+    
+    return variants[variant] || variants.default;
   };
 
   // Entrance animation

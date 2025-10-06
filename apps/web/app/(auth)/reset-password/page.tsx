@@ -54,7 +54,7 @@ function ResetPasswordContent() {
     setError(null);
     
     try {
-      const response = await apiClient.resetPassword(token, data.password);
+      const response: any = await apiClient.resetPassword(token, data.password);
       
       if (response.success) {
         setIsSuccess(true);
@@ -65,8 +65,9 @@ function ResetPasswordContent() {
       } else {
         setError(response.error || 'Failed to reset password');
       }
-    } catch (err: any) {
-      setError('Failed to reset password. Please try again.');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reset password. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

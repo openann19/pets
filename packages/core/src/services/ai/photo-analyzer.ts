@@ -65,7 +65,7 @@ export class PhotoAnalyzerService {
    */
   async getBestProfilePhoto(photoUrls: string[], petType?: string): Promise<string> {
     const analyses = await this.analyzeMultiplePhotos(photoUrls, petType);
-    return analyses[0]?.url || photoUrls[0];
+    return analyses[0]?.url ?? photoUrls[0];
   }
 
   /**
@@ -83,7 +83,7 @@ export class PhotoAnalyzerService {
     prompt += '4. Suggestions for improvement\n';
     prompt += '5. Best use case (profile/gallery/background)\n\n';
     
-    if (petType) {
+    if (petType != null && petType !== '') {
       prompt += `The pet is a ${petType}.\n\n`;
     }
     
@@ -109,21 +109,31 @@ export class PhotoAnalyzerService {
   private parseAnalysisResponse(response: string): PhotoAnalysisResult {
     try {
       // Try to extract JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+      const jsonMatch = /\{[\s\S]*\}/.exec(response);
+      if (jsonMatch != null) {
+        const parsed = JSON.parse(jsonMatch[0]) as {
+          quality?: string;
+          score?: number;
+          suggestions?: string[];
+          lighting?: string;
+          framing?: string;
+          clarity?: string;
+          background?: string;
+          emotions?: string[];
+          bestFor?: string;
+        };
         return {
-          quality: parsed.quality || 'good',
-          score: parsed.score || 70,
-          suggestions: parsed.suggestions || [],
+          quality: this.validateQuality(parsed.quality) ?? 'good',
+          score: parsed.score ?? 70,
+          suggestions: parsed.suggestions ?? [],
           detectedFeatures: {
-            lighting: parsed.lighting || 'good',
-            framing: parsed.framing || 'good',
-            clarity: parsed.clarity || 'good',
-            background: parsed.background || 'clean',
+            lighting: this.validateQuality(parsed.lighting) ?? 'good',
+            framing: this.validateQuality(parsed.framing) ?? 'good',
+            clarity: this.validateQuality(parsed.clarity) ?? 'good',
+            background: this.validateBackground(parsed.background) ?? 'clean',
           },
-          emotions: parsed.emotions || [],
-          bestFor: parsed.bestFor || 'gallery',
+          emotions: parsed.emotions ?? [],
+          bestFor: this.validateBestFor(parsed.bestFor) ?? 'gallery',
         };
       }
     } catch (error) {
@@ -151,6 +161,33 @@ export class PhotoAnalyzerService {
       emotions: ['happy', 'friendly'],
       bestFor: 'gallery',
     };
+  }
+
+  /**
+   * Validate quality string against expected literals
+   */
+  private validateQuality(value?: string): 'excellent' | 'good' | 'fair' | 'poor' | undefined {
+    if (value == null || value === '') return undefined;
+    const validValues = ['excellent', 'good', 'fair', 'poor'] as const;
+    return validValues.includes(value as typeof validValues[number]) ? value as 'excellent' | 'good' | 'fair' | 'poor' : undefined;
+  }
+
+  /**
+   * Validate background string against expected literals
+   */
+  private validateBackground(value?: string): 'clean' | 'busy' | 'distracting' | undefined {
+    if (value == null || value === '') return undefined;
+    const validValues = ['clean', 'busy', 'distracting'] as const;
+    return validValues.includes(value as typeof validValues[number]) ? value as 'clean' | 'busy' | 'distracting' : undefined;
+  }
+
+  /**
+   * Validate bestFor string against expected literals
+   */
+  private validateBestFor(value?: string): 'profile' | 'gallery' | 'background' | undefined {
+    if (value == null || value === '') return undefined;
+    const validValues = ['profile', 'gallery', 'background'] as const;
+    return validValues.includes(value as typeof validValues[number]) ? value as 'profile' | 'gallery' | 'background' : undefined;
   }
 }
 

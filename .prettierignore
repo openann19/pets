@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test results
+test-results/
+playwright-report/
+
+# Temporary files
+*.tmp
+*.temp
+.tsbuildinfo
+
+# Package manager files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Documentation
+*.md
+!README.md
+
+# Config files
+*.config.js
+*.config.ts

@@ -123,7 +123,7 @@ export default function RegisterPage() {
             transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
             <PremiumCard variant="glass" className="p-10 space-y-6 shadow-2xl border-2 border-white/30">
-              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)} data-testid="register-form">
             <AnimatePresence>
               {authError && (
                 <motion.div 

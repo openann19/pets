@@ -1,9 +1,8 @@
-import React from 'react';
 import { useDialog } from '@react-aria/dialog';
-import { useOverlay, usePreventScroll, useModal } from '@react-aria/overlays';
-import { useOverlayTriggerState } from '@react-stately/overlays';
 import { FocusScope } from '@react-aria/focus';
+import { useModal, useOverlay, usePreventScroll } from '@react-aria/overlays';
 import { mergeProps } from '@react-aria/utils';
+import React from 'react';
 
 export interface DialogProps {
   /**
@@ -102,14 +101,14 @@ export const Dialog: React.FC<DialogProps> = ({
             ${className}
           `}
         >
-          {(title || description) && (
+          {((title != null && title !== '') ?? (description != null && description !== '')) && (
             <div className="px-6 py-4 border-b border-gray-200">
-              {title && (
+              {title != null && title !== '' && (
                 <h2 {...titleProps} className="text-lg font-semibold text-gray-900">
                   {title}
                 </h2>
               )}
-              {description && (
+              {description != null && description !== '' && (
                 <p className="mt-1 text-sm text-gray-600">
                   {description}
                 </p>

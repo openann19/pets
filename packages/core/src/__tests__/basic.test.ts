@@ -1,6 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React, { ReactNode } from 'react';
+// Unused imports removed - basic test doesn't need them
 
 // Simple test for basic functionality
 describe('PawfectMatch Core Tests', () => {

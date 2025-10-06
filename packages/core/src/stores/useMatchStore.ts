@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { Pet, Match, User } from '../types';
+
+import type { Match, Pet } from '../types';
 
 export interface MatchState {
   // Current pet being viewed in swipe
@@ -66,31 +67,26 @@ export const useMatchStore = create<MatchState>()(
     // Set the current pet being viewed
     setCurrentPet: (petId: string | null) => set((state) => {
       state.currentPet = petId;
-      return state;
     }),
 
     // Replace all swipe pets
     setSwipePets: (pets: Pet[]) => set((state) => {
       state.swipePets = pets;
-      return state;
     }),
 
     // Add more pets to swipe deck
     addSwipePets: (pets: Pet[]) => set((state) => {
       state.swipePets = [...state.swipePets, ...pets];
-      return state;
     }),
 
     // Set all matches
     setMatches: (matches: Match[]) => set((state) => {
       state.matches = matches;
-      return state;
     }),
 
     // Add a new match
     addMatch: (match: Match) => set((state) => {
       state.matches.unshift(match);
-      return state;
     }),
 
     // Update an existing match
@@ -99,25 +95,21 @@ export const useMatchStore = create<MatchState>()(
       if (index !== -1) {
         state.matches[index] = { ...state.matches[index], ...data };
       }
-      return state;
     }),
 
     // Remove a match
     removeMatch: (matchId: string) => set((state) => {
       state.matches = state.matches.filter(match => match._id !== matchId);
-      return state;
     }),
 
     // Set active match for chat
     setActiveMatchId: (matchId: string | null) => set((state) => {
       state.activeMatchId = matchId;
-      return state;
     }),
 
     // Update pagination info
     setPaginationInfo: (info: Partial<MatchState['paginationInfo']>) => set((state) => {
       state.paginationInfo = { ...state.paginationInfo, ...info };
-      return state;
     }),
 
     // Add to swipe history
@@ -129,7 +121,6 @@ export const useMatchStore = create<MatchState>()(
       } else if (action === 'superlike') {
         state.swipeHistory.superlikes.push(petId);
       }
-      return state;
     }),
 
     // Clear swipe history
@@ -139,7 +130,6 @@ export const useMatchStore = create<MatchState>()(
         passes: [],
         superlikes: [],
       };
-      return state;
     }),
   }))
 );

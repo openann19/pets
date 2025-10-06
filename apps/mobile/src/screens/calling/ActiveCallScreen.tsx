@@ -1,22 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  StatusBar,
   Animated,
+  Dimensions,
   PanResponder,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { RTCView } from 'react-native-webrtc';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import WebRTCService, { CallState } from '../../services/WebRTCService';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+import type { CallState } from '../../services/WebRTCService';
 
 interface ActiveCallScreenProps {
   callState: CallState;
@@ -35,6 +33,7 @@ export default function ActiveCallScreen({
   onSwitchCamera,
   onToggleSpeaker,
 }: ActiveCallScreenProps) {
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const [controlsVisible, setControlsVisible] = useState(true);
   const [localVideoPosition, setLocalVideoPosition] = useState({ x: 20, y: 100 });
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -43,13 +42,13 @@ export default function ActiveCallScreen({
   // Auto-hide controls after 5 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (controlsVisible && callState.callType === 'video') {
+      if (controlsVisible && callState.callData?.callType === 'video') {
         hideControls();
       }
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, [controlsVisible, callState.callType]);
+  }, [controlsVisible, callState.callData?.callType]);
 
   // Pan responder for draggable local video
   const panResponder = PanResponder.create({

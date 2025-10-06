@@ -1,17 +1,18 @@
 // Mobile Animations for PawfectMatch Premium
 // High-impact micro-interactions for React Native
 
+import * as Haptics from 'expo-haptics';
 import { 
   useSharedValue, 
   useAnimatedStyle, 
   withSpring, 
   withTiming, 
   withSequence,
+  withDelay,
   interpolate,
   Extrapolate,
   runOnJS
 } from 'react-native-reanimated';
-import { Haptics } from 'expo-haptics';
 
 // Animation configurations
 export const AnimationConfigs = {
@@ -191,7 +192,7 @@ export const useButtonMicro = () => {
 };
 
 // Card entrance animation
-export const useCardEntrance = (delay: number = 0) => {
+export const useCardEntrance = (delay = 0) => {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(30);
   const scale = useSharedValue(0.95);
@@ -207,9 +208,9 @@ export const useCardEntrance = (delay: number = 0) => {
   });
 
   const startEntrance = () => {
-    opacity.value = withTiming(1, { duration: 600, delay });
-    translateY.value = withTiming(0, { duration: 600, delay });
-    scale.value = withTiming(1, { duration: 600, delay });
+    opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
+    translateY.value = withDelay(delay, withTiming(0, { duration: 600 }));
+    scale.value = withDelay(delay, withTiming(1, { duration: 600 }));
   };
 
   return { animatedStyle, startEntrance };

@@ -1,0 +1,75 @@
+{
+  "timestamp": "2025-10-05T21:51:26.924Z",
+  "summary": {
+    "pageLoad": "PASSED",
+    "animations": "PASSED",
+    "interactions": "PASSED",
+    "accessibility": "PARTIAL",
+    "performance": "PARTIAL",
+    "responsiveness": "PARTIAL"
+  },
+  "details": {
+    "pageLoad": {
+      "loadTime": 101,
+      "serversRunning": {
+        "frontend": true,
+        "backend": true
+      },
+      "status": "PASSED"
+    },
+    "animations": {
+      "springConfigs": true,
+      "easingConfigs": true,
+      "premiumVariants": true,
+      "staggerConfig": true,
+      "animationPresets": true,
+      "status": "PASSED"
+    },
+    "interactions": {
+      "hoverEffects": true,
+      "tapEffects": true,
+      "clickHandlers": true,
+      "focusStates": true,
+      "animationVariants": true,
+      "motionComponents": true,
+      "status": "PASSED"
+    },
+    "accessibility": {
+      "ariaLabels": false,
+      "ariaDescribedBy": false,
+      "roleAttributes": false,
+      "tabIndex": false,
+      "keyboardNavigation": false,
+      "focusManagement": true,
+      "semanticHTML": true,
+      "status": "PARTIAL"
+    },
+    "performance": {
+      "reactMemo": true,
+      "lazyLoading": false,
+      "codeSplitting": false,
+      "optimization": false,
+      "caching": true,
+      "debouncing": false,
+      "status": "PARTIAL"
+    },
+    "responsiveness": {
+      "responsiveClasses": true,
+      "flexbox": true,
+      "grid": true,
+      "viewport": false,
+      "mobileFirst": false,
+      "breakpoints": false,
+      "status": "PARTIAL"
+    },
+    "errors": [],
+    "screenshots": []
+  },
+  "recommendations": [
+    "Improve accessibility features for WCAG compliance",
+    "Implement additional performance optimizations",
+    "Enhance responsive design features",
+    "Run full browser-based tests for complete validation",
+    "Implement automated testing in CI/CD pipeline"
+  ]
+}

@@ -1,6 +1,6 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 
-export interface ApiClientResponse<T = any> {
+export interface ApiClientResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -8,11 +8,11 @@ export interface ApiClientResponse<T = any> {
 }
 
 class ApiClient {
-  private client: AxiosInstance;
+  private readonly client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+      baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
@@ -27,86 +27,119 @@ class ApiClient {
     this.client.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('accessToken');
-        if (token) {
+        if (token != null && token !== '') {
           config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
-      (error) => {
-        return Promise.reject(error);
+      (error: Error) => {
+        return Promise.reject(error instanceof Error ? error : new Error('Request failed'));
       }
     );
 
     // Response interceptor for error handling
     this.client.interceptors.response.use(
       (response: AxiosResponse) => response,
-      (error) => {
-        if (error.response?.status === 401) {
+      (error: unknown) => {
+        if (error instanceof Error && 'response' in error && 
+            typeof (error as { response?: { status?: number } }).response?.status === 'number' &&
+            (error as { response: { status: number } }).response.status === 401) {
           // Handle token refresh or logout
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           window.location.href = '/login';
         }
-        return Promise.reject(error);
+        return Promise.reject(error instanceof Error ? error : new Error(String(error)));
       }
     );
   }
 
   // Generic request methods
-  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.get<ApiClientResponse<T>>(url, config);
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Request failed');
+    } catch (error: unknown) {
+      let errorMessage = 'Request failed';
+      if (error instanceof Error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        errorMessage = axiosError.response?.data?.message ?? error.message ?? 'Request failed';
+      }
+      throw new Error(errorMessage);
     }
   }
 
-  async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.post<ApiClientResponse<T>>(url, data, config);
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Request failed');
+    } catch (error: unknown) {
+      let errorMessage = 'Request failed';
+      if (error instanceof Error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        errorMessage = axiosError.response?.data?.message ?? error.message ?? 'Request failed';
+      }
+      throw new Error(errorMessage);
     }
   }
 
-  async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.put<ApiClientResponse<T>>(url, data, config);
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Request failed');
+    } catch (error: unknown) {
+      let errorMessage = 'Request failed';
+      if (error instanceof Error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        errorMessage = axiosError.response?.data?.message ?? error.message ?? 'Request failed';
+      }
+      throw new Error(errorMessage);
     }
   }
 
-  async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.patch<ApiClientResponse<T>>(url, data, config);
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Request failed');
+    } catch (error: unknown) {
+      let errorMessage = 'Request failed';
+      if (error instanceof Error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        errorMessage = axiosError.response?.data?.message ?? error.message ?? 'Request failed';
+      }
+      throw new Error(errorMessage);
     }
   }
 
-  async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.delete<ApiClientResponse<T>>(url, config);
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Request failed');
+    } catch (error: unknown) {
+      let errorMessage = 'Request failed';
+      if (error instanceof Error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        errorMessage = axiosError.response?.data?.message ?? error.message ?? 'Request failed';
+      }
+      throw new Error(errorMessage);
     }
   }
 
   // File upload helper
-  async uploadFile<T = any>(url: string, file: File, additionalData?: Record<string, any>): Promise<ApiClientResponse<T>> {
+  async uploadFile<T = unknown>(url: string, file: File, additionalData?: Record<string, unknown>): Promise<ApiClientResponse<T>> {
     try {
       const formData = new FormData();
       formData.append('file', file);
 
       if (additionalData) {
         Object.entries(additionalData).forEach(([key, value]) => {
-          formData.append(key, value);
+          if (value instanceof Blob) {
+            formData.append(key, value);
+          } else if (value != null) {
+            formData.append(key, String(value));
+          } else {
+            formData.append(key, '');
+          }
         });
       }
 
@@ -117,8 +150,9 @@ class ApiClient {
       });
 
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Upload failed');
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } }; message?: string };
+      throw new Error(axiosError.response?.data?.message ?? axiosError.message ?? 'Upload failed');
     }
   }
 }

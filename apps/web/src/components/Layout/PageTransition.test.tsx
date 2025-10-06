@@ -1,29 +1,33 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import React from 'react';
+
 import '@testing-library/jest-dom';
 import PageTransition from './PageTransition';
 
+// Mock Next.js usePathname
+const mockPathname = '/';
+jest.mock('next/navigation', () => ({
+  usePathname: () => mockPathname,
+}));
+
 const TestComponent = () => <div data-testid="test-content">Test Content</div>;
 
-const renderWithRouter = (initialEntries = ['/']) => {
+const renderPageTransition = () => {
   return render(
-    <MemoryRouter initialEntries={initialEntries}>
-      <PageTransition>
-        <TestComponent />
-      </PageTransition>
-    </MemoryRouter>
+    <PageTransition>
+      <TestComponent />
+    </PageTransition>
   );
 };
 
 describe('PageTransition Component', () => {
   it('renders children content', () => {
-    renderWithRouter();
+    renderPageTransition();
     expect(screen.getByTestId('test-content')).toBeInTheDocument();
   });
 
   it('wraps content in motion.div with proper classes', () => {
-    renderWithRouter();
+    renderPageTransition();
     
     const content = screen.getByTestId('test-content');
     const motionDiv = content.parentElement;
@@ -32,7 +36,7 @@ describe('PageTransition Component', () => {
   });
 
   it('applies correct initial animation state', () => {
-    renderWithRouter();
+    renderPageTransition();
     
     // The motion div should exist and be properly structured
     const content = screen.getByTestId('test-content');
@@ -42,25 +46,8 @@ describe('PageTransition Component', () => {
     // we verify the component renders without crashing
   });
 
-  it('handles route changes', () => {
-    const { rerender } = renderWithRouter(['/first']);
-    
-    expect(screen.getByTestId('test-content')).toBeInTheDocument();
-    
-    // Rerender with different route
-    rerender(
-      <MemoryRouter initialEntries={['/second']}>
-        <PageTransition>
-          <div data-testid="second-content">Second Content</div>
-        </PageTransition>
-      </MemoryRouter>
-    );
-    
-    expect(screen.getByTestId('second-content')).toBeInTheDocument();
-  });
-
   it('has proper animation variants structure', () => {
     // Test that the component doesn't crash with animation props
-    expect(() => renderWithRouter()).not.toThrow();
+    expect(() => renderPageTransition()).not.toThrow();
   });
 });

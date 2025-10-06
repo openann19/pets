@@ -1,3 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
@@ -13,10 +17,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
+
 import { useTheme } from '../contexts/ThemeContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -234,7 +235,7 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
               </View>
               <View style={[
                 styles.emotionBadge,
-                { backgroundColor: getEmotionColor(memory.metadata?.emotion) + '30' }
+                { backgroundColor: `${getEmotionColor(memory.metadata?.emotion)  }30` }
               ]}>
                 <Text style={styles.emotionEmoji}>
                   {getEmotionEmoji(memory.metadata?.emotion)}

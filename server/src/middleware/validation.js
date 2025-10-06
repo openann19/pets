@@ -20,4 +20,16 @@ const validate = (req, res, next) => {
   next();
 };
 
-module.exports = { validate };
+const validatePremiumRequest = (req, res, next) => {
+  // Basic premium request validation
+  if (!req.body.planId && !req.body.plan) {
+    return res.status(400).json({
+      success: false,
+      message: 'Plan ID or plan type is required'
+    });
+  }
+  
+  next();
+};
+
+module.exports = { validate, validatePremiumRequest };

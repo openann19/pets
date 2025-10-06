@@ -1,13 +1,16 @@
 'use client';
-import React, { useRef, useState, useCallback } from 'react';
+
 import { motion, useMotionValue, useSpring } from 'framer-motion';
+import React, { useCallback, useRef, useState } from 'react';
+
+
 import { SPRING_CONFIG } from '@/constants/animations';
 import { COLORS, SHADOWS } from '@/constants/design-tokens';
 
 interface PremiumButtonProps {
   children?: React.ReactNode;
   onClick?: () => void;
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'glass' | 'solid' | 'outline' | 'holographic' | 'neon';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'glass' | 'solid' | 'outline' | 'holographic' | 'neon' | 'gradient';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
@@ -20,6 +23,15 @@ interface PremiumButtonProps {
   magneticEffect?: boolean;
   fullWidth?: boolean;
   type?: 'button' | 'submit' | 'reset';
+  
+  // Accessibility props
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-pressed'?: boolean;
+  'aria-expanded'?: boolean;
+  'aria-haspopup'?: boolean | 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
+  role?: string;
+  tabIndex?: number;
 }
 
 /**
@@ -46,6 +58,13 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
   magneticEffect = false,
   fullWidth = false,
   type = 'button',
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
+  'aria-pressed': ariaPressed,
+  'aria-expanded': ariaExpanded,
+  'aria-haspopup': ariaHaspopup,
+  role,
+  tabIndex,
 }) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [isPressed, setIsPressed] = useState(false);
@@ -117,6 +136,12 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
       border: '1px solid rgba(59,130,246,0.4)',
       boxShadow: `0 0 20px rgba(59,130,246,0.25)`,
     },
+    gradient: {
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: '#ffffff',
+      border: 'none',
+      boxShadow: glow ? '0 0 30px rgba(102, 126, 234, 0.5)' : SHADOWS.lg,
+    },
   } as const;
 
   const sizeClasses = {
@@ -144,7 +169,10 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
     if (!sound || typeof window === 'undefined') return;
     
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+      
+      const audioContext = new AudioContextClass();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -159,8 +187,8 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
       
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.1);
-    } catch (error) {
-      console.debug('Audio feedback not available');
+    } catch {
+      // Audio feedback not available
     }
   }, [sound]);
 
@@ -192,6 +220,10 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
     }
   }, [magneticEffect, x, y]);
 
+  const handleMouseEnter = useCallback(() => {
+    triggerSound('hover');
+  }, [triggerSound]);
+
   const handleClick = () => {
     if (disabled || loading) return;
 
@@ -201,6 +233,13 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
     setTimeout(() => setIsPressed(false), 200);
 
     onClick?.();
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleClick();
+    }
   };
 
   const variantStyle = variantClasses[variant];
@@ -225,10 +264,19 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
           y: magneticEffect ? springY : 0,
         }}
         onClick={handleClick}
+        onKeyDown={handleKeyDown}
         disabled={disabled || loading}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        onMouseEnter={() => triggerSound('hover')}
+        onMouseEnter={useCallback(() => triggerSound('hover'), [triggerSound])}
+        aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
+        aria-pressed={ariaPressed}
+        aria-expanded={ariaExpanded}
+        aria-haspopup={ariaHaspopup}
+        aria-disabled={disabled || loading}
+        role={role}
+        tabIndex={tabIndex}
         
         // Enhanced hover animation
         whileHover={!disabled && !loading ? {

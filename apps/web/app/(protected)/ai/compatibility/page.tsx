@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { CompatibilityAnalyzer } from '../../../../src/components/AI/CompatibilityAnalyzer';
-import { motion } from 'framer-motion';
 import { ArrowLeftIcon, HeartIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+import { CompatibilityAnalyzer } from '../../../../src/components/AI/CompatibilityAnalyzer';
 
 export default function AiCompatibilityPage() {
   const searchParams = useSearchParams();

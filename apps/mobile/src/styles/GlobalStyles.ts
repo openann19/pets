@@ -54,6 +54,14 @@ export const Colors = {
   gradientSuccess: ['#ecfdf5', '#d1fae5', '#a7f3d0'],
   gradientWarning: ['#fffbeb', '#fef3c7', '#fde68a'],
   gradientError: ['#fef2f2', '#fecaca', '#fca5a5'],
+  
+  // Additional UI Colors
+  background: '#ffffff',
+  surface: '#f9fafb',
+  text: '#111827',
+  textSecondary: '#6b7280',
+  border: '#e5e7eb',
+  borderLight: '#f3f4f6',
 };
 
 export const Typography = {

@@ -1,299 +1,696 @@
-export interface User {
-  id: string;
-  email: string;
-  name: string;
+/**
+ * Comprehensive TypeScript Types for PawfectMatch
+ * Replaces all 'any' types with proper type definitions
+ */
+
+// ===== API Response Types =====
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+// ===== Pet Types =====
+export interface PetPhoto {
+  url: string;
+  isPrimary?: boolean;
+  caption?: string;
+  uploadedAt?: string;
+}
+
+export interface PetLocation {
+  coordinates: [number, number];
+  address?: {
+    city?: string;
+    state?: string;
+    country?: string;
+    zipCode?: string;
+  };
+}
+
+export interface PetOwner {
+  _id: string;
+  firstName: string;
+  lastName: string;
   avatar?: string;
-  bio?: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-    city: string;
-    state: string;
-    country: string;
+  premium?: {
+    isActive: boolean;
+    tier?: 'basic' | 'premium' | 'ultra';
+    expiresAt?: string;
   };
-  dateOfBirth?: string;
-  isPremium?: boolean;
-  premiumFeatures?: {
-    unlimitedLikes: boolean;
-    seeWhoLikesYou: boolean;
-    advancedFilters: boolean;
-    priorityMatching: boolean;
-    aiRecommendations: boolean;
-  };
-  preferences?: UserPreferences;
-  stats?: UserStats;
-  createdAt: string;
-  updatedAt: string;
+  isVerified?: boolean;
 }
 
-export interface UserPreferences {
-  maxDistance: number;
-  ageRange: { min: number; max: number };
-  sizePreference: ('small' | 'medium' | 'large')[];
-  breedPreference: string[];
-  temperamentPreference: string[];
-  notificationsEnabled: boolean;
-  emailNotifications: boolean;
-  pushNotifications: boolean;
+export interface PetHealthInfo {
+  vaccinated: boolean;
+  spayedNeutered: boolean;
+  microchipped?: boolean;
+  lastVetVisit?: string;
+  medicalNotes?: string;
 }
 
-export interface UserStats {
-  totalSwipes: number;
-  totalLikes: number;
-  totalMatches: number;
-  totalSuperLikes: number;
-  matchRate: number;
-  responseRate: number;
-  averageResponseTime: number;
+export interface PetAnalytics {
+  views: number;
+  likes: number;
+  matches: number;
+  superLikes: number;
+  passes: number;
 }
 
 export interface Pet {
-  id: string;
+  _id: string;
   name: string;
   breed: string;
   age: number;
+  size: 'small' | 'medium' | 'large' | 'extra-large';
+  species: 'dog' | 'cat' | 'bird' | 'fish' | 'reptile' | 'small-animal' | 'other';
   gender: 'male' | 'female';
-  size: 'small' | 'medium' | 'large';
-  weight: number;
-  description: string;
-  temperament: string[];
-  energy: 'low' | 'medium' | 'high';
-  training: 'none' | 'basic' | 'intermediate' | 'advanced';
-  goodWithKids: boolean;
-  goodWithPets: boolean;
-  houseTrained: boolean;
-  specialNeeds?: string;
-  medicalHistory?: MedicalRecord[];
-  vaccinations?: Vaccination[];
-  photos: Photo[];
-  videos?: Video[];
-  ownerId: string;
-  owner?: User;
-  location?: {
-    latitude: number;
-    longitude: number;
+  photos: PetPhoto[];
+  description?: string;
+  personalityTags?: string[];
+  location?: PetLocation;
+  owner?: PetOwner;
+  featured?: {
+    isFeatured: boolean;
+    featuredUntil?: string;
   };
+  isVerified?: boolean;
+  healthInfo?: PetHealthInfo;
+  analytics?: PetAnalytics;
+  createdAt: string;
+  updatedAt: string;
   isActive: boolean;
-  isAvailableForAdoption?: boolean;
-  isAvailableForPlaydates?: boolean;
-  isAvailableForBreeding?: boolean;
-  aiScore?: number;
-  aiTags?: string[];
-  createdAt: string;
-  updatedAt: string;
 }
 
-export interface MedicalRecord {
-  id: string;
-  date: string;
-  type: 'checkup' | 'surgery' | 'illness' | 'injury' | 'other';
-  description: string;
-  veterinarian: string;
-  documents?: string[];
-}
-
-export interface Vaccination {
-  id: string;
-  name: string;
-  date: string;
-  nextDue?: string;
-  veterinarian: string;
-  certificateUrl?: string;
-}
-
-export interface Photo {
-  id: string;
-  url: string;
-  thumbnailUrl?: string;
-  isPrimary: boolean;
-  width?: number;
-  height?: number;
-  aiAnalysis?: {
-    breed: string;
-    confidence: number;
-    traits: string[];
-    quality: number;
+// ===== User Types =====
+export interface User {
+  _id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  avatar?: string;
+  dateOfBirth?: string;
+  location?: PetLocation;
+  bio?: string;
+  preferences?: UserPreferences;
+  premium?: {
+    isActive: boolean;
+    tier: 'basic' | 'premium' | 'ultra';
+    expiresAt?: string;
+    features?: string[];
   };
-}
-
-export interface Video {
-  id: string;
-  url: string;
-  thumbnailUrl: string;
-  duration: number;
-  size: number;
-}
-
-export interface Match {
-  id: string;
-  pet1Id: string;
-  pet2Id: string;
-  pet1?: Pet;
-  pet2?: Pet;
-  user1Id: string;
-  user2Id: string;
-  user1?: User;
-  user2?: User;
-  status: 'pending' | 'matched' | 'rejected' | 'unmatched';
-  compatibilityScore?: number;
-  aiReasons?: string[];
-  lastActivity?: string;
+  isVerified?: boolean;
+  isActive?: boolean;
   createdAt: string;
-  updatedAt: string;
+  lastActive: string;
 }
 
+export interface UserPreferences {
+  ageRange: { min: number; max: number };
+  species: string[];
+  breeds: string[];
+  sizes: string[];
+  genders: string[];
+  maxDistance: number;
+  showVerifiedOnly?: boolean;
+  showPremiumOnly?: boolean;
+}
+
+// ===== Match Types =====
+export interface Match {
+  _id: string;
+  users: User[];
+  pets: Pet[];
+  createdAt: string;
+  lastMessageAt?: string;
+  status: 'active' | 'inactive' | 'blocked';
+  messagesCount: number;
+  isTyping?: boolean;
+  unreadCount?: number;
+  // Extended properties for chat UI
+  petName?: string;
+  petPhoto?: string;
+  isOnline?: boolean;
+  lastSeen?: string;
+  ownerName?: string;
+}
+
+export interface MatchData {
+  matchId: string;
+  pets: Pet[];
+  users: User[];
+  createdAt: string;
+  isMatch: boolean;
+  _id?: string; // Optional MongoDB ID for backward compatibility
+}
+
+// ===== Message Types =====
 export interface Message {
-  id: string;
+  _id: string;
   matchId: string;
   senderId: string;
-  receiverId: string;
   content: string;
-  type: 'text' | 'image' | 'video' | 'audio' | 'location';
+  type: 'text' | 'image' | 'emoji' | 'gift' | 'system';
+  metadata?: MessageMetadata;
   attachments?: MessageAttachment[];
-  isRead: boolean;
-  isDelivered: boolean;
-  readAt?: string;
-  deliveredAt?: string;
-  isEdited?: boolean;
-  editedAt?: string;
-  replyTo?: string;
-  reactions?: Reaction[];
+  read: boolean;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface MessageMetadata {
+  emoji?: string;
+  giftType?: string;
+  imageUrl?: string;
+  imageCaption?: string;
+  systemAction?: string;
+  fileName?: string;
+  fileSize?: number;
 }
 
 export interface MessageAttachment {
-  id: string;
   type: 'image' | 'video' | 'audio' | 'document';
   url: string;
-  thumbnailUrl?: string;
-  name: string;
-  size: number;
-  mimeType: string;
+  filename?: string;
+  size?: number;
+  mimeType?: string;
 }
 
-export interface Reaction {
-  userId: string;
-  emoji: string;
-  timestamp: string;
-}
-
-export interface SwipeAction {
-  petId: string;
-  action: 'like' | 'pass' | 'superlike';
-  timestamp: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-}
-
-export interface Notification {
-  id: string;
-  userId: string;
-  type: 'match' | 'message' | 'like' | 'superlike' | 'visitor' | 'system';
-  title: string;
+// ===== Socket Event Types =====
+export interface SocketError {
   message: string;
-  data?: any;
-  imageUrl?: string;
-  actionUrl?: string;
-  isRead: boolean;
-  isSeen: boolean;
-  priority: 'low' | 'medium' | 'high';
-  expiresAt?: string;
+  code?: string;
+  details?: Record<string, unknown>;
+}
+
+export interface SocketMessageData {
+  matchId: string;
+  content: string;
+  senderId: string;
+  timestamp: Date;
+  attachments?: MessageAttachment[];
+}
+
+export interface SocketNotificationData {
+  type: 'match' | 'message' | 'like' | 'superlike' | 'call' | 'system';
+  data: Record<string, unknown>;
+  timestamp: Date;
+  title?: string;
+  message?: string;
+}
+
+export interface SocketUserStatusData {
+  userId: string;
+  status: 'online' | 'offline' | 'away';
+  lastSeen?: Date;
+}
+
+export interface SocketCallData {
+  callId: string;
+  matchId: string;
+  type: 'audio' | 'video';
+  initiatorId: string;
+  participants: string[];
+  status: 'ringing' | 'active' | 'ended';
+  startedAt?: Date;
+  endedAt?: Date;
+}
+
+export interface SocketTypingData {
+  matchId: string;
+  userId: string;
+  isTyping: boolean;
+}
+
+export interface SocketMatchData {
+  matchId: string;
+  pets: Pet[];
+  users: User[];
   createdAt: string;
 }
 
-export interface Subscription {
-  id: string;
-  userId: string;
-  plan: 'free' | 'premium' | 'premium_plus';
-  status: 'active' | 'cancelled' | 'expired' | 'past_due';
-  currentPeriodStart: string;
-  currentPeriodEnd: string;
-  cancelAtPeriodEnd: boolean;
-  paymentMethod?: PaymentMethod;
-  features: string[];
+// ===== Filter Types =====
+export interface FilterState {
+  species: string[];
+  breeds: string[];
+  ages: { min: number; max: number };
+  sizes: string[];
+  genders: string[];
+  colors: string[];
+  
+  temperaments: string[];
+  energyLevels: string[];
+  trainability: string[];
+  
+  familyFriendly: string[];
+  petFriendly: string[];
+  strangerFriendly: string[];
+  
+  apartmentFriendly: boolean | null;
+  houseSafe: boolean | null;
+  yardRequired: boolean | null;
+  
+  groomingNeeds: string[];
+  exerciseNeeds: string[];
+  barkiness: string[];
+  
+  healthStatus: string[];
+  vaccinationStatus: string[];
+  
+  availability: string[];
+  locationRadius: number;
+  
+  sortBy: string;
+  sortDirection: 'asc' | 'desc';
+  resultLimit: number;
+  
+  premiumFeatures: {
+    trending: boolean;
+    verified: boolean;
+    featured: boolean;
+    aiRecommended: boolean;
+  };
+}
+
+export interface SwipeParams {
+  limit: number;
+  page: number;
+  species?: string;
+  breeds?: string;
+  ageRange?: string;
+  sizes?: string;
+  gender?: string;
+  temperament?: string;
+  energyLevel?: string;
+  apartmentFriendly?: string;
+  maxDistance?: number;
+  sortBy?: string;
+  boostFeature?: string;
+  verifiedOnly?: string;
+}
+
+// ===== Subscription Types =====
+export interface SubscriptionPlan {
+  _id: string;
+  name: string;
+  tier: 'basic' | 'premium' | 'ultra';
   price: number;
-  currency: string;
+  interval: 'month' | 'year';
+  features: string[];
+  description: string;
+  isPopular?: boolean;
+  stripePriceId?: string;
+}
+
+export interface SubscriptionStatus {
+  isActive: boolean;
+  plan?: SubscriptionPlan;
+  currentPeriodEnd?: string;
+  cancelAtPeriodEnd?: boolean;
+  trialEnd?: string;
+}
+
+// ===== Admin Types =====
+export interface AdminStats {
+  totalUsers: number;
+  totalPets: number;
+  totalMatches: number;
+  totalMessages: number;
+  premiumUsers: number;
+  verifiedUsers: number;
+  activeMatches: number;
+  recentUsers: number;
+  speciesDistribution: Array<{ _id: string; count: number }>;
+  monthlyGrowth: Array<{ _id: { year: number; month: number }; count: number }>;
+  systemHealth: SystemHealth;
+}
+
+export interface SystemHealth {
+  status: 'healthy' | 'warning' | 'critical';
+  uptime: number;
+  memoryUsage: MemoryUsage;
+  responseTime: number;
+}
+
+export interface MemoryUsage {
+  rss: number;
+  heapTotal: number;
+  heapUsed: number;
+  external: number;
+  arrayBuffers: number;
+}
+
+export interface SystemLog {
+  timestamp: string;
+  level: 'info' | 'warn' | 'error';
+  message: string;
+  userId?: string;
+  ip?: string;
+  details?: Record<string, unknown>;
+}
+
+export interface NotificationRequest {
+  type: string;
+  title: string;
+  message: string;
+  targetUsers?: string[] | 'all';
+  targetType?: 'all' | 'premium' | 'verified';
+}
+
+// ===== Error Types =====
+export interface ApiError {
+  message: string;
+  code?: string;
+  statusCode?: number;
+  details?: Record<string, unknown>;
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+  value?: unknown;
+}
+
+// ===== Animation Types =====
+export interface AnimationConfig {
+  duration?: number;
+  delay?: number;
+  ease?: string;
+  repeat?: number;
+  yoyo?: boolean;
+}
+
+// ===== Utility Types =====
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
+
+// ===== Event Handler Types =====
+export interface SocketEventHandlers {
+  onConnect?: () => void;
+  onDisconnect?: (reason: string) => void;
+  onError?: (error: SocketError) => void;
+  onMessage?: (data: SocketMessageData) => void;
+  onNewMatch?: (data: SocketMatchData) => void;
+  onUserStatus?: (data: SocketUserStatusData) => void;
+  onNotification?: (data: SocketNotificationData) => void;
+  onCallIncoming?: (data: SocketCallData) => void;
+  onCallAccepted?: (data: SocketCallData) => void;
+  onCallRejected?: (data: SocketCallData) => void;
+  onCallEnded?: (data: SocketCallData) => void;
+  onTypingStart?: (data: SocketTypingData) => void;
+  onTypingStop?: (data: SocketTypingData) => void;
+}
+
+// ===== Component Props Types =====
+export interface ComponentProps {
+  className?: string;
+  children?: React.ReactNode;
+}
+
+export interface ButtonProps extends ComponentProps {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  loading?: boolean;
+  onClick?: () => void;
+}
+
+// ===== Form Types =====
+export interface FormField {
+  name: string;
+  label: string;
+  type: 'text' | 'email' | 'password' | 'number' | 'select' | 'textarea' | 'checkbox' | 'radio';
+  required?: boolean;
+  placeholder?: string;
+  options?: Array<{ value: string; label: string }>;
+  validation?: {
+    min?: number;
+    max?: number;
+    pattern?: string;
+    message?: string;
+  };
+}
+
+export interface FormData {
+  [key: string]: string | number | boolean | string[] | undefined;
+}
+
+// ===== Search and Discovery Types =====
+export interface SearchFilters {
+  query?: string;
+  species?: string[];
+  breeds?: string[];
+  ageRange?: { min: number; max: number };
+  size?: string[];
+  gender?: string[];
+  location?: {
+    coordinates: [number, number];
+    radius: number;
+  };
+  sortBy?: 'relevance' | 'distance' | 'age' | 'newest';
+  premiumOnly?: boolean;
+  verifiedOnly?: boolean;
+}
+
+export interface DiscoveryResult {
+  pets: Pet[];
+  totalCount: number;
+  hasMore: boolean;
+  nextPage?: number;
+}
+
+// ===== Analytics Types =====
+export interface UserAnalytics {
+  profileViews: number;
+  petViews: number;
+  likesReceived: number;
+  matches: number;
+  messagesSent: number;
+  messagesReceived: number;
+  timeSpent: number;
+  lastActive: string;
+}
+
+export interface PetAnalyticsData {
+  views: number;
+  likes: number;
+  matches: number;
+  superLikes: number;
+  passes: number;
+  viewsByDay: Array<{ date: string; count: number }>;
+  likesByDay: Array<{ date: string; count: number }>;
+}
+
+// ===== Premium Features Types =====
+export interface PremiumFeature {
+  id: string;
+  name: string;
+  description: string;
+  tier: 'basic' | 'premium' | 'ultra';
+  isEnabled: boolean;
+  usage?: {
+    current: number;
+    limit: number;
+    resetDate: string;
+  };
+}
+
+export interface BoostFeature {
+  type: 'profile' | 'pet' | 'discovery';
+  duration: number; // in hours
+  multiplier: number;
+  cost: number;
+  isActive: boolean;
+  expiresAt?: string;
+}
+
+// ===== Location Types =====
+export interface LocationData {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    zipCode?: string;
+  };
+}
+
+export interface GeocodingResult {
+  address: string;
+  coordinates: [number, number];
+  confidence: number;
+}
+
+// ===== File Upload Types =====
+export interface FileUpload {
+  file: File;
+  type: 'image' | 'video' | 'document';
+  progress: number;
+  status: 'uploading' | 'completed' | 'error';
+  url?: string;
+  error?: string;
+}
+
+export interface ImageUpload extends FileUpload {
+  type: 'image';
+  thumbnail?: string;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+}
+
+// ===== Notification Types =====
+export interface Notification {
+  _id: string;
+  userId: string;
+  type: 'match' | 'message' | 'like' | 'superlike' | 'system' | 'premium';
+  title: string;
+  message: string;
+  data?: Record<string, unknown>;
+  read: boolean;
+  createdAt: string;
+  expiresAt?: string;
+}
+
+export interface NotificationSettings {
+  email: {
+    matches: boolean;
+    messages: boolean;
+    likes: boolean;
+    system: boolean;
+  };
+  push: {
+    matches: boolean;
+    messages: boolean;
+    likes: boolean;
+    system: boolean;
+  };
+  inApp: {
+    matches: boolean;
+    messages: boolean;
+    likes: boolean;
+    system: boolean;
+  };
+}
+
+// ===== Chat Types =====
+export interface ChatRoom {
+  _id: string;
+  matchId: string;
+  participants: string[];
+  lastMessage?: Message;
+  unreadCount: number;
+  isTyping: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface PaymentMethod {
-  id: string;
-  type: 'card' | 'paypal' | 'apple_pay' | 'google_pay';
-  last4?: string;
-  brand?: string;
-  expiryMonth?: number;
-  expiryYear?: number;
-  isDefault: boolean;
+export interface TypingIndicator {
+  userId: string;
+  isTyping: boolean;
+  timestamp: Date;
 }
 
+// ===== Report Types =====
 export interface Report {
-  id: string;
+  _id: string;
   reporterId: string;
   reportedUserId?: string;
   reportedPetId?: string;
   reportedMessageId?: string;
-  reason: 'spam' | 'inappropriate' | 'fake' | 'harassment' | 'other';
-  description: string;
-  status: 'pending' | 'reviewing' | 'resolved' | 'dismissed';
-  resolution?: string;
-  reviewedBy?: string;
+  reason: 'inappropriate' | 'spam' | 'harassment' | 'fake' | 'other';
+  description?: string;
+  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  createdAt: string;
   reviewedAt?: string;
+  reviewedBy?: string;
+}
+
+// ===== Block Types =====
+export interface Block {
+  _id: string;
+  blockerId: string;
+  blockedUserId: string;
+  reason?: string;
   createdAt: string;
 }
 
-// Weather-related types for enhanced weather service
-export interface WeatherAlert {
-  title: string;
-  description: string;
-  severity: 'minor' | 'moderate' | 'severe' | 'extreme';
-  start: string;
-  end: string;
+// ===== Verification Types =====
+export interface VerificationRequest {
+  _id: string;
+  userId: string;
+  type: 'identity' | 'pet' | 'phone' | 'email';
+  status: 'pending' | 'approved' | 'rejected';
+  documents: Array<{
+    type: string;
+    url: string;
+    uploadedAt: string;
+  }>;
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  notes?: string;
 }
 
-export interface HourlyForecast {
-  time: string;
-  temperature: number;
-  feelsLike: number;
-  condition: string;
-  precipitation: number;
-  windSpeed: number;
-  humidity: number;
-  icon: string;
+// ===== API Data Types =====
+export interface UserRegistrationData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
 }
 
-export interface DailyForecast {
-  date: string;
-  tempMin: number;
-  tempMax: number;
-  condition: string;
-  precipitation: number;
-  windSpeed: number;
-  humidity: number;
-  sunrise: string;
-  sunset: string;
-  moonPhase: string;
-  icon: string;
+export interface PetCreationData {
+  name: string;
+  species: string;
+  breed: string;
+  age: number;
+  size: string;
+  gender: string;
+  description?: string;
+  photos?: PetPhoto[];
 }
 
-export interface AirQuality {
-  aqi: number;
-  pm25: number;
-  pm10: number;
-  o3: number;
-  no2: number;
-  so2: number;
-  co: number;
-  category: 'good' | 'moderate' | 'unhealthy_sensitive' | 'unhealthy' | 'very_unhealthy' | 'hazardous';
+export interface BioGenerationData {
+  petId: string;
+  species: string;
+  breed: string;
+  age: number;
+  personality?: string[];
 }
 
-export interface PetSafetyInfo {
-  walkSafety: 'safe' | 'caution' | 'unsafe';
-  recommendations: string[];
-  heatRisk: 'low' | 'moderate' | 'high' | 'extreme';
-  coldRisk: 'low' | 'moderate' | 'high' | 'extreme';
-  uvRisk: 'low' | 'moderate' | 'high' | 'very_high' | 'extreme';
-  bestWalkTimes: string[];
+export interface CompatibilityOptions {
+  includePersonality?: boolean;
+  includeHealth?: boolean;
+  includeLifestyle?: boolean;
 }
+
+export interface BehaviorAnalysisData {
+  observations: string[];
+  environment: string;
+  triggers?: string[];
+  duration?: number;
+}
+
+// ===== Export all types =====
