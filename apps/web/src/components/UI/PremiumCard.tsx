@@ -1,13 +1,15 @@
 /**
- * 💎 ENHANCED Premium Card Component - Ultra Elite UI
- * Advanced card with glass morphism, 3D effects, and jaw-dropping animations
+ * 💎 ULTRA PREMIUM CARD COMPONENT - World-Class Mobile-First UI
+ * Advanced card with glass morphism, 3D effects, haptic feedback, and WCAG 2.1 AA compliance
+ * Implements the complete premium design system with mobile-first approach
  */
 
 'use client';
 
-import React, { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { SPRING_CONFIG, PREMIUM_VARIANTS } from '@/constants/animations';
+import React, { useCallback, useRef, useState } from 'react';
+
+import { PREMIUM_VARIANTS, SPRING_CONFIG } from '@/constants/animations';
 import { transitions } from '@/constants/design-tokens';
 
 interface PremiumCardProps {
@@ -24,6 +26,27 @@ interface PremiumCardProps {
   onClick?: () => void;
   entrance?: 'fadeInUp' | 'scaleIn' | 'slideInLeft' | 'slideInRight';
   delay?: number;
+  
+  // Mobile-first and accessibility props
+  haptic?: boolean;
+  sound?: boolean;
+  disabled?: boolean;
+  
+  // WCAG 2.1 AA Accessibility Props
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-labelledby'?: string;
+  'aria-expanded'?: boolean;
+  'aria-selected'?: boolean;
+  'aria-hidden'?: boolean;
+  'aria-live'?: 'polite' | 'assertive' | 'off';
+  'aria-atomic'?: boolean;
+  'aria-relevant'?: 'additions' | 'removals' | 'text' | 'all';
+  role?: string;
+  tabIndex?: number;
+  
+  // Enhanced accessibility for screen readers
+  'data-testid'?: string;
 }
 
 export default function PremiumCard({
@@ -40,15 +63,72 @@ export default function PremiumCard({
   onClick,
   entrance = 'fadeInUp',
   delay = 0,
+  haptic = true,
+  sound = true,
+  disabled = false,
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
+  'aria-labelledby': ariaLabelledBy,
+  'aria-expanded': ariaExpanded,
+  'aria-selected': ariaSelected,
+  'aria-hidden': ariaHidden,
+  'aria-live': ariaLive,
+  'aria-atomic': ariaAtomic,
+  'aria-relevant': ariaRelevant,
+  role,
+  tabIndex,
+  'data-testid': dataTestId,
 }: PremiumCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  // 3D tilt effect
+  // 3D tilt effect with enhanced physics
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const rotateX = useSpring(useTransform(y, [-100, 100], [15, -15]), transitions.micro);
   const rotateY = useSpring(useTransform(x, [-100, 100], [-15, 15]), transitions.micro);
+
+  // Enhanced haptic feedback for mobile devices
+  const triggerHaptic = useCallback((intensity: 'light' | 'medium' | 'heavy' = 'medium') => {
+    if (!haptic || typeof window === 'undefined' || disabled) return;
+    
+    if ('vibrate' in navigator) {
+      const patterns = {
+        light: [8],
+        medium: [15],
+        heavy: [25, 10, 15],
+      };
+      navigator.vibrate(patterns[intensity]);
+    }
+  }, [haptic, disabled]);
+
+  // Enhanced sound feedback
+  const triggerSound = useCallback((type: 'hover' | 'press' = 'press') => {
+    if (!sound || typeof window === 'undefined' || disabled) return;
+    
+    try {
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+      
+      const audioContext = new AudioContextClass();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      const frequencies = { hover: 800, press: 600 };
+      oscillator.frequency.setValueAtTime(frequencies[type], audioContext.currentTime);
+      
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch {
+      // Audio feedback not available
+    }
+  }, [sound, disabled]);
 
   // Handle mouse move for tilt effect
   const handleMouseMove = (event: React.MouseEvent) => {
@@ -62,60 +142,88 @@ export default function PremiumCard({
     y.set(event.clientY - centerY);
   };
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     setIsHovered(false);
     if (tilt) {
       x.set(0);
       y.set(0);
     }
-  };
+  }, [tilt, x, y]);
 
-  // Get enhanced variant styles with premium effects
+  const handleMouseEnter = useCallback(() => {
+    if (disabled) return;
+    setIsHovered(true);
+    triggerSound('hover');
+  }, [disabled, triggerSound]);
+
+  const handleClick = useCallback(() => {
+    if (disabled || !onClick) return;
+    triggerHaptic('medium');
+    triggerSound('press');
+    onClick();
+  }, [disabled, onClick, triggerHaptic, triggerSound]);
+
+  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleClick();
+    }
+  }, [handleClick]);
+
+  // Get enhanced variant styles with premium effects using design tokens
   const getVariantClasses = () => {
     const variants = {
       default: "text-white border border-white/15",
       glass: "text-white border border-white/20",
       elevated: "text-white border border-white/15 shadow-premium-lg hover:shadow-2xl transform hover:-translate-y-2",
       gradient: "text-white border border-white/15",
-      neon: "border border-blue-500/40 text-blue-300 hover:shadow-[0_0_24px_rgba(59,130,246,0.25)]",
+      neon: `border border-${COLORS.primary[400]}/40 text-${COLORS.primary[300]} hover:shadow-[0_0_24px_${COLORS.primary[400]}25]`,
       holographic: "text-white border border-white/15",
     };
     
     return variants[variant];
   };
 
-  // Get enhanced background styles with better glassmorphism
+  // Get enhanced background styles with better glassmorphism using design tokens
   const getBackgroundStyle = () => {
     const backgrounds = {
       default: {
-        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        background: GRADIENTS.glass.light,
+        backdropFilter: BLUR.premium,
+        WebkitBackdropFilter: BLUR.premium,
+        boxShadow: SHADOWS.glass,
       },
       glass: {
-        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%)',
-        backdropFilter: 'blur(24px) saturate(200%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+        background: GRADIENTS.glass.medium,
+        backdropFilter: BLUR['2xl'],
+        WebkitBackdropFilter: BLUR['2xl'],
+        boxShadow: SHADOWS.glass,
       },
       elevated: {
-        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        background: GRADIENTS.glass.medium,
+        backdropFilter: BLUR.premium,
+        WebkitBackdropFilter: BLUR.premium,
+        boxShadow: SHADOWS['premium-lg'],
       },
       gradient: {
-        background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        background: GRADIENTS.primary,
+        backdropFilter: BLUR.premium,
+        WebkitBackdropFilter: BLUR.premium,
+        boxShadow: SHADOWS.primaryGlow,
       },
       neon: {
-        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        background: GRADIENTS.neon,
+        backdropFilter: BLUR.premium,
+        WebkitBackdropFilter: BLUR.premium,
+        boxShadow: SHADOWS.neon,
       },
       holographic: {
-        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.15) 50%, rgba(236, 72, 153, 0.15) 100%)',
-        backdropFilter: 'blur(24px) saturate(200%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+        background: GRADIENTS.holographic,
+        backdropFilter: BLUR['2xl'],
+        WebkitBackdropFilter: BLUR['2xl'],
+        boxShadow: SHADOWS['2xl'],
+        backgroundSize: '400% 400%',
+        animation: 'holographic 4s ease infinite',
       },
     };
     
@@ -147,7 +255,7 @@ export default function PremiumCard({
           relative rounded-2xl transition-all duration-300 transform-gpu
           ${variantClasses}
           ${paddingClasses}
-          ${onClick ? 'cursor-pointer' : ''}
+          ${onClick && !disabled ? 'cursor-pointer' : disabled ? 'cursor-not-allowed opacity-50' : ''}
           ${tilt ? 'perspective-1000 preserve-3d' : ''}
           ${className}
         `}
@@ -155,43 +263,64 @@ export default function PremiumCard({
           ...backgroundStyle,
           rotateX: tilt ? rotateX : 0,
           rotateY: tilt ? rotateY : 0,
-          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
+          borderRadius: RADIUS['2xl'],
         }}
         initial={PREMIUM_VARIANTS[entrance]?.initial || { opacity: 0, y: 10 }}
-        animate={PREMIUM_VARIANTS[entrance]?.animate || { opacity: 1, y: 0 }}
-        transition={{ ...(PREMIUM_VARIANTS[entrance]?.transition || SPRING_CONFIG), delay }}
-        whileHover={hover ? { scale: 1.02, y: -4 } : {}}
-        whileTap={onClick ? { scale: 0.98 } : {}}
+        animate={PREMIUM_VARIANTS[entrance]?.animate || { opacity: disabled ? 0.5 : 1, y: 0 }}
+        transition={{ ...(PREMIUM_VARIANTS[entrance]?.transition || SPRING_CONFIG.default), delay }}
+        whileHover={hover && !disabled ? { scale: 1.02, y: -4 } : {}}
+        whileTap={onClick && !disabled ? { scale: 0.98 } : {}}
         onMouseMove={handleMouseMove}
-        onMouseEnter={() => setIsHovered(true)}
+        onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={onClick}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
+        aria-labelledby={ariaLabelledBy}
+        aria-expanded={ariaExpanded}
+        aria-selected={ariaSelected}
+        aria-hidden={ariaHidden}
+        aria-live={ariaLive}
+        aria-atomic={ariaAtomic}
+        aria-relevant={ariaRelevant}
+        role={role}
+        tabIndex={onClick ? (tabIndex ?? 0) : undefined}
+        data-testid={dataTestId}
+        aria-disabled={disabled}
       >
-        {/* Glow effect */}
-        {glow && isHovered && (
+        {/* Enhanced Glow effect with design tokens */}
+        {glow && isHovered && !disabled && (
           <motion.div
-            className="absolute inset-0 rounded-2xl pointer-events-none bg-blue-500/20 blur-xl scale-110 -z-10"
+            className="absolute inset-0 rounded-2xl pointer-events-none blur-xl scale-110 -z-10"
+            style={{
+              background: `radial-gradient(circle, ${COLORS.primary[400]}20 0%, transparent 70%)`,
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ ...SPRING_CONFIG.quick }}
           />
         )}
 
-        {/* Blur overlay */}
+        {/* Enhanced Blur overlay */}
         {blur && (
           <motion.div
-            className="absolute inset-0 rounded-2xl pointer-events-none backdrop-blur-lg bg-white/5"
+            className="absolute inset-0 rounded-2xl pointer-events-none"
+            style={{
+              backdropFilter: BLUR.xl,
+              background: 'rgba(255, 255, 255, 0.05)',
+            }}
           />
         )}
 
-        {/* Content */}
+        {/* Content with proper z-index */}
         <div className="relative z-10">
           {children}
         </div>
 
-        {/* Interactive shine effect */}
-        {hover && isHovered && (
+        {/* Enhanced Interactive shine effect */}
+        {hover && isHovered && !disabled && (
           <motion.div
             className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden"
             initial={{ opacity: 0 }}
@@ -207,7 +336,7 @@ export default function PremiumCard({
           </motion.div>
         )}
 
-        {/* Shimmer effect */}
+        {/* Enhanced Shimmer effect */}
         {shimmer && (
           <motion.div
             className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden"
@@ -230,19 +359,30 @@ export default function PremiumCard({
           </motion.div>
         )}
 
-        {/* Magnetic effect */}
-        {magnetic && (
+        {/* Enhanced Magnetic effect */}
+        {magnetic && isHovered && !disabled && (
           <motion.div
             className="absolute inset-0 rounded-2xl pointer-events-none"
             style={{
               background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.1) 0%, transparent 50%)',
             }}
             initial={{ opacity: 0 }}
-            animate={{ opacity: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.2 }}
+            animate={{ opacity: 1 }}
+            transition={{ ...SPRING_CONFIG.quick }}
           />
         )}
       </motion.div>
+
+      {/* Holographic animation styles */}
+      {variant === 'holographic' && (
+        <style>{`
+          @keyframes holographic {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+        `}</style>
+      )}
     </>
   );
 }
