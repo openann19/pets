@@ -29,7 +29,30 @@ const PremiumLayout: React.FC<PremiumLayoutProps> = ({
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const { isAuthenticated } = useAuthStore();
-  const t = useTranslations();
+  
+  // Handle missing translations gracefully
+  let t: any;
+  try {
+    t = useTranslations();
+  } catch (error) {
+    // Fallback translations if context is missing
+    t = (key: string) => {
+      const fallbacks: Record<string, string> = {
+        'navigation.browse': 'Browse',
+        'navigation.matches': 'Matches',
+        'navigation.dashboard': 'Dashboard',
+        'navigation.map': 'Map',
+        'navigation.premium': 'Premium',
+        'navigation.aiBio': 'AI Bio',
+        'navigation.aiPhoto': 'AI Photo',
+        'common.getStarted': 'Get Started',
+        'landing.browsePets': 'Browse Pets',
+        'landing.myMatches': 'My Matches',
+        'landing.petMap': 'Pet Map',
+      };
+      return fallbacks[key] || key;
+    };
+  }
 
   // Dismiss mobile menu on outside click and Esc; restore focus
   useEffect(() => {

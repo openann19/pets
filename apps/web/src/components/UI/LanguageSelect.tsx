@@ -9,8 +9,27 @@ interface LanguageSelectProps {
 }
 
 export default function LanguageSelect({ compact = false }: LanguageSelectProps) {
-  const t = useTranslations();
-  const locale = useLocale();
+  // Handle missing translations gracefully
+  let t: any;
+  let locale: string;
+  
+  try {
+    t = useTranslations();
+    locale = useLocale();
+  } catch (error) {
+    // Fallback translations and locale if context is missing
+    t = (key: string) => {
+      const fallbacks: Record<string, string> = {
+        'navigation.language': 'Language',
+        'navigation.home': 'Home',
+        'navigation.about': 'About',
+        'navigation.contact': 'Contact',
+      };
+      return fallbacks[key] || key;
+    };
+    locale = 'en'; // Default to English
+  }
+  
   const router = useRouter();
   const pathname = usePathname();
 

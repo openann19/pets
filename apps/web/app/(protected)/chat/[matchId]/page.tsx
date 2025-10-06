@@ -56,21 +56,21 @@ export default function ChatPage() {
   }, [matchId]);
 
   useEffect(() => {
-    if (socket?.on) {
-      socket.on('new_message', handleNewMessage);
-      socket.on('user_typing', handleTypingIndicator);
-      socket.on('messages_read', handleReadReceipt);
-      socket.on('user_status', handleUserStatus);
-      
-      return () => {
-        if (socket?.off) {
-          socket.off('new_message');
-          socket.off('user_typing');
-          socket.off('messages_read');
-          socket.off('user_status');
-        }
-      };
-    }
+    if (!socket?.on) return;
+    
+    socket.on('new_message', handleNewMessage);
+    socket.on('user_typing', handleTypingIndicator);
+    socket.on('messages_read', handleReadReceipt);
+    socket.on('user_status', handleUserStatus);
+    
+    return () => {
+      if (socket?.off) {
+        socket.off('new_message');
+        socket.off('user_typing');
+        socket.off('messages_read');
+        socket.off('user_status');
+      }
+    };
   }, [socket, messages]);
 
   useEffect(() => {
