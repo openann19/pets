@@ -1,5 +1,6 @@
-import 'react-native-gesture-handler/jestSetup';
 import mockAsyncStorage from '@react-native-async-storage/async-storage/jest/async-storage-mock';
+import '@testing-library/jest-native/extend-expect';
+import 'react-native-gesture-handler/jestSetup';
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
@@ -32,34 +33,45 @@ jest.mock('expo-blur', () => ({
 // Mock React Native modules
 jest.mock('react-native/Libraries/EventEmitter/NativeEventEmitter');
 
-jest.mock('react-native', () => {
-  const RN = jest.requireActual('react-native');
-  return {
-    ...RN,
-    NativeModules: {
-      ...RN.NativeModules,
-      RNGestureHandlerModule: {
-        attachGestureHandler: jest.fn(),
-        createGestureHandler: jest.fn(),
-        dropGestureHandler: jest.fn(),
-        updateGestureHandler: jest.fn(),
-      },
+jest.mock('react-native', () => ({
+  NativeModules: {
+    RNGestureHandlerModule: {
+      attachGestureHandler: jest.fn(),
+      createGestureHandler: jest.fn(),
+      dropGestureHandler: jest.fn(),
+      updateGestureHandler: jest.fn(),
     },
-    Platform: {
-      ...RN.Platform,
-      OS: 'ios',
-      select: jest.fn((obj) => obj.ios || obj.default),
-    },
-    Dimensions: {
-      get: jest.fn(() => ({ width: 375, height: 812 })),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-    },
-    StatusBar: {
-      currentHeight: 44,
-    },
-  };
-});
+  },
+  Platform: {
+    OS: 'ios',
+    select: jest.fn((obj) => obj.ios || obj.default),
+  },
+  Dimensions: {
+    get: jest.fn(() => ({ width: 375, height: 812 })),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  },
+  StatusBar: {
+    currentHeight: 44,
+  },
+  View: 'View',
+  Text: 'Text',
+  ScrollView: 'ScrollView',
+  TouchableOpacity: 'TouchableOpacity',
+  Image: 'Image',
+  StyleSheet: {
+    create: jest.fn((styles) => styles),
+  },
+  Animated: {
+    View: 'Animated.View',
+    Text: 'Animated.Text',
+    Value: jest.fn(),
+    timing: jest.fn(),
+    spring: jest.fn(),
+    sequence: jest.fn(),
+    parallel: jest.fn(),
+  },
+}));
 
 // Mock WebRTC
 jest.mock('react-native-webrtc', () => ({

@@ -1,22 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  Image,
   Animated,
-  Vibration,
+  Dimensions,
+  Image,
   StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import WebRTCService, { CallData } from '../../services/WebRTCService';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+import type { CallData } from '../../services/WebRTCService';
 
 interface IncomingCallScreenProps {
   callData: CallData;
@@ -29,6 +28,7 @@ export default function IncomingCallScreen({
   onAnswer, 
   onReject 
 }: IncomingCallScreenProps) {
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const [pulseAnim] = useState(new Animated.Value(1));
   const [slideAnim] = useState(new Animated.Value(0));
 
@@ -84,7 +84,7 @@ export default function IncomingCallScreen({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="incoming-call-container">
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
       {/* Background Gradient */}
@@ -146,6 +146,7 @@ export default function IncomingCallScreen({
                     : require('../../assets/default-avatar.png')
                 }
                 style={styles.avatar}
+                testID="caller-avatar"
               />
             </View>
           </Animated.View>
@@ -173,6 +174,7 @@ export default function IncomingCallScreen({
             style={[styles.actionButton, styles.rejectButton]}
             onPress={handleReject}
             activeOpacity={0.8}
+            testID="reject-button"
           >
             <LinearGradient
               colors={['#ff4757', '#ff3838']}
@@ -187,6 +189,7 @@ export default function IncomingCallScreen({
             style={[styles.actionButton, styles.answerButton]}
             onPress={handleAnswer}
             activeOpacity={0.8}
+            testID="answer-button"
           >
             <LinearGradient
               colors={['#2ed573', '#1dd1a1']}

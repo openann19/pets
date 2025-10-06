@@ -1,9 +1,10 @@
-import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
-import ChatScreen from '../ChatScreen';
-import { useCallManager } from '../../components/calling/CallManager';
 import { useAuthStore } from '@pawfectmatch/core';
+import { fireEvent, render } from '@testing-library/react-native';
+import React from 'react';
+import { Alert } from 'react-native';
+
+import { useCallManager } from '../../components/calling/CallManager';
+import ChatScreen from '../ChatScreen';
 
 // Mock dependencies
 jest.mock('../../components/calling/CallManager');
@@ -17,9 +18,15 @@ jest.mock('../../services/api', () => ({
 }));
 
 jest.mock('react-native', () => ({
-  ...jest.requireActual('react-native'),
   Alert: {
     alert: jest.fn(),
+  },
+  View: 'View',
+  Text: 'Text',
+  TouchableOpacity: 'TouchableOpacity',
+  ScrollView: 'ScrollView',
+  StyleSheet: {
+    create: jest.fn((styles) => styles),
   },
 }));
 

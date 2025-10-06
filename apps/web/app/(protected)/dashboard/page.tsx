@@ -79,7 +79,7 @@ export default function DashboardPage() {
     },
     { 
       label: 'Messages', 
-      value: matches?.reduce((acc, match) => acc + (match.unreadCount || 0), 0)?.toString() || '0', 
+      value: matches?.reduce((acc: number, match: any) => acc + (match.unreadCount || 0), 0)?.toString() || '0', 
       icon: FireIcon, 
       variant: 'neon' as const,
       description: 'Unread chats',
@@ -250,9 +250,9 @@ export default function DashboardPage() {
 
         {/* Enhanced Stats Grid */}
         <motion.div
-          variants={STAGGER_CONFIG}
           initial="initial"
           animate="animate"
+          transition={{ staggerChildren: STAGGER_CONFIG }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
           {enhancedStats.map((stat, index) => (
@@ -319,9 +319,9 @@ export default function DashboardPage() {
         {/* Enhanced Quick Actions */}
         <motion.div
           className="mb-8"
-          variants={STAGGER_CONFIG}
           initial="initial"
           animate="animate"
+          transition={{ staggerChildren: STAGGER_CONFIG }}
         >
           <motion.h2 
             className="text-2xl font-bold gradient-text mb-6"

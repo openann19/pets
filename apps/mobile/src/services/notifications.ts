@@ -3,10 +3,10 @@
  * Professional implementation with Expo Notifications
  */
 
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -14,6 +14,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -27,8 +29,8 @@ export interface NotificationData {
 
 class NotificationService {
   private expoPushToken: string | null = null;
-  private notificationListener: any = null;
-  private responseListener: any = null;
+  private notificationListener: Notifications.Subscription | null = null;
+  private responseListener: Notifications.Subscription | null = null;
 
   async initialize(): Promise<string | null> {
     try {
@@ -54,12 +56,13 @@ class NotificationService {
       }
 
       // Get the token
-      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      const tokenData = await Notifications.getExpoPushTokenAsync();
+      const token = tokenData.data;
       this.expoPushToken = token;
 
       // Store token locally
       await AsyncStorage.setItem('expo_push_token', token);
-
+      
       // Configure notification channel for Android
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
@@ -122,25 +125,22 @@ class NotificationService {
         description: channel.description,
         sound: channel.sound,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF6B6B',
       });
     }
   }
 
   private setupListeners() {
-    // Listener for notifications received while app is foregrounded
     this.notificationListener = Notifications.addNotificationReceivedListener(
-      (notification) => {
+      (notification: Notifications.Notification) => {
         console.log('Notification received:', notification);
         this.handleNotificationReceived(notification);
       }
     );
 
-    // Listener for user interactions with notifications
     this.responseListener = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        console.log('Notification response:', response);
-        this.handleNotificationResponse(response);
+      (response: Notifications.NotificationResponse) => {
+        const { data } = response.notification.request.content;
+        this.handleNotificationResponse(data);
       }
     );
   }
@@ -162,9 +162,7 @@ class NotificationService {
     }
   }
 
-  private handleNotificationResponse(response: Notifications.NotificationResponse) {
-    const { data } = response.notification.request.content;
-    
+  private handleNotificationResponse(data: any) {
     // Navigate to appropriate screen based on notification type
     switch (data?.type) {
       case 'match':
@@ -173,84 +171,19 @@ class NotificationService {
       case 'message':
         // Navigate to specific chat
         if (data.matchId) {
-          // NavigationService.navigate('Chat', { matchId: data.matchId });
+          // Navigate to specific chat with matchId
         }
         break;
       case 'like':
         // Navigate to likes screen
         break;
+      case 'reminder':
+        // Navigate to home screen
+        break;
     }
   }
 
-  async sendLocalNotification(notificationData: NotificationData) {
-    try {
-      const { type, title, body, data, scheduledFor } = notificationData;
-
-      const notificationConfig: Notifications.NotificationRequestInput = {
-        content: {
-          title,
-          body,
-          data: { type, ...data },
-          sound: this.getSoundForType(type),
-          badge: await this.getBadgeCount() + 1,
-        },
-        trigger: scheduledFor 
-          ? { date: scheduledFor }
-          : null,
-      };
-
-      // Set channel for Android
-      if (Platform.OS === 'android') {
-        notificationConfig.content.categoryIdentifier = this.getChannelForType(type);
-      }
-
-      const identifier = await Notifications.scheduleNotificationAsync(notificationConfig);
-      console.log('Local notification scheduled:', identifier);
-      
-      return identifier;
-    } catch (error) {
-      console.error('Error sending local notification:', error);
-      return null;
-    }
-  }
-
-  async sendPushNotification(
-    targetToken: string,
-    notificationData: NotificationData
-  ): Promise<boolean> {
-    try {
-      const { type, title, body, data } = notificationData;
-
-      const message = {
-        to: targetToken,
-        sound: 'default',
-        title,
-        body,
-        data: { type, ...data },
-        badge: 1,
-        channelId: this.getChannelForType(type),
-      };
-
-      const response = await fetch('https://exp.host/--/api/v2/push/send', {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Accept-encoding': 'gzip, deflate',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(message),
-      });
-
-      const result = await response.json();
-      console.log('Push notification sent:', result);
-      
-      return result.data?.status === 'ok';
-    } catch (error) {
-      console.error('Error sending push notification:', error);
-      return false;
-    }
-  }
-
+  // Helper to get sound for notification type
   private getSoundForType(type: string): string {
     switch (type) {
       case 'match':
@@ -261,10 +194,11 @@ class NotificationService {
       case 'super_like':
         return 'like_sound.wav';
       default:
-        return 'default';
+        return 'default_sound.wav';
     }
   }
 
+  // Helper to get notification channel for type
   private getChannelForType(type: string): string {
     switch (type) {
       case 'match':
@@ -281,129 +215,162 @@ class NotificationService {
     }
   }
 
-  private async getBadgeCount(): Promise<number> {
+  // Send a local notification
+  async sendLocalNotification(notificationData: NotificationData): Promise<string | null> {
+    try {
+      // Get sound and channel based on notification type
+      const sound = this.getSoundForType(notificationData.type);
+      const channelId = Platform.OS === 'android' ? this.getChannelForType(notificationData.type) : undefined;
+      
+      // Configure trigger (immediate or scheduled)
+      let trigger: Notifications.NotificationTriggerInput | null = null;
+      if (notificationData.scheduledFor) {
+        trigger = {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: notificationData.scheduledFor
+        };
+      }
+
+      // Schedule the notification
+      const identifier = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: notificationData.title,
+          body: notificationData.body,
+          data: notificationData.data || {},
+          sound,
+        },
+        trigger,
+      });
+
+      return identifier;
+    } catch (error) {
+      console.error('Error sending local notification:', error);
+      return null;
+    }
+  }
+
+  // Get current badge count
+  async getBadgeCount(): Promise<number> {
     try {
       const count = await Notifications.getBadgeCountAsync();
-      return count || 0;
-    } catch {
+      return count;
+    } catch (error) {
       return 0;
     }
   }
 
-  async setBadgeCount(count: number) {
+  // Set badge count
+  async setBadgeCount(count: number): Promise<boolean> {
     try {
       await Notifications.setBadgeCountAsync(count);
+      return true;
     } catch (error) {
-      console.error('Error setting badge count:', error);
+      return false;
     }
   }
 
-  async clearBadge() {
-    await this.setBadgeCount(0);
+  // Clear badge count
+  async clearBadge(): Promise<boolean> {
+    return await this.setBadgeCount(0);
   }
 
-  async cancelNotification(identifier: string) {
+  // Cancel a specific notification
+  async cancelNotification(identifier: string): Promise<boolean> {
     try {
       await Notifications.cancelScheduledNotificationAsync(identifier);
+      return true;
     } catch (error) {
-      console.error('Error canceling notification:', error);
+      return false;
     }
   }
 
-  async cancelAllNotifications() {
+  // Cancel all notifications
+  async cancelAllNotifications(): Promise<boolean> {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
+      return true;
     } catch (error) {
-      console.error('Error canceling all notifications:', error);
+      return false;
     }
   }
 
-  // Predefined notification templates
-  async sendMatchNotification(petName: string, petPhoto: string) {
+  // Send match notification
+  async sendMatchNotification(petName: string, petPhoto: string): Promise<string | null> {
     return this.sendLocalNotification({
       type: 'match',
-      title: '🎉 It\'s a Match!',
-      body: `You and ${petName} liked each other!`,
-      data: { petName, petPhoto },
+      title: 'New Match! 🎉',
+      body: `You matched with ${petName}!`,
+      data: {
+        type: 'match',
+        petName,
+        petPhoto,
+      },
     });
   }
 
-  async sendMessageNotification(senderName: string, message: string, matchId: string) {
+  // Send message notification
+  async sendMessageNotification(senderName: string, message: string, matchId: string): Promise<string | null> {
     return this.sendLocalNotification({
       type: 'message',
-      title: `New message from ${senderName}`,
+      title: `Message from ${senderName}`,
       body: message.length > 50 ? `${message.substring(0, 50)}...` : message,
-      data: { matchId, senderName },
+      data: {
+        type: 'message',
+        senderName,
+        message,
+        matchId,
+      },
     });
   }
 
-  async sendLikeNotification(petName: string, isSuper: boolean = false) {
+  // Send like notification
+  async sendLikeNotification(petName: string, isSuper = false): Promise<string | null> {
     return this.sendLocalNotification({
       type: isSuper ? 'super_like' : 'like',
-      title: isSuper ? '⭐ Super Like!' : '❤️ Someone likes you!',
-      body: `${petName} ${isSuper ? 'super ' : ''}liked your pet!`,
-      data: { petName, isSuper },
+      title: isSuper ? 'Super Like! ⭐' : 'New Like! ❤️',
+      body: `${petName} ${isSuper ? 'super liked' : 'liked'} your pet!`,
+      data: {
+        type: isSuper ? 'super_like' : 'like',
+        petName,
+      },
     });
   }
 
-  async scheduleReminderNotification(hours: number = 24) {
-    const scheduledFor = new Date();
-    scheduledFor.setHours(scheduledFor.getHours() + hours);
-
+  // Schedule a reminder notification
+  async scheduleReminderNotification(hours: number): Promise<string | null> {
+    const scheduledTime = new Date();
+    scheduledTime.setHours(scheduledTime.getHours() + hours);
+    
     return this.sendLocalNotification({
       type: 'reminder',
-      title: 'Come back to PawfectMatch! 🐾',
-      body: 'New pets are waiting to meet you!',
-      scheduledFor,
+      title: 'Missing Your Furry Friends!',
+      body: `It's been ${hours} hours since your last visit. Check out new potential matches!`,
+      data: {
+        type: 'reminder',
+      },
+      scheduledFor: scheduledTime,
     });
   }
 
+  // Get current token
   getExpoPushToken(): string | null {
     return this.expoPushToken;
   }
 
-  cleanup() {
+  // Clean up resources
+  cleanup(): void {
     if (this.notificationListener) {
-      Notifications.removeNotificationSubscription(this.notificationListener);
+      this.notificationListener.remove();
+      this.notificationListener = null;
     }
+    
     if (this.responseListener) {
-      Notifications.removeNotificationSubscription(this.responseListener);
+      this.responseListener.remove();
+      this.responseListener = null;
     }
   }
 }
 
-// Export singleton instance
+// Export a singleton instance
 export const notificationService = new NotificationService();
-
-// Utility hook for React components
-export const useNotifications = () => {
-  const [isInitialized, setIsInitialized] = React.useState(false);
-  const [pushToken, setPushToken] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    const initializeNotifications = async () => {
-      const token = await notificationService.initialize();
-      setPushToken(token);
-      setIsInitialized(true);
-    };
-
-    initializeNotifications();
-
-    return () => {
-      notificationService.cleanup();
-    };
-  }, []);
-
-  return {
-    isInitialized,
-    pushToken,
-    sendMatchNotification: notificationService.sendMatchNotification.bind(notificationService),
-    sendMessageNotification: notificationService.sendMessageNotification.bind(notificationService),
-    sendLikeNotification: notificationService.sendLikeNotification.bind(notificationService),
-    scheduleReminderNotification: notificationService.scheduleReminderNotification.bind(notificationService),
-    setBadgeCount: notificationService.setBadgeCount.bind(notificationService),
-    clearBadge: notificationService.clearBadge.bind(notificationService),
-  };
-};
-
 export default notificationService;

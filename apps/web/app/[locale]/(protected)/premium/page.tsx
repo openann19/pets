@@ -32,7 +32,7 @@ export default function PremiumPage() {
 
   return (
     <PremiumLayout>
-      <div className="min-h-screen py-12 px-4">
+      <div className="min-h-screen py-12 px-4" data-testid="premium-page">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <motion.div

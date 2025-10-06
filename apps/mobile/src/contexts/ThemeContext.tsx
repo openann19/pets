@@ -1,8 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Appearance, ColorSchemeName } from 'react-native';
-import { Colors, GlobalStyles, Shadows } from '../styles/GlobalStyles';
+import type { ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { ColorSchemeName } from 'react-native';
+import { Appearance } from 'react-native';
+
 import { ColorsDark, GlobalStylesDark, ShadowsDark } from '../styles/DarkTheme';
+import { Colors, GlobalStyles, Shadows } from '../styles/GlobalStyles';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -44,6 +47,13 @@ export interface ThemeColors {
   gradientSuccess: string[];
   gradientWarning: string[];
   gradientError: string[];
+  // Additional UI colors
+  background: string;
+  surface: string;
+  text: string;
+  textSecondary: string;
+  border: string;
+  borderLight: string;
 }
 
 export interface ThemeContextType {

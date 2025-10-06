@@ -21,31 +21,13 @@ import { chatAPI, api } from '@/services/api';
 import { useSocket } from '@/hooks/useSocket';
 import { logger } from '@/services/logger';
 import Image from 'next/image';
+import { Message, Match, MessageMetadata, MessageAttachment, SocketTypingData, SocketUserStatusData } from '@/types';
 
-interface Message {
-  id: string;
-  senderId: string;
-  content: string;
-  timestamp: string;
-  read: boolean;
-  type: 'text' | 'image' | 'emoji' | 'gift';
-  metadata?: any;
-}
-
-interface Match {
-  id: string;
-  petName: string;
-  petPhoto: string;
-  ownerName: string;
-  lastSeen: string;
-  isOnline: boolean;
-  isTyping: boolean;
-}
 
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const matchId = params.matchId as string;
+  const matchId = (params?.matchId as string) || '';
   const { user } = useAuth();
   const socket = useSocket();
   
@@ -75,17 +57,19 @@ export default function ChatPage() {
   }, [matchId]);
 
   useEffect(() => {
-    if (socket) {
+    if (socket && socket.on) {
       socket.on('new_message', handleNewMessage);
-      socket.on('typing', handleTypingIndicator);
-      socket.on('read_receipt', handleReadReceipt);
+      socket.on('user_typing', handleTypingIndicator);
+      socket.on('messages_read', handleReadReceipt);
       socket.on('user_status', handleUserStatus);
       
       return () => {
-        socket.off('new_message');
-        socket.off('typing');
-        socket.off('read_receipt');
-        socket.off('user_status');
+        if (socket && socket.off) {
+          socket.off('new_message');
+          socket.off('user_typing');
+          socket.off('messages_read');
+          socket.off('user_status');
+        }
       };
     }
   }, [socket, messages]);
@@ -98,11 +82,13 @@ export default function ChatPage() {
     setIsLoading(true);
     try {
       // Load match info
-      const matchData = await api.matches.getMatch(matchId);
-      setMatch(matchData);
+      const matchResponse: any = await api.matches.getMatch(matchId);
+      const matchData = matchResponse?.data || matchResponse;
+      setMatch(matchData as Match);
       
       // Load messages
-      const messagesData = await chatAPI.getMessages(matchId);
+      const messagesResponse: any = await chatAPI.getMessages(matchId);
+      const messagesData = Array.isArray(messagesResponse) ? messagesResponse : messagesResponse?.data || [];
       setMessages(messagesData);
       
       // Mark as read
@@ -139,13 +125,13 @@ export default function ChatPage() {
 
   const joinChatRoom = () => {
     if (socket) {
-      socket.emit('join_chat', { matchId, userId: user?.id });
+      socket.joinMatch(matchId);
     }
   };
 
   const leaveChatRoom = () => {
     if (socket) {
-      socket.emit('leave_chat', { matchId, userId: user?.id });
+      socket.leaveMatch(matchId);
     }
   };
 
@@ -159,16 +145,22 @@ export default function ChatPage() {
     }
   };
 
-  const handleTypingIndicator = ({ userId, isTyping: typing }: any) => {
+  const handleTypingIndicator = ({ userId, isTyping: typing }: SocketTypingData) => {
     if (userId !== user?.id && match) {
       setMatch({ ...match, isTyping: typing });
     }
   };
 
-  const handleReadReceipt = ({ messageIds }: any) => {
+  const handleReadReceipt = ({ messageIds }: { messageIds: string[] }) => {
     setMessages(prev => prev.map(msg => 
-      messageIds.includes(msg.id) ? { ...msg, read: true } : msg
+      messageIds.includes(msg._id) ? { ...msg, read: true } : msg
     ));
+  };
+
+  const handleUserStatus = ({ userId, status }: SocketUserStatusData) => {
+    if (userId !== user?.id && match) {
+      setMatch({ ...match, isOnline: status === 'online' });
+    }
   };
 
   const sendMessage = async (messageData?: Partial<Message>) => {
@@ -178,10 +170,12 @@ export default function ChatPage() {
     if (!content || !socket) return;
 
     const newMessage: Message = {
-      id: Date.now().toString(),
+      _id: Date.now().toString(),
+      matchId,
       senderId: user?.id || '',
       content,
-      timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       read: false,
       type,
       metadata: messageData?.metadata,
@@ -192,10 +186,13 @@ export default function ChatPage() {
     setInputMessage('');
 
     // Send via socket
-    socket.emit('send_message', {
-      matchId,
-      message: newMessage,
-    });
+    const attachments: MessageAttachment[] = newMessage.metadata ? [{
+      type: 'image',
+      url: newMessage.content,
+      filename: newMessage.metadata.fileName,
+      size: newMessage.metadata.fileSize
+    }] : [];
+    socket.sendMessage(matchId, newMessage.content, attachments);
 
     // Mark as sent
     try {
@@ -204,7 +201,7 @@ export default function ChatPage() {
     } catch (error) {
       logger.error('Failed to send message', error);
       // Remove temp message on error
-      setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
+      setMessages(prev => prev.filter(msg => msg._id !== newMessage._id));
     }
   };
 
@@ -239,7 +236,12 @@ export default function ChatPage() {
       
       if (!response.ok) throw new Error('Upload failed');
       
-      const { url } = await response.json();
+      const responseData = await response.json();
+      const url = responseData.data?.url || responseData.url;
+      
+      if (!url) {
+        throw new Error('No URL returned from upload');
+      }
       
       // Send as image message
       await sendMessage({
@@ -266,7 +268,7 @@ export default function ChatPage() {
     if (!isTyping) {
       setIsTyping(true);
       if (socket) {
-        socket.emit('typing', { matchId, userId: user?.id, isTyping: true });
+        socket.startTyping(matchId);
       }
     }
     
@@ -279,7 +281,7 @@ export default function ChatPage() {
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
       if (socket) {
-        socket.emit('typing', { matchId, userId: user?.id, isTyping: false });
+        socket.stopTyping(matchId);
       }
     }, 2000);
   };
@@ -331,7 +333,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50" data-testid="chat-interface">
       {/* Header */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
@@ -419,7 +421,7 @@ export default function ChatPage() {
           <AnimatePresence>
             {messages.map((message) => (
               <motion.div
-                key={message.id}
+                key={message._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -435,13 +437,25 @@ export default function ChatPage() {
                   >
                     {message.type === 'emoji' ? (
                       <span className="text-3xl">{message.content}</span>
+                    ) : message.type === 'image' ? (
+                      <div className="space-y-2">
+                        <img 
+                          src={message.content} 
+                          alt="Chat image" 
+                          className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => window.open(message.content, '_blank')}
+                        />
+                        {message.metadata?.fileName && (
+                          <p className="text-xs opacity-75">{message.metadata.fileName}</p>
+                        )}
+                      </div>
                     ) : (
                       <p className="break-words">{message.content}</p>
                     )}
                   </div>
                   
                   <div className="flex items-center mt-1 px-2">
-                    <span className="text-xs text-gray-500">{formatTime(message.timestamp)}</span>
+                    <span className="text-xs text-gray-500">{formatTime(message.createdAt)}</span>
                     {message.senderId === user?.id && message.read && (
                       <CheckIcon className="h-3 w-3 text-blue-500 ml-1" />
                     )}
@@ -556,6 +570,7 @@ export default function ChatPage() {
               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
               placeholder="Type a message..."
               className="w-full px-6 py-3 glass-light rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all placeholder-gray-500"
+              data-testid="message-input"
               animate={{ 
                 scale: inputMessage.length > 0 ? 1.02 : 1,
               }}

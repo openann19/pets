@@ -1,23 +1,23 @@
+import { INTENT_OPTIONS, SPECIES_OPTIONS } from '@pawfectmatch/core';
+import Slider from '@react-native-community/slider';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
   Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import Slider from '@react-native-community/slider';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { SPECIES_OPTIONS, INTENT_OPTIONS } from '@pawfectmatch/core';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type OnboardingStackParamList = {
   UserIntent: undefined;
@@ -171,7 +171,6 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
                 onValueChange={(value) => updatePreferences('maxDistance', Math.round(value))}
                 minimumTrackTintColor="#ec4899"
                 maximumTrackTintColor="#e5e7eb"
-                thumbStyle={styles.sliderThumb}
               />
               <View style={styles.sliderLabels}>
                 <Text style={styles.sliderLabel}>5 mi</Text>

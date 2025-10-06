@@ -1,3 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '@pawfectmatch/core';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -8,12 +12,10 @@ import {
   Image,
   RefreshControl,
   Dimensions,
+  Alert,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@pawfectmatch/core';
-import * as Haptics from 'expo-haptics';
+
 import { matchesAPI } from '../services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -72,7 +74,7 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
     setIsLoading(true);
     try {
       // ✅ REAL API - Fetch matches from backend
-      const realMatches = await matchesAPI.getMatches();
+      const realMatches = await matchesAPI.getMatches() as unknown as Match[];
       setMatches(realMatches);
     } catch (error) {
       console.error('Failed to load matches:', error);

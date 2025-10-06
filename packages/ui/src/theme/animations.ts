@@ -231,11 +231,11 @@ export const createTransition = (
   return properties.map(prop => `${prop} ${duration}ms ${easing}`).join(', ');
 };
 
-export const createKeyframes = (name: string, frames: Record<string, any>) => {
+export const createKeyframes = (name: string, frames: Record<string, Record<string, unknown>>) => {
   const keyframeString = Object.entries(frames)
     .map(([key, value]) => {
       const styles = Object.entries(value)
-        .map(([prop, val]) => `${prop}: ${val}`)
+        .map(([prop, val]) => `${prop}: ${String(val)}`)
         .join('; ');
       return `${key} { ${styles} }`;
     })
@@ -244,14 +244,14 @@ export const createKeyframes = (name: string, frames: Record<string, any>) => {
   return `@keyframes ${name} { ${keyframeString} }`;
 };
 
-export const withDelay = (animation: any, delay: number) => ({
+export const withDelay = (animation: Record<string, unknown>, delay: number) => ({
   ...animation,
   delay,
 });
 
-export const withStagger = (animation: any, index: number, staggerDelay: number = animations.stagger.normal) => ({
+export const withStagger = (animation: Record<string, unknown>, index: number, staggerDelay: number = animations.stagger.normal) => ({
   ...animation,
-  delay: (animation.delay || 0) + (index * staggerDelay),
+  delay: ((animation.delay as number) || 0) + (index * staggerDelay),
 });
 
 export default animations;

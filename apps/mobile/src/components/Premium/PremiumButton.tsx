@@ -4,7 +4,13 @@
  * Matches web premium experience with native mobile optimizations
  */
 
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef, useState } from 'react';
+import type {
+  ViewStyle} from 'react-native';
 import {
   TouchableOpacity,
   Text,
@@ -13,13 +19,8 @@ import {
   Animated,
   PanResponder,
   Dimensions,
-  ViewStyle,
   TextStyle,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
-import { Ionicons } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -30,12 +31,22 @@ interface PremiumButtonProps {
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
-  icon?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
   iconPosition?: 'left' | 'right';
   fullWidth?: boolean;
-  haptic?: boolean;
+  haptic?: 'light' | 'medium' | 'heavy';
   glow?: boolean;
   style?: ViewStyle;
+}
+
+// Variant style interface
+interface VariantStyle {
+  colors: string[];
+  textColor: string;
+  shadowColor: string;
+  blur?: boolean;
+  border?: boolean;
+  borderColor?: string;
 }
 
 export const PremiumButton: React.FC<PremiumButtonProps> = ({
@@ -48,13 +59,13 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
   icon,
   iconPosition = 'left',
   fullWidth = false,
-  haptic = true,
+  haptic = 'medium',
   glow = false,
   style,
 }) => {
+  const [isPressed, setIsPressed] = useState(false);
   const animatedScale = useRef(new Animated.Value(1)).current;
   const animatedGlow = useRef(new Animated.Value(0)).current;
-  const [isPressed, setIsPressed] = useState(false);
 
   // Enhanced haptic feedback with optimized patterns
   const triggerHaptic = async (type: 'light' | 'medium' | 'heavy' = 'medium') => {
@@ -84,39 +95,49 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
   // Enhanced press animations with optimized spring physics
   const handlePressIn = () => {
     setIsPressed(true);
-    triggerHaptic('light');
     
-    Animated.parallel([
+    const animations = [
       Animated.spring(animatedScale, {
         toValue: 0.95,
         useNativeDriver: true,
         tension: 400, // Increased for more responsive feel
         friction: 8,  // Reduced for smoother animation
       }),
-      glow && Animated.timing(animatedGlow, {
+    ];
+    
+    if (glow) {
+      animations.push(Animated.timing(animatedGlow, {
         toValue: 1,
         duration: 120, // Faster response
         useNativeDriver: false,
-      }),
-    ]).start();
+      }));
+    }
+    
+    Animated.parallel(animations).start();
+    triggerHaptic('light');
   };
 
   const handlePressOut = () => {
     setIsPressed(false);
     
-    Animated.parallel([
+    const animations = [
       Animated.spring(animatedScale, {
         toValue: 1,
         useNativeDriver: true,
         tension: 400, // Increased for more responsive feel
         friction: 6,  // Reduced for smoother animation
       }),
-      glow && Animated.timing(animatedGlow, {
+    ];
+    
+    if (glow) {
+      animations.push(Animated.timing(animatedGlow, {
         toValue: 0,
         duration: 180, // Faster response
         useNativeDriver: false,
-      }),
-    ]).start();
+      }));
+    }
+    
+    Animated.parallel(animations).start();
   };
 
   const handlePress = () => {
@@ -127,8 +148,8 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
   };
 
   // Get variant styles
-  const getVariantStyles = () => {
-    const variants = {
+  const getVariantStyles = (): VariantStyle => {
+    const variants: Record<string, VariantStyle> = {
       primary: {
         colors: ['#ec4899', '#f472b6'],
         textColor: '#ffffff',
@@ -155,6 +176,7 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
         textColor: '#ec4899',
         shadowColor: '#ec4899',
         border: true,
+        borderColor: '#ec4899',
       },
       ghost: {
         colors: ['transparent', 'transparent'],
@@ -165,7 +187,7 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
       },
     };
     
-    return variants[variant];
+    return variants[variant] || variants.primary;
   };
 
   // Get size styles
@@ -176,66 +198,25 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
       lg: { height: 52, paddingHorizontal: 32, fontSize: 18 },
     };
     
-    return sizes[size];
+    return sizes[size] || sizes.md;
   };
 
   const variantStyle = getVariantStyles();
   const sizeStyle = getSizeStyles();
 
-  const ButtonContent = () => (
-    <View style={[styles.content, { height: sizeStyle.height }]}>
-      {icon && iconPosition === 'left' && (
-        <Ionicons 
-          name={icon as any} 
-          size={sizeStyle.fontSize + 2} 
-          color={variantStyle.textColor}
-          style={{ marginRight: 8 }}
-        />
-      )}
-      
-      <Text
-        style={[
-          styles.text,
-          { 
-            color: variantStyle.textColor, 
-            fontSize: sizeStyle.fontSize,
-            opacity: loading ? 0 : 1,
-          },
-        ]}
-      >
-        {title}
-      </Text>
-      
-      {icon && iconPosition === 'right' && (
-        <Ionicons 
-          name={icon as any} 
-          size={sizeStyle.fontSize + 2} 
-          color={variantStyle.textColor}
-          style={{ marginLeft: 8 }}
-        />
-      )}
-      
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <Animated.View
-            style={[
-              styles.loadingDot,
-              {
-                transform: [{
-                  rotate: animatedGlow.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0deg', '360deg'],
-                  }),
-                }],
-              },
-            ]}
-          >
-            <Ionicons name="paw" size={20} color={variantStyle.textColor} />
-          </Animated.View>
-        </View>
-      )}
-    </View>
-  );
+  // Icon rendering helper
+  const renderIcon = () => {
+    if (!icon) return null;
+    
+    return (
+      <Ionicons
+        name={icon}
+        size={sizeStyle.fontSize + 2}
+        color={loading ? 'transparent' : variantStyle.textColor}
+        style={{ marginRight: iconPosition === 'left' ? 8 : 0, marginLeft: iconPosition === 'right' ? 8 : 0 }}
+      />
+    );
+  };
 
   const buttonStyle: ViewStyle = {
     width: fullWidth ? '100%' : 'auto',
@@ -259,38 +240,44 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
           buttonStyle,
           {
             transform: [{ scale: animatedScale }],
-            overflow: 'hidden',
           },
         ]}
       >
-        <BlurView intensity={20} style={StyleSheet.absoluteFillObject} />
+        <BlurView intensity={80} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
+        
         <TouchableOpacity
           onPress={handlePress}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           disabled={disabled || loading}
-          style={[styles.touchable, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
-          activeOpacity={0.8}
+          style={styles.buttonContent}
+          activeOpacity={0.9}
         >
-          <ButtonContent />
+          {iconPosition === 'left' && renderIcon()}
+          <Text style={[styles.buttonText, { color: variantStyle.textColor, fontSize: sizeStyle.fontSize }]}>
+            {title}
+          </Text>
+          {iconPosition === 'right' && renderIcon()}
+          
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <View style={[styles.loadingDot, { backgroundColor: variantStyle.textColor }]} />
+            </View>
+          )}
         </TouchableOpacity>
       </Animated.View>
     );
   }
 
-  // Gradient variants
-  if (variant === 'primary' || variant === 'secondary' || variant === 'gradient') {
+  // Gradient variant
+  if (variant === 'gradient') {
     return (
       <Animated.View
         style={[
           buttonStyle,
           {
             transform: [{ scale: animatedScale }],
-            shadowColor: variantStyle.shadowColor,
-            shadowOffset: { width: 0, height: glow ? 8 : 4 },
-            shadowOpacity: glow ? 0.4 : 0.2,
-            shadowRadius: glow ? 16 : 8,
-            elevation: glow ? 8 : 4,
           },
         ]}
       >
@@ -298,7 +285,7 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
           colors={variantStyle.colors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[StyleSheet.absoluteFillObject, { borderRadius: buttonStyle.borderRadius }]}
+          style={StyleSheet.absoluteFill}
         />
         
         <TouchableOpacity
@@ -306,46 +293,40 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           disabled={disabled || loading}
-          style={styles.touchable}
-          activeOpacity={0.8}
+          style={styles.buttonContent}
+          activeOpacity={0.9}
         >
-          <ButtonContent />
+          {iconPosition === 'left' && renderIcon()}
+          <Text style={[styles.buttonText, { color: variantStyle.textColor, fontSize: sizeStyle.fontSize }]}>
+            {title}
+          </Text>
+          {iconPosition === 'right' && renderIcon()}
+          
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <View style={[styles.loadingDot, { backgroundColor: variantStyle.textColor }]} />
+            </View>
+          )}
         </TouchableOpacity>
-
-        {/* Glow effect */}
-        {glow && (
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFillObject,
-              {
-                borderRadius: buttonStyle.borderRadius,
-                backgroundColor: variantStyle.shadowColor,
-                opacity: animatedGlow.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 0.3],
-                }),
-              },
-            ]}
-            pointerEvents="none"
-          />
-        )}
       </Animated.View>
     );
   }
 
-  // Default and other variants
+  // Standard variants (primary, secondary, neon, ghost)
   return (
     <Animated.View
       style={[
         buttonStyle,
         {
+          backgroundColor: variantStyle.colors[0],
           transform: [{ scale: animatedScale }],
-          backgroundColor: variant === 'neon' ? '#1a1a1a' : 'transparent',
+        },
+        glow && {
           shadowColor: variantStyle.shadowColor,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 2,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: animatedGlow,
+          shadowRadius: 12,
+          elevation: 8,
         },
       ]}
     >
@@ -354,36 +335,47 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled || loading}
-        style={styles.touchable}
-        activeOpacity={0.8}
+        style={styles.buttonContent}
+        activeOpacity={0.95}
       >
-        <ButtonContent />
+        {iconPosition === 'left' && renderIcon()}
+        <Text style={[styles.buttonText, { color: variantStyle.textColor, fontSize: sizeStyle.fontSize }]}>
+          {title}
+        </Text>
+        {iconPosition === 'right' && renderIcon()}
+        
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <View style={[styles.loadingDot, { backgroundColor: variantStyle.textColor }]} />
+          </View>
+        )}
       </TouchableOpacity>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  touchable: {
+  buttonContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
   },
-  text: {
+  buttonText: {
     fontWeight: '600',
     textAlign: 'center',
   },
   loadingContainer: {
     position: 'absolute',
+    right: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     justifyContent: 'center',
     alignItems: 'center',
   },

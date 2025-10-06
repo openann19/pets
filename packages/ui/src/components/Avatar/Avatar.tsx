@@ -89,7 +89,7 @@ export const Avatar: React.FC<AvatarProps> = ({
       `}
       onClick={onClick}
     >
-      {src ? (
+      {src != null && src !== '' ? (
         <img
           src={src}
           alt={alt}

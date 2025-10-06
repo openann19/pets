@@ -7,21 +7,16 @@ module.exports = {
     '**/*.(test|spec).(ts|tsx|js)'
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: 'tsconfig.json',
+    }],
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   testTimeout: 10000,
   verbose: true,
-  globals: {
-    'ts-jest': {
-      tsconfig: {
-        jsx: 'react-jsx'
-      }
-    }
-  }
 };

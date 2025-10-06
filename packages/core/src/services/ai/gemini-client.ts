@@ -3,7 +3,7 @@
  * Integration with Google's Gemini API for AI features
  */
 
-import axios, { AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 
 export interface GeminiConfig {
   apiKey: string;
@@ -22,16 +22,16 @@ export interface GeminiResponse {
 }
 
 export class GeminiClient {
-  private client: AxiosInstance;
-  private apiKey: string;
-  private model: string;
+  private readonly client: AxiosInstance;
+  private readonly apiKey: string;
+  private readonly model: string;
 
   constructor(config: GeminiConfig) {
     this.apiKey = config.apiKey;
-    this.model = config.model || 'gemini-pro';
+    this.model = config.model ?? 'gemini-pro';
     
     this.client = axios.create({
-      baseURL: config.baseURL || 'https://generativelanguage.googleapis.com/v1beta',
+      baseURL: config.baseURL ?? 'https://generativelanguage.googleapis.com/v1beta',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -55,7 +55,7 @@ export class GeminiClient {
       );
 
       const text = response.data.candidates[0]?.content?.parts[0]?.text;
-      if (!text) {
+      if (text == null || text === '') {
         throw new Error('No content generated');
       }
 
@@ -89,7 +89,7 @@ export class GeminiClient {
       );
 
       const text = response.data.candidates[0]?.content?.parts[0]?.text;
-      if (!text) {
+      if (text == null || text === '') {
         throw new Error('No analysis generated');
       }
 
@@ -105,7 +105,7 @@ export class GeminiClient {
    */
   private async imageToBase64(url: string): Promise<string> {
     const response = await axios.get(url, { responseType: 'arraybuffer' });
-    return Buffer.from(response.data, 'binary').toString('base64');
+    return Buffer.from(response.data as ArrayBuffer).toString('base64');
   }
 }
 

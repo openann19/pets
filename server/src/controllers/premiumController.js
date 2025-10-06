@@ -106,10 +106,242 @@ const getSuperLikes = (req, res) => {
     res.json({ success: true, data: { superLikes: 5 } });
 };
 
+const reactivateSubscription = async (req, res) => {
+    try {
+        const userId = req.userId;
+        
+        // Placeholder logic for reactivating subscription
+        res.json({ 
+            success: true, 
+            message: 'Subscription reactivated successfully',
+            data: { 
+                userId,
+                status: 'active',
+                reactivatedAt: new Date()
+            }
+        });
+    } catch (error) {
+        console.error('Reactivate subscription error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to reactivate subscription' 
+        });
+    }
+};
+
+const getSubscriptionStatus = async (req, res) => {
+    try {
+        const userId = req.userId;
+        
+        // Placeholder logic for getting subscription status
+        res.json({ 
+            success: true, 
+            data: { 
+                userId,
+                status: 'active',
+                plan: 'premium',
+                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+            }
+        });
+    } catch (error) {
+        console.error('Get subscription status error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to get subscription status' 
+        });
+    }
+};
+
+const updatePaymentMethod = async (req, res) => {
+    try {
+        const userId = req.userId;
+        
+        // Placeholder logic for updating payment method
+        res.json({ 
+            success: true, 
+            message: 'Payment method updated successfully',
+            data: { userId }
+        });
+    } catch (error) {
+        console.error('Update payment method error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to update payment method' 
+        });
+    }
+};
+
+const getBillingHistory = async (req, res) => {
+    try {
+        const userId = req.userId;
+        
+        // Placeholder logic for getting billing history
+        res.json({ 
+            success: true, 
+            data: { 
+                userId,
+                history: [
+                    { date: new Date(), amount: 9.99, status: 'paid' }
+                ]
+            }
+        });
+    } catch (error) {
+        console.error('Get billing history error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to get billing history' 
+        });
+    }
+};
+
+const getUsageStats = async (req, res) => {
+    try {
+        const userId = req.userId;
+        
+        // Placeholder logic for getting usage stats
+        res.json({ 
+            success: true, 
+            data: { 
+                userId,
+                superLikesUsed: 2,
+                superLikesRemaining: 3,
+                profileBoostsUsed: 1,
+                profileBoostsRemaining: 4
+            }
+        });
+    } catch (error) {
+        console.error('Get usage stats error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to get usage stats' 
+        });
+    }
+};
+
+const createCheckoutSession = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { planId } = req.body;
+        
+        // Placeholder logic for creating checkout session
+        res.json({ 
+            success: true, 
+            data: { 
+                userId,
+                planId,
+                sessionId: 'cs_test_' + Math.random().toString(36).substr(2, 9),
+                url: 'https://checkout.stripe.com/pay/cs_test_123'
+            }
+        });
+    } catch (error) {
+        console.error('Create checkout session error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to create checkout session' 
+        });
+    }
+};
+
+const handleWebhook = async (req, res) => {
+    try {
+        // Placeholder logic for handling webhooks
+        res.json({ 
+            success: true, 
+            message: 'Webhook processed successfully'
+        });
+    } catch (error) {
+        console.error('Handle webhook error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to process webhook' 
+        });
+    }
+};
+
+const getPlans = async (req, res) => {
+    try {
+        // Placeholder logic for getting plans
+        res.json({ 
+            success: true, 
+            data: { 
+                plans: [
+                    { id: 'basic', name: 'Basic', price: 4.99, features: ['Basic matching'] },
+                    { id: 'premium', name: 'Premium', price: 9.99, features: ['Advanced matching', 'Super likes'] },
+                    { id: 'vip', name: 'VIP', price: 19.99, features: ['All features', 'Priority support'] }
+                ]
+            }
+        });
+    } catch (error) {
+        console.error('Get plans error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to get plans' 
+        });
+    }
+};
+
+const upgradePlan = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { newPlanId } = req.body;
+        
+        // Placeholder logic for upgrading plan
+        res.json({ 
+            success: true, 
+            message: 'Plan upgraded successfully',
+            data: { 
+                userId,
+                newPlanId,
+                upgradedAt: new Date()
+            }
+        });
+    } catch (error) {
+        console.error('Upgrade plan error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to upgrade plan' 
+        });
+    }
+};
+
+const downgradePlan = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { newPlanId } = req.body;
+        
+        // Placeholder logic for downgrading plan
+        res.json({ 
+            success: true, 
+            message: 'Plan downgraded successfully',
+            data: { 
+                userId,
+                newPlanId,
+                downgradedAt: new Date()
+            }
+        });
+    } catch (error) {
+        console.error('Downgrade plan error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to downgrade plan' 
+        });
+    }
+};
+
 module.exports = {
     subscribeToPremium,
     cancelSubscription,
     getPremiumFeatures,
     boostProfile,
-    getSuperLikes
+    getSuperLikes,
+    reactivateSubscription,
+    getSubscriptionStatus,
+    updatePaymentMethod,
+    getBillingHistory,
+    getUsageStats,
+    createCheckoutSession,
+    handleWebhook,
+    getPlans,
+    upgradePlan,
+    downgradePlan
 };

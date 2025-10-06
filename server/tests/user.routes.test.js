@@ -10,9 +10,12 @@ let mongoServer;
 
 describe('User Routes API Test', () => {
   beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+    // Only create memory server if not already connected
+    if (mongoose.connection.readyState === 0) {
+      mongoServer = await MongoMemoryServer.create();
+      const mongoUri = mongoServer.getUri();
+      await mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+    }
 
     // Create and log in a user
     const user = new User({
@@ -32,9 +35,12 @@ describe('User Routes API Test', () => {
   });
 
   afterAll(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
-    if (httpServer.listening) {
+    // Only disconnect if we created the connection
+    if (mongoServer) {
+      await mongoose.disconnect();
+      await mongoServer.stop();
+    }
+    if (httpServer && httpServer.listening) {
       httpServer.close();
     }
   });

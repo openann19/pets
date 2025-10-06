@@ -371,8 +371,8 @@ export function PremiumButton({
         role={role ?? 'button'}
         tabIndex={tabIndex ?? (disabled ? -1 : 0)}
         data-testid={testId}
-        whileHover={!disabled ? hoverVariants.glow : undefined}
-        whileTap={!disabled ? tapVariants.press : undefined}
+        whileHover={!disabled ? "glow" : undefined}
+        whileTap={!disabled ? "press" : undefined}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: disabled ? 0.5 : 1, scale: 1 }}
         transition={transitions.spring}

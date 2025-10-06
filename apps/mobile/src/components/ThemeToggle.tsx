@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
   TouchableOpacity,
@@ -6,7 +7,7 @@ import {
   StyleSheet,
   Animated,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
 import { useThemeToggle } from '../hooks/useThemeToggle';
 import { Spacing, BorderRadius, Typography } from '../styles/GlobalStyles';
 
@@ -78,7 +79,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         ]}
         activeOpacity={0.7}
       >
-        <Animated.View style={{ color: iconColor }}>
+        <Animated.View>
           <Ionicons
             name={isDark ? 'moon' : 'sunny'}
             size={iconSizes[size]}

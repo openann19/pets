@@ -1,9 +1,10 @@
 import React, { useRef, useEffect } from 'react';
+import type {
+  ViewStyle,
+  TextStyle} from 'react-native';
 import {
   Animated,
   Easing,
-  ViewStyle,
-  TextStyle,
   Dimensions,
 } from 'react-native';
 
@@ -77,13 +78,13 @@ export const useFloatingAnimation = (amplitude = 10, duration = 2000) => {
         Animated.timing(floatAnim, {
           toValue: 1,
           duration: duration / 2,
-          easing: Easing.inOut(Easing.sine),
+          easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(floatAnim, {
           toValue: 0,
           duration: duration / 2,
-          easing: Easing.inOut(Easing.sine),
+          easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
       ])

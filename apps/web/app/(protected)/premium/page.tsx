@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   CheckIcon, 
@@ -19,33 +19,90 @@ import {
 import { useAuthStore } from '@/lib/auth-store';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
+import { api } from '@/services/api';
+import { SubscriptionPlan, SubscriptionStatus, ApiResponse } from '@/types';
 
-// Dev-safe stubs for premium tier logic when hooks/services are missing
-type PremiumTier = 'free' | 'premium_plus' | 'enterprise' | 'global_elite';
-const premiumTierService = {
-  getPlans: () => ([
-    { tier: 'free', name: 'Free', price: 0, features: { videoCalls: false, analytics: false, apiAccess: false, conciergeService: false }, limits: { dailySwipes: 50 } },
-    { tier: 'premium_plus', name: 'Premium+', price: 9, features: { videoCalls: true, analytics: true, apiAccess: false, conciergeService: false }, limits: { dailySwipes: -1 } },
-    { tier: 'enterprise', name: 'Enterprise', price: 19, features: { videoCalls: true, analytics: true, apiAccess: true, conciergeService: false }, limits: { dailySwipes: -1 } },
-    { tier: 'global_elite', name: 'Global Elite', price: 49, features: { videoCalls: true, analytics: true, apiAccess: true, conciergeService: true }, limits: { dailySwipes: -1 } },
-  ])
-};
+// Premium tier types
+type PremiumTier = 'free' | 'basic' | 'premium' | 'vip';
+
 
 function usePremiumTier(userId: string) {
-  const plans = premiumTierService.getPlans();
-  const currentTier: PremiumTier = 'free';
+  const [currentTier, setCurrentTier] = useState<PremiumTier>('free');
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
+  useEffect(() => {
+    const loadPremiumData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Load available plans
+        const plansResponse: any = await api.subscription.getPlans();
+        if (plansResponse.success) {
+          setPlans(plansResponse.data.plans);
+        }
+        
+        // Load current subscription status
+        try {
+          const statusResponse: any = await api.subscription.getCurrentSubscription();
+          if (statusResponse.success) {
+            setSubscriptionStatus(statusResponse.data);
+            setCurrentTier(statusResponse.data.plan as PremiumTier);
+          }
+        } catch (error) {
+          // User might not have a subscription yet
+          console.log('No subscription found, using free tier');
+        }
+      } catch (error) {
+        console.error('Failed to load premium data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (userId) {
+      loadPremiumData();
+    }
+  }, [userId]);
+
+  const upgrade = async (tier: PremiumTier) => {
+    try {
+      setIsUpgrading(true);
+      
+      // Create checkout session
+      const checkoutResponse: any = await api.subscription.createCheckoutSession({
+        plan: tier,
+        interval: 'month'
+      });
+      
+      if (checkoutResponse.success && checkoutResponse.data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = checkoutResponse.data.url;
+      }
+    } catch (error) {
+      console.error('Failed to upgrade:', error);
+      alert('Failed to start upgrade process. Please try again.');
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   return {
     currentTier,
-    plan: plans[0],
+    plan: plans.find(p => (p as any).id === currentTier) || plans[0],
     allPlans: plans,
-    upgrade: (tier: PremiumTier) => console.log('Mock upgrade to', tier),
-    isUpgrading: false,
+    subscriptionStatus,
+    upgrade,
+    isUpgrading,
+    isLoading
   };
 }
 
 export default function PremiumPage() {
   const { user } = useAuthStore();
-  const { currentTier, plan, allPlans, upgrade, isUpgrading } = usePremiumTier(user?.id || '');
+  const { currentTier, plan, allPlans, upgrade, isUpgrading, isLoading } = usePremiumTier(user?.id || '');
   const [selectedTier, setSelectedTier] = useState<PremiumTier>(currentTier);
 
   const handleUpgrade = () => {
@@ -56,20 +113,36 @@ export default function PremiumPage() {
 
   const tierIcons = {
     free: BoltIcon,
-    premium_plus: VideoCameraIcon,
-    enterprise: ChartBarIcon,
-    global_elite: GlobeAltIcon,
+    basic: VideoCameraIcon,
+    premium: ChartBarIcon,
+    vip: GlobeAltIcon,
   };
 
   const tierColors = {
     free: 'from-gray-400 to-gray-500',
-    premium_plus: 'from-pink-500 to-purple-600',
-    enterprise: 'from-blue-500 to-indigo-600',
-    global_elite: 'from-yellow-500 to-orange-600',
+    basic: 'from-blue-500 to-blue-600',
+    premium: 'from-pink-500 to-purple-600',
+    vip: 'from-yellow-500 to-orange-600',
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          >
+            <SparklesIcon className="h-12 w-12 text-purple-500 mx-auto" />
+          </motion.div>
+          <p className="mt-4 text-gray-600">Loading premium plans...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 py-12 px-4" data-testid="premium-page">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -91,29 +164,89 @@ export default function PremiumPage() {
 
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {/* Free Plan */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0 }}
+          >
+            <PremiumCard
+              hover
+              glow={selectedTier === 'free'}
+              variant="gradient"
+              className={`p-6 h-full ${selectedTier === 'free' ? 'ring-4 ring-purple-500' : ''}`}
+              data-testid="plan-card"
+            >
+              <div className="flex flex-col h-full">
+                <div className="mb-6">
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${tierColors.free} flex items-center justify-center mb-4`}>
+                    <BoltIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Free</h3>
+                  <div className="flex items-baseline mb-2">
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">$0</span>
+                  </div>
+                  {currentTier === 'free' && (
+                    <span className="inline-block px-3 py-1 text-xs font-semibold text-white bg-purple-500 rounded-full">
+                      Current Plan
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-3 mb-6">
+                  <div className="flex items-center gap-2">
+                    <CheckIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm text-gray-900 dark:text-white">Basic matching</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm text-gray-900 dark:text-white">50 daily swipes</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                    <span className="text-sm text-gray-400">Video calls</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                    <span className="text-sm text-gray-400">Analytics</span>
+                  </div>
+                </div>
+
+                <PremiumButton
+                  size="lg"
+                  variant={selectedTier === 'free' ? 'primary' : 'secondary'}
+                  disabled={currentTier === 'free'}
+                  onClick={() => setSelectedTier('free')}
+                >
+                  {currentTier === 'free' ? 'Current Plan' : selectedTier === 'free' ? 'Selected' : 'Select Plan'}
+                </PremiumButton>
+              </div>
+            </PremiumCard>
+          </motion.div>
+
+          {/* Paid Plans */}
           {allPlans.map((tierPlan, index) => {
-            const Icon = tierIcons[tierPlan.tier];
-            const isCurrentTier = tierPlan.tier === currentTier;
-            const isSelected = tierPlan.tier === selectedTier;
-            const isPremium = tierPlan.tier !== 'free';
+            const Icon = tierIcons[(tierPlan as any).id as keyof typeof tierIcons];
+            const isCurrentTier = (tierPlan as any).id === currentTier;
+            const isSelected = (tierPlan as any).id === selectedTier;
 
             return (
               <motion.div
-                key={tierPlan.tier}
+                key={(tierPlan as any).id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: (index + 1) * 0.1 }}
               >
                 <PremiumCard
                   hover
                   glow={isSelected}
-                  gradient={tierColors[tierPlan.tier]}
+                  variant="gradient"
                   className={`p-6 h-full ${isSelected ? 'ring-4 ring-purple-500' : ''}`}
+                  data-testid="plan-card"
                 >
                   <div className="flex flex-col h-full">
-                    {/* Header */}
                     <div className="mb-6">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${tierColors[tierPlan.tier]} flex items-center justify-center mb-4`}>
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${tierColors[(tierPlan as any).id as keyof typeof tierColors]} flex items-center justify-center mb-4`}>
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                       <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -123,9 +256,7 @@ export default function PremiumPage() {
                         <span className="text-4xl font-bold text-gray-900 dark:text-white">
                           ${tierPlan.price}
                         </span>
-                        {tierPlan.price > 0 && (
-                          <span className="text-gray-500 ml-2">/month</span>
-                        )}
+                        <span className="text-gray-500 ml-2">/month</span>
                       </div>
                       {isCurrentTier && (
                         <span className="inline-block px-3 py-1 text-xs font-semibold text-white bg-purple-500 rounded-full">
@@ -134,33 +265,20 @@ export default function PremiumPage() {
                       )}
                     </div>
 
-                    {/* Features */}
                     <div className="flex-1 space-y-3 mb-6">
-                      {Object.entries(tierPlan.features).slice(0, 6).map(([feature, enabled]) => {
-                        if (typeof enabled === 'boolean') {
-                          return (
-                            <div key={feature} className="flex items-center gap-2">
-                              {enabled ? (
-                                <CheckIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
-                              ) : (
-                                <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
-                              )}
-                              <span className={`text-sm ${enabled ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                                {feature.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                              </span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })}
+                      {tierPlan.features.map((feature, featureIndex) => (
+                        <div key={featureIndex} className="flex items-center gap-2">
+                          <CheckIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
+                          <span className="text-sm text-gray-900 dark:text-white">{feature}</span>
+                        </div>
+                      ))}
                     </div>
 
-                    {/* Action Button */}
                     <PremiumButton
                       size="lg"
                       variant={isSelected ? 'primary' : 'secondary'}
-                      disabled={isCurrentTier || !isPremium}
-                      onClick={() => setSelectedTier(tierPlan.tier)}
+                      disabled={isCurrentTier}
+                      onClick={() => setSelectedTier(tierPlan.id as PremiumTier)}
                     >
                       {isCurrentTier ? 'Current Plan' : isSelected ? 'Selected' : 'Select Plan'}
                     </PremiumButton>
@@ -183,9 +301,9 @@ export default function PremiumPage() {
                 Ready to upgrade?
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Upgrade to {allPlans.find(p => p.tier === selectedTier)?.name} for just 
+                Upgrade to {selectedTier === 'free' ? 'Free' : allPlans.find(p => p.id === selectedTier)?.name} for just 
                 <span className="font-bold text-purple-600 mx-2">
-                  ${allPlans.find(p => p.tier === selectedTier)?.price}/month
+                  ${selectedTier === 'free' ? '0' : allPlans.find(p => p.id === selectedTier)?.price}/month
                 </span>
               </p>
               <div className="flex gap-4 justify-center">
@@ -200,6 +318,7 @@ export default function PremiumPage() {
                   size="lg"
                   loading={isUpgrading}
                   onClick={handleUpgrade}
+                  data-testid="upgrade-button"
                 >
                   Upgrade Now
                 </PremiumButton>
@@ -221,8 +340,9 @@ export default function PremiumPage() {
                     <th className="text-left py-4 px-4 text-gray-900 dark:text-white font-semibold">
                       Feature
                     </th>
+                    <th className="text-center py-4 px-4 text-gray-900 dark:text-white font-semibold">Free</th>
                     {allPlans.map(tierPlan => (
-                      <th key={tierPlan.tier} className="text-center py-4 px-4 text-gray-900 dark:text-white font-semibold">
+                      <th key={tierPlan.id} className="text-center py-4 px-4 text-gray-900 dark:text-white font-semibold">
                         {tierPlan.name}
                       </th>
                     ))}
@@ -230,42 +350,46 @@ export default function PremiumPage() {
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-100">
-                    <td className="py-3 px-4 text-gray-600">Video Calls</td>
+                    <td className="py-3 px-4 text-gray-600">Basic Matching</td>
+                    <td className="text-center py-3 px-4">
+                      <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
+                    </td>
                     {allPlans.map(tierPlan => (
-                      <td key={tierPlan.tier} className="text-center py-3 px-4">
-                        {tierPlan.features.videoCalls ? (
-                          <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
+                      <td key={tierPlan.id} className="text-center py-3 px-4">
+                        <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     ))}
                   </tr>
                   <tr className="border-b border-gray-100">
-                    <td className="py-3 px-4 text-gray-600">Analytics Dashboard</td>
+                    <td className="py-3 px-4 text-gray-600">Advanced Matching</td>
+                    <td className="text-center py-3 px-4">
+                      <span className="text-gray-300">—</span>
+                    </td>
                     {allPlans.map(tierPlan => (
-                      <td key={tierPlan.tier} className="text-center py-3 px-4">
-                        {tierPlan.features.analytics ? (
-                          <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
+                      <td key={tierPlan.id} className="text-center py-3 px-4">
+                        <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     ))}
                   </tr>
                   <tr className="border-b border-gray-100">
-                    <td className="py-3 px-4 text-gray-600">Daily Swipes</td>
+                    <td className="py-3 px-4 text-gray-600">Super Likes</td>
+                    <td className="text-center py-3 px-4">
+                      <span className="text-gray-300">—</span>
+                    </td>
                     {allPlans.map(tierPlan => (
-                      <td key={tierPlan.tier} className="text-center py-3 px-4 text-gray-900 dark:text-white font-semibold">
-                        {tierPlan.limits.dailySwipes === -1 ? 'Unlimited' : tierPlan.limits.dailySwipes}
+                      <td key={tierPlan.id} className="text-center py-3 px-4">
+                        <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     ))}
                   </tr>
                   <tr className="border-b border-gray-100">
-                    <td className="py-3 px-4 text-gray-600">API Access</td>
+                    <td className="py-3 px-4 text-gray-600">Priority Support</td>
+                    <td className="text-center py-3 px-4">
+                      <span className="text-gray-300">—</span>
+                    </td>
                     {allPlans.map(tierPlan => (
-                      <td key={tierPlan.tier} className="text-center py-3 px-4">
-                        {tierPlan.features.apiAccess ? (
+                      <td key={tierPlan.id} className="text-center py-3 px-4">
+                        {tierPlan.id === 'vip' ? (
                           <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
                         ) : (
                           <span className="text-gray-300">—</span>
@@ -274,10 +398,13 @@ export default function PremiumPage() {
                     ))}
                   </tr>
                   <tr>
-                    <td className="py-3 px-4 text-gray-600">Concierge Service</td>
+                    <td className="py-3 px-4 text-gray-600">All Features</td>
+                    <td className="text-center py-3 px-4">
+                      <span className="text-gray-300">—</span>
+                    </td>
                     {allPlans.map(tierPlan => (
-                      <td key={tierPlan.tier} className="text-center py-3 px-4">
-                        {tierPlan.features.conciergeService ? (
+                      <td key={tierPlan.id} className="text-center py-3 px-4">
+                        {tierPlan.id === 'vip' ? (
                           <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
                         ) : (
                           <span className="text-gray-300">—</span>

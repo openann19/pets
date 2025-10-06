@@ -1,3 +1,5 @@
+import { SPECIES_OPTIONS, SIZE_OPTIONS, INTENT_OPTIONS, PERSONALITY_TAGS } from '@pawfectmatch/core';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
   View,
@@ -10,15 +12,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { SPECIES_OPTIONS, SIZE_OPTIONS, INTENT_OPTIONS, PERSONALITY_TAGS } from '@pawfectmatch/core';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type OnboardingStackParamList = {
   UserIntent: undefined;

@@ -52,7 +52,7 @@ Cypress.Commands.add('logout', () => {
 declare global {
   namespace Cypress {
     interface Chainable {
-      login(email: string, password: string): Chainable<{ token: string; user: any }>;
+      login(email: string, password: string): Chainable<{ token: string; user: Record<string, unknown> }>;
       register(userData: {
         email: string;
         password: string;

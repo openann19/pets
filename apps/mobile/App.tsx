@@ -92,8 +92,8 @@ function MainTabNavigator() {
   
   return (
     <MainTabs.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
+      screenOptions={({ route }: { route: { name: string } }) => ({
+        tabBarIcon: ({ focused, color, size }: { focused: boolean; color: string; size: number }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
 
           if (route.name === 'Home') {
@@ -180,12 +180,12 @@ function RootNavigator() {
 }
 
 export default function App() {
-  const { isAuthenticated, user, initializeAuth } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Initialize auth state from storage
-    initializeAuth();
+    // Initialize auth state from storage is handled by Zustand persist
+    // No need to explicitly initialize
     
     // Check onboarding status
     checkOnboardingStatus();

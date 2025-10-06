@@ -2,21 +2,16 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const { app, httpServer } = require('../server');
 const User = require('../src/models/User');
-const { MongoMemoryServer } = require('mongodb-memory-server');
-
-let mongoServer;
+const { setupTestDatabase, cleanupTestDatabase, clearTestDatabase } = require('./test-utils');
 
 describe('Auth Routes API Test', () => {
   beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+    await setupTestDatabase();
   });
 
   afterAll(async () => {
-    await mongoose.disconnect();
-    await mongoServer.stop();
-    if (httpServer.listening) {
+    await cleanupTestDatabase();
+    if (httpServer && httpServer.listening) {
       httpServer.close();
     }
   });

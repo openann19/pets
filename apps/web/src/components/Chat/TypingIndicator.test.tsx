@@ -1,5 +1,6 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
+import React from 'react';
+
 import '@testing-library/jest-dom';
 import TypingIndicator from './TypingIndicator';
 
@@ -50,8 +51,8 @@ describe('TypingIndicator Component', () => {
       <TypingIndicator isVisible={true} userNames={['John']} />
     );
 
-    // Check that the animated dots are present
-    const dots = screen.getAllByTestId('typing-dot');
+    // Check that the animated dots are present (they don't have testids, so check by class)
+    const dots = document.querySelectorAll('.w-2.h-2.bg-gray-400.rounded-full');
     expect(dots).toHaveLength(3);
   });
 

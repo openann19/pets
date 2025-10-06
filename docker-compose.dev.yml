@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: pawfectmatch-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: pawfectmatch
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - pawfectmatch-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: pawfectmatch-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pawfectmatch-network
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pawfectmatch-server
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://root:password@mongodb:27017/pawfectmatch?authSource=admin
+      REDIS_URL: redis://redis:6379
+      PORT: 5001
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - pawfectmatch-network
+    volumes:
+      - ./server:/app/server
+      - /app/server/node_modules
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pawfectmatch-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:5001
+      API_URL: http://server:5001
+    depends_on:
+      - server
+    networks:
+      - pawfectmatch-network
+    volumes:
+      - ./apps/web:/app/apps/web
+      - /app/apps/web/node_modules
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  pawfectmatch-network:
+    driver: bridge

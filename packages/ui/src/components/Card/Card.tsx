@@ -1,7 +1,7 @@
-import React from 'react';
 import { useFocusRing } from '@react-aria/focus';
 import { useHover } from '@react-aria/interactions';
 import { mergeProps } from '@react-aria/utils';
+import React from 'react';
 
 export interface CardProps {
   /**

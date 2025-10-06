@@ -1,3 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '@pawfectmatch/core';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Haptics from 'expo-haptics';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,11 +15,6 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@pawfectmatch/core';
-import * as Haptics from 'expo-haptics';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -86,7 +86,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Good morning!</Text>
-            <Text style={styles.userName}>{user?.name || 'Pet Lover'}</Text>
+            <Text style={styles.userName}>{user?.firstName || 'Pet Lover'}</Text>
           </View>
           <TouchableOpacity
             style={styles.profileButton}

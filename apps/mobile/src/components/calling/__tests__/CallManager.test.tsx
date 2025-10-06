@@ -1,15 +1,16 @@
+import { act, fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Alert } from 'react-native';
-import CallManager, { useCallManager } from '../CallManager';
-import WebRTCService from '../../../services/WebRTCService';
+import { Alert, Text, TouchableOpacity, View } from 'react-native';
+
 import { useSocket } from '../../../hooks/useSocket';
+import WebRTCService from '../../../services/WebRTCService';
+import CallManager, { useCallManager } from '../CallManager';
 
 // Mock dependencies
 jest.mock('../../../services/WebRTCService');
 jest.mock('../../../hooks/useSocket');
+// React Native is already mocked in jest.setup.ts
 jest.mock('react-native', () => ({
-  ...jest.requireActual('react-native'),
   Alert: {
     alert: jest.fn(),
   },
@@ -45,7 +46,7 @@ describe('CallManager', () => {
   });
 
   it('should render children correctly', () => {
-    const TestChild = () => <div testID="test-child">Test Child</div>;
+    const TestChild = () => <Text testID="test-child">Test Child</Text>;
     
     const { getByTestId } = render(
       <CallManager>
@@ -171,18 +172,18 @@ describe('useCallManager hook', () => {
     const { startCall, endCall, isCallActive, getCallState } = useCallManager();
     
     return (
-      <div>
-        <button testID="start-voice-call" onPress={() => startCall('test-match', 'voice')}>
-          Start Voice Call
-        </button>
-        <button testID="start-video-call" onPress={() => startCall('test-match', 'video')}>
-          Start Video Call
-        </button>
-        <button testID="end-call" onPress={endCall}>
-          End Call
-        </button>
-        <div testID="call-active">{isCallActive() ? 'Active' : 'Inactive'}</div>
-      </div>
+      <View>
+        <TouchableOpacity testID="start-voice-call" onPress={() => startCall('test-match', 'voice')}>
+          <Text>Start Voice Call</Text>
+        </TouchableOpacity>
+        <TouchableOpacity testID="start-video-call" onPress={() => startCall('test-match', 'video')}>
+          <Text>Start Video Call</Text>
+        </TouchableOpacity>
+        <TouchableOpacity testID="end-call" onPress={endCall}>
+          <Text>End Call</Text>
+        </TouchableOpacity>
+        <Text testID="call-active">{isCallActive() ? 'Active' : 'Inactive'}</Text>
+      </View>
     );
   };
 

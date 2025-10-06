@@ -148,7 +148,7 @@ export default function MatchesPage() {
                   </div>
                 </div>
               </PremiumCard>
-            )))}
+            ))}
           </div>
         ) : (
           <div className="text-center py-12">

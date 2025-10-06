@@ -5,10 +5,11 @@
 
 'use client';
 
-import React, { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { COLORS, GRADIENTS, SHADOWS, RADIUS, BACKDROP } from '../../theme/design-system';
-import { transitions, entranceVariants, hoverVariants } from '../../animations/premium-motion';
+import React, { useRef, useState } from 'react';
+
+import { entranceVariants, hoverVariants, tapVariants, transitions } from '../../animations/premium-motion';
+import { BACKDROP, COLORS, GRADIENTS, RADIUS, SHADOWS } from '../../theme/design-system';
 
 interface PremiumCardProps {
   children: React.ReactNode;
@@ -22,6 +23,20 @@ interface PremiumCardProps {
   onClick?: () => void;
   entrance?: keyof typeof entranceVariants;
   delay?: number;
+  // WCAG 2.1 AA Accessibility Props
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-labelledby'?: string;
+  'aria-expanded'?: boolean;
+  'aria-selected'?: boolean;
+  'aria-hidden'?: boolean;
+  'aria-live'?: 'polite' | 'assertive' | 'off';
+  'aria-atomic'?: boolean;
+  'aria-relevant'?: 'additions' | 'removals' | 'text' | 'all';
+  role?: string;
+  tabIndex?: number;
+  // Enhanced accessibility for screen readers
+  'data-testid'?: string;
 }
 
 export function PremiumCard({
@@ -58,12 +73,38 @@ export function PremiumCard({
     y.set(event.clientY - centerY);
   };
 
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
   const handleMouseLeave = () => {
     setIsHovered(false);
     if (tilt) {
       x.set(0);
       y.set(0);
     }
+  };
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    }
+  };
+
+  const handleMouseMoveWrapper = (event: React.MouseEvent) => {
+    handleMouseMove(event);
+  };
+
+  const handleMouseEnterWrapper = () => {
+    handleMouseEnter();
+  };
+
+  const handleMouseLeaveWrapper = () => {
+    handleMouseLeave();
+  };
+
+  const handleClickWrapper = () => {
+    handleClick();
   };
 
   // Get variant styles
@@ -143,18 +184,24 @@ export function PremiumCard({
           rotateY: tilt ? rotateY : 0,
           transformStyle: tilt ? 'preserve-3d' : 'flat',
         }}
-        initial={entranceVariants[entrance]?.initial}
-        animate={entranceVariants[entrance]?.animate}
+        variants={{
+          hidden: entranceVariants[entrance],
+          visible: { opacity: 1, x: 0, y: 0, scale: 1, rotateX: 0, rotateY: 0 },
+          gentleLift: hoverVariants.gentleLift,
+          press: tapVariants.press,
+        }}
+        initial="hidden"
+        animate="visible"
         transition={{
-          ...entranceVariants[entrance]?.transition,
+          ...transitions.spring,
           delay,
         }}
-        whileHover={hover && !onClick ? hoverVariants.gentleLift : {}}
-        whileTap={onClick ? tapVariants.press : {}}
-        onMouseMove={handleMouseMove}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={handleMouseLeave}
-        onClick={onClick}
+        whileHover={hover && !onClick ? 'gentleLift' : undefined}
+        whileTap={onClick ? 'press' : undefined}
+        onMouseMove={handleMouseMoveWrapper}
+        onMouseEnter={handleMouseEnterWrapper}
+        onMouseLeave={handleMouseLeaveWrapper}
+        onClick={handleClickWrapper}
       >
         {/* Glow effect */}
         {glow && isHovered && (
@@ -210,7 +257,7 @@ export function PremiumCard({
 
       {/* Holographic animation styles */}
       {variant === 'holographic' && (
-        <style jsx>{`
+        <style>{`
           @keyframes holographic {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }

@@ -17,7 +17,7 @@ interface PremiumInputProps {
   onBlur?: () => void;
   onFocus?: () => void;
   type?: 'text' | 'email' | 'password' | 'tel' | 'url' | 'search' | 'number';
-  variant?: 'default' | 'glass' | 'gradient' | 'neon';
+  variant?: 'default' | 'glass' | 'gradient' | 'neon' | 'floating' | 'outlined' | 'filled';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   error?: string;
@@ -109,6 +109,27 @@ const PremiumInput: React.FC<PremiumInputProps> = ({
       } ${isFocused ? 'shadow-[0_0_20px_rgba(236,72,153,0.5)]' : ''}`,
       input: 'text-pink-400',
       label: error ? 'text-red-500' : 'text-pink-400',
+    },
+    floating: {
+      container: `bg-white/10 backdrop-blur-md border-2 ${
+        error ? 'border-red-500' : isFocused ? 'border-blue-400' : 'border-white/20'
+      } ${isFocused ? 'shadow-[0_0_20px_rgba(59,130,246,0.5)]' : ''}`,
+      input: 'text-white',
+      label: error ? 'text-red-500' : isFocused ? 'text-blue-400' : 'text-white/70',
+    },
+    outlined: {
+      container: `bg-transparent border-2 ${
+        error ? 'border-red-500' : isFocused ? 'border-blue-500' : 'border-gray-300 dark:border-gray-600'
+      } ${isFocused ? 'shadow-[0_0_0_3px_rgba(59,130,246,0.1)]' : ''}`,
+      input: 'text-gray-900 dark:text-white',
+      label: error ? 'text-red-500' : isFocused ? 'text-blue-600' : 'text-gray-600 dark:text-gray-400',
+    },
+    filled: {
+      container: `bg-gray-100 dark:bg-gray-800 border-2 ${
+        error ? 'border-red-500' : isFocused ? 'border-blue-500' : 'border-transparent'
+      } ${isFocused ? 'shadow-[0_0_0_3px_rgba(59,130,246,0.1)]' : ''}`,
+      input: 'text-gray-900 dark:text-white',
+      label: error ? 'text-red-500' : isFocused ? 'text-blue-600' : 'text-gray-600 dark:text-gray-400',
     },
   };
 

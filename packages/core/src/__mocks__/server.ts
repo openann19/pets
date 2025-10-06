@@ -1,5 +1,5 @@
 import { rest } from 'msw';
-import { setupServer } from 'msw/node';
+import { setupServer, type SetupServer } from 'msw/node';
 
 const handlers = [
   // Auth endpoints
@@ -123,14 +123,14 @@ const handlers = [
 
   // Default handler for unhandled requests
   rest.get('*', (req, res, ctx) => {
-    console.error(`Unhandled ${req.method} ${req.url}`);
+    console.error(`Unhandled ${req.method} ${req.url?.toString() ?? 'unknown'}`);
     return res(ctx.status(404), ctx.json({ error: 'Not found' }));
   }),
 
   rest.post('*', (req, res, ctx) => {
-    console.error(`Unhandled ${req.method} ${req.url}`);
+    console.error(`Unhandled ${req.method} ${req.url?.toString() ?? 'unknown'}`);
     return res(ctx.status(404), ctx.json({ error: 'Not found' }));
   })
 ];
 
-export const server = setupServer(...handlers);
+export const server: SetupServer = setupServer(...handlers);

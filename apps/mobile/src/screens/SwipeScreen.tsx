@@ -1,22 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore, useSwipeLogic } from '@pawfectmatch/core';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
   Alert,
-  TouchableOpacity,
-  Image,
-  ScrollView,
   Animated,
+  Dimensions,
+  Image,
   PanResponder,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@pawfectmatch/core';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSwipe } from '../../../web/src/hooks/useSwipe';
-import { api } from '../../../web/src/services/api';
+
 import { useTheme } from '../contexts/ThemeContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -50,7 +49,82 @@ interface SwipeScreenProps {
 export default function SwipeScreen({ navigation }: SwipeScreenProps) {
   const { user } = useAuthStore();
   const { colors, isDark } = useTheme();
-  const { pets, isLoading, error, loadPets, swipePet, refreshPets } = useSwipe();
+  // Mock data for now - replace with actual API calls
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { handleLike, handlePass, handleSuperLike, isProcessing } = useSwipeLogic({
+    onMatch: (result) => {
+      if (result.isMatch) {
+        setShowMatchModal(true);
+      }
+    }
+  });
+
+  const loadPets = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // TODO: Replace with actual API call
+      const mockPets: Pet[] = [
+        {
+          _id: '1',
+          name: 'Buddy',
+          species: 'dog',
+          breed: 'Golden Retriever',
+          age: 3,
+          size: 'large',
+          intent: 'adoption',
+          description: 'Friendly and energetic',
+          photos: [{ url: 'https://example.com/buddy.jpg', isPrimary: true }],
+          personalityTags: ['friendly', 'energetic'],
+          healthInfo: { vaccinated: true, spayedNeutered: true },
+          featured: { isFeatured: false },
+          owner: { name: 'John Doe' }
+        }
+      ];
+      setPets(mockPets);
+    } catch (err) {
+      setError('Failed to load pets');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const swipePet = async (petId: string, action: 'like' | 'pass' | 'superlike') => {
+    const pet = pets.find(p => p._id === petId);
+    if (!pet) return null;
+
+    // Convert mobile Pet to core Pet type
+    const corePet = {
+      ...pet,
+      bio: pet.description,
+      distance: 0,
+      compatibility: 0,
+      isVerified: true,
+      owner: { _id: 'owner1', name: 'Owner' }
+    } as any;
+
+    switch (action) {
+      case 'like':
+        return await handleLike(corePet);
+      case 'pass':
+        return await handlePass(corePet);
+      case 'superlike':
+        return await handleSuperLike(corePet);
+      default:
+        return null;
+    }
+  };
+
+  const refreshPets = loadPets;
+  
+  // Load pets on component mount
+  useEffect(() => {
+    loadPets();
+  }, []);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [matchedPet, setMatchedPet] = useState<Pet | null>(null);
@@ -200,7 +274,7 @@ export default function SwipeScreen({ navigation }: SwipeScreenProps) {
     );
   }
 
-  const primaryPhoto = currentPet.photos.find(p => p.isPrimary) || currentPet.photos[0];
+  const primaryPhoto = currentPet.photos.find((p: any) => p.isPrimary) || currentPet.photos[0];
   const ageText = currentPet.age < 1 ? `${Math.round(currentPet.age * 12)} months` : `${currentPet.age} years`;
 
   return (
@@ -316,7 +390,7 @@ export default function SwipeScreen({ navigation }: SwipeScreenProps) {
           <Image source={{ uri: primaryPhoto?.url }} style={styles.petImage} />
           
           {/* Featured Badge */}
-          {currentPet.featured.isFeatured && (
+          {currentPet.featured?.isFeatured && (
             <View style={styles.featuredBadge}>
               <Ionicons name="star" size={16} color="#fff" />
               <Text style={styles.featuredText}>Featured</Text>

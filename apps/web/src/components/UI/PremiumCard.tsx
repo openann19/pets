@@ -17,6 +17,8 @@ interface PremiumCardProps {
   tilt?: boolean;
   glow?: boolean;
   blur?: boolean;
+  shimmer?: boolean;
+  magnetic?: boolean;
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   onClick?: () => void;
@@ -31,6 +33,8 @@ export default function PremiumCard({
   tilt = false,
   glow = false,
   blur = false,
+  shimmer = false,
+  magnetic = false,
   padding = 'md',
   className = '',
   onClick,
@@ -201,6 +205,42 @@ export default function PremiumCard({
               transition={{ duration: 0.6, ease: 'easeInOut' }}
             />
           </motion.div>
+        )}
+
+        {/* Shimmer effect */}
+        {shimmer && (
+          <motion.div
+            className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+              animate={{
+                x: ['-100%', '100%'],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatDelay: 3,
+                ease: 'easeInOut',
+              }}
+            />
+          </motion.div>
+        )}
+
+        {/* Magnetic effect */}
+        {magnetic && (
+          <motion.div
+            className="absolute inset-0 rounded-2xl pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.1) 0%, transparent 50%)',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isHovered ? 1 : 0 }}
+            transition={{ duration: 0.2 }}
+          />
         )}
       </motion.div>
     </>

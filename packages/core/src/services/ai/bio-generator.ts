@@ -71,8 +71,8 @@ export class BioGeneratorService {
     let prompt = `Write a ${tone} and engaging bio for a pet with the following details:\n\n`;
     prompt += `Name: ${petName}\n`;
     prompt += `Species: ${species}\n`;
-    if (breed) prompt += `Breed: ${breed}\n`;
-    if (age) prompt += `Age: ${age} years old\n`;
+    if (breed != null && breed !== '') prompt += `Breed: ${breed}\n`;
+    if (age != null && age > 0) prompt += `Age: ${age} years old\n`;
     if (personality.length > 0) prompt += `Personality: ${personality.join(', ')}\n`;
     if (keywords.length > 0) prompt += `Keywords to include: ${keywords.join(', ')}\n`;
     
@@ -103,12 +103,12 @@ export class BioGeneratorService {
    */
   private extractTags(response: string): string[] {
     const tagsSection = response.split('TAGS:')[1];
-    if (!tagsSection) return [];
+    if (tagsSection == null || tagsSection === '') return [];
     
     // Extract hashtags
     const tags = tagsSection
       .match(/#\w+/g)
-      ?.map(tag => tag.replace('#', '')) || [];
+      ?.map(tag => tag.replace('#', '')) ?? [];
     
     return tags.slice(0, 5); // Max 5 tags
   }
@@ -119,7 +119,7 @@ export class BioGeneratorService {
   private generateFallbackBio(request: BioGenerationRequest): BioGenerationResponse {
     const { petName, species, personality = [], age } = request;
     
-    let bio = `Meet ${petName}, a wonderful ${age ? `${age}-year-old ` : ''}${species}! `;
+    let bio = `Meet ${petName}, a wonderful ${age != null && age > 0 ? `${age}-year-old ` : ''}${species}! `;
     
     if (personality.length > 0) {
       bio += `${petName} is known for being ${personality.join(', ')}. `;

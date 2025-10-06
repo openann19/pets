@@ -1,0 +1,91 @@
+---
+alwaysApply: true
+---
+
+Ultimate “Ship It” Checklist
+(Use this as a master Kanban. Every line = a PR / commit. Tick-off left→right; nothing should be merged half-done.)
+
+0 Meta
+Create milestone v1.0.0 on GitHub; add the checklist as issues → project board.
+Enable branch protection: lint + type-check + test + build must pass.
+1 Code Quality & Types
+1.1 Monorepo hygiene
+pnpm-lock: run pnpm install --frozen-lockfile → commit any lock drift.
+Turbo cache: prune .turbo/daemon/_ logs from repo (.gitignore).
+1.2 ESLint / TypeScript
+UI package: 0 errors / 0 warnings
+Refactor src/animations/premium-motion.ts into valid Variants.
+Cast or label-string whileHover, whileTap.
+Fix HTMLInputElement | null return in useImperativeHandle.
+Mobile package:
+Rename
+jest.setup.ts
+→ jest.setup.tsx, add import React.
+Remove duplicate keys (InCallManager mock).
+Replace all <> fragments with children as React.ReactElement | null or keep JSX since file is now
+.tsx
+.
+Add missing imports (Dimensions, Platform, etc.).
+Web package:
+jest.config.(js|ts) → testPathIgnorePatterns for Playwright specs.
+Strict-boolean-expression fixes in hooks.
+Run:
+pnpm lint --fix # all packages
+pnpm turbo run type-check
+2 Tests
+2.1 Unit
+ENSURE 80 % coverage in each workspace (coverageThreshold in Jest).
+Fix failing suites in apps/mobile/src/screens/calling/**tests**. Root cause:
+IncomingCallScreen
+import path and host-component detection.
+2.2 Integration
+Server pact + supertest at tests/contracts/_ must be green.
+Core stores: add tests for useWeatherStore, useSwipeLogic.
+2.3 E2E
+Web: Playwright tests/playwright/_ happy path - login→match→chat.
+Mobile: Detox “swipe / like / message” script. Run on CI’s Android emulator.
+3 Builds
+Web (Next 15): apps/web – pnpm build passes, no hydration warnings.
+Mobile (Expo 50 SDK): expo prebuild clean → eas build --profile production.
+Server (Node 18): pnpm build && node dist/server.js --dry-run binds port 5001.
+4 Performance & UX
+Lighthouse budgets ≥ 90 (perf, PWA, a11y, SEO) – script in tests/performance/.
+Mobile bundle ≤ 8 MB; enable Hermes & Proguard.
+Add React-Native Skia placeholder images for initial load.
+Implement skeleton loaders for Map & Swipe screens.
+5 Accessibility (WCAG 2.1 AA)
+✅ Color contrast check via axe (web) & RTL a11y (mobile).
+All buttons/inputs have accessibilityLabel/aria-label.
+Keyboard nav: focus rings on web components.
+Motion safe / reduced-motion media queries.
+6 Security
+pnpm audit --prod → 0 high/critical.
+Rate-limit /auth/_ endpoints (express-rate-limit).
+Helmet & CORS configured on server.
+Secrets via .env + GitHub Secrets; no keys in repo.
+7 Observability
+Sentry DSN loaded from env in mobile, web, server.
+Winston + morgan logs -> server/logs/\*.log, daily rotation.
+Health endpoint: GET /healthz returns { status:"ok", uptime }.
+8 DevOps
+Docker:
+docker compose -f deploy/docker-compose.prod.yml build
+docker compose up -d
+Verify web :3000, api :5001, mongo :27017.
+Netlify (web): netlify.toml build & env.
+EAS submit (mobile): Android AAB & iOS.
+GitHub Actions workflow:
+Install pnpm
+turbo run lint type-check test build
+Upload artefacts
+Deploy on tag.
+9 Documentation
+Update README.md quick-start, tech stack, scripts.
+DEPLOYMENT_GUIDE.md – one-command Docker + EAS guide.
+CHANGELOG.md – semantic-version history.
+Storybook (ui) – run pnpm storybook and add to docs.
+10 Product QA
+Smoke: Create user → add pet → swipe → match → chat → place call.
+Regression sheet (Google Sheets) – mark pass/fail.
+Beta testers via Expo TestFlight & Play Store Internal.
+Completion criteria = All check-boxes ticked, CI green, release tag v1.0.0.

@@ -1,7 +1,10 @@
+import * as Haptics from 'expo-haptics';
 import { useCallback } from 'react';
-import { useTheme, ThemeMode } from '../contexts/ThemeContext';
-import { Haptics } from 'expo-haptics';
 import { Alert } from 'react-native';
+
+import type { ThemeMode } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
+
 
 export interface UseThemeToggleReturn {
   isDark: boolean;

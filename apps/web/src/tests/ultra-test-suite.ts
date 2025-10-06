@@ -11,7 +11,7 @@ interface TestResult {
   status: 'PASS' | 'FAIL' | 'SKIP';
   duration: number;
   error?: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 class UltraTestSuite {
@@ -44,7 +44,7 @@ class UltraTestSuite {
     return this.results;
   }
 
-  private async runTest(name: string, testFn: () => Promise<any>): Promise<void> {
+  private async runTest(name: string, testFn: () => Promise<unknown>): Promise<void> {
     const start = Date.now();
     try {
       console.log(`🧪 Testing: ${name}...`);
@@ -59,17 +59,18 @@ class UltraTestSuite {
       });
       
       console.log(`✅ ${name} - PASSED (${duration}ms)`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const duration = Date.now() - start;
       
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.results.push({
         name,
         status: 'FAIL',
         duration,
-        error: error.message
+        error: errorMessage
       });
       
-      console.log(`❌ ${name} - FAILED (${duration}ms): ${error.message}`);
+      console.log(`❌ ${name} - FAILED (${duration}ms): ${errorMessage}`);
     }
   }
 
@@ -378,8 +379,8 @@ class UltraTestSuite {
           throw new Error(`Expected 404, got ${response.status}`);
         }
         return { errorHandled: true };
-      } catch (error: any) {
-        if (error.message.includes('Expected 404')) throw error;
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.includes('Expected 404')) throw error;
         return { errorHandled: true, networkError: true };
       }
     });

@@ -22,7 +22,11 @@ export default function SwipePage() {
 
   const onSwipe = async (direction: 'like' | 'pass' | 'superlike') => {
     if (!currentPet) return;
-    await swipe(direction);
+    await swipe({
+      petId: currentPet.id,
+      action: direction,
+      timestamp: new Date().toISOString(),
+    });
   };
 
   if (isLoading && !currentPet) {
@@ -70,7 +74,7 @@ export default function SwipePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex flex-col" data-testid="swipe-interface">
       {/* Premium Header */}
       <motion.header 
         initial={{ y: -100 }}
@@ -130,6 +134,7 @@ export default function SwipePage() {
               icon={<XMarkIcon className="h-6 w-6 text-red-500" />}
               haptic
               className="!w-16 !h-16 !rounded-full !min-h-0 !p-0"
+              data-testid="pass-button"
             />
             
             {isPremium && (
@@ -160,6 +165,7 @@ export default function SwipePage() {
               haptic
               sound
               className="!w-16 !h-16 !rounded-full !min-h-0 !p-0"
+              data-testid="like-button"
             />
           </motion.div>
 
@@ -173,7 +179,7 @@ export default function SwipePage() {
       </div>
 
       {/* Match Modal */}
-      {showMatchModal && lastMatch && lastMatch.pets && lastMatch.users && (
+      {showMatchModal && lastMatch && lastMatch.pet1 && lastMatch.pet2 && (
         <MatchModal
           isOpen={showMatchModal}
           onClose={() => {
@@ -181,9 +187,9 @@ export default function SwipePage() {
             clearMatch();
           }}
           matchId={lastMatch.id}
-          currentUserPet={lastMatch.pets[0] as any}
-          matchedPet={lastMatch.pets[1] as any}
-          matchedUser={lastMatch.users[1] as any}
+          currentUserPet={lastMatch.pet1 as any}
+          matchedPet={lastMatch.pet2 as any}
+          matchedUser={lastMatch.user2 as any}
         />
       )}
     </div>

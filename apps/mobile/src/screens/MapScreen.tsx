@@ -1,3 +1,7 @@
+import { useAuthStore } from '@pawfectmatch/core';
+import { BlurView } from '@react-native-community/blur';
+import Geolocation from '@react-native-community/geolocation';
+import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
@@ -13,14 +17,13 @@ import {
   Animated,
   PanResponder,
 } from 'react-native';
-import MapView, { Marker, Circle, PROVIDER_GOOGLE, Region } from 'react-native-maps';
-import Geolocation from '@react-native-community/geolocation';
-import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { BlurView } from '@react-native-community/blur';
 import LinearGradient from 'react-native-linear-gradient';
-import { useAuthStore } from '@pawfectmatch/core';
-import { PulsePin } from '@pawfectmatch/core';
-import io, { Socket } from 'socket.io-client';
+import type { Region } from 'react-native-maps';
+import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
+import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import type { Socket } from 'socket.io-client';
+import io from 'socket.io-client';
+ 
 
 const { width, height } = Dimensions.get('window');
 
@@ -39,8 +42,34 @@ interface MapStats {
   recentActivity: number;
 }
 
-const MapScreen: React.FC = () => {
+interface PulsePin {
+  _id: string;
+  latitude: number;
+  longitude: number;
+  coordinates?: [number, number]; // For backward compatibility
+  activity: string;
+  petId: string;
+  userId: string;
+  timestamp: string;
+  message?: string;
+  createdAt: string;
+}
+
+interface ActivityType {
+  id: string;
+  name: string;
+  label: string;
+  emoji: string;
+  color: string;
+}
+
+interface MapScreenProps {
+  navigation?: any;
+}
+
+const MapScreen: React.FC<MapScreenProps> = ({ navigation: _navProp }) => {
   const { user } = useAuthStore();
+  const navigation = useNavigation();
   const [region, setRegion] = useState<Region>({
     latitude: 40.7589,
     longitude: -73.9851,
@@ -52,56 +81,46 @@ const MapScreen: React.FC = () => {
   const [pins, setPins] = useState<PulsePin[]>([]);
   const [selectedPin, setSelectedPin] = useState<PulsePin | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [stats, setStats] = useState<MapStats>({
-    totalPets: 0,
-    activePets: 0,
-    nearbyMatches: 0,
-    recentActivity: 0
-  });
-
   const [filters, setFilters] = useState<MapFilters>({
     showMyPets: true,
     showMatches: true,
     showNearby: true,
-    activityTypes: ['walking', 'playing', 'park'],
-    radius: 5
+    activityTypes: ['walking', 'playing', 'feeding'],
+    radius: 5,
   });
+  const [stats, setStats] = useState<MapStats>({
+    totalPets: 0,
+    activePets: 0,
+    nearbyMatches: 0,
+    recentActivity: 0,
+  });
+  const [filterPanelHeight] = useState(new Animated.Value(0));
+  const [statsOpacity] = useState(new Animated.Value(1));
+  const [socket, setSocket] = useState<Socket | null>(null);
 
-  // Animated values for UI
-  const filterPanelHeight = new Animated.Value(0);
-  const statsOpacity = new Animated.Value(1);
-
-  // Activity type configurations
-  const activityTypes = [
-    { id: 'walking', label: 'Walking', emoji: '🚶', color: '#3B82F6' },
-    { id: 'playing', label: 'Playing', emoji: '🎾', color: '#10B981' },
-    { id: 'grooming', label: 'Grooming', emoji: '✂️', color: '#8B5CF6' },
-    { id: 'vet', label: 'Vet Visit', emoji: '🏥', color: '#EF4444' },
-    { id: 'park', label: 'Dog Park', emoji: '🏞️', color: '#059669' },
-    { id: 'other', label: 'Other', emoji: '📍', color: '#6B7280' }
+  // Activity types configuration
+  const activityTypes: ActivityType[] = [
+    { id: 'walking', name: 'Walking', label: 'Walking', emoji: '🚶‍♂️', color: '#4CAF50' },
+    { id: 'playing', name: 'Playing', label: 'Playing', emoji: '🎾', color: '#FF9800' },
+    { id: 'feeding', name: 'Feeding', label: 'Feeding', emoji: '🍽️', color: '#9C27B0' },
+    { id: 'resting', name: 'Resting', label: 'Resting', emoji: '😴', color: '#607D8B' },
+    { id: 'training', name: 'Training', label: 'Training', emoji: '🎯', color: '#E91E63' },
   ];
 
-  // Request location permissions
+  // Location permission request
   const requestLocationPermission = useCallback(async () => {
     try {
-      const permission = Platform.OS === 'ios' 
-        ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE 
-        : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
-
-      const result = await request(permission);
+      const permission = await request(
+        Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION
+      );
       
-      if (result === RESULTS.GRANTED) {
+      if (permission === RESULTS.GRANTED) {
         getCurrentLocation();
       } else {
-        Alert.alert(
-          'Location Permission',
-          'Location access is needed to show nearby pets and activities.',
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Location Permission', 'Please enable location access to see nearby pets.');
       }
     } catch (error) {
-      console.warn('Location permission error:', error);
+      console.error('Location permission error:', error);
     }
   }, []);
 
@@ -119,14 +138,15 @@ const MapScreen: React.FC = () => {
         });
       },
       (error) => {
-        console.warn('Geolocation error:', error);
+        console.error('Location error:', error);
         Alert.alert('Location Error', 'Unable to get your current location.');
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
   }, []);
 
-  // Initialize socket connection
+ 
+
   useEffect(() => {
     const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
     const newSocket = io(socketUrl, {
@@ -136,8 +156,8 @@ const MapScreen: React.FC = () => {
 
     newSocket.on('connect', () => {
       console.log('📱 Mobile map connected to socket');
-      if (user?.token) {
-        newSocket.emit('authenticate', user.token);
+      if (user?._id) {
+        newSocket.emit('join', { userId: user._id });
       }
     });
 
@@ -166,7 +186,7 @@ const MapScreen: React.FC = () => {
     return () => {
       newSocket.disconnect();
     };
-  }, [user?.token, filters.radius]);
+  }, [user?._id, filters.radius]);
 
   // Request location permission on mount
   useEffect(() => {
@@ -198,8 +218,8 @@ const MapScreen: React.FC = () => {
         const distance = calculateDistance(
           userLocation.latitude,
           userLocation.longitude,
-          pin.coordinates[1],
-          pin.coordinates[0]
+          pin.latitude,
+          pin.longitude
         );
         return distance <= filters.radius;
       }
@@ -251,7 +271,7 @@ const MapScreen: React.FC = () => {
   }, []);
 
   // Get marker color based on activity
-  const getMarkerColor = (activity: string, isMatch: boolean = false): string => {
+  const getMarkerColor = (activity: string, isMatch = false): string => {
     if (isMatch) return '#EC4899';
     const activityType = activityTypes.find(a => a.id === activity);
     return activityType?.color || '#6B7280';
@@ -340,8 +360,8 @@ const MapScreen: React.FC = () => {
             <React.Fragment key={pin._id}>
               <Marker
                 coordinate={{
-                  latitude: pin.coordinates[1],
-                  longitude: pin.coordinates[0]
+                  latitude: pin.latitude,
+                  longitude: pin.longitude
                 }}
                 title={pin.activity}
                 description={pin.message || 'Pet activity'}
@@ -352,8 +372,8 @@ const MapScreen: React.FC = () => {
               {/* Activity radius circle */}
               <Circle
                 center={{
-                  latitude: pin.coordinates[1],
-                  longitude: pin.coordinates[0]
+                  latitude: pin.latitude,
+                  longitude: pin.longitude
                 }}
                 radius={100}
                 strokeColor={getMarkerColor(pin.activity, isMatch)}

@@ -8,8 +8,8 @@ import {
   SparklesIcon,
   CheckCircleIcon,
   StarIcon
-} from '@heroicons/react/<｜tool▁call▁begin｜>24/outline';
-import { api } from '../../services/api';
+} from '@heroicons/react/24/outline';
+import { breedsAPI } from '../../services/breeds';
 
 interface Breed {
   name: string;
@@ -60,9 +60,7 @@ export default function BreedSearchInput({
 
     setIsLoading(true);
     try {
-      const response = await api.request('/breeds/search/autocomplete', {
-        params: { q: query, species }
-      });
+      const response = await breedsAPI.searchBreeds(query, { species });
       
       if (response.data?.suggestions) {
         setSuggestions(response.data.suggestions);

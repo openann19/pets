@@ -1,3 +1,7 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -6,13 +10,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
-  Haptics,
   StatusBar,
   InteractionManager,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -23,7 +23,7 @@ import Animated, {
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 

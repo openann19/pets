@@ -1,35 +1,153 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local"],
+  "globalDependencies": ["**/.env.*local", "**/.env", "**/tsconfig.json", "**/.eslintrc.js", "**/.prettierrc"],
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**", "build/**"]
+      "outputs": [".next/**", "dist/**", "build/**", "!.next/cache/**"],
+      "env": ["NODE_ENV", "NEXT_PUBLIC_*", "API_URL", "MONGODB_URI"]
     },
     "dev": {
       "cache": false,
       "dependsOn": ["^build"],
-      "persistent": true
+      "persistent": true,
+      "env": ["NODE_ENV", "NEXT_PUBLIC_*", "API_URL", "MONGODB_URI"]
     },
     "start": {
       "cache": false,
       "dependsOn": ["build"],
-      "persistent": true
+      "persistent": true,
+      "env": ["NODE_ENV", "PORT", "API_URL", "MONGODB_URI"]
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": [],
-      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+      "outputs": ["coverage/**", "test-results/**"],
+      "inputs": [
+        "src/**/*.tsx", 
+        "src/**/*.ts", 
+        "test/**/*.ts", 
+        "test/**/*.tsx",
+        "tests/**/*.ts",
+        "tests/**/*.tsx",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx"
+      ],
+      "env": ["NODE_ENV", "CI", "TEST_ENV"]
+    },
+    "test:unit": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "inputs": [
+        "src/**/*.tsx", 
+        "src/**/*.ts", 
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "env": ["NODE_ENV", "CI"]
+    },
+    "test:integration": {
+      "dependsOn": ["^build", "build"],
+      "outputs": ["test-results/**"],
+      "inputs": [
+        "tests/integration/**/*.ts",
+        "tests/integration/**/*.tsx"
+      ],
+      "env": ["NODE_ENV", "CI", "API_URL", "MONGODB_URI"]
+    },
+    "test:e2e": {
+      "dependsOn": ["^build", "build"],
+      "outputs": ["test-results/**", "playwright-report/**"],
+      "inputs": [
+        "tests/e2e/**/*.ts",
+        "tests/e2e/**/*.tsx",
+        "cypress/**/*.ts",
+        "cypress/**/*.js"
+      ],
+      "env": ["NODE_ENV", "CI", "BASE_URL", "API_URL"]
+    },
+    "test:visual": {
+      "dependsOn": ["^build", "build"],
+      "outputs": ["test-results/**", "percy/**"],
+      "inputs": [
+        "tests/visual/**/*.ts",
+        "tests/visual/**/*.tsx"
+      ],
+      "env": ["NODE_ENV", "CI", "PERCY_TOKEN"]
+    },
+    "test:load": {
+      "dependsOn": ["^build", "build"],
+      "outputs": ["test-results/**"],
+      "inputs": [
+        "tests/load/**/*.js"
+      ],
+      "env": ["NODE_ENV", "CI", "BASE_URL", "API_URL"]
+    },
+    "test:chaos": {
+      "dependsOn": ["^build", "build"],
+      "outputs": ["test-results/**"],
+      "inputs": [
+        "tests/chaos/**/*.ts",
+        "tests/chaos/**/*.tsx"
+      ],
+      "env": ["NODE_ENV", "CI", "BASE_URL", "API_URL"]
     },
     "lint": {
-      "outputs": []
+      "outputs": [],
+      "inputs": [
+        "src/**/*.tsx",
+        "src/**/*.ts",
+        "**/*.tsx",
+        "**/*.ts",
+        "**/*.js",
+        "**/*.jsx"
+      ]
     },
-    "clean": {
-      "cache": false
+    "format": {
+      "outputs": [],
+      "inputs": [
+        "src/**/*.tsx",
+        "src/**/*.ts",
+        "**/*.tsx",
+        "**/*.ts",
+        "**/*.js",
+        "**/*.jsx",
+        "**/*.json",
+        "**/*.md"
+      ]
     },
     "type-check": {
       "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": [
+        "src/**/*.tsx",
+        "src/**/*.ts",
+        "**/*.tsx",
+        "**/*.ts"
+      ]
+    },
+    "clean": {
+      "cache": false,
       "outputs": []
+    },
+    "quality-gate": {
+      "dependsOn": ["build", "test", "lint", "type-check"],
+      "outputs": ["sonar/**"],
+      "env": ["SONAR_TOKEN", "SONAR_HOST_URL"]
+    },
+    "security-scan": {
+      "dependsOn": ["^build"],
+      "outputs": ["security-reports/**"],
+      "env": ["NODE_ENV", "CI"]
+    },
+    "performance-test": {
+      "dependsOn": ["^build", "build"],
+      "outputs": ["lighthouse-reports/**"],
+      "inputs": [
+        "tests/performance/**/*.js"
+      ],
+      "env": ["NODE_ENV", "CI", "BASE_URL"]
     }
   }
 }

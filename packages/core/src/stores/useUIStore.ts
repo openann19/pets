@@ -13,7 +13,7 @@ export interface Toast {
 
 export interface ModalState {
   type: ModalType | null;
-  props?: Record<string, any>;
+  props?: Record<string, unknown>;
 }
 
 export interface UIState {
@@ -34,7 +34,7 @@ export interface UIState {
   showToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   clearToasts: () => void;
-  openModal: (type: ModalType, props?: Record<string, any>) => void;
+  openModal: (type: ModalType, props?: Record<string, unknown>) => void;
   closeModal: () => void;
   setDarkMode: (enabled: boolean) => void;
   setIsPageLoading: (isLoading: boolean) => void;
@@ -72,7 +72,7 @@ export const useUIStore = create<UIState>()(
     }),
 
     // Open a modal with optional props
-    openModal: (type: ModalType, props: Record<string, any> = {}) => set((state) => {
+    openModal: (type: ModalType, props: Record<string, unknown> = {}) => set((state) => {
       state.modal = { type, props };
       return state;
     }),
