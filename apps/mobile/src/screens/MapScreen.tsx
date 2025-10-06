@@ -451,7 +451,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ navigation: _navProp }) => {
           style={[styles.fab, styles.arFab]}
           onPress={() => {
             // Navigate to AR Scent Trails
-            navigation.navigate('ARScentTrails', {
+            (navigation as any).navigate('ARScentTrails', {
               initialLocation: userLocation
             });
           }}

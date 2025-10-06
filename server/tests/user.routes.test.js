@@ -1,12 +1,31 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const { app, httpServer } = require('../server');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+const request = require('supertest');
+
+const { app, httpServer } = require('../server');
 const User = require('../src/models/User');
 
 let authToken;
 let userId;
 let mongoServer;
+
+// Helper function to create and authenticate a user
+async function createAndAuthenticateUser() {
+  const user = new User({
+    email: 'userroutes@example.com',
+    password: 'password123',
+    firstName: 'User',
+    lastName: 'Routes',
+    dateOfBirth: '1990-01-01',
+  });
+  await user.save();
+  userId = user._id;
+
+  const res = await request(app)
+    .post('/api/auth/login')
+    .send({ email: 'userroutes@example.com', password: 'password123' });
+  authToken = res.body.data.accessToken;
+}
 
 describe('User Routes API Test', () => {
   beforeAll(async () => {
@@ -16,22 +35,6 @@ describe('User Routes API Test', () => {
       const mongoUri = mongoServer.getUri();
       await mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
     }
-
-    // Create and log in a user
-    const user = new User({
-        email: 'userroutes@example.com',
-        password: 'password123',
-        firstName: 'User',
-        lastName: 'Routes',
-        dateOfBirth: '1990-01-01',
-    });
-    await user.save();
-    userId = user._id;
-
-    const res = await request(app)
-        .post('/api/auth/login')
-        .send({ email: 'userroutes@example.com', password: 'password123' });
-    authToken = res.body.data.accessToken;
   });
 
   afterAll(async () => {
@@ -45,12 +48,20 @@ describe('User Routes API Test', () => {
     }
   });
 
+  beforeEach(async () => {
+    // Clean up all users before each test to avoid duplicate key errors
+    await User.deleteMany({});
+  });
+
   afterEach(async () => {
-    await User.deleteMany({ email: { $ne: 'userroutes@example.com' } });
+    // Clean up after each test
+    await User.deleteMany({});
   });
 
   describe('GET /api/users/profile', () => {
     it('should fetch the profile of the authenticated user', async () => {
+      await createAndAuthenticateUser();
+      
       const res = await request(app)
         .get('/api/users/profile')
         .set('Authorization', `Bearer ${authToken}`);
@@ -64,6 +75,8 @@ describe('User Routes API Test', () => {
 
   describe('PUT /api/users/profile', () => {
     it('should update the profile of the authenticated user', async () => {
+      await createAndAuthenticateUser();
+      
       const res = await request(app)
         .put('/api/users/profile')
         .set('Authorization', `Bearer ${authToken}`)
@@ -85,15 +98,17 @@ describe('User Routes API Test', () => {
     });
 
     it('should not allow updating the email or password via the profile route', async () => {
-        const res = await request(app)
-            .put('/api/users/profile')
-            .set('Authorization', `Bearer ${authToken}`)
-            .send({ email: 'newemail@example.com', password: 'newpassword' });
+      await createAndAuthenticateUser();
+      
+      const res = await request(app)
+          .put('/api/users/profile')
+          .set('Authorization', `Bearer ${authToken}`)
+          .send({ email: 'newemail@example.com', password: 'newpassword' });
 
-        expect(res.statusCode).toEqual(200);
-        
-        const updatedUser = await User.findById(userId);
-        expect(updatedUser.email).not.toBe('newemail@example.com');
+      expect(res.statusCode).toEqual(200);
+      
+      const updatedUser = await User.findById(userId);
+      expect(updatedUser.email).not.toBe('newemail@example.com');
     });
   });
 });

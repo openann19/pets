@@ -1,14 +1,15 @@
 'use client';
-import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { SPRING_CONFIG } from '@/constants/animations';
-import HoloLogo from '@/components/Brand/HoloLogo';
-import PremiumButton from '@/components/UI/PremiumButton';
 import { useTranslations } from 'next-intl';
-import LanguageSelect from '@/components/UI/LanguageSelect';
-import { useAuthStore } from '@/lib/auth-store';
+import Link from 'next/link';
+import React, { useEffect, useRef, useState } from 'react';
+
 import UniversalHeader from './UniversalHeader';
+
+import HoloLogo from '@/components/Brand/HoloLogo';
+import LanguageSelect from '@/components/UI/LanguageSelect';
+import PremiumButton from '@/components/UI/PremiumButton';
+import { useAuthStore } from '@/lib/auth-store';
 
 interface PremiumLayoutProps {
   children: React.ReactNode;

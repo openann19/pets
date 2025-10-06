@@ -1,8 +1,7 @@
 'use client';
 
-import { useRouter, usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { locales } from '@/i18n';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface LanguageSelectProps {
   compact?: boolean;
