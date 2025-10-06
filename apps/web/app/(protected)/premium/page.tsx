@@ -5,22 +5,22 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  CheckIcon, 
-  SparklesIcon,
-  VideoCameraIcon,
+import {
+  BoltIcon,
   ChartBarIcon,
+  CheckIcon,
   GlobeAltIcon,
-  UserGroupIcon,
-  BoltIcon
+  SparklesIcon,
+  VideoCameraIcon
 } from '@heroicons/react/24/solid';
-import { useAuthStore } from '@/lib/auth-store';
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
+import { useAuthStore } from '@/lib/auth-store';
 import { api } from '@/services/api';
-import { SubscriptionPlan, SubscriptionStatus, ApiResponse } from '@/types';
+import type { SubscriptionPlan, SubscriptionStatus } from '@/types';
 
 // Premium tier types
 type PremiumTier = 'free' | 'basic' | 'premium' | 'vip';
@@ -158,7 +158,7 @@ export default function PremiumPage() {
             Unlock powerful features and find your perfect match faster
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            Current Plan: <span className="font-semibold text-purple-600">{plan.name}</span>
+            Current Plan: <span className="font-semibold text-purple-600">{plan?.name || 'Free'}</span>
           </p>
         </motion.div>
 
@@ -278,7 +278,7 @@ export default function PremiumPage() {
                       size="lg"
                       variant={isSelected ? 'primary' : 'secondary'}
                       disabled={isCurrentTier}
-                      onClick={() => setSelectedTier(tierPlan.id as PremiumTier)}
+                      onClick={() => setSelectedTier((tierPlan as any).id as PremiumTier)}
                     >
                       {isCurrentTier ? 'Current Plan' : isSelected ? 'Selected' : 'Select Plan'}
                     </PremiumButton>
@@ -301,9 +301,9 @@ export default function PremiumPage() {
                 Ready to upgrade?
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Upgrade to {selectedTier === 'free' ? 'Free' : allPlans.find(p => p.id === selectedTier)?.name} for just 
+                Upgrade to {selectedTier === 'free' ? 'Free' : allPlans.find(p => (p as any).id === selectedTier)?.name} for just 
                 <span className="font-bold text-purple-600 mx-2">
-                  ${selectedTier === 'free' ? '0' : allPlans.find(p => p.id === selectedTier)?.price}/month
+                  ${selectedTier === 'free' ? '0' : allPlans.find(p => (p as any).id === selectedTier)?.price}/month
                 </span>
               </p>
               <div className="flex gap-4 justify-center">
@@ -342,7 +342,7 @@ export default function PremiumPage() {
                     </th>
                     <th className="text-center py-4 px-4 text-gray-900 dark:text-white font-semibold">Free</th>
                     {allPlans.map(tierPlan => (
-                      <th key={tierPlan.id} className="text-center py-4 px-4 text-gray-900 dark:text-white font-semibold">
+                      <th key={(tierPlan as any).id} className="text-center py-4 px-4 text-gray-900 dark:text-white font-semibold">
                         {tierPlan.name}
                       </th>
                     ))}
@@ -355,7 +355,7 @@ export default function PremiumPage() {
                       <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
                     </td>
                     {allPlans.map(tierPlan => (
-                      <td key={tierPlan.id} className="text-center py-3 px-4">
+                      <td key={(tierPlan as any).id} className="text-center py-3 px-4">
                         <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     ))}
@@ -366,7 +366,7 @@ export default function PremiumPage() {
                       <span className="text-gray-300">—</span>
                     </td>
                     {allPlans.map(tierPlan => (
-                      <td key={tierPlan.id} className="text-center py-3 px-4">
+                      <td key={(tierPlan as any).id} className="text-center py-3 px-4">
                         <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     ))}
@@ -377,7 +377,7 @@ export default function PremiumPage() {
                       <span className="text-gray-300">—</span>
                     </td>
                     {allPlans.map(tierPlan => (
-                      <td key={tierPlan.id} className="text-center py-3 px-4">
+                      <td key={(tierPlan as any).id} className="text-center py-3 px-4">
                         <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
                       </td>
                     ))}
@@ -388,8 +388,8 @@ export default function PremiumPage() {
                       <span className="text-gray-300">—</span>
                     </td>
                     {allPlans.map(tierPlan => (
-                      <td key={tierPlan.id} className="text-center py-3 px-4">
-                        {tierPlan.id === 'vip' ? (
+                      <td key={(tierPlan as any).id} className="text-center py-3 px-4">
+                        {(tierPlan as any).id === 'vip' ? (
                           <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
                         ) : (
                           <span className="text-gray-300">—</span>
@@ -403,8 +403,8 @@ export default function PremiumPage() {
                       <span className="text-gray-300">—</span>
                     </td>
                     {allPlans.map(tierPlan => (
-                      <td key={tierPlan.id} className="text-center py-3 px-4">
-                        {tierPlan.id === 'vip' ? (
+                      <td key={(tierPlan as any).id} className="text-center py-3 px-4">
+                        {(tierPlan as any).id === 'vip' ? (
                           <CheckIcon className="w-5 h-5 text-green-500 mx-auto" />
                         ) : (
                           <span className="text-gray-300">—</span>

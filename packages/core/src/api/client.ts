@@ -1,5 +1,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 
+import { getItemSync, removeItemSync } from '../utils/storage';
+
 export interface ApiClientResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -12,7 +14,7 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api',
+      baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5001/api',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
@@ -26,7 +28,7 @@ class ApiClient {
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('accessToken');
+        const token = getItemSync('accessToken');
         if (token != null && token !== '') {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -45,9 +47,12 @@ class ApiClient {
             typeof (error as { response?: { status?: number } }).response?.status === 'number' &&
             (error as { response: { status: number } }).response.status === 401) {
           // Handle token refresh or logout
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
+          removeItemSync('accessToken');
+          removeItemSync('refreshToken');
+          // Only redirect on web platform
+          if (typeof window !== 'undefined' && 'location' in window) {
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error instanceof Error ? error : new Error(String(error)));
       }

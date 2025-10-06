@@ -58,6 +58,7 @@ const aiRoutes = require('./src/routes/ai');
 const premiumRoutes = require('./src/routes/premium');
 const breedRoutes = require('./src/routes/breeds');
 const adminRoutes = require('./src/routes/admin');
+const stripeWebhookRoutes = require('./src/routes/stripeWebhooks');
 
 // Import middleware
 const errorHandler = require('./src/middleware/errorHandler');
@@ -293,6 +294,7 @@ const { cacheMiddleware, invalidateOnMutation } = require('./src/middleware/cach
 
 // Public API Routes (no authentication required)
 app.use('/api/premium', premiumRoutes); // Premium routes with mixed auth requirements
+app.use('/api/stripe', stripeWebhookRoutes); // Stripe webhook routes (no auth required)
 
 // Protected API Routes
 app.use('/api/auth', authRoutes);
@@ -345,6 +347,12 @@ app.post('/api/upload', authenticateToken, upload.single('image'), async (req, r
 
 // Error reporting routes
 app.use('/api/errors', require('./src/routes/errorRoutes'));
+
+// GDPR compliance routes
+app.use('/api/gdpr', authenticateToken, require('./src/routes/gdpr'));
+
+// API documentation routes
+app.use('/api/docs', require('./src/routes/swagger'));
 
 // Legacy health check (deprecated - use /health instead)
 app.get('/api/health/legacy', (req, res) => {

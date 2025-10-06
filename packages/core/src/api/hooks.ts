@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type UseMutationOptions, type UseMutationResult, type UseQueryOptions, type UseQueryResult } from '@tanstack/react-query';
 
 import type { Match, Message, Pet, User } from '../types';
+import { setItemSync, removeItemSync } from '../utils/storage';
 
 import { apiClient, type ApiClientResponse } from './client';
 
@@ -49,8 +50,8 @@ export function useLogin(): UseMutationResult<ApiClientResponse<{ accessToken: s
     onSuccess: (data) => {
       if (data.success && data.data != null) {
         const { accessToken, refreshToken } = data.data as { accessToken: string; refreshToken: string };
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
+        setItemSync('accessToken', accessToken);
+        setItemSync('refreshToken', refreshToken);
       }
     },
   });
@@ -61,8 +62,8 @@ export function useRegister(): UseMutationResult<ApiClientResponse<{ accessToken
     onSuccess: (data) => {
       if (data.success && data.data != null) {
         const { accessToken, refreshToken } = data.data as { accessToken: string; refreshToken: string };
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
+        setItemSync('accessToken', accessToken);
+        setItemSync('refreshToken', refreshToken);
       }
     },
   });
@@ -73,8 +74,9 @@ export function useLogout(): UseMutationResult<ApiClientResponse<void>, Error, v
 
   return useApiMutation('/auth/logout', {
     onSuccess: () => {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      // Use cross-platform storage utility
+      removeItemSync('accessToken');
+      removeItemSync('refreshToken');
       queryClient.clear();
     },
   });

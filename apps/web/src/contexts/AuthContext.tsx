@@ -1,9 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { createContext, useContext, useEffect } from 'react';
+
 import { useAuthStore } from '../lib/auth-store';
 import { api } from '../services/api';
-import { User } from '../types';
+import type { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -27,8 +29,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokens, 
     setIsLoading, 
     setError,
-    logout: clearAuth
+    logout: clearAuth,
+    initializeAuth
   } = useAuthStore();
+
+  // Initialize auth on mount
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  // ----- DEV AUTH BYPASS -----
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && !isAuthenticated) {
+      const stored = localStorage.getItem('accessToken');
+      if (!stored) {
+        // Pre-generated demo tokens from backend (valid for 24h)
+        const demoTokens = {
+          accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGQ1MzYxZTU3ZGVmZGFhNzZmYzNjM2YiLCJpYXQiOjE3NTg4MDM0ODYsImV4cCI6MTc1OTQwODI4Nn0.uw2KH-77AuozUVbuleO07UAX0sBBeZZ6S6g0_5srV-I',
+          refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGQ1MzYxZTU3ZGVmZGFhNzZmYzNjM2YiLCJpYXQiOjE3NTg4MDM0ODYsImV4cCI6MTc2MTM5NTQ4Nn0.3uEUvdPP7ZmW2_XilX7OFcfbUfnjLj3mlx65T38l6t8'
+        };
+        
+        const demoUser = {
+          _id: '68d5361e57defdaa76fc3c3f',
+          email: 'demo@pawfect.com',
+          firstName: 'Demo',
+          lastName: 'User',
+          premium: { isActive: false, tier: 'basic' as const },
+          createdAt: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+        };
+
+        setTokens(demoTokens.accessToken, demoTokens.refreshToken);
+        setUser(demoUser);
+        console.info('%c[DEV] Auth bypass tokens injected', 'color: #8b5cf6');
+      }
+    }
+  }, [isAuthenticated, setTokens, setUser]);
+  // ----- END DEV AUTH BYPASS -----
 
   const login = async (email: string, password: string) => {
     try {

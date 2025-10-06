@@ -1,22 +1,27 @@
-import {getMessages} from 'next-intl/server';
-import {notFound} from 'next/navigation';
-import {locales} from '@/i18n';
-import {IntlProvider} from './intl-provider';
+import { getMessages } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import type { ReactNode } from 'react';
 
-export function generateStaticParams() {
-  return locales.map((locale) => ({locale}));
+import { IntlProvider } from './intl-provider';
+
+import { locales } from '@/i18n';
+
+export function generateStaticParams(): Array<{ locale: string }> {
+  return locales.map((locale) => ({ locale }));
 }
 
-export default async function LocaleLayout({
+interface LocaleLayoutProps {
+  children: ReactNode;
+  params: Promise<{locale: string}>;
+}
+
+const LocaleLayout = async function ({
   children,
   params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{locale: string}>;
-}) {
+}: LocaleLayoutProps) {
   const {locale} = await params;
   
-  if (!locales.includes(locale as any)) notFound();
+  if (!locales.includes(locale as (typeof locales)[number])) notFound();
 
   const messages = await getMessages({locale});
 
@@ -25,4 +30,6 @@ export default async function LocaleLayout({
       {children}
     </IntlProvider>
   );
-}
+};
+
+export default LocaleLayout;

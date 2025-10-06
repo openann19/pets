@@ -10,7 +10,23 @@ import { motion } from 'framer-motion';
 import { StarIcon, CheckCircleIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 export default function PremiumPage() {
-  const t = useTranslations();
+  // Handle missing translations gracefully
+  let t: any;
+  try {
+    t = useTranslations();
+  } catch (error) {
+    // Fallback translations if context is missing
+    t = (key: string) => {
+      const fallbacks: Record<string, string> = {
+        'premium.title': 'Premium Features',
+        'premium.subtitle': 'Unlock exclusive features and enhance your pet matching experience',
+        'premium.features.unlimitedLikes': 'Unlimited Likes',
+        'premium.features.superLikes': 'Super Likes',
+        'premium.features.rewind': 'Rewind Last Swipe',
+      };
+      return fallbacks[key] || key;
+    };
+  }
 
   const premiumFeatures = [
     {

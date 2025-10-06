@@ -43,11 +43,12 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     const { hoverProps, isHovered } = useHover({});
 
     // Merge the refs
-    React.useImperativeHandle(forwardedRef, () => ref.current!);
+    React.useImperativeHandle(forwardedRef, () => ref.current as HTMLDivElement);
 
     return (
       <div
         {...(interactive ? mergeProps(focusProps, hoverProps, otherProps) : otherProps)}
+        // eslint-disable-next-line react/jsx-props-no-spreading
         ref={ref}
         tabIndex={interactive ? 0 : undefined}
         role={interactive ? 'button' : undefined}

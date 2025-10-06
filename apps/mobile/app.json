@@ -8,7 +8,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "pawfectmatch",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -28,7 +31,9 @@
         "NSPhotoLibraryUsageDescription": "PawfectMatch needs access to your photo library to upload pet pictures",
         "NSContactsUsageDescription": "PawfectMatch can sync your contacts to help you find friends who use the app"
       },
-      "associatedDomains": ["applinks:pawfectmatch.com"],
+      "associatedDomains": [
+        "applinks:pawfectmatch.com"
+      ],
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -36,8 +41,6 @@
     "android": {
       "package": "com.pawfectmatch.premium",
       "versionCode": 1,
-      "compileSdkVersion": 34,
-      "targetSdkVersion": 34,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ec4899"
@@ -63,7 +66,10 @@
               "host": "pawfectmatch.com"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -84,6 +90,7 @@
           "locationAlwaysAndWhenInUsePermission": "Allow PawfectMatch to use your location to find pets near you and suggest nearby meetup locations."
         }
       ],
+      "expo-font"
     ],
     "extra": {
       "eas": {

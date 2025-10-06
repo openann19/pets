@@ -138,6 +138,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       <div className="relative">
         <textarea
           {...mergeProps(focusProps, otherProps)}
+          // eslint-disable-next-line react/jsx-props-no-spreading
           ref={ref}
           value={value}
           onChange={React.useCallback(handleChange, [onChange])}

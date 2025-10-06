@@ -202,7 +202,7 @@ describe('Comprehensive Test Suite', () => {
       render(<SubscriptionManager />);
       
       expect(screen.getByText(/Unlock Premium Features/i)).toBeInTheDocument();
-      expect(screen.getByText(/AI-Powered Matching/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /AI-Powered Matching/i })).toBeInTheDocument();
     });
   });
 

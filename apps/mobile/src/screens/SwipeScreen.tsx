@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '../contexts/ThemeContext';
+import { matchesAPI } from '../services/api';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -42,14 +43,21 @@ interface Pet {
   };
 }
 
-interface SwipeScreenProps {
-  navigation: any;
-}
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+type RootStackParamList = {
+  Swipe: undefined;
+  Matches: undefined;
+  Chat: { matchId: string; petName: string };
+};
+
+type SwipeScreenProps = NativeStackScreenProps<RootStackParamList, 'Swipe'>;
 
 export default function SwipeScreen({ navigation }: SwipeScreenProps) {
   const { user } = useAuthStore();
   const { colors, isDark } = useTheme();
-  // Mock data for now - replace with actual API calls
+  
+  // Real API calls for pets
   const [pets, setPets] = useState<Pet[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,55 +74,45 @@ export default function SwipeScreen({ navigation }: SwipeScreenProps) {
     setIsLoading(true);
     setError(null);
     try {
-      // TODO: Replace with actual API call
-      const mockPets: Pet[] = [
-        {
-          _id: '1',
-          name: 'Buddy',
-          species: 'dog',
-          breed: 'Golden Retriever',
-          age: 3,
-          size: 'large',
-          intent: 'adoption',
-          description: 'Friendly and energetic',
-          photos: [{ url: 'https://example.com/buddy.jpg', isPrimary: true }],
-          personalityTags: ['friendly', 'energetic'],
-          healthInfo: { vaccinated: true, spayedNeutered: true },
-          featured: { isFeatured: false },
-          owner: { name: 'John Doe' }
-        }
-      ];
-      setPets(mockPets);
+      // ✅ REAL API - Fetch pets from backend
+      const realPets = await matchesAPI.getPets(filters) as unknown as Pet[];
+      setPets(realPets);
     } catch (err) {
-      setError('Failed to load pets');
+      console.error('Error loading pets:', err);
+      setError('Failed to load pets. Please check your connection.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const swipePet = async (petId: string, action: 'like' | 'pass' | 'superlike') => {
-    const pet = pets.find(p => p._id === petId);
-    if (!pet) return null;
+    try {
+      const pet = pets.find(p => p._id === petId);
+      if (!pet) return null;
 
-    // Convert mobile Pet to core Pet type
-    const corePet = {
-      ...pet,
-      bio: pet.description,
-      distance: 0,
-      compatibility: 0,
-      isVerified: true,
-      owner: { _id: 'owner1', name: 'Owner' }
-    } as any;
+      // Convert mobile Pet to core Pet type
+      const corePet = {
+        ...pet,
+        bio: pet.description,
+        distance: 0,
+        compatibility: 0,
+        isVerified: true,
+        owner: { _id: 'owner1', name: 'Owner' }
+      } as any;
 
-    switch (action) {
-      case 'like':
-        return await handleLike(corePet);
-      case 'pass':
-        return await handlePass(corePet);
-      case 'superlike':
-        return await handleSuperLike(corePet);
-      default:
-        return null;
+      switch (action) {
+        case 'like':
+          return await handleLike(corePet);
+        case 'pass':
+          return await handlePass(corePet);
+        case 'superlike':
+          return await handleSuperLike(corePet);
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error('Error in swipePet:', error);
+      return null;
     }
   };
 
@@ -293,9 +291,9 @@ export default function SwipeScreen({ navigation }: SwipeScreenProps) {
             <Ionicons name="options-outline" size={20} color="#333" />
             <Text style={styles.filterText}>Filter</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Matches')}>
-            <Ionicons name="heart" size={24} color="#ff6b6b" />
-          </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Matches')}>
+          <Ionicons name="heart" size={24} color="#ff6b6b" />
+        </TouchableOpacity>
         </View>
       </View>
 
@@ -480,7 +478,12 @@ export default function SwipeScreen({ navigation }: SwipeScreenProps) {
                 style={styles.sendMessageButton}
                 onPress={() => {
                   setShowMatchModal(false);
-                  navigation.navigate('Chat', { matchId: matchedPet._id });
+                  if (matchedPet) {
+                    navigation.navigate('Chat', { 
+                      matchId: matchedPet._id, 
+                      petName: matchedPet.name 
+                    });
+                  }
                 }}
               >
                 <Text style={styles.sendMessageText}>Send Message</Text>

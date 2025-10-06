@@ -2,17 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@pawfectmatch/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
+  Alert,
+  Dimensions,
   FlatList,
-  TouchableOpacity,
   Image,
   RefreshControl,
-  Dimensions,
-  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

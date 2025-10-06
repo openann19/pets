@@ -27,27 +27,61 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        viewport: { width: 3840, height: 2160 }, // 4K UHD
+        deviceScaleFactor: 2, // High DPI
+      },
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: { 
+        ...devices['Desktop Firefox'],
+        viewport: { width: 3840, height: 2160 }, // 4K UHD
+        deviceScaleFactor: 2,
+      },
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { 
+        ...devices['Desktop Safari'],
+        viewport: { width: 3840, height: 2160 }, // 4K UHD
+        deviceScaleFactor: 2,
+      },
     },
     {
       name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
+      use: { 
+        ...devices['Pixel 5'],
+        viewport: { width: 1080, height: 2400 }, // High-res mobile
+        deviceScaleFactor: 3, // High DPI mobile
+      },
     },
     {
       name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
+      use: { 
+        ...devices['iPhone 12'],
+        viewport: { width: 1170, height: 2532 }, // iPhone 12 Pro Max
+        deviceScaleFactor: 3,
+      },
     },
     {
       name: 'Desktop Edge',
-      use: { ...devices['Desktop Edge'], channel: 'msedge' },
+      use: { 
+        ...devices['Desktop Edge'], 
+        channel: 'msedge',
+        viewport: { width: 3840, height: 2160 }, // 4K UHD
+        deviceScaleFactor: 2,
+      },
+    },
+    {
+      name: 'UHD Testing',
+      use: {
+        viewport: { width: 3840, height: 2160 }, // 4K UHD
+        deviceScaleFactor: 2,
+        isMobile: false,
+        hasTouch: false,
+      },
     },
   ],
   webServer: {

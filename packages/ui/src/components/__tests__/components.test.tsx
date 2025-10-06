@@ -123,7 +123,7 @@ describe('UI Components', () => {
       expect(screen.getByLabelText('Email')).toBeInTheDocument();
     });
 
-    it('handles user input', async () => {
+    it('handles user input', () => {
       const handleChange = jest.fn();
 
       render(
@@ -191,7 +191,7 @@ describe('UI Components', () => {
       expect(textarea).toBeInTheDocument();
     });
 
-    it('handles user input', async () => {
+    it('handles user input', () => {
       const handleChange = jest.fn();
 
       render(

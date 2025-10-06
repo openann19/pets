@@ -18,9 +18,38 @@ export default function PremiumLanding() {
     // Fallback translations if context is missing
     t = (key: string) => {
       const fallbacks: Record<string, string> = {
+        // Navigation
+        'navigation.browse': 'Browse',
+        'navigation.matches': 'Matches',
+        'navigation.dashboard': 'Dashboard',
+        'navigation.map': 'Map',
+        'navigation.premium': 'Premium',
+        'navigation.language': 'Language',
+        'navigation.aiBio': 'AI Bio',
+        'navigation.aiPhoto': 'AI Photo',
+        
+        // Common
+        'common.getStarted': 'Get Started',
+        'common.createProfile': 'Create Profile',
+        'common.startBrowsing': 'Start Browsing',
+        
+        // Landing
+        'landing.toggleMenu': 'Toggle Menu',
+        'landing.premiumPetMatching': 'Premium Pet Matching',
+        'landing.headlinePrefix': 'Find Your Perfect',
+        'landing.headlineHighlight': 'Pet Match',
+        'landing.description': 'AI-powered pet matching for the perfect companion. Connect with pets that match your lifestyle and preferences.',
+        'landing.browsePets': 'Browse Pets',
+        'landing.myMatches': 'My Matches',
+        'landing.petMap': 'Pet Map',
+        'landing.premiumExperience': 'Premium Experience',
+        
+        // Hero section
         'hero.title': 'Find Your Perfect Pet Match',
         'hero.subtitle': 'AI-powered pet matching for the perfect companion',
         'hero.cta': 'Start Matching',
+        
+        // Features
         'features.title': 'Why Choose PawfectMatch?',
         'features.ai.title': 'AI-Powered Matching',
         'features.ai.description': 'Advanced algorithms find your ideal pet companion',
@@ -69,11 +98,11 @@ export default function PremiumLanding() {
                 
                   {/* Desktop Navigation */}
                 <nav className="hidden md:flex items-center gap-6">
-                  <Link href="/browse" className="text-white/90 hover:text-white transition-colors font-medium">{t('navigation.browse')}</Link>
-                  <Link href="/matches" className="text-white/90 hover:text-white transition-colors font-medium">{t('navigation.matches')}</Link>
-                  <Link href="/dashboard" className="text-white/90 hover:text-white transition-colors font-medium">{t('navigation.dashboard')}</Link>
-                  <Link href="/map" className="text-white/90 hover:text-white transition-colors font-medium">{t('navigation.map')}</Link>
-                  <Link href="/premium" className="text-white/90 hover:text-white transition-colors font-medium">{t('navigation.premium')}</Link>
+                  <Link href="./browse" className="text-white/90 hover:text-white transition-colors font-medium">{t('navigation.browse')}</Link>
+                  <Link href="./matches" className="text-white/90 hover:text-white transition-colors font-medium">{t('navigation.matches')}</Link>
+                  <Link href="./dashboard" className="text-white/90 hover:text-white transition-colors font-medium">{t('navigation.dashboard')}</Link>
+                  <Link href="./map" className="text-white/90 hover:text-white transition-colors font-medium">{t('navigation.map')}</Link>
+                  <Link href="./premium" className="text-white/90 hover:text-white transition-colors font-medium">{t('navigation.premium')}</Link>
                 </nav>
 
                 <div className="flex items-center gap-3">
@@ -89,7 +118,7 @@ export default function PremiumLanding() {
                     </svg>
                   </button>
                   
-                    <Link href="/register" aria-label={t('common.getStarted')}>
+                    <Link href="./register" aria-label={t('common.getStarted')}>
                     <PremiumButton variant="outline" magneticEffect className="border-2 border-white/80 hover:bg-white/20 hover:border-white font-semibold">
                       {t('common.getStarted')}
                     </PremiumButton>
@@ -111,13 +140,13 @@ export default function PremiumLanding() {
                       <LanguageSelect />
                     </div>
                     <div className="h-px w-full bg-white/10" />
-                    <Link href="/browse" className="block text-white/80 hover:text-white transition-colors py-2">{t('landing.browsePets')}</Link>
-                    <Link href="/matches" className="block text-white/80 hover:text-white transition-colors py-2">{t('landing.myMatches')}</Link>
-                    <Link href="/dashboard" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.dashboard')}</Link>
-                    <Link href="/map" className="block text-white/80 hover:text-white transition-colors py-2">{t('landing.petMap')}</Link>
-                    <Link href="/premium" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.premium')}</Link>
-                    <Link href="/ai/bio" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.aiBio')}</Link>
-                    <Link href="/ai/photo" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.aiPhoto')}</Link>
+                    <Link href="./browse" className="block text-white/80 hover:text-white transition-colors py-2">{t('landing.browsePets')}</Link>
+                    <Link href="./matches" className="block text-white/80 hover:text-white transition-colors py-2">{t('landing.myMatches')}</Link>
+                    <Link href="./dashboard" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.dashboard')}</Link>
+                    <Link href="./map" className="block text-white/80 hover:text-white transition-colors py-2">{t('landing.petMap')}</Link>
+                    <Link href="./premium" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.premium')}</Link>
+                    <Link href="./ai/bio" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.aiBio')}</Link>
+                    <Link href="./ai/photo" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.aiPhoto')}</Link>
                   </div>
                 </motion.div>
               )}
@@ -174,7 +203,7 @@ export default function PremiumLanding() {
             transition={SPRING_CONFIG}
             className="mt-8 flex flex-wrap items-center justify-center gap-4"
           >
-            <Link href="/register" aria-label={t('common.createProfile')}>
+            <Link href="./register" aria-label={t('common.createProfile')}>
               <motion.div
                 whileHover={{ scale: 1.05, y: -3 }}
                 whileTap={{ scale: 0.95 }}
@@ -186,7 +215,7 @@ export default function PremiumLanding() {
                 </PremiumButton>
               </motion.div>
             </Link>
-            <Link href="/browse" aria-label={t('common.startBrowsing')}>
+            <Link href="./browse" aria-label={t('common.startBrowsing')}>
               <PremiumButton variant="outline" magneticEffect size="lg" className="text-white border-2 border-white/80 hover:bg-white/20 hover:border-white font-semibold backdrop-blur-md shadow-lg">
                 {t('common.startBrowsing')}
               </PremiumButton>

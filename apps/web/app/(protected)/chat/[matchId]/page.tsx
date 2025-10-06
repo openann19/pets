@@ -177,7 +177,7 @@ export default function ChatPage() {
       updatedAt: new Date().toISOString(),
       read: false,
       type,
-      metadata: messageData?.metadata,
+      ...(messageData?.metadata && { metadata: messageData.metadata }),
     };
 
     // Optimistic update
@@ -188,8 +188,8 @@ export default function ChatPage() {
     const attachments: MessageAttachment[] = newMessage.metadata ? [{
       type: 'image',
       url: newMessage.content,
-      filename: newMessage.metadata.fileName,
-      size: newMessage.metadata.fileSize
+      ...(newMessage.metadata.fileName && { filename: newMessage.metadata.fileName }),
+      ...(newMessage.metadata.fileSize && { size: newMessage.metadata.fileSize })
     }] : [];
     socket.sendMessage(matchId, newMessage.content, attachments);
 
@@ -225,7 +225,7 @@ export default function ChatPage() {
       const formData = new FormData();
       formData.append('image', file);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/api/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
@@ -298,7 +298,7 @@ export default function ChatPage() {
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(`New message from ${match?.petName}`, {
         body: message.content,
-        icon: match?.petPhoto
+        ...(match?.petPhoto && { icon: match.petPhoto })
       });
     }
   };

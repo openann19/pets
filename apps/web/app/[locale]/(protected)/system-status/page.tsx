@@ -5,28 +5,28 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
+  ArrowPathIcon,
+  BeakerIcon,
+  BoltIcon,
   ChartBarIcon,
-  CpuChipIcon,
-  CloudIcon,
-  WifiIcon,
-  ExclamationTriangleIcon,
   CheckCircleIcon,
   ClockIcon,
-  BoltIcon,
-  BeakerIcon,
-  ShieldCheckIcon,
-  ArrowPathIcon,
+  CpuChipIcon,
+  ExclamationTriangleIcon,
   EyeIcon,
+  ShieldCheckIcon,
+  WifiIcon
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+
+import PremiumButton from '@/components/UI/PremiumButton';
+import PremiumCard from '@/components/UI/PremiumCard';
+import { PREMIUM_VARIANTS } from '@/constants/animations';
 import { useEnhancedSocket } from '@/hooks/useEnhancedSocket';
 import { useAnalytics } from '@/utils/analytics-system';
 import { createPerformanceMonitor } from '@/utils/performance';
-import PremiumCard from '@/components/UI/PremiumCard';
-import PremiumButton from '@/components/UI/PremiumButton';
-import { PREMIUM_VARIANTS } from '@/constants/animations';
 
 interface SystemHealth {
   status: 'healthy' | 'warning' | 'critical';
@@ -76,7 +76,7 @@ export default function SystemStatusPage() {
       const backendHealth = await fetch('/api/health').then(r => r.json()).catch(() => null);
       
       // AI Service Health  
-      const aiHealth = await fetch(`${process.env.NEXT_PUBLIC_AI_URL}/health`).then(r => r.json()).catch(() => null);
+      const aiHealth = await fetch(`${process.env['NEXT_PUBLIC_AI_URL']}/health`).then(r => r.json()).catch(() => null);
       
       // AI Routes Health
       const aiRoutesHealth = await fetch('/api/ai/health').then(r => r.json()).catch(() => null);
@@ -105,7 +105,7 @@ export default function SystemStatusPage() {
             errorRate: 0,
             lastCheck: new Date().toISOString(),
           },
-          endpoint: `${process.env.NEXT_PUBLIC_AI_URL}/health`,
+          endpoint: `${process.env['NEXT_PUBLIC_AI_URL']}/health`,
           features: ['Bio Generation', 'Photo Analysis', 'Compatibility', 'Caching'],
         },
         {

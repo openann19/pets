@@ -1,17 +1,5 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore } from '../../../src/lib/auth-store';
-import { useDashboardData, useWebSocket } from '../../../src/hooks/api-hooks';
-import PremiumCard from '../../../src/components/UI/PremiumCard';
-import PremiumButton from '../../../src/components/UI/PremiumButton';
-import { 
-  PREMIUM_VARIANTS, 
-  STAGGER_CONFIG,
-  SPRING_CONFIG,
-} from '../../../src/constants/animations';
 import {
   HeartIcon,
   ChatBubbleLeftRightIcon,
@@ -28,6 +16,20 @@ import {
   BeakerIcon,
   EyeIcon,
 } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+
+import PremiumButton from '../../../src/components/UI/PremiumButton';
+import PremiumCard from '../../../src/components/UI/PremiumCard';
+import { 
+  PREMIUM_VARIANTS, 
+  STAGGER_CONFIG,
+  SPRING_CONFIG,
+} from '../../../src/constants/animations';
+import { useDashboardData, useWebSocket } from '../../../src/hooks/api-hooks';
+import { useAuthStore } from '../../../src/lib/auth-store';
+
 
 export default function DashboardPage() {
   const { user: authUser } = useAuthStore();
@@ -101,49 +103,49 @@ export default function DashboardPage() {
     {
       title: 'Discover Pets',
       description: 'Start swiping to find new matches',
-      href: '/swipe',
+      href: './swipe',
       icon: MagnifyingGlassIcon,
       gradient: 'from-pink-500 to-purple-600',
     },
     {
       title: 'Video Call',
       description: 'Start a video call with matches',
-      href: '/video-call/demo-room',
+      href: './video-call/demo-room',
       icon: VideoCameraIcon,
       gradient: 'from-blue-500 to-cyan-500',
     },
     {
       title: 'Analytics',
       description: 'View your performance insights',
-      href: '/analytics',
+      href: './analytics',
       icon: ChartBarIcon,
       gradient: 'from-green-500 to-emerald-500',
     },
     {
       title: 'Upgrade Premium',
       description: 'Unlock all premium features',
-      href: '/premium',
+      href: './premium',
       icon: SparklesIcon,
       gradient: 'from-yellow-500 to-orange-500',
     },
     {
       title: 'View Matches',
       description: 'Chat with your matched pets',
-      href: '/matches',
+      href: './matches',
       icon: ChatBubbleLeftRightIcon,
       gradient: 'from-purple-500 to-indigo-600',
     },
     {
       title: 'Add a Pet',
       description: 'Create a profile for your pet',
-      href: '/pets/new',
+      href: './pets/new',
       icon: PlusCircleIcon,
       gradient: 'from-green-500 to-teal-600',
     },
     {
       title: 'My Pets',
       description: 'Manage your pet profiles',
-      href: '/my-pets',
+      href: './my-pets',
       icon: UserGroupIcon,
       gradient: 'from-orange-500 to-red-600',
     },
@@ -252,7 +254,7 @@ export default function DashboardPage() {
         <motion.div
           initial="initial"
           animate="animate"
-          transition={{ staggerChildren: STAGGER_CONFIG }}
+          transition={{ staggerChildren: STAGGER_CONFIG.normal }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
           {enhancedStats.map((stat, index) => (
@@ -321,7 +323,7 @@ export default function DashboardPage() {
           className="mb-8"
           initial="initial"
           animate="animate"
-          transition={{ staggerChildren: STAGGER_CONFIG }}
+          transition={{ staggerChildren: STAGGER_CONFIG.normal }}
         >
           <motion.h2 
             className="text-2xl font-bold gradient-text mb-6"
@@ -404,7 +406,7 @@ export default function DashboardPage() {
         {/* Enhanced Premium Showcase */}
         {!subscription?.isActive && (
           <motion.div
-            variants={PREMIUM_VARIANTS.scaleIn}
+            variants={PREMIUM_VARIANTS.scale}
             transition={{ delay: 0.6 }}
             className="mb-8"
           >

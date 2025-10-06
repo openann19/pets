@@ -306,11 +306,11 @@ class NotificationService {
 
     // Navigate based on notification type
     if (data?.type === 'match') {
-      window.location.href = `/matches/${data.matchId}`;
+      window.location.href = `./matches/${data.matchId}`;
     } else if (data?.type === 'message') {
-      window.location.href = `/chat/${data.matchId}`;
+      window.location.href = `./chat/${data.matchId}`;
     } else if (data?.type === 'like') {
-      window.location.href = '/swipe';
+      window.location.href = './swipe';
     }
   }
 

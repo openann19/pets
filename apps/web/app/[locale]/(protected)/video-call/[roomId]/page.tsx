@@ -5,14 +5,14 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import VideoCallRoom from '@/components/VideoCall/VideoCallRoom';
-import { useAuthStore } from '@/lib/auth-store';
-import { usePremiumTier } from '@/hooks/premium-hooks';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
+import VideoCallRoom from '@/components/VideoCall/VideoCallRoom';
+import { usePremiumTier } from '@/hooks/premium-hooks';
+import { useAuthStore } from '@/lib/auth-store';
 import { VideoCameraIcon } from '@heroicons/react/24/solid';
+import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function VideoCallPage() {
   const params = useParams();
@@ -21,7 +21,7 @@ export default function VideoCallPage() {
   const { hasFeature } = usePremiumTier(user?.id || '');
   const [inCall, setInCall] = useState(false);
 
-  const roomId = (params?.roomId as string) || '';
+  const roomId = (params?.['roomId'] as string) || '';
   const hasVideoAccess = hasFeature('videoCalls');
 
   // Check premium access

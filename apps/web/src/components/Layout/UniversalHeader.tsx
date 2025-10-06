@@ -35,11 +35,11 @@ interface UniversalHeaderProps {
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Swipe', href: '/swipe', icon: HeartIcon },
-  { name: 'Matches', href: '/matches', icon: ChatBubbleLeftRightIcon },
-  { name: 'Map', href: '/map', icon: MapPinIcon },
-  { name: 'Premium', href: '/premium', icon: SparklesIcon },
+  { name: 'Dashboard', href: './dashboard', icon: HomeIcon },
+  { name: 'Swipe', href: './swipe', icon: HeartIcon },
+  { name: 'Matches', href: './matches', icon: ChatBubbleLeftRightIcon },
+  { name: 'Map', href: './map', icon: MapPinIcon },
+  { name: 'Premium', href: './premium', icon: SparklesIcon },
 ];
 
 export default function UniversalHeader({ showNav = true }: UniversalHeaderProps) {

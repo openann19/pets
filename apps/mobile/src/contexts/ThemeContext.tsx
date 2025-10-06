@@ -1,8 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ColorSchemeName } from 'react-native';
-import { Appearance } from 'react-native';
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { Appearance, type ColorSchemeName } from 'react-native';
 
 import { ColorsDark, GlobalStylesDark, ShadowsDark } from '../styles/DarkTheme';
 import { Colors, GlobalStyles, Shadows } from '../styles/GlobalStyles';
@@ -60,10 +58,10 @@ export interface ThemeContextType {
   isDark: boolean;
   themeMode: ThemeMode;
   colors: ThemeColors;
-  styles: any;
-  shadows: any;
+  styles: Record<string, unknown>;
+  shadows: Record<string, unknown>;
   setThemeMode: (mode: ThemeMode) => void;
-  toggleTheme: () => void;
+  toggleTheme: () => Promise<void>;
 }
 
 const THEME_STORAGE_KEY = '@pawfectmatch_theme_mode';
@@ -98,7 +96,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const loadThemePreference = async () => {
       try {
         const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-        if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
+        if (savedTheme != null && savedTheme.length > 0 && ['light', 'dark', 'system'].includes(savedTheme)) {
           setThemeModeState(savedTheme as ThemeMode);
         }
       } catch (error) {
@@ -106,7 +104,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       }
     };
 
-    loadThemePreference();
+    void loadThemePreference();
   }, []);
 
   // Listen to system color scheme changes
@@ -129,9 +127,9 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   // Toggle between light and dark (skip system)
-  const toggleTheme = () => {
+  const toggleTheme = async () => {
     const newMode = isDark ? 'light' : 'dark';
-    setThemeMode(newMode);
+    await setThemeMode(newMode);
   };
 
   const contextValue: ThemeContextType = {

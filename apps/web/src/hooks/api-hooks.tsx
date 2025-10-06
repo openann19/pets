@@ -4,12 +4,12 @@
  */
 
 // @ts-nocheck
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuthStore } from '@/lib/auth-store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import apiClient from '../lib/api-client';
-import type { User, Pet, Match, Message, SwipeAction } from '../types';
-import { useAuthStore } from '@/lib/auth-store';
+import type { Match, Message, Pet, SwipeAction, User } from '../types';
 
 // ============= AUTHENTICATION HOOKS =============
 export function useAuth() {
@@ -425,18 +425,53 @@ export function useMarkNotificationRead() {
 
 // ============= WEBSOCKET HOOKS =============
 export function useWebSocket(userId?: string) {
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+
   useEffect(() => {
-    // Temporarily disabled to prevent infinite refresh loops
-    // Will be re-enabled when full WebSocket implementation is added
     if (!userId) return;
     
-    console.log('[WebSocket] Hook called but disabled for now');
+    console.log('[WebSocket] Initializing connection for user:', userId);
     
-    // const socket = apiClient.connectWebSocket(userId);
-    // return () => {
-    //   apiClient.disconnectWebSocket();
-    // };
+    // Connect to WebSocket
+    const connectSocket = async () => {
+      try {
+        const socket = await apiClient.connectWebSocket(userId);
+        if (socket) {
+          setIsConnected(true);
+          setConnectionError(null);
+          console.log('[WebSocket] Connected successfully');
+        }
+      } catch (error) {
+        console.error('[WebSocket] Connection failed:', error);
+        setConnectionError(error instanceof Error ? error.message : 'Connection failed');
+        setIsConnected(false);
+      }
+    };
+
+    connectSocket();
+    
+    // Cleanup on unmount or userId change
+    return () => {
+      console.log('[WebSocket] Cleaning up connection');
+      apiClient.disconnectWebSocket();
+      setIsConnected(false);
+      setConnectionError(null);
+    };
   }, [userId]);
+
+  return {
+    isConnected,
+    connectionError,
+    isWebSocketConnected: apiClient.isWebSocketConnected,
+    joinMatchRoom: apiClient.joinMatchRoom,
+    leaveMatchRoom: apiClient.leaveMatchRoom,
+    sendChatMessage: apiClient.sendChatMessage,
+    sendTypingIndicator: apiClient.sendTypingIndicator,
+    markMessagesAsRead: apiClient.markMessagesAsRead,
+    performMatchAction: apiClient.performMatchAction,
+    onWebSocketEvent: apiClient.onWebSocketEvent,
+  };
 }
 
 // ============= COMBINED HOOKS =============

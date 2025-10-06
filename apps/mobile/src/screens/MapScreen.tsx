@@ -1,26 +1,25 @@
 import { useAuthStore } from '@pawfectmatch/core';
-import { BlurView } from '@react-native-community/blur';
 import Geolocation from '@react-native-community/geolocation';
 import { useNavigation } from '@react-navigation/native';
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
   Alert,
-  Platform,
-  StatusBar,
   Animated,
-  PanResponder,
+  Dimensions,
+  Modal,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import type { Region } from 'react-native-maps';
-import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
-import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { PERMISSIONS, RESULTS, request } from 'react-native-permissions';
 import type { Socket } from 'socket.io-client';
 import io from 'socket.io-client';
  
@@ -389,8 +388,8 @@ const MapScreen: React.FC<MapScreenProps> = ({ navigation: _navProp }) => {
       <Animated.View style={[styles.filterPanel, { height: filterPanelHeight }]}>
         <BlurView
           style={styles.filterBlur}
-          blurType="light"
-          blurAmount={10}
+          intensity={50}
+          tint="light"
         >
           <ScrollView style={styles.filterContent}>
             <Text style={styles.filterTitle}>Map Filters</Text>
@@ -482,7 +481,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ navigation: _navProp }) => {
         onRequestClose={() => setSelectedPin(null)}
       >
         <View style={styles.modalOverlay}>
-          <BlurView style={styles.modalBlur} blurType="dark" blurAmount={10}>
+          <BlurView style={styles.modalBlur} intensity={80} tint="dark">
             <View style={styles.modalContent}>
               {selectedPin && (
                 <>

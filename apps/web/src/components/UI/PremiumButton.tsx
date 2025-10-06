@@ -3,9 +3,7 @@
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 import React, { useCallback, useRef, useState } from 'react';
 
-
 import { SPRING_CONFIG } from '@/constants/animations';
-import { COLORS, SHADOWS } from '@/constants/design-tokens';
 
 interface PremiumButtonProps {
   children?: React.ReactNode;
@@ -23,6 +21,8 @@ interface PremiumButtonProps {
   magneticEffect?: boolean;
   fullWidth?: boolean;
   type?: 'button' | 'submit' | 'reset';
+  href?: string;
+  as?: React.ElementType;
   
   // Accessibility props
   'aria-label'?: string;
@@ -35,12 +35,11 @@ interface PremiumButtonProps {
 }
 
 /**
- * Premium Button with Phase 2 compliance:
- * - Spring physics animations (not duration-based)
- * - Haptic feedback integration
- * - Sound effects
- * - 3D perspective on hover
- * - Consistent tactile feedback
+ * Premium Button with enhanced mobile responsiveness and professional styling
+ * - Mobile-first responsive padding
+ * - High contrast colors for better visibility
+ * - Professional gradients and shadows
+ * - WCAG compliant color combinations
  */
 const PremiumButton: React.FC<PremiumButtonProps> = ({
   children,
@@ -58,6 +57,8 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
   magneticEffect = false,
   fullWidth = false,
   type = 'button',
+  href,
+  as: Component = 'button',
   'aria-label': ariaLabel,
   'aria-describedby': ariaDescribedBy,
   'aria-pressed': ariaPressed,
@@ -65,6 +66,7 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
   'aria-haspopup': ariaHaspopup,
   role,
   tabIndex,
+  ...props
 }) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [isPressed, setIsPressed] = useState(false);
@@ -77,78 +79,91 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
   
   const baseClasses = "relative inline-flex items-center justify-center font-semibold rounded-xl transition-all focus:outline-none transform-gpu overflow-hidden backdrop-blur";
   
-  const variantClasses = {
+  const variantStyles = {
     primary: {
-      background: 'rgba(59, 130, 246, 0.12)',
-      color: COLORS.neutral[0],
-      boxShadow: glow ? SHADOWS.primaryGlow : SHADOWS.lg,
-      border: '1px solid rgba(255,255,255,0.12)',
+      background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)',
+      color: '#ffffff',
+      boxShadow: glow ? '0 0 40px rgba(236, 72, 153, 0.4)' : '0 10px 25px -3px rgba(0, 0, 0, 0.3)',
+      border: '1px solid rgba(255,255,255,0.2)',
+      fontWeight: '600',
     },
     secondary: {
-      background: COLORS.secondary[700],
-      color: COLORS.neutral[0],
-      boxShadow: glow ? SHADOWS.secondaryGlow : SHADOWS.lg,
-      border: 'none',
+      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+      color: '#ffffff',
+      boxShadow: glow ? '0 0 40px rgba(59, 130, 246, 0.4)' : '0 10px 25px -3px rgba(0, 0, 0, 0.3)',
+      border: '1px solid rgba(255,255,255,0.2)',
+      fontWeight: '600',
     },
     danger: {
-      background: COLORS.error[600],
-      color: COLORS.neutral[0],
-      boxShadow: glow ? SHADOWS.errorGlow : SHADOWS.lg,
-      border: 'none',
+      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      color: '#ffffff',
+      boxShadow: glow ? '0 0 40px rgba(239, 68, 68, 0.4)' : '0 10px 25px -3px rgba(0, 0, 0, 0.3)',
+      border: '1px solid rgba(255,255,255,0.2)',
+      fontWeight: '600',
     },
     ghost: {
       background: 'transparent',
-      color: '#e5e7eb',
-      border: '1px solid rgba(255,255,255,0.12)',
+      color: '#ffffff',
+      border: '2px solid rgba(255,255,255,0.3)',
       boxShadow: 'none',
+      fontWeight: '500',
     },
     glass: {
-      background: 'rgba(255,255,255,0.08)',
-      backdropFilter: 'blur(12px) saturate(140%)',
-      border: '1px solid rgba(255,255,255,0.12)',
-      color: '#f1f5f9',
-      boxShadow: SHADOWS.glass,
+      background: 'rgba(255,255,255,0.15)',
+      backdropFilter: 'blur(16px) saturate(180%)',
+      border: '1px solid rgba(255,255,255,0.25)',
+      color: '#ffffff',
+      boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+      fontWeight: '600',
     },
     solid: {
-      background: COLORS.neutral[900],
-      color: COLORS.neutral[0],
-      border: 'none',
-      boxShadow: SHADOWS.lg,
+      background: '#1f2937',
+      color: '#ffffff',
+      border: '1px solid rgba(255,255,255,0.1)',
+      boxShadow: '0 10px 25px -3px rgba(0, 0, 0, 0.3)',
+      fontWeight: '600',
     },
     outline: {
       background: 'transparent',
-      color: '#e5e7eb',
-      border: '1px solid rgba(255,255,255,0.12)',
+      color: '#ffffff',
+      border: '2px solid #e5e7eb',
       boxShadow: 'none',
+      fontWeight: '500',
     },
     holographic: {
-      background: 'linear-gradient(135deg, rgba(59,130,246,0.25), rgba(37,99,235,0.25))',
-      color: '#f8fafc',
-      border: '1px solid rgba(255,255,255,0.12)',
-      boxShadow: SHADOWS['2xl'],
+      background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.8), rgba(139, 92, 246, 0.8), rgba(59, 130, 246, 0.8))',
+      color: '#ffffff',
+      border: '1px solid rgba(255,255,255,0.3)',
+      boxShadow: '0 0 50px rgba(236, 72, 153, 0.3)',
       backgroundSize: '200% 200%',
       animation: 'holographic 8s ease infinite',
-      filter: 'saturate(105%)',
+      filter: 'saturate(120%)',
+      fontWeight: '600',
     },
     neon: {
-      background: 'rgba(2,6,23,0.6)',
-      color: COLORS.primary[500],
-      border: '1px solid rgba(59,130,246,0.4)',
-      boxShadow: `0 0 20px rgba(59,130,246,0.25)`,
+      background: 'rgba(16, 185, 129, 0.9)',
+      color: '#ffffff',
+      border: '1px solid rgba(16, 185, 129, 0.6)',
+      boxShadow: `0 0 30px rgba(16, 185, 129, 0.5), inset 0 1px 0 rgba(255,255,255,0.2)`,
+      fontWeight: '600',
     },
     gradient: {
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       color: '#ffffff',
-      border: 'none',
-      boxShadow: glow ? '0 0 30px rgba(102, 126, 234, 0.5)' : SHADOWS.lg,
+      border: '1px solid rgba(255,255,255,0.2)',
+      boxShadow: glow ? '0 0 40px rgba(102, 126, 234, 0.5)' : '0 10px 25px -3px rgba(0, 0, 0, 0.3)',
+      fontWeight: '600',
     },
   } as const;
 
+  // Mobile-first responsive size classes
   const sizeClasses = {
-    sm: "px-4 py-2 text-sm min-h-[36px]",
-    md: "px-6 py-3 text-base min-h-[44px]",
-    lg: "px-8 py-4 text-lg min-h-[52px]"
+    sm: "px-3 sm:px-4 py-2 text-sm min-h-[36px]",
+    md: "px-4 sm:px-6 py-3 text-base min-h-[44px]",
+    lg: "px-6 sm:px-8 py-4 text-lg min-h-[52px]"
   };
+
+  const variantStyle = variantStyles[variant];
 
   // Enhanced haptic feedback
   const triggerHaptic = useCallback((intensity: 'light' | 'medium' | 'heavy' = 'medium') => {
@@ -242,9 +257,110 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
     }
   };
 
-  const variantStyle = variantClasses[variant];
-
   const wrapperClass = fullWidth ? "relative block w-full" : "relative inline-block";
+  
+  // If href is provided, render as Link
+  if (href) {
+    const LinkComponent = Component;
+    return (
+      <div className={wrapperClass}>
+        <LinkComponent href={href} className="block">
+          <motion.button
+            ref={buttonRef}
+            type={type}
+            className={`
+              ${baseClasses}
+              ${sizeClasses[size]}
+              ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              ${fullWidth ? 'w-full' : ''}
+              ${className}
+            `}
+            style={{
+              ...variantStyle,
+              x: springX,
+              y: springY,
+            }}
+            whileHover={!disabled && !loading ? { 
+              scale: 1.02, 
+              y: -2,
+              transition: { type: "spring", stiffness: 400, damping: 25 }
+            } : {}}
+            whileTap={!disabled && !loading ? { 
+              scale: 0.98,
+              transition: { type: "spring", stiffness: 400, damping: 25 }
+            } : {}}
+            onMouseMove={handleMouseMove}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onClick={handleClick}
+            onKeyDown={handleKeyDown}
+            aria-label={ariaLabel}
+            aria-describedby={ariaDescribedBy}
+            aria-pressed={ariaPressed}
+            aria-expanded={ariaExpanded}
+            aria-haspopup={ariaHaspopup}
+            role={role}
+            tabIndex={tabIndex}
+            disabled={disabled || loading}
+            aria-disabled={disabled || loading}
+            {...props}
+          >
+            {/* Enhanced content with icon support */}
+            <motion.div
+              className="flex items-center justify-center gap-2"
+              animate={{ 
+                scale: isPressed ? 0.95 : 1,
+                opacity: loading ? 0 : 1,
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            >
+              {icon && iconPosition === 'left' && (
+                <motion.span
+                  className="flex-shrink-0"
+                  whileHover={{ rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                >
+                  {icon}
+                </motion.span>
+              )}
+              
+              <span>{children}</span>
+              
+              {icon && iconPosition === 'right' && (
+                <motion.span
+                  className="flex-shrink-0"
+                  whileHover={{ rotate: -5 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                >
+                  {icon}
+                </motion.span>
+              )}
+            </motion.div>
+
+            {/* Ripple effect */}
+            <motion.div
+              className="absolute inset-0 rounded-inherit overflow-hidden pointer-events-none"
+              initial={false}
+              animate={isPressed ? { scale: 1 } : { scale: 0 }}
+            >
+              <motion.div
+                className="absolute inset-0 bg-white opacity-20"
+                initial={{ scale: 0 }}
+                animate={isPressed ? { scale: 4 } : { scale: 0 }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                style={{
+                  borderRadius: '50%',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              />
+            </motion.div>
+          </motion.button>
+        </LinkComponent>
+      </div>
+    );
+  }
 
   return (
     <div className={wrapperClass}>
@@ -278,20 +394,20 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
         role={role}
         tabIndex={tabIndex}
         
-        // Enhanced hover animation
-        whileHover={!disabled && !loading ? {
-          scale: 1.02,
-          y: -2,
-          rotateY: 1,
-          transition: { type: "spring", stiffness: 400, damping: 25 },
-        } : {}}
-        
-        // Enhanced tap animation  
-        whileTap={!disabled && !loading ? {
-          scale: 0.98,
-          y: 0,
-          transition: { type: "spring", stiffness: 400, damping: 25 },
-        } : {}}
+        // Enhanced hover and tap animations
+        {...(!disabled && !loading ? {
+          whileHover: {
+            scale: 1.02,
+            y: -2,
+            rotateY: 1,
+            transition: { type: "spring", stiffness: 400, damping: 25 },
+          },
+          whileTap: {
+            scale: 0.98,
+            y: 0,
+            transition: { type: "spring", stiffness: 400, damping: 25 },
+          }
+        } : {})}
         
         // Entry animation
         initial={{ opacity: 0, scale: 0.95 }}
@@ -337,6 +453,7 @@ const PremiumButton: React.FC<PremiumButtonProps> = ({
                 repeat: Infinity,
                 ease: "linear",
               }}
+              data-testid="loading-spinner"
             />
           </motion.div>
         )}

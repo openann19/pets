@@ -1,16 +1,18 @@
-import { NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
-// import createIntlMiddleware from 'next-intl/middleware';
-// import { locales } from './src/i18n';
+import { NextResponse } from 'next/server';
+
+import { isAuthDisabled } from './src/config/dev';
+import { locales } from './src/i18n';
 
 // Create the intl middleware
-// const intlMiddleware = createIntlMiddleware({
-//   locales,
-//   defaultLocale: 'en',
-//   localePrefix: 'always'
-// });
+const intlMiddleware = createIntlMiddleware({
+  locales,
+  defaultLocale: 'en',
+  localePrefix: 'always'
+});
 
-// Define protected routes (without locale prefix)
+// Define protected routes (with locale prefix)
 const protectedRoutes = [
   '/dashboard',
   '/swipe',
@@ -19,7 +21,10 @@ const protectedRoutes = [
   '/profile',
   '/pets',
   '/my-pets',
-  '/premium'
+  '/premium',
+  '/map',
+  '/system-status',
+  '/ai'
 ];
 
 // Define public-only routes (redirect to dashboard if logged in)
@@ -28,31 +33,40 @@ const publicOnlyRoutes = ['/login', '/register'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Skip internationalization for now
-  // const intlResponse = intlMiddleware(request);
-  // if (intlResponse) {
-  //   return intlResponse;
-  // }
-  
-  // Get the token from cookies (we'll set this when user logs in)
-  const token = request.cookies.get('accessToken')?.value || request.cookies.get('auth-token')?.value;
-  
-  // Check if the route is protected
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-  
-  // Check if the route is public-only
-  const isPublicOnlyRoute = publicOnlyRoutes.some(route => pathname.startsWith(route));
-  
-  // If trying to access protected route without token, redirect to login
-  if (isProtectedRoute && !token) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('from', pathname);
-    return NextResponse.redirect(loginUrl);
+  // Handle internationalization first
+  const intlResponse = intlMiddleware(request);
+  if (intlResponse) {
+    return intlResponse;
   }
   
-  // If logged in and trying to access public-only routes, redirect to dashboard
-  if (isPublicOnlyRoute && token) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  // DEVELOPMENT MODE: Skip authentication checks
+  if (isAuthDisabled()) {
+    console.log(`[DEV] Bypassing auth for: ${pathname}`);
+    // Continue to security headers setup
+  } else {
+    // Get the token from cookies (we'll set this when user logs in)
+    const token = request.cookies.get('accessToken')?.value || request.cookies.get('auth-token')?.value;
+    
+    // Extract locale from pathname (e.g., /en/dashboard -> /dashboard)
+    const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '') || '/';
+    
+    // Check if the route is protected
+    const isProtectedRoute = protectedRoutes.some(route => pathWithoutLocale.startsWith(route));
+    
+    // Check if the route is public-only
+    const isPublicOnlyRoute = publicOnlyRoutes.some(route => pathWithoutLocale.startsWith(route));
+    
+    // If trying to access protected route without token, redirect to login
+    if (isProtectedRoute && !token) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    
+    // If logged in and trying to access public-only routes, redirect to dashboard
+    if (isPublicOnlyRoute && token) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   }
   
   // Create response with security headers

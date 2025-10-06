@@ -1,29 +1,43 @@
-import React, { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext';
-import { 
-  HeartIcon, 
-  ChatBubbleLeftRightIcon, 
-  UserIcon,
+import {
   Bars3Icon,
-  XMarkIcon,
-  SparklesIcon,
-  PlusIcon,
+  ChatBubbleLeftRightIcon,
+  HeartIcon,
   MapPinIcon,
+  PlusIcon,
+  SparklesIcon,
+  UserIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { 
-  HeartIcon as HeartSolid,
+import {
   ChatBubbleLeftRightIcon as ChatSolid,
-  UserIcon as UserSolid,
+  HeartIcon as HeartSolid,
   MapPinIcon as MapPinSolid,
+  UserIcon as UserSolid,
 } from '@heroicons/react/24/solid';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import React, { useEffect, useRef, useState } from 'react';
+
+import { useAuth } from '../../contexts/AuthContext';
 import ThemeToggle from '../ThemeToggle';
+import PremiumButton from '../UI/PremiumButton';
+
+import LanguageSelect from '@/components/UI/LanguageSelect';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 
+interface User {
+  avatar?: string;
+  firstName?: string;
+  lastName?: string;
+  premium?: {
+    isActive: boolean;
+  };
+}
+
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
+  const typedUser = user as User;
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -54,13 +68,20 @@ const Header: React.FC = () => {
     });
   }, [isMobileMenuOpen]);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
+  const handleLogout = () => {
+    logout().then(() => {
       router.push('/');
-    } catch (error) {
+    }).catch((error) => {
       console.error('Logout failed:', error);
-    }
+    });
+  };
+
+  const handleMobileMenuToggle = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const handleMobileMenuClose = () => {
+    setIsMobileMenuOpen(false);
   };
 
   const isActive = (path: string) => pathname === path;
@@ -97,18 +118,18 @@ const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center space-x-2">
+          <Link href="/dashboard" className="flex items-center space-x-1 sm:space-x-2">
             <div className="text-2xl">🐾</div>
             <span className="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
               PawfectMatch
             </span>
-            {(user as any)?.premium?.isActive && (
+            {typedUser?.premium?.isActive === true && (
               <SparklesIcon className="w-5 h-5 text-yellow-500" />
             )}
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex space-x-6 lg:space-x-8">
             {navigationItems.map((item) => {
               const Icon = isActive(item.path) ? item.iconSolid : item.icon;
               return (
@@ -129,52 +150,70 @@ const Header: React.FC = () => {
           </nav>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-3 lg:space-x-4">
+            {/* Language Toggle */}
+            <LanguageSelect />
             {/* Theme Toggle */}
             <ThemeToggle />
             {/* Add Pet Button */}
-            <Link
-              href="/pets/new"
-              className="flex items-center space-x-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              <PlusIcon className="w-4 h-4" />
-              <span>Add Pet</span>
+            <Link href="./pets/new">
+              <PremiumButton
+                size="md"
+                variant="primary"
+                glow
+                magneticEffect
+                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 font-bold shadow-xl border-none justify-center"
+                icon={<PlusIcon className="w-5 h-5" />}
+              >
+                Add Pet
+              </PremiumButton>
             </Link>
 
             {/* Premium Button */}
-            {!(user as any)?.premium?.isActive && (
-              <Link
-                href="/premium"
-                className="flex items-center space-x-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-lg hover:from-yellow-500 hover:to-orange-600 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                <SparklesIcon className="w-4 h-4" />
-                <span>Premium</span>
+            {typedUser?.premium?.isActive !== true && (
+              <Link href="./premium">
+                <PremiumButton
+                  size="md"
+                  variant="primary"
+                  glow
+                  magneticEffect
+                  className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 font-bold shadow-xl border-none justify-center"
+                  icon={<SparklesIcon className="w-5 h-5" />}
+                >
+                  Premium
+                </PremiumButton>
               </Link>
             )}
 
             {/* User Menu */}
             <div className="relative">
-              <button
+              <PremiumButton
+                size="sm"
+                variant="ghost"
                 onClick={handleLogout}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 px-3 py-2 rounded-md text-sm font-medium"
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 px-3 py-2"
+                icon={
+                  typedUser?.avatar ? (
+                    <img
+                      className="w-6 h-6 rounded-full object-cover"
+                      src={typedUser.avatar}
+                      alt="User avatar"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                      {typedUser?.firstName?.[0]}{typedUser?.lastName?.[0]}
+                    </div>
+                  )
+                }
               >
-                {user?.avatar ? (
-                  <img
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-8 h-8 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                    {(user as any)?.firstName?.[0]}{(user as any)?.lastName?.[0]}
-                  </div>
-                )}
-                <span className="hidden lg:inline">{(user as any)?.firstName}</span>
-              </button>
+                <span className="hidden lg:inline">{typedUser?.firstName || 'User'}</span>
+              </PremiumButton>
             </div>
           </div>
 
           {/* Mobile menu button */}
           <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            onClick={handleMobileMenuToggle}
             className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100"
             ref={menuButtonRef}
           >
@@ -211,32 +250,48 @@ const Header: React.FC = () => {
               
               {/* Mobile Actions */}
               <div className="pt-4 space-y-2">
-                <Link
-                  href="/pets/new"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center space-x-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-2 rounded-md text-base font-medium"
-                >
-                  <PlusIcon className="w-5 h-5" />
-                  <span>Add Pet</span>
+                {/* Mobile Language Toggle */}
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-gray-600 text-base font-medium">Language</span>
+                  <LanguageSelect compact />
+                </div>
+                
+                <Link href="/pets/new" onClick={handleMobileMenuClose}>
+                  <PremiumButton
+                    size="md"
+                    variant="primary"
+                    glow
+                    magneticEffect
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 font-bold shadow-xl border-none justify-center"
+                    icon={<PlusIcon className="w-5 h-5" />}
+                  >
+                    Add Pet
+                  </PremiumButton>
                 </Link>
                 
-                {!(user as any)?.premium?.isActive && (
-                  <Link
-                    href="/premium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center space-x-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-2 rounded-md text-base font-medium"
-                  >
-                    <SparklesIcon className="w-5 h-5" />
-                    <span>Upgrade to Premium</span>
+                {typedUser?.premium?.isActive !== true && (
+                  <Link href="/premium" onClick={handleMobileMenuClose}>
+                    <PremiumButton
+                      size="md"
+                      variant="primary"
+                      glow
+                      magneticEffect
+                      className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 font-bold shadow-xl border-none justify-center"
+                      icon={<SparklesIcon className="w-5 h-5" />}
+                    >
+                      Upgrade to Premium
+                    </PremiumButton>
                   </Link>
                 )}
                 
-                <button
+                <PremiumButton
+                  size="md"
+                  variant="outline"
                   onClick={handleLogout}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 px-3 py-2 rounded-md text-base font-medium w-full text-left"
+                  className="w-full bg-white/20 border-2 border-gray-300 hover:bg-gray-100 hover:border-gray-400 font-semibold justify-center"
                 >
-                  <span>Logout</span>
-                </button>
+                  Logout
+                </PremiumButton>
               </div>
             </div>
           </div>

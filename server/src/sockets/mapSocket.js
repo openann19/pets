@@ -5,12 +5,19 @@ class MapSocketServer {
   constructor(httpServer) {
     this.io = new Server(httpServer, {
       cors: {
-        origin: process.env.CLIENT_URL || "http://localhost:3000",
+        origin: process.env.NODE_ENV === 'production' 
+          ? process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) || [process.env.CLIENT_URL]
+          : process.env.CLIENT_URL || "http://localhost:3000",
         methods: ["GET", "POST"],
         credentials: true
       },
       path: '/socket.io/',
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      pingTimeout: 60000,
+      pingInterval: 25000,
+      connectTimeout: 45000,
+      maxHttpBufferSize: 1e8,
+      allowEIO3: true
     });
 
     this.activePins = new Map(); // Store active pet locations

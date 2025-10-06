@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import { LockClosedIcon, CheckCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { LockClosedIcon, CheckCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+
+import HoloLogo from '@/components/Brand/HoloLogo';
+import PremiumLayout from '@/components/Layout/PremiumLayout';
 import PremiumButton from '@/components/UI/PremiumButton';
 import apiClient from '@/lib/api-client';
-import PremiumLayout from '@/components/Layout/PremiumLayout';
-import HoloLogo from '@/components/Brand/HoloLogo';
 
 const resetPasswordSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -54,7 +55,7 @@ function ResetPasswordContent() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/auth/reset-password/${token}`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5001'}/api/auth/reset-password/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: data.password }),
