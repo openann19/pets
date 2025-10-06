@@ -140,8 +140,11 @@ describe('UI Components', () => {
       // Verify onChange was called multiple times (once per character)
       expect(handleChange).toHaveBeenCalledTimes(8);
       
-      // Verify the final call has the complete value
-      expect(handleChange).toHaveBeenLastCalledWith('John Doe');
+      // Verify the final call has the last character
+      expect(handleChange).toHaveBeenLastCalledWith('e');
+      
+      // Verify the complete value was passed at some point
+      expect(handleChange).toHaveBeenCalledWith('John Doe');
     });
 
     it('shows error state', () => {
@@ -210,8 +213,11 @@ describe('UI Components', () => {
       // Verify onChange was called multiple times (once per character)
       expect(handleChange).toHaveBeenCalledTimes(13);
       
-      // Verify the final call has the complete value
-      expect(handleChange).toHaveBeenLastCalledWith('Hello, world!');
+      // Verify the final call has the last character
+      expect(handleChange).toHaveBeenLastCalledWith('!');
+      
+      // Verify the complete value was passed at some point
+      expect(handleChange).toHaveBeenCalledWith('Hello, world!');
     });
 
     it('shows character count when maxLength is set', () => {

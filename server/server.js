@@ -1,13 +1,16 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
 const { createServer } = require('http');
-const { Server } = require('socket.io');
 const path = require('path');
+
+const compression = require('compression');
+const cors = require('cors');
+const express = require('express');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const mongoose = require('mongoose');
+const morgan = require('morgan');
+const multer = require('multer');
+const { Server } = require('socket.io');
+
 
 // Load environment-specific .env file
 if (process.env.NODE_ENV === 'development') {
@@ -24,15 +27,15 @@ const { validateProductionEnv, getProductionConfig } = require('./src/config/pro
 validateProductionEnv();
 
 // Use centralized logger
-const logger = require('./src/utils/logger');
-
-// Initialize Sentry (must be before other imports)
 const { 
   initSentry, 
   sentryRequestHandler, 
   sentryTracingHandler,
   sentryErrorHandler 
 } = require('./src/config/sentry');
+const logger = require('./src/utils/logger');
+
+// Initialize Sentry (must be before other imports)
 
 const app = express();
 
@@ -302,7 +305,6 @@ app.use('/api/breeds', cacheMiddleware(600), breedRoutes); // Cache breeds for 1
 app.use('/api/admin', authenticateToken, adminRoutes); // Admin endpoints (add admin-only middleware in production)
 
 // General upload route for chat images
-const multer = require('multer');
 const { uploadToCloudinary } = require('./src/services/cloudinaryService');
 
 const upload = multer({
@@ -437,3 +439,6 @@ const startServer = async () => {
     logger.error('Failed to start server:', err);
     process.exit(1);
   });
+
+// Export app and httpServer for testing
+module.exports = { app, httpServer };
