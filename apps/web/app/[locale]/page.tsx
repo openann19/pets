@@ -9,7 +9,29 @@ import HoloLogo from '@/components/Brand/HoloLogo';
 import LanguageSelect from '@/components/UI/LanguageSelect';
 
 export default function PremiumLanding() {
-  const t = useTranslations();
+  // Handle missing translations gracefully
+  let t: any;
+  try {
+    t = useTranslations();
+  } catch (error) {
+    // Fallback translations if context is missing
+    t = (key: string) => {
+      const fallbacks: Record<string, string> = {
+        'hero.title': 'Find Your Perfect Pet Match',
+        'hero.subtitle': 'AI-powered pet matching for the perfect companion',
+        'hero.cta': 'Start Matching',
+        'features.title': 'Why Choose PawfectMatch?',
+        'features.ai.title': 'AI-Powered Matching',
+        'features.ai.description': 'Advanced algorithms find your ideal pet companion',
+        'features.premium.title': 'Premium Experience',
+        'features.premium.description': 'Exclusive features and premium support',
+        'features.community.title': 'Active Community',
+        'features.community.description': 'Connect with other pet lovers and experts',
+      };
+      return fallbacks[key] || key;
+    };
+  }
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
