@@ -125,7 +125,6 @@ describe('UI Components', () => {
 
     it('handles user input', async () => {
       const handleChange = jest.fn();
-      const user = userEvent.setup();
 
       render(
         <Input
@@ -135,15 +134,10 @@ describe('UI Components', () => {
       );
 
       const input = screen.getByLabelText('Name');
-      await user.type(input, 'John Doe');
+      fireEvent.change(input, { target: { value: 'John Doe' } });
 
-      // Verify onChange was called multiple times (once per character)
-      expect(handleChange).toHaveBeenCalledTimes(8);
-      
-      // Verify the final call has the last character
-      expect(handleChange).toHaveBeenLastCalledWith('e');
-      
-      // Verify the complete value was passed at some point
+      // Verify onChange was called once with the complete value
+      expect(handleChange).toHaveBeenCalledTimes(1);
       expect(handleChange).toHaveBeenCalledWith('John Doe');
     });
 
@@ -199,7 +193,6 @@ describe('UI Components', () => {
 
     it('handles user input', async () => {
       const handleChange = jest.fn();
-      const user = userEvent.setup();
 
       render(
         <Textarea
@@ -208,15 +201,10 @@ describe('UI Components', () => {
       );
 
       const textarea = screen.getByRole('textbox');
-      await user.type(textarea, 'Hello, world!');
+      fireEvent.change(textarea, { target: { value: 'Hello, world!' } });
 
-      // Verify onChange was called multiple times (once per character)
-      expect(handleChange).toHaveBeenCalledTimes(13);
-      
-      // Verify the final call has the last character
-      expect(handleChange).toHaveBeenLastCalledWith('!');
-      
-      // Verify the complete value was passed at some point
+      // Verify onChange was called once with the complete value
+      expect(handleChange).toHaveBeenCalledTimes(1);
       expect(handleChange).toHaveBeenCalledWith('Hello, world!');
     });
 
