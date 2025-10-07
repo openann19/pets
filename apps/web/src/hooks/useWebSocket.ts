@@ -1,0 +1,379 @@
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useAuthStore } from '@/lib/auth-store';
+import { WebSocketManager, getWebSocketManager } from '@/lib/websocket-manager';
+import type { Socket } from 'socket.io-client';
+
+interface UseWebSocketOptions {
+  autoConnect?: boolean;
+  enableLogging?: boolean;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+  onReconnect?: () => void;
+  onError?: (error: any) => void;
+}
+
+interface WebSocketState {
+  connected: boolean;
+  connecting: boolean;
+  error: Error | null;
+  socket: Socket | null;
+}
+
+export function useWebSocket(options: UseWebSocketOptions = {}) {
+  const { 
+    autoConnect = true, 
+    enableLogging = true,
+    onConnect,
+    onDisconnect,
+    onReconnect,
+    onError
+  } = options;
+
+  const { user, accessToken, isAuthenticated } = useAuthStore();
+  const [state, setState] = useState<WebSocketState>({
+    connected: false,
+    connecting: false,
+    error: null,
+    socket: null
+  });
+
+  const managerRef = useRef<WebSocketManager | null>(null);
+  const listenersRef = useRef<Map<string, Function>>(new Map());
+
+  // Initialize WebSocket manager
+  useEffect(() => {
+    if (!managerRef.current) {
+      managerRef.current = getWebSocketManager({ enableLogging });
+    }
+  }, [enableLogging]);
+
+  // Connect to WebSocket
+  const connect = useCallback(async () => {
+    if (!user?.id || !accessToken) {
+      console.warn('[useWebSocket] Cannot connect: missing user or token');
+      return;
+    }
+
+    if (!managerRef.current) {
+      console.error('[useWebSocket] WebSocket manager not initialized');
+      return;
+    }
+
+    setState(prev => ({ ...prev, connecting: true, error: null }));
+
+    try {
+      const socket = await managerRef.current.connect(user.id, accessToken);
+      setState({
+        connected: true,
+        connecting: false,
+        error: null,
+        socket
+      });
+    } catch (error) {
+      setState({
+        connected: false,
+        connecting: false,
+        error: error as Error,
+        socket: null
+      });
+      onError?.(error);
+    }
+  }, [user?.id, accessToken, onError]);
+
+  // Disconnect from WebSocket
+  const disconnect = useCallback(() => {
+    if (managerRef.current) {
+      managerRef.current.disconnect();
+      setState({
+        connected: false,
+        connecting: false,
+        error: null,
+        socket: null
+      });
+    }
+  }, []);
+
+  // Emit event
+  const emit = useCallback((event: string, data: any) => {
+    if (!managerRef.current) {
+      console.warn('[useWebSocket] Cannot emit: manager not initialized');
+      return;
+    }
+    managerRef.current.emit(event, data);
+  }, []);
+
+  // Subscribe to event
+  const on = useCallback((event: string, callback: Function) => {
+    if (!managerRef.current) {
+      console.warn('[useWebSocket] Cannot subscribe: manager not initialized');
+      return;
+    }
+
+    // Store listener reference for cleanup
+    listenersRef.current.set(event, callback);
+    managerRef.current.on(event, callback);
+
+    // Return unsubscribe function
+    return () => {
+      if (managerRef.current) {
+        managerRef.current.off(event, callback);
+        listenersRef.current.delete(event);
+      }
+    };
+  }, []);
+
+  // Subscribe to event once
+  const once = useCallback((event: string, callback: Function) => {
+    if (!managerRef.current) {
+      console.warn('[useWebSocket] Cannot subscribe once: manager not initialized');
+      return;
+    }
+    managerRef.current.once(event, callback);
+  }, []);
+
+  // Get connection status
+  const getStatus = useCallback(() => {
+    if (!managerRef.current) {
+      return {
+        connected: false,
+        connecting: false,
+        reconnectAttempts: 0,
+        userId: null,
+        socketId: null,
+        queuedMessages: 0
+      };
+    }
+    return managerRef.current.getConnectionStatus();
+  }, []);
+
+  // Auto-connect when authenticated
+  useEffect(() => {
+    if (autoConnect && isAuthenticated && user?.id && accessToken && !state.connected && !state.connecting) {
+      connect();
+    }
+  }, [autoConnect, isAuthenticated, user?.id, accessToken, state.connected, state.connecting, connect]);
+
+  // Listen for WebSocket status events
+  useEffect(() => {
+    const handleStatusChange = (event: CustomEvent) => {
+      const { status } = event.detail;
+      
+      switch (status) {
+        case 'connected':
+          setState(prev => ({ ...prev, connected: true, connecting: false }));
+          onConnect?.();
+          break;
+        case 'disconnected':
+          setState(prev => ({ ...prev, connected: false, connecting: false }));
+          onDisconnect?.();
+          break;
+        case 'reconnected':
+          setState(prev => ({ ...prev, connected: true, connecting: false }));
+          onReconnect?.();
+          break;
+        case 'failed':
+          setState(prev => ({ 
+            ...prev, 
+            connected: false, 
+            connecting: false,
+            error: new Error('Connection failed')
+          }));
+          break;
+      }
+    };
+
+    const handleAuthError = () => {
+      disconnect();
+      // Trigger re-authentication flow
+      useAuthStore.getState().logout();
+    };
+
+    window.addEventListener('websocket_status', handleStatusChange as EventListener);
+    window.addEventListener('websocket_auth_error', handleAuthError);
+
+    return () => {
+      window.removeEventListener('websocket_status', handleStatusChange as EventListener);
+      window.removeEventListener('websocket_auth_error', handleAuthError);
+    };
+  }, [onConnect, onDisconnect, onReconnect, disconnect]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Remove all listeners
+      listenersRef.current.forEach((callback, event) => {
+        if (managerRef.current) {
+          managerRef.current.off(event, callback);
+        }
+      });
+      listenersRef.current.clear();
+    };
+  }, []);
+
+  return {
+    // State
+    connected: state.connected,
+    connecting: state.connecting,
+    error: state.error,
+    socket: state.socket,
+    
+    // Methods
+    connect,
+    disconnect,
+    emit,
+    on,
+    once,
+    getStatus,
+  };
+}
+
+// Specialized hook for chat functionality
+export function useChatWebSocket() {
+  const websocket = useWebSocket({
+    autoConnect: true,
+    enableLogging: process.env.NODE_ENV === 'development'
+  });
+
+  const sendMessage = useCallback((matchId: string, message: string, attachments?: any[]) => {
+    websocket.emit('send_message', {
+      matchId,
+      message,
+      attachments,
+      timestamp: new Date().toISOString()
+    });
+  }, [websocket]);
+
+  const sendTypingIndicator = useCallback((matchId: string, isTyping: boolean) => {
+    websocket.emit('typing', {
+      matchId,
+      isTyping
+    });
+  }, [websocket]);
+
+  const markMessageAsRead = useCallback((messageId: string) => {
+    websocket.emit('message_read', {
+      messageId,
+      timestamp: new Date().toISOString()
+    });
+  }, [websocket]);
+
+  const joinChatRoom = useCallback((matchId: string) => {
+    websocket.emit('join_chat', { matchId });
+  }, [websocket]);
+
+  const leaveChatRoom = useCallback((matchId: string) => {
+    websocket.emit('leave_chat', { matchId });
+  }, [websocket]);
+
+  return {
+    ...websocket,
+    sendMessage,
+    sendTypingIndicator,
+    markMessageAsRead,
+    joinChatRoom,
+    leaveChatRoom
+  };
+}
+
+// Specialized hook for video calling
+export function useVideoWebSocket() {
+  const websocket = useWebSocket({
+    autoConnect: true,
+    enableLogging: process.env.NODE_ENV === 'development'
+  });
+
+  const initiateCall = useCallback((targetUserId: string, petId?: string) => {
+    websocket.emit('initiate_call', {
+      targetUserId,
+      petId,
+      timestamp: new Date().toISOString()
+    });
+  }, [websocket]);
+
+  const answerCall = useCallback((callId: string, accept: boolean) => {
+    websocket.emit('answer_call', {
+      callId,
+      accept,
+      timestamp: new Date().toISOString()
+    });
+  }, [websocket]);
+
+  const sendSignal = useCallback((callId: string, targetUserId: string, signal: any) => {
+    websocket.emit('webrtc_signal', {
+      callId,
+      targetUserId,
+      signal
+    });
+  }, [websocket]);
+
+  const endCall = useCallback((callId: string) => {
+    websocket.emit('end_call', {
+      callId,
+      timestamp: new Date().toISOString()
+    });
+  }, [websocket]);
+
+  return {
+    ...websocket,
+    initiateCall,
+    answerCall,
+    sendSignal,
+    endCall
+  };
+}
+
+// Specialized hook for real-time notifications
+export function useNotificationWebSocket() {
+  const [notifications, setNotifications] = useState<any[]>([]);
+  
+  const websocket = useWebSocket({
+    autoConnect: true,
+    enableLogging: process.env.NODE_ENV === 'development',
+    onConnect: () => {
+      console.log('[Notifications] WebSocket connected');
+    }
+  });
+
+  useEffect(() => {
+    if (!websocket.connected) return;
+
+    const handleNotification = (notification: any) => {
+      setNotifications(prev => [notification, ...prev].slice(0, 50)); // Keep last 50
+      
+      // Show browser notification if permitted
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(notification.title, {
+          body: notification.body,
+          icon: '/icon-192x192.png',
+          tag: notification.id
+        });
+      }
+    };
+
+    const unsubscribe = websocket.on('notification', handleNotification);
+    
+    return () => {
+      unsubscribe?.();
+    };
+  }, [websocket.connected, websocket]);
+
+  const markAsRead = useCallback((notificationId: string) => {
+    websocket.emit('notification_read', { notificationId });
+    setNotifications(prev => 
+      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+    );
+  }, [websocket]);
+
+  const clearAll = useCallback(() => {
+    websocket.emit('notifications_clear_all');
+    setNotifications([]);
+  }, [websocket]);
+
+  return {
+    ...websocket,
+    notifications,
+    markAsRead,
+    clearAll,
+    unreadCount: notifications.filter(n => !n.read).length
+  };
+}
