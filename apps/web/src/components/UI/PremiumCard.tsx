@@ -198,52 +198,59 @@ export default function PremiumCard({
     }
   }, [handleClick]);
 
-  // Get enhanced variant styles with premium effects using design tokens
+  // Get stable classes only; dynamic visual styles are applied via inline styles below
   const getVariantClasses = () => {
     const variants = {
-      default: "text-white border border-white/15",
-      glass: "text-white border border-white/20",
-      elevated: "text-white border border-white/15 shadow-premium-lg hover:shadow-2xl transform hover:-translate-y-2",
-      gradient: "text-white border border-white/15",
-      neon: `border border-${COLORS.primary[400]}/40 text-${COLORS.primary[300]} hover:shadow-[0_0_24px_${COLORS.primary[400]}25]`,
-      holographic: "text-white border border-white/15",
-    };
-    
+      default: 'text-white border border-white/15',
+      glass: 'text-white border border-white/20',
+      elevated: 'text-white border border-white/15 hover:shadow-2xl transform hover:-translate-y-2',
+      gradient: 'text-white border border-white/15',
+      neon: 'text-white border',
+      holographic: 'text-white border border-white/15',
+    } as const;
     return variants[variant];
   };
 
-  // Get enhanced background styles with better glassmorphism using design tokens
-  const getBackgroundStyle = () => {
-    const backgrounds = {
+  // Get enhanced background and inline visual styles using design tokens (no dynamic classes)
+  const getBackgroundStyle = (): React.CSSProperties => {
+    const base: React.CSSProperties = { borderRadius: RADIUS['2xl'] };
+    const styles: Record<NonNullable<PremiumCardProps['variant']>, React.CSSProperties> = {
       default: {
         background: GRADIENTS.glass.light,
         backdropFilter: BLUR.premium,
         WebkitBackdropFilter: BLUR.premium,
         boxShadow: SHADOWS.glass,
+        borderColor: 'rgba(255,255,255,0.15)'
       },
       glass: {
         background: GRADIENTS.glass.medium,
         backdropFilter: BLUR['2xl'],
         WebkitBackdropFilter: BLUR['2xl'],
         boxShadow: SHADOWS.glass,
+        borderColor: 'rgba(255,255,255,0.2)'
       },
       elevated: {
         background: GRADIENTS.glass.medium,
         backdropFilter: BLUR.premium,
         WebkitBackdropFilter: BLUR.premium,
         boxShadow: SHADOWS['premium-lg'],
+        borderColor: 'rgba(255,255,255,0.15)'
       },
       gradient: {
         background: GRADIENTS.primary,
         backdropFilter: BLUR.premium,
         WebkitBackdropFilter: BLUR.premium,
         boxShadow: SHADOWS.primaryGlow,
+        borderColor: 'rgba(255,255,255,0.15)'
       },
       neon: {
         background: GRADIENTS.neon,
         backdropFilter: BLUR.premium,
         WebkitBackdropFilter: BLUR.premium,
         boxShadow: SHADOWS.neon,
+        // Use tokenized brand color for border/text instead of dynamic Tailwind classes
+        borderColor: `${COLORS.primary[400]}66`,
+        color: COLORS.primary[300],
       },
       holographic: {
         background: GRADIENTS.holographic,
@@ -252,10 +259,10 @@ export default function PremiumCard({
         boxShadow: SHADOWS['2xl'],
         backgroundSize: '400% 400%',
         animation: 'holographic 4s ease infinite',
+        borderColor: 'rgba(255,255,255,0.15)'
       },
     };
-    
-    return backgrounds[variant];
+    return { ...base, ...styles[variant] };
   };
 
   // Get padding classes
@@ -293,7 +300,6 @@ export default function PremiumCard({
           ...backgroundStyle,
           rotateX: tilt ? rotateX : 0,
           rotateY: tilt ? rotateY : 0,
-          borderRadius: RADIUS['2xl'],
         }}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: disabled ? 0.5 : 1, y: 0 }}
