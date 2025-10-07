@@ -193,5 +193,25 @@ module.exports = {
         'import/no-default-export': 'off',
       },
     },
+    {
+      files: ['**/*.test.js', '**/*.spec.js', 'server/**/*.js'],
+      parserOptions: {
+        sourceType: 'script',
+        ecmaVersion: 'latest',
+      },
+      rules: {
+        '@typescript-eslint/no-var-requires': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+        '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unsafe-call': 'off',
+        '@typescript-eslint/no-unsafe-return': 'off',
+        '@typescript-eslint/no-unsafe-argument': 'off',
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-non-null-assertion': 'off',
+        '@typescript-eslint/unbound-method': 'off',
+        '@typescript-eslint/restrict-template-expressions': 'off',
+        '@typescript-eslint/no-unsafe-enum-comparison': 'off',
+      },
+    },
   ],
 };
