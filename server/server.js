@@ -403,10 +403,13 @@ const startServer = async () => {
     });
   };
   
-  startServer().catch(err => {
-    logger.error('Failed to start server:', err);
-    process.exit(1);
-  });
+  // Only start the server if not in test environment
+  if (process.env.NODE_ENV !== 'test') {
+    startServer().catch(err => {
+      logger.error('Failed to start server:', err);
+      process.exit(1);
+    });
+  }
 
 // Export app and httpServer for testing
 module.exports = { app, httpServer };
