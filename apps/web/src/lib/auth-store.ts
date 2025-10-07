@@ -9,15 +9,57 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  isInitialized: boolean;
   
   // Actions
   setUser: (user: User | null) => void;
-  setTokens: (accessToken: string, refreshToken: string) => void;
+  setTokens: (accessToken: string, refreshToken?: string) => void;
   setIsLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   logout: () => void;
-  initializeAuth: () => void;
+  initializeAuth: () => Promise<void>;
+  clearTokens: () => void;
 }
+
+// Token storage utilities - single source of truth
+const tokenStorage = {
+  setAccessToken: (token: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('accessToken', token);
+      // Set cookie for SSR/middleware
+      document.cookie = `accessToken=${token}; Max-Age=${24 * 60 * 60}; Path=/; SameSite=Lax`;
+    }
+  },
+  
+  setRefreshToken: (token: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('refreshToken', token);
+      document.cookie = `refreshToken=${token}; Max-Age=${7 * 24 * 60 * 60}; Path=/; SameSite=Lax`;
+    }
+  },
+  
+  getAccessToken: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('accessToken');
+  },
+  
+  getRefreshToken: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('refreshToken');
+  },
+  
+  clearAll: () => {
+    if (typeof window === 'undefined') return;
+    
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    
+    // Clear cookies
+    document.cookie = 'accessToken=; Max-Age=0; Path=/; SameSite=Lax';
+    document.cookie = 'refreshToken=; Max-Age=0; Path=/; SameSite=Lax';
+    document.cookie = 'auth-token=; Max-Age=0; Path=/; SameSite=Lax';
+  }
+};
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -28,6 +70,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      isInitialized: false,
 
       setUser: (user) => {
         set({ 
@@ -38,33 +81,29 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setTokens: (accessToken, refreshToken) => {
+        // Update store state
         set({ 
           accessToken, 
-          refreshToken,
-          isAuthenticated: true 
+          refreshToken: refreshToken || get().refreshToken,
+          isAuthenticated: true,
+          error: null
         });
         
-        // Store tokens in localStorage for API calls
+        // Store tokens in localStorage (single source of truth)
+        tokenStorage.setAccessToken(accessToken);
+        if (refreshToken) {
+          tokenStorage.setRefreshToken(refreshToken);
+        }
+
+        // Sync with API service if available
         if (typeof window !== 'undefined') {
-          localStorage.setItem('accessToken', accessToken);
-          if (refreshToken) {
-            localStorage.setItem('refreshToken', refreshToken);
-          }
-
-          // Also set cookies for middleware route protection
-          const setCookie = (name: string, value: string, maxAgeSeconds: number) => {
-            document.cookie = `${name}=${value}; Max-Age=${maxAgeSeconds}; Path=/; SameSite=Lax`;
-          };
-          setCookie('auth-token', accessToken, 24 * 60 * 60);
-          setCookie('accessToken', accessToken, 24 * 60 * 60);
-          if (refreshToken) setCookie('refreshToken', refreshToken, 7 * 24 * 60 * 60);
-
-          // Sync with API service
           try {
-            const { api } = require('../services/api');
-            api.setToken(accessToken, refreshToken);
+            const apiService = require('../services/api').default;
+            if (apiService && apiService.setAuthToken) {
+              apiService.setAuthToken(accessToken);
+            }
           } catch (error) {
-            // Ignore if API service not available
+            console.debug('[AuthStore] API service not available for token sync');
           }
         }
       },
@@ -76,8 +115,18 @@ export const useAuthStore = create<AuthState>()(
       setError: (error) => {
         set({ error });
       },
+      
+      clearTokens: () => {
+        tokenStorage.clearAll();
+        set({
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false
+        });
+      },
 
       logout: () => {
+        // Clear all auth state
         set({
           user: null,
           accessToken: null,
@@ -86,50 +135,57 @@ export const useAuthStore = create<AuthState>()(
           error: null,
         });
         
-        // Clear tokens from localStorage
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-
-          // Clear cookies used by middleware
-          const clearCookie = (name: string) => {
-            document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax`;
-          };
-          clearCookie('auth-token');
-          clearCookie('accessToken');
-          clearCookie('refreshToken');
-        }
+        // Clear all stored tokens
+        tokenStorage.clearAll();
       },
 
-      initializeAuth: () => {
-        // Check if we have stored tokens on mount
-        if (typeof window !== 'undefined') {
-          const storedToken = localStorage.getItem('accessToken') || localStorage.getItem('auth_token');
-          const storedRefreshToken = localStorage.getItem('refreshToken') || localStorage.getItem('refresh_token');
-          
-          if (storedToken) {
-            // Verify token is still valid (you can add API call here)
-            set({ 
-              accessToken: storedToken,
-              refreshToken: storedRefreshToken,
-              isAuthenticated: true 
-            });
+      initializeAuth: async () => {
+        // Prevent multiple initializations
+        const state = get();
+        if (state.isInitialized || state.isLoading) {
+          return;
+        }
+        
+        set({ isLoading: true, isInitialized: true });
+        
+        try {
+          // Check if we have stored tokens on mount
+          if (typeof window !== 'undefined') {
+            const storedToken = tokenStorage.getAccessToken();
+            const storedRefreshToken = tokenStorage.getRefreshToken();
+            
+            if (storedToken) {
+              // Update state with stored tokens
+              set({ 
+                accessToken: storedToken,
+                refreshToken: storedRefreshToken,
+                isAuthenticated: true 
+              });
 
-            // Ensure cookies are present for middleware
-            const setCookie = (name: string, value: string, maxAgeSeconds: number) => {
-              document.cookie = `${name}=${value}; Max-Age=${maxAgeSeconds}; Path=/; SameSite=Lax`;
-            };
-            setCookie('auth-token', storedToken, 24 * 60 * 60);
-            setCookie('accessToken', storedToken, 24 * 60 * 60);
-
-            // Sync with API service
-            try {
-              const { api } = require('../services/api');
-              api.setToken(storedToken, storedRefreshToken);
-            } catch (error) {
-              // Ignore if API service not available
+              // Sync with API service
+              try {
+                const apiService = require('../services/api').default;
+                if (apiService && apiService.setAuthToken) {
+                  apiService.setAuthToken(storedToken);
+                }
+                
+                // Optionally validate token with backend
+                if (apiService && apiService.validateToken) {
+                  const isValid = await apiService.validateToken(storedToken);
+                  if (!isValid) {
+                    get().clearTokens();
+                  }
+                }
+              } catch (error) {
+                console.debug('[AuthStore] Could not validate token');
+              }
             }
           }
+        } catch (error) {
+          console.error('[AuthStore] Initialization error:', error);
+          set({ error: 'Failed to initialize authentication' });
+        } finally {
+          set({ isLoading: false });
         }
       },
     }),

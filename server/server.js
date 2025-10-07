@@ -59,6 +59,8 @@ const premiumRoutes = require('./src/routes/premium');
 const breedRoutes = require('./src/routes/breeds');
 const adminRoutes = require('./src/routes/admin');
 const stripeWebhookRoutes = require('./src/routes/stripeWebhooks');
+const weatherRoutes = require('./src/routes/weather');
+const videoRoutes = require('./src/routes/video');
 
 // Import middleware
 const errorHandler = require('./src/middleware/errorHandler');
@@ -235,54 +237,8 @@ app.use(morgan('combined'));
 // Redis connection (optional, for production caching)
 const { initRedis, closeRedis } = require('./src/config/redis');
 
-// Database connection
-const connectDB = async (retries = 5, delay = 5000) => {
-  const mongoUri = process.env.MONGODB_URI;
-  
-  if (!mongoUri) {
-    logger.error('❌ MONGODB_URI not provided in environment variables');
-    process.exit(1);
-  }
-
-  // Validate URI format
-  try {
-    new URL(mongoUri);
-  } catch {
-    logger.error('❌ Invalid MONGODB_URI format');
-    process.exit(1);
-  }
-
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const conn = await mongoose.connect(mongoUri, {
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 45000,
-      });
-      logger.info(`🚀 MongoDB Connected: ${conn.connection.host}`);
-      
-      // Handle connection events
-      mongoose.connection.on('disconnected', () => {
-        logger.warn('⚠️  MongoDB disconnected. Attempting to reconnect...');
-      });
-      
-      mongoose.connection.on('reconnected', () => {
-        logger.info('✅ MongoDB reconnected successfully');
-      });
-      
-      return; // Connection successful
-    } catch (error) {
-      logger.error(`❌ Database connection attempt ${attempt}/${retries} failed:`, error.message);
-      
-      if (attempt === retries) {
-        logger.error('❌ All database connection attempts failed. Exiting...');
-        process.exit(1);
-      }
-      
-      logger.info(`⏳ Retrying in ${delay / 1000} seconds...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-};
+// Import improved database connection
+const databaseConnection = require('./src/config/database');
 
 // Health check routes (public - no auth required)
 const healthRoutes = require('./src/routes/health');
@@ -305,6 +261,8 @@ app.use('/api/chat', authenticateToken, chatRoutes);
 app.use('/api/ai', authenticateToken, aiRoutes);
 app.use('/api/breeds', cacheMiddleware(600), breedRoutes); // Cache breeds for 10 minutes
 app.use('/api/admin', authenticateToken, adminRoutes); // Admin endpoints (add admin-only middleware in production)
+app.use('/api/weather', weatherRoutes); // Weather API with auth handled per route
+app.use('/api/video', videoRoutes); // Video calling API with auth handled per route
 
 // General upload route for chat images
 const { uploadToCloudinary } = require('./src/services/cloudinaryService');
@@ -422,7 +380,8 @@ app.use((req, res) => {
 
 // Start server function
 const startServer = async () => {
-  await connectDB();
+  // Connect to MongoDB with improved connection handling
+  await databaseConnection.connect();
   
   // Initialize Redis (optional, won't fail if not configured)
   await initRedis().catch(err => {
@@ -436,6 +395,7 @@ const startServer = async () => {
       logger.info(`🌟 PawfectMatch Premium Server running on port ${PORT}`);
       logger.info(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`🚀 Server ready to accept connections`);
+      logger.info(`📊 Database: ${databaseConnection.getConnectionStatus().name}`);
     })
     .on('error', (err) => {
       logger.error('Server failed to start:', err);
