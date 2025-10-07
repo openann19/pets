@@ -167,6 +167,15 @@ router.get('/live', (req, res) => {
   });
 });
 
+// Standard healthz endpoint (commonly used in cloud deployments)
+router.get('z', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
+
 // Metrics endpoint
 router.get('/metrics', (req, res) => {
   try {
