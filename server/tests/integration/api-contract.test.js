@@ -10,6 +10,7 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const { setupTestDatabase, cleanupTestDatabase } = require('../helpers/mongoTestHelper');
 
 // Mock Stripe before requiring server
 jest.mock('stripe', () => {
@@ -40,21 +41,17 @@ let testPet;
 
 describe('API Contract Integration Tests', () => {
   beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
+    await setupTestDatabase();
   }, 30000);
 
   afterAll(async () => {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
-    if (mongoServer) {
-      await mongoServer.stop();
-    }
+    await cleanupTestDatabase();
     if (httpServer && httpServer.listening) {
-      httpServer.close();
+      await new Promise((resolve) => {
+        httpServer.close(() => resolve());
+      });
     }
-  }, 30000);
+  }, 10000);
 
   beforeEach(async () => {
     // Clean database before each test
