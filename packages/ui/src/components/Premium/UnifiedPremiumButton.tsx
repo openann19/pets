@@ -14,7 +14,7 @@ import { ANIMATION_SYSTEM, utils } from '../../theme/unified-design-system';
 interface UnifiedPremiumButtonProps {
   children: React.ReactNode;
   onClick?: () => void;
-  variant?: 'primary' | 'secondary' | 'glass' | 'outline';
+  variant?: 'primary' | 'secondary' | 'glass' | 'outline' | 'ghost' | 'text' | 'danger' | 'success' | 'warning' | 'holographic' | 'neon';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   disabled?: boolean;
   loading?: boolean;
@@ -114,7 +114,8 @@ export function UnifiedPremiumButton({
     if (!sound || disabled || loading) return;
     
     // Simulate sound feedback (in real app, use audio files)
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const audioContext = new AudioContextClass();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
@@ -200,7 +201,11 @@ export function UnifiedPremiumButton({
 
   // Get unified button styles
   const getButtonStyles = () => {
-    const baseStyles = utils.createButtonStyles(variant, size, 'web');
+    // Map extended variants to supported variants
+    const mappedVariant = variant === 'ghost' || variant === 'text' || variant === 'danger' || variant === 'success' || variant === 'warning' || variant === 'holographic' || variant === 'neon' 
+      ? 'outline' 
+      : variant;
+    const baseStyles = utils.createButtonStyles(mappedVariant as 'primary' | 'secondary' | 'glass' | 'outline', size, 'web');
     
     // Apply dynamic opacity for inactive primary buttons
     const dynamicOpacity = (variant === 'primary' && !shouldBeActive) ? 0.5 : 1;
@@ -208,19 +213,24 @@ export function UnifiedPremiumButton({
     // Convert all styles to strings for motion compatibility
     let background: string;
     if (Array.isArray(baseStyles.background)) {
-      background = `linear-gradient(135deg, ${baseStyles.background[0]} 0%, ${baseStyles.background[1]} 100%)`;
+      const [firstColor, secondColor] = baseStyles.background;
+      background = `linear-gradient(135deg, ${firstColor} 0%, ${secondColor} 100%)`;
     } else if (typeof baseStyles.background === 'string') {
-      background = baseStyles.background;
+      const { background: bgValue } = baseStyles;
+      background = bgValue;
     } else {
       background = 'transparent';
     }
 
     // Convert color to string
     let color: string;
-    if (typeof baseStyles.color === 'string') {
-      color = baseStyles.color;
-    } else if (baseStyles.color && typeof baseStyles.color === 'object' && '500' in baseStyles.color) {
-      color = baseStyles.color[500];
+    const colorValue = baseStyles.color;
+    if (typeof colorValue === 'string') {
+      color = colorValue;
+    } else if (colorValue != null && typeof colorValue === 'object' && '500' in colorValue) {
+      const colorRecord = colorValue as Record<string, string>;
+      const { '500': color500 } = colorRecord;
+      color = color500;
     } else {
       color = '#ffffff';
     }

@@ -1,117 +1,207 @@
 #!/bin/bash
 
-# 🚀 PawfectMatch Production-Ready Startup Script
-# Simple script to start all services with proper configuration
+# 🚀 PAWFECTMATCH PRODUCTION READY STARTUP SCRIPT
+# This script starts all services in the correct order for production readiness
 
 set -e
 
-echo "🚀 Starting PawfectMatch Production-Ready Environment..."
-
 # Colors for output
+RED='\033[0;31m'
 GREEN='\033[0;32m'
-BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
-NC='\033[0m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+# Logging functions
+log_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
 }
 
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+log_success() {
+    echo -e "${GREEN}✅ $1${NC}"
 }
 
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+log_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
-# Kill any existing processes
-print_status "Cleaning up existing processes..."
-pkill -f "node.*server" 2>/dev/null || true
-pkill -f "next" 2>/dev/null || true
-sleep 3
+log_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
 
-# Check MongoDB
-print_status "Checking MongoDB..."
-if ! pgrep -x "mongod" > /dev/null; then
-    print_warning "MongoDB not running. Please start MongoDB manually:"
-    echo "  mongod --config /opt/homebrew/etc/mongod.conf --fork"
-    echo "  Or: brew services start mongodb/brew/mongodb-community"
-else
-    print_success "MongoDB is running"
-fi
+log_header() {
+    echo -e "\n${BLUE}=== $1 ===${NC}"
+}
 
-# Start backend server
-print_status "Starting backend server..."
-cd server
-npm start > ../logs/backend.log 2>&1 &
-BACKEND_PID=$!
-cd ..
+# Check if command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
 
-# Wait for backend to start
-print_status "Waiting for backend to start..."
-sleep 8
+# Check if port is in use
+port_in_use() {
+    lsof -i :$1 >/dev/null 2>&1
+}
 
-# Check if backend is running
-if curl -s http://localhost:5001/api/health > /dev/null; then
-    print_success "Backend server is running on port 5001"
-else
-    print_warning "Backend server may not be fully ready yet"
-fi
+# Kill processes on specific ports
+kill_port() {
+    local port=$1
+    if port_in_use $port; then
+        log_warning "Port $port is in use, killing existing process..."
+        lsof -ti :$port | xargs kill -9 2>/dev/null || true
+        sleep 2
+    fi
+}
 
-# Start frontend server
-print_status "Starting frontend server..."
-cd apps/web
-pnpm dev > ../../logs/frontend.log 2>&1 &
-FRONTEND_PID=$!
-cd ../..
-
-# Wait for frontend to start
-print_status "Waiting for frontend to start..."
-sleep 10
-
-# Check what port frontend is running on
-FRONTEND_PORT=""
-if curl -s http://localhost:3000 > /dev/null 2>&1; then
-    FRONTEND_PORT="3000"
-elif curl -s http://localhost:3001 > /dev/null 2>&1; then
-    FRONTEND_PORT="3001"
-else
-    print_warning "Frontend may still be starting up"
-fi
-
-echo ""
-echo "🎉 PawfectMatch Production-Ready Environment Started!"
-echo ""
-echo "📱 Frontend: http://localhost:${FRONTEND_PORT:-3000}"
-echo "🔧 Backend API: http://localhost:5001/api"
-echo "💾 MongoDB: mongodb://127.0.0.1:27017/pawfectmatch"
-echo ""
-echo "📊 Health Checks:"
-echo "  - Backend: http://localhost:5001/api/health"
-echo "  - Frontend: http://localhost:${FRONTEND_PORT:-3000}/en"
-echo ""
-echo "📝 Logs:"
-echo "  - Backend: tail -f logs/backend.log"
-echo "  - Frontend: tail -f logs/frontend.log"
-echo ""
-echo "🛑 To stop all services: Press Ctrl+C"
-
-# Create logs directory if it doesn't exist
-mkdir -p logs
-
-# Function to cleanup on exit
-cleanup() {
+# Main startup function
+main() {
+    log_header "PAWFECTMATCH PRODUCTION READY STARTUP"
+    log_info "Starting all services in production-ready configuration..."
+    
+    # Check prerequisites
+    log_header "CHECKING PREREQUISITES"
+    
+    if ! command_exists node; then
+        log_error "Node.js is not installed"
+        exit 1
+    fi
+    
+    if ! command_exists pnpm; then
+        log_error "pnpm is not installed"
+        exit 1
+    fi
+    
+    if ! command_exists mongod; then
+        log_warning "MongoDB is not installed or not in PATH"
+        log_warning "Please install MongoDB or use MongoDB Atlas"
+    fi
+    
+    log_success "Prerequisites checked"
+    
+    # Clean up existing processes
+    log_header "CLEANING UP EXISTING PROCESSES"
+    kill_port 5001  # Backend
+    kill_port 3000  # Web
+    kill_port 8081  # Metro
+    kill_port 8082  # Metro alternative
+    
+    # Install dependencies
+    log_header "INSTALLING DEPENDENCIES"
+    log_info "Installing root dependencies..."
+    pnpm install --frozen-lockfile
+    
+    log_success "Dependencies installed"
+    
+    # Start MongoDB (if available)
+    log_header "STARTING DATABASE"
+    if command_exists mongod; then
+        log_info "Starting MongoDB..."
+        if ! port_in_use 27017; then
+            # Try to start MongoDB
+            if brew services start mongodb-community 2>/dev/null; then
+                log_success "MongoDB started via Homebrew"
+            elif mongod --config /opt/homebrew/etc/mongod.conf --fork 2>/dev/null; then
+                log_success "MongoDB started manually"
+            else
+                log_warning "Could not start MongoDB locally"
+                log_warning "Please ensure MongoDB is running or use MongoDB Atlas"
+            fi
+        else
+            log_success "MongoDB is already running"
+        fi
+    else
+        log_warning "MongoDB not found locally"
+        log_warning "Please ensure MongoDB Atlas is configured or MongoDB is installed"
+    fi
+    
+    # Start backend server
+    log_header "STARTING BACKEND SERVER"
+    log_info "Starting Express.js server on port 5001..."
+    cd server
+    npm start &
+    BACKEND_PID=$!
+    cd ..
+    
+    # Wait for backend to start
+    log_info "Waiting for backend server to start..."
+    for i in {1..30}; do
+        if curl -s http://localhost:5001/healthz >/dev/null 2>&1; then
+            log_success "Backend server is running"
+            break
+        fi
+        if [ $i -eq 30 ]; then
+            log_error "Backend server failed to start"
+            kill $BACKEND_PID 2>/dev/null || true
+            exit 1
+        fi
+        sleep 1
+    done
+    
+    # Start web application
+    log_header "STARTING WEB APPLICATION"
+    log_info "Starting Next.js application on port 3000..."
+    cd apps/web
+    pnpm dev &
+    WEB_PID=$!
+    cd ../..
+    
+    # Wait for web app to start
+    log_info "Waiting for web application to start..."
+    for i in {1..30}; do
+        if curl -s http://localhost:3000 >/dev/null 2>&1; then
+            log_success "Web application is running"
+            break
+        fi
+        if [ $i -eq 30 ]; then
+            log_error "Web application failed to start"
+            kill $WEB_PID 2>/dev/null || true
+            kill $BACKEND_PID 2>/dev/null || true
+            exit 1
+        fi
+        sleep 1
+    done
+    
+    # Start mobile Metro bundler
+    log_header "STARTING MOBILE METRO BUNDLER"
+    log_info "Starting Metro bundler for React Native..."
+    cd apps/mobile
+    npx expo start --dev-client --clear &
+    METRO_PID=$!
+    cd ../..
+    
+    # Wait for Metro to start
+    log_info "Waiting for Metro bundler to start..."
+    for i in {1..30}; do
+        if curl -s http://localhost:8081 >/dev/null 2>&1; then
+            log_success "Metro bundler is running"
+            break
+        fi
+        if [ $i -eq 30 ]; then
+            log_warning "Metro bundler may not be ready yet"
+            break
+        fi
+        sleep 1
+    done
+    
+    # Final status
+    log_header "STARTUP COMPLETE"
+    log_success "All services are starting up!"
     echo ""
-    print_status "Stopping all services..."
-    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
-    print_success "All services stopped"
-    exit 0
+    log_info "🌐 Web Application: http://localhost:3000"
+    log_info "🔧 Backend API: http://localhost:5001"
+    log_info "📱 Mobile Metro: http://localhost:8081"
+    echo ""
+    log_info "To stop all services, press Ctrl+C"
+    echo ""
+    
+    # Keep script running
+    trap 'log_info "Shutting down services..."; kill $BACKEND_PID $WEB_PID $METRO_PID 2>/dev/null || true; exit 0' INT
+    
+    # Wait for user to stop
+    while true; do
+        sleep 1
+    done
 }
 
-# Set up signal handlers
-trap cleanup INT TERM
-
-# Keep script running
-print_status "Services are running. Press Ctrl+C to stop..."
-wait
+# Run main function
+main "$@"

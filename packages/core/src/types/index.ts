@@ -357,6 +357,7 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   message?: string;
   error?: string;
+  status?: number;
 }
 
 export type PaginatedResponse<T = unknown> = ApiResponse<{
@@ -370,6 +371,154 @@ export type PaginatedResponse<T = unknown> = ApiResponse<{
     hasMore: boolean;
   };
 }>;
+
+// API Service Types
+export interface ApiService {
+  get<T>(url: string, config?: RequestInit): Promise<ApiResponse<T>>;
+  post<T>(url: string, data?: unknown, config?: RequestInit): Promise<ApiResponse<T>>;
+  put<T>(url: string, data?: unknown, config?: RequestInit): Promise<ApiResponse<T>>;
+  delete<T>(url: string, config?: RequestInit): Promise<ApiResponse<T>>;
+  patch<T>(url: string, data?: unknown, config?: RequestInit): Promise<ApiResponse<T>>;
+}
+
+// Filter Types for API calls
+export interface PetFilters {
+  species?: string;
+  intent?: string;
+  maxDistance?: number;
+  minAge?: number;
+  maxAge?: number;
+  size?: string;
+  gender?: string;
+  breed?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+    radius?: number;
+  };
+}
+
+// User Profile Update Types
+export interface UserProfileUpdate {
+  firstName?: string;
+  lastName?: string;
+  bio?: string;
+  phone?: string;
+  location?: {
+    type: 'Point';
+    coordinates: [number, number];
+    address?: {
+      street?: string;
+      city?: string;
+      state?: string;
+      zipCode?: string;
+      country?: string;
+    };
+  };
+  preferences?: {
+    maxDistance?: number;
+    ageRange?: {
+      min?: number;
+      max?: number;
+    };
+    species?: string[];
+    intents?: string[];
+    notifications?: {
+      email?: boolean;
+      push?: boolean;
+      matches?: boolean;
+      messages?: boolean;
+    };
+  };
+}
+
+// Pet Profile Update Types
+export interface PetProfileUpdate {
+  name?: string;
+  species?: string;
+  breed?: string;
+  age?: number;
+  gender?: string;
+  size?: string;
+  weight?: number;
+  description?: string;
+  personalityTags?: string[];
+  intent?: string;
+  healthInfo?: {
+    vaccinated?: boolean;
+    spayedNeutered?: boolean;
+    microchipped?: boolean;
+    healthConditions?: string[];
+    medications?: string[];
+    specialNeeds?: string;
+    lastVetVisit?: string;
+    vetContact?: {
+      name?: string;
+      phone?: string;
+      clinic?: string;
+    };
+  };
+  availability?: {
+    isAvailable?: boolean;
+    schedule?: WeeklySchedule;
+  };
+}
+
+// Adoption Types
+export interface AdoptionApplication {
+  _id: string;
+  petId: string;
+  applicantId: string;
+  applicant: User;
+  pet: Pet;
+  status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
+  applicationData: {
+    experience: string;
+    livingSituation: string;
+    otherPets: string;
+    timeAlone: string;
+    vetReference?: string;
+    personalReference?: string;
+    additionalInfo?: string;
+  };
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewNotes?: string;
+}
+
+export interface AdoptionListing {
+  _id: string;
+  petId: string;
+  ownerId: string;
+  pet: Pet;
+  owner: User;
+  status: 'active' | 'pending' | 'adopted' | 'withdrawn';
+  requirements: string[];
+  adoptionFee?: number;
+  applicationDeadline?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Call Data Types
+export interface CallData {
+  callId: string;
+  matchId: string;
+  participants: {
+    userId: string;
+    petId: string;
+  }[];
+  status: 'initiating' | 'ringing' | 'connected' | 'ended' | 'failed';
+  startTime?: string;
+  endTime?: string;
+  duration?: number;
+  callType: 'video' | 'audio';
+  quality?: {
+    video?: 'poor' | 'fair' | 'good' | 'excellent';
+    audio?: 'poor' | 'fair' | 'good' | 'excellent';
+  };
+}
 
 // UI Types
 export interface NotificationProps {

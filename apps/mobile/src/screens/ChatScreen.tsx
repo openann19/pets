@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@pawfectmatch/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +27,27 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { 
+  EliteContainer,
+  EliteHeader,
+  EliteCard,
+  EliteButton,
+  EliteLoading,
+  FadeInUp,
+  ScaleIn,
+  StaggeredContainer,
+  GestureWrapper,
+  GlassContainer,
+  GlassCard,
+  HolographicContainer,
+  HolographicCard,
+  GlowContainer,
+  GlowingCard,
+  GradientText,
+  PremiumHeading,
+  PremiumBody,
+  ParticleEffect,
+} from '../components/PremiumComponents';
 import { useTheme } from '../contexts/ThemeContext';
 // import { useCallManager } from '../components/calling/CallManager'; // Call manager not implemented yet
 // import { useSocket } from '../hooks/useSocket'; // Socket hook not implemented yet
@@ -49,7 +71,6 @@ interface Message {
   error?: boolean;
 }
 
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
   Chat: { matchId: string; petName: string };
@@ -651,97 +672,50 @@ export default function ChatScreen({ navigation, route }: ChatScreenProps) {
   ];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.gray100 }]}>
-      {/* Elite Header with Glassmorphic Design */}
-      <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
-        <BlurView intensity={95} style={styles.headerBlur}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity 
-              style={[styles.backButton, { backgroundColor: colors.glassWhiteLight }]}
+    <EliteContainer gradient="primary">
+      {/* Premium Glass Header */}
+      <EliteHeader
+        title={petName}
+        subtitle={isOnline ? 'Online now' : 'Last seen recently'}
+        blur={true}
+        onBack={() => navigation.goBack()}
+        rightComponent={
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <EliteButton
+              title=""
+              variant="glass"
+              size="sm"
+              icon="call"
+              magnetic={true}
+              ripple={true}
+              glow={true}
+              onPress={handleVoiceCall}
+            />
+            <EliteButton
+              title=""
+              variant="glass"
+              size="sm"
+              icon="videocam"
+              magnetic={true}
+              ripple={true}
+              glow={true}
+              onPress={handleVideoCall}
+            />
+            <EliteButton
+              title=""
+              variant="glass"
+              size="sm"
+              icon="ellipsis-vertical"
+              magnetic={true}
+              ripple={true}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.goBack();
+                Alert.alert('More Options', 'Additional options coming soon!');
               }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.gray800} />
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.headerInfo}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                // Navigate to pet profile
-              }}
-              activeOpacity={0.8}
-            >
-              <View style={styles.headerAvatarContainer}>
-                <Image 
-                  source={{ uri: PET_AVATAR }} 
-                  style={styles.headerAvatar} 
-                />
-                {isOnline && <View style={styles.headerOnlineIndicator} />}
-              </View>
-              <View style={styles.headerTextContainer}>
-                <Text style={[styles.headerName, { color: colors.gray800 }]}>{petName}</Text>
-                <Animated.View style={[styles.statusContainer, { opacity: headerOpacity }]}>
-                  <View style={[styles.statusDot, { 
-                    backgroundColor: isOnline ? '#4CAF50' : '#999',
-                    transform: [{ scale: isOnline ? 1 : 0.8 }]
-                  }]} />
-                  <Text style={[styles.statusText, { color: isOnline ? colors.success : colors.gray500 }]}>
-                    {isOnline ? 'Online now' : 'Last seen recently'}
-                  </Text>
-                  {otherUserTyping && (
-                    <Text style={[styles.typingStatus, { color: colors.success }]}>typing...</Text>
-                  )}
-                </Animated.View>
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.headerActions}>
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={handleVoiceCall}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <LinearGradient
-                  colors={['#4CAF50', '#45a049']}
-                  style={styles.headerButtonGradient}
-                >
-                  <Ionicons name="call" size={18} color="#fff" />
-                </LinearGradient>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={handleVideoCall}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <LinearGradient
-                  colors={['#2196F3', '#1976D2']}
-                  style={styles.headerButtonGradient}
-                >
-                  <Ionicons name="videocam" size={18} color="#fff" />
-                </LinearGradient>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  Alert.alert('More Options', 'Additional options coming soon!');
-                }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <View style={styles.moreButton}>
-                  <Ionicons name="ellipsis-vertical" size={18} color="#666" />
-                </View>
-              </TouchableOpacity>
-            </View>
+            />
           </View>
-        </BlurView>
-      </Animated.View>
+        }
+      />
 
       {/* Messages */}
       <KeyboardAvoidingView 
@@ -777,59 +751,61 @@ export default function ChatScreen({ navigation, route }: ChatScreenProps) {
         
         {renderTypingIndicator()}
 
-        {/* Smart Quick Replies */}
+        {/* Premium Quick Replies */}
         {messages.length > 0 && (
-          <View style={styles.quickRepliesContainer}>
-            <FlatList
-              data={quickReplies}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.quickReply, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                  onPress={() => {
-                    setInputText(item);
-                    // Don't auto-send, let user edit first
-                    inputRef.current?.focus();
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.quickReplyText, { color: colors.textSecondary }]}>{item}</Text>
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item, index) => index.toString()}
-              contentContainerStyle={styles.quickRepliesList}
-            />
-          </View>
+          <FadeInUp delay={0}>
+            <View style={styles.quickRepliesContainer}>
+              <FlatList
+                data={quickReplies}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                renderItem={({ item, index }) => (
+                  <FadeInUp delay={index * 100}>
+                    <EliteButton
+                      title={item}
+                      variant="glass"
+                      size="sm"
+                      magnetic={true}
+                      ripple={true}
+                      onPress={() => {
+                        setInputText(item);
+                        inputRef.current?.focus();
+                      }}
+                      style={styles.quickReply}
+                    />
+                  </FadeInUp>
+                )}
+                keyExtractor={(item, index) => index.toString()}
+                contentContainerStyle={styles.quickRepliesList}
+              />
+            </View>
+          </FadeInUp>
         )}
 
-        {/* Elite Input Area with Glassmorphic Design */}
-        <BlurView intensity={95} style={styles.inputBlur}>
+        {/* Premium Input Area with Glass Morphism */}
+        <GlassContainer intensity="heavy" transparency="medium" border="light" shadow="medium">
           <View style={styles.inputContainer}>
-            <TouchableOpacity 
-              style={styles.attachButton}
+            <EliteButton
+              title=""
+              variant="glass"
+              size="sm"
+              icon="add"
+              magnetic={true}
+              ripple={true}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 Alert.alert('Attach Media', 'Photo and file sharing coming soon!');
               }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <LinearGradient
-                colors={[colors.gray100, colors.gray200]}
-                style={styles.attachButtonGradient}
-              >
-                <Ionicons name="add" size={20} color={colors.gray600} />
-              </LinearGradient>
-            </TouchableOpacity>
+            />
             
             <View style={styles.inputWrapper}>
               <TextInput
                 ref={inputRef}
                 style={[
                   styles.textInput,
-                  { backgroundColor: colors.gray100, borderColor: colors.gray300, color: colors.gray800 },
-                  isTyping && [styles.textInputFocused, { borderColor: colors.primary, backgroundColor: colors.white }],
-                  characterCount > MAX_MESSAGE_LENGTH * 0.9 && [styles.textInputWarning, { borderColor: colors.warning, backgroundColor: `${colors.warning  }10` }]
+                  { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)', color: '#fff' },
+                  isTyping && [styles.textInputFocused, { borderColor: '#ec4899', backgroundColor: 'rgba(255,255,255,0.2)' }],
+                  characterCount > MAX_MESSAGE_LENGTH * 0.9 && [styles.textInputWarning, { borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)' }]
                 ]}
                 value={inputText}
                 onChangeText={(text) => {
@@ -849,7 +825,7 @@ export default function ChatScreen({ navigation, route }: ChatScreenProps) {
                   }
                 }}
                 placeholder="Type a message..."
-                placeholderTextColor={colors.gray500}
+                placeholderTextColor="rgba(255,255,255,0.6)"
                 multiline
                 maxLength={MAX_MESSAGE_LENGTH}
                 onFocus={() => {
@@ -884,71 +860,44 @@ export default function ChatScreen({ navigation, route }: ChatScreenProps) {
                     { opacity: messageEntryAnimation }
                   ]}
                 >
-                  <Text style={[
-                    styles.characterCount,
-                    characterCount > MAX_MESSAGE_LENGTH * 0.95 && styles.characterCountWarning
-                  ]}>
+                  <PremiumBody size="xs" weight="regular">
                     {characterCount}/{MAX_MESSAGE_LENGTH}
-                  </Text>
+                  </PremiumBody>
                 </Animated.View>
               )}
             </View>
             
-            <TouchableOpacity 
-              style={styles.emojiButton}
+            <EliteButton
+              title=""
+              variant="glass"
+              size="sm"
+              icon="happy-outline"
+              magnetic={true}
+              ripple={true}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 Alert.alert('Emoji Picker', 'Emoji picker coming soon! 😊');
               }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <LinearGradient
-                colors={[`${colors.warning  }30`, `${colors.warning  }50`]}
-                style={styles.emojiButtonGradient}
-              >
-                <Ionicons name="happy-outline" size={20} color={colors.warning} />
-              </LinearGradient>
-            </TouchableOpacity>
+            />
             
             <Animated.View style={{ transform: [{ scale: sendButtonScale }] }}>
-              <TouchableOpacity
-                style={[
-                  styles.sendButton,
-                  inputText.trim() ? styles.sendButtonActive : {},
-                  isSending ? styles.sendButtonSending : {},
-                ]}
+              <EliteButton
+                title=""
+                variant={inputText.trim() ? "primary" : "glass"}
+                size="sm"
+                icon={isSending ? "hourglass" : "send"}
+                magnetic={true}
+                ripple={true}
+                glow={inputText.trim()}
+                shimmer={isSending}
                 onPress={sendMessage}
                 disabled={!inputText.trim() || isSending}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <LinearGradient
-                  colors={
-                    isSending 
-                      ? [colors.warning, `${colors.warning}DD`]
-                      : inputText.trim()
-                        ? [colors.primary, colors.primaryLight] 
-                        : [colors.gray200, colors.gray300]
-                  }
-                  style={[styles.sendButtonGradient, isSending && { opacity: 0.5 }]}
-                >
-                  {isSending ? (
-                    <Animated.View style={styles.sendingSpinner}>
-                      <Ionicons name="hourglass" size={18} color={colors.white} />
-                    </Animated.View>
-                  ) : (
-                    <Ionicons 
-                      name="send" 
-                      size={18} 
-                      color={inputText.trim() ? colors.white : colors.gray500} 
-                    />
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
+              />
             </Animated.View>
           </View>
-        </BlurView>
+        </GlassContainer>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </EliteContainer>
   );
 }
 

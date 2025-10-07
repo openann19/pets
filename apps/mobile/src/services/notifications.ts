@@ -23,7 +23,7 @@ export interface NotificationData {
   type: 'match' | 'message' | 'like' | 'super_like' | 'premium' | 'reminder';
   title: string;
   body: string;
-  data?: any;
+  data?: Record<string, unknown>;
   scheduledFor?: Date;
 }
 
@@ -36,6 +36,7 @@ class NotificationService {
     try {
       // Check if device supports notifications
       if (!Device.isDevice) {
+        // eslint-disable-next-line no-console
         console.log('Must use physical device for Push Notifications');
         return null;
       }
@@ -51,6 +52,7 @@ class NotificationService {
       }
 
       if (finalStatus !== 'granted') {
+        // eslint-disable-next-line no-console
         console.log('Failed to get push token for push notification!');
         return null;
       }
@@ -79,6 +81,7 @@ class NotificationService {
       // Set up listeners
       this.setupListeners();
 
+      // eslint-disable-next-line no-console
       console.log('Push notifications initialized successfully');
       return token;
     } catch (error) {
@@ -123,7 +126,7 @@ class NotificationService {
         name: channel.name,
         importance: channel.importance,
         description: channel.description,
-        sound: channel.sound,
+        sound: channel.sound ?? null,
         vibrationPattern: [0, 250, 250, 250],
       });
     }
@@ -132,6 +135,7 @@ class NotificationService {
   private setupListeners() {
     this.notificationListener = Notifications.addNotificationReceivedListener(
       (notification: Notifications.Notification) => {
+        // eslint-disable-next-line no-console
         console.log('Notification received:', notification);
         this.handleNotificationReceived(notification);
       }
@@ -140,7 +144,7 @@ class NotificationService {
     this.responseListener = Notifications.addNotificationResponseReceivedListener(
       (response: Notifications.NotificationResponse) => {
         const { data } = response.notification.request.content;
-        this.handleNotificationResponse(data);
+        this.handleNotificationResponse(data as Record<string, unknown>);
       }
     );
   }
@@ -149,7 +153,7 @@ class NotificationService {
     const { data } = notification.request.content;
     
     // Handle different notification types
-    switch (data?.type) {
+    switch (data?.['type'] as string) {
       case 'match':
         // Could trigger a celebration animation
         break;
@@ -162,15 +166,15 @@ class NotificationService {
     }
   }
 
-  private handleNotificationResponse(data: any) {
+  private handleNotificationResponse(data: Record<string, unknown>) {
     // Navigate to appropriate screen based on notification type
-    switch (data?.type) {
+    switch (data?.['type'] as string) {
       case 'match':
         // Navigate to matches screen
         break;
       case 'message':
         // Navigate to specific chat
-        if (data.matchId) {
+        if (data['matchId'] != null) {
           // Navigate to specific chat with matchId
         }
         break;
@@ -199,34 +203,33 @@ class NotificationService {
   }
 
   // Helper to get notification channel for type
-  private getChannelForType(type: string): string {
-    switch (type) {
-      case 'match':
-        return 'matches';
-      case 'message':
-        return 'messages';
-      case 'like':
-      case 'super_like':
-        return 'likes';
-      case 'reminder':
-        return 'reminders';
-      default:
-        return 'default';
-    }
-  }
+  // private getChannelForType(type: string): string {
+  //   switch (type) {
+  //     case 'match':
+  //       return 'matches';
+  //     case 'message':
+  //       return 'messages';
+  //     case 'like':
+  //     case 'super_like':
+  //       return 'likes';
+  //     case 'reminder':
+  //       return 'reminders';
+  //     default:
+  //       return 'default';
+  //   }
+  // }
 
   // Send a local notification
   async sendLocalNotification(notificationData: NotificationData): Promise<string | null> {
     try {
       // Get sound and channel based on notification type
       const sound = this.getSoundForType(notificationData.type);
-      const channelId = Platform.OS === 'android' ? this.getChannelForType(notificationData.type) : undefined;
+      // const channelId = Platform.OS === 'android' ? this.getChannelForType(notificationData.type) : undefined;
       
       // Configure trigger (immediate or scheduled)
       let trigger: Notifications.NotificationTriggerInput | null = null;
       if (notificationData.scheduledFor) {
         trigger = {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: notificationData.scheduledFor
         };
       }
@@ -236,7 +239,7 @@ class NotificationService {
         content: {
           title: notificationData.title,
           body: notificationData.body,
-          data: notificationData.data || {},
+          data: notificationData.data ?? {},
           sound,
         },
         trigger,

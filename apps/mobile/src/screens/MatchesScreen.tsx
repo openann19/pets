@@ -16,6 +16,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AdvancedCard, CardConfigs } from '../components/Advanced/AdvancedCard';
+import { AdvancedHeader, HeaderConfigs } from '../components/Advanced/AdvancedHeader';
 import { matchesAPI } from '../services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -95,80 +97,134 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
   };
 
   const renderMatch = ({ item }: { item: Match }) => (
-    <TouchableOpacity
+    <AdvancedCard
+      {...CardConfigs.glass({
+        interactions: ['hover', 'press', 'glow', 'bounce'],
+        haptic: 'medium',
+        onPress: async () => {
+          try {
+            const matchDetails = await matchesAPI.getMatch(item._id);
+            console.log('Loaded match details:', matchDetails);
+            navigation.navigate('Chat', { 
+              matchId: item._id, 
+              petName: item.petName 
+            });
+          } catch (error) {
+            console.error('Failed to load match details:', error);
+            navigation.navigate('Chat', { 
+              matchId: item._id, 
+              petName: item.petName 
+            });
+          }
+        },
+        apiAction: async () => {
+          const messages = await matchesAPI.getMessages(item._id);
+          console.log('Loaded messages for match:', messages.length);
+        },
+        badge: item.unreadCount > 0 ? { 
+          text: item.unreadCount > 99 ? '99+' : item.unreadCount.toString(),
+          backgroundColor: '#ef4444'
+        } : undefined,
+        status: item.isOnline ? {
+          text: 'Online',
+          backgroundColor: '#10b981'
+        } : undefined,
+      })}
       style={styles.matchCard}
-      onPress={() => {
-        if (Haptics) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-        navigation.navigate('Chat', { 
-          matchId: item._id, 
-          petName: item.petName 
-        });
-      }}
     >
-      <Image source={{ uri: item.petPhoto }} style={styles.matchPhoto} />
-      <View style={styles.matchInfo}>
-        <View style={styles.matchHeader}>
-          <Text style={styles.matchName}>{item.petName}</Text>
-          {item.unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>{item.unreadCount}</Text>
-            </View>
-          )}
+      <View style={styles.matchContent}>
+        <Image source={{ uri: item.petPhoto }} style={styles.matchPhoto} />
+        <View style={styles.matchInfo}>
+          <View style={styles.matchHeader}>
+            <Text style={styles.matchName}>{item.petName}</Text>
+          </View>
+          <Text style={styles.matchMessage} numberOfLines={1}>
+            {item.lastMessage.content}
+          </Text>
+          <Text style={styles.matchTime}>
+            {new Date(item.lastMessage.timestamp).toLocaleTimeString([], { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}
+          </Text>
         </View>
-        <Text style={styles.matchMessage} numberOfLines={1}>
-          {item.lastMessage.content}
-        </Text>
       </View>
-    </TouchableOpacity>
+    </AdvancedCard>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Matches</Text>
-        <TouchableOpacity
-          onPress={() => {
-            if (Haptics) {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-          }}
-        >
-          <Ionicons name="filter" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
+      {/* Advanced Header */}
+      <AdvancedHeader
+        {...HeaderConfigs.glass({
+          title: 'Matches',
+          rightButtons: [
+            {
+              type: 'filter',
+              onPress: async () => {
+                console.log('Filter matches');
+              },
+              variant: 'glass',
+              haptic: 'light',
+            },
+            {
+              type: 'search',
+              onPress: async () => {
+                console.log('Search matches');
+              },
+              variant: 'minimal',
+              haptic: 'light',
+            },
+          ],
+          apiActions: {
+            filter: async () => {
+              console.log('Filter API action');
+            },
+            search: async () => {
+              console.log('Search API action');
+            },
+          },
+        })}
+      />
 
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            selectedTab === 'matches' && styles.activeTab
-          ]}
-          onPress={() => setSelectedTab('matches')}
-        >
-          <Text style={[
-            styles.tabText,
-            selectedTab === 'matches' && styles.activeTabText
-          ]}>
-            Matches
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            selectedTab === 'likedYou' && styles.activeTab
-          ]}
-          onPress={() => setSelectedTab('likedYou')}
-        >
-          <Text style={[
-            styles.tabText,
-            selectedTab === 'likedYou' && styles.activeTabText
-          ]}>
-            Liked You
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <AdvancedCard
+        {...CardConfigs.minimal({
+          interactions: ['hover', 'press'],
+          haptic: 'light',
+        })}
+        style={styles.tabContainer}
+      >
+        <View style={styles.tabContent}>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              selectedTab === 'matches' && styles.activeTab
+            ]}
+            onPress={() => setSelectedTab('matches')}
+          >
+            <Text style={[
+              styles.tabText,
+              selectedTab === 'matches' && styles.activeTabText
+            ]}>
+              Matches
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              selectedTab === 'likedYou' && styles.activeTab
+            ]}
+            onPress={() => setSelectedTab('likedYou')}
+          >
+            <Text style={[
+              styles.tabText,
+              selectedTab === 'likedYou' && styles.activeTabText
+            ]}>
+              Liked You
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </AdvancedCard>
 
       <FlatList
         ref={listRef}
@@ -294,5 +350,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  matchContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  matchTime: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 4,
+  },
+  tabContent: {
+    flexDirection: 'row',
   },
 });

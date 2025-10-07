@@ -141,7 +141,7 @@ export default function IncomingCallScreen({
             <View style={styles.avatarRing}>
               <Image
                 source={
-                  callData.callerAvatar 
+                  callData.callerAvatar != null && callData.callerAvatar !== ''
                     ? { uri: callData.callerAvatar }
                     : require('../../assets/default-avatar.png')
                 }

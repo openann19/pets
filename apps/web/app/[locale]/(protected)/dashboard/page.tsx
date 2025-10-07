@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import PremiumLayout from '@/components/Layout/PremiumLayout';
+import { EnhancedButton, EnhancedCard, InteractionProvider } from '@/components/UI/AdvancedInteractionSystem';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
 import {
@@ -162,9 +163,10 @@ export default function DashboardPage() {
   ];
 
   return (
-    <PremiumLayout>
-      {/* Enhanced Welcome Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+    <InteractionProvider>
+      <PremiumLayout>
+        {/* Enhanced Welcome Section */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <motion.div
           variants={PREMIUM_VARIANTS.fadeInUp}
           initial="initial"
@@ -321,12 +323,24 @@ export default function DashboardPage() {
                 transition={{ delay: index * 0.05 }}
               >
                 <Link href={action.href} className="block">
-                  <PremiumCard
+                  <EnhancedCard
+                    id={`quick-action-${action.title.toLowerCase().replace(/\s+/g, '-')}`}
                     variant="glass"
-                    hover
-                    tilt
-                    glow
-                    className="p-6 group cursor-pointer transition-all duration-300"
+                    padding="lg"
+                    effects={{
+                      hover: true,
+                      magnetic: true,
+                      tilt: true,
+                      glow: true,
+                      ripple: true,
+                      sound: true,
+                      haptic: true,
+                      shimmer: true,
+                    }}
+                    className="group cursor-pointer transition-all duration-300"
+                    tooltip={`${action.description} - Click to get started`}
+                    aria-label={`${action.title} - ${action.description}`}
+                    apiOperation={`navigate-${action.title.toLowerCase().replace(/\s+/g, '-')}`}
                   >
                     <div className="relative">
                       <motion.div 
@@ -377,7 +391,7 @@ export default function DashboardPage() {
                         →
                       </motion.span>
                     </motion.div>
-                  </PremiumCard>
+                  </EnhancedCard>
                 </Link>
               </motion.div>
             ))}
@@ -432,16 +446,28 @@ export default function DashboardPage() {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Link href="/premium">
-                    <PremiumButton 
-                      variant="primary" 
+                    <EnhancedButton
+                      id="dashboard-premium-upgrade"
+                      variant="holographic"
                       size="lg"
-                      glow
-                      magneticEffect
                       icon={<StarIcon className="w-6 h-6" />}
-                      className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-400 hover:to-orange-500 font-bold shadow-xl w-full justify-center"
+                      effects={{
+                        hover: true,
+                        magnetic: true,
+                        glow: true,
+                        ripple: true,
+                        sound: true,
+                        haptic: true,
+                        shimmer: true,
+                        particles: true,
+                      }}
+                      className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-400 hover:to-orange-500 font-bold shadow-xl w-full"
+                      tooltip="Upgrade to Premium for exclusive features"
+                      aria-label="Upgrade to Premium for exclusive features"
+                      apiOperation="premium-upgrade"
                     >
                       Upgrade to Premium
-                    </PremiumButton>
+                    </EnhancedButton>
                   </Link>
                 </motion.div>
               </div>
@@ -528,7 +554,8 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-      </div>
-    </PremiumLayout>
+        </div>
+      </PremiumLayout>
+    </InteractionProvider>
   );
 }

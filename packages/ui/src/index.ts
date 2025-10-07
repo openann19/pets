@@ -1,22 +1,47 @@
-// Legacy components
-export * from './components/Button';
-export * from './components/Card';
-export * from './components/Input';
-export * from './components/Textarea';
-export * from './components/Badge';
-export * from './components/Avatar';
-export * from './components/Dialog';
+/**
+ * PROJECT HYPERION: UNIFIED UI PACKAGE
+ * 
+ * Cross-platform UI components for PawfectMatch
+ * Supports both React Native and React Native Web
+ */
 
-// Premium components (NEW)
-export * from './components/Premium/PremiumButton';
-export * from './components/Premium/PremiumCard';
-export * from './components/Premium/PremiumInput';
+// === BUTTON COMPONENTS ===
+export { InteractiveButton } from './components/Button/InteractiveButton';
+export type { 
+  InteractiveButtonProps, 
+  ButtonVariant, 
+  ButtonSize 
+} from './components/Button/InteractiveButton';
 
-// Design system
-export * from './theme/design-system';
-export * from './theme/colors';
-export * from './theme/typography';
-export * from './animations/premium-motion';
+// === CARD COMPONENTS ===
+export { ImmersiveCard } from './components/Card/ImmersiveCard';
+export type { 
+  ImmersiveCardProps, 
+  CardVariant, 
+  EntranceAnimation 
+} from './components/Card/ImmersiveCard';
 
-// Theme utilities
-export { getThemeColors } from './theme/colors';
+// === ANIMATION HOOKS ===
+export { useSpringAnimation } from './hooks/useSpringAnimation';
+export { useEntranceAnimation } from './hooks/useEntranceAnimation';
+export { useStaggeredAnimation } from './hooks/useStaggeredAnimation';
+export { useMagneticEffect } from './hooks/useMagneticEffect';
+export { useRippleEffect } from './hooks/useRippleEffect';
+export { useShimmerEffect } from './hooks/useShimmerEffect';
+export { useGlowEffect } from './hooks/useGlowEffect';
+
+// === DESIGN TOKENS ===
+export { COLORS } from './tokens/colors';
+export { SPACING } from './tokens/spacing';
+export { TYPOGRAPHY } from './tokens/typography';
+export { SHADOWS } from './tokens/shadows';
+export { ANIMATIONS } from './tokens/animations';
+
+// === UTILITIES ===
+export { createStyleSheet } from './utils/createStyleSheet';
+export { generateId } from './utils/generateId';
+export { debounce } from './utils/debounce';
+export { throttle } from './utils/throttle';
+
+// === VERSION ===
+export const VERSION = '1.0.0';

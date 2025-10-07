@@ -1,0 +1,242 @@
+
+> @pawfectmatch/ui@0.1.0 test /Users/elvira/Downloads/pets-pr-1/packages/ui
+> jest
+
+[1m[2mDetermining test suites to run...[22m[22m[999D[K
+[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A[999D[K
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A  [2m[31mconsole.error[39m[22m
+[31m    Warning: Unknown event handler property `onPress`. It will be ignored.[39m
+[31m        at button[39m
+[31m        at /Users/elvira/Downloads/pets-pr-1/packages/ui/src/components/Button/Button.tsx:31:7[39m
+[2m[22m
+[2m    [0m [90m 23 |[39m       [36mconst[39m user [33m=[39m userEvent[33m.[39msetup()[33m;[39m[22m
+[2m     [90m 24 |[39m[22m
+[2m    [31m[1m>[22m[2m[39m[90m 25 |[39m       render([33m<[39m[33mButton[39m onPress[33m=[39m{handleClick}[33m>[39m[33mClick[39m me[33m<[39m[33m/[39m[33mButton[39m[33m>[39m)[33m;[39m[22m
+[2m     [90m    |[39m             [31m[1m^[22m[2m[39m[22m
+[2m     [90m 26 |[39m[22m
+[2m     [90m 27 |[39m       [36mconst[39m button [33m=[39m screen[33m.[39mgetByRole([32m'button'[39m)[33m;[39m[22m
+[2m     [90m 28 |[39m       [36mawait[39m user[33m.[39mclick(button)[33m;[39m[0m[22m
+[2m[22m
+[2m      [2mat printWarning ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:86:30)[22m[2m[22m
+[2m      [2mat error ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:60:7)[22m[2m[22m
+[2m      [2mat validateProperty$1 ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:3692:9)[22m[2m[22m
+[2m      [2mat warnUnknownProperties ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:3803:21)[22m[2m[22m
+[2m      [2mat validateProperties$2 ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:3827:3)[22m[2m[22m
+[2m      [2mat validatePropertiesInDevelopment ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:9541:5)[22m[2m[22m
+[2m      [2mat setInitialProperties ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:9830:5)[22m[2m[22m
+[2m      [2mat finalizeInitialChildren ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:10950:3)[22m[2m[22m
+[2m      [2mat completeWork ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:22193:17)[22m[2m[22m
+[2m      [2mat completeUnitOfWork ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:26593:16)[22m[2m[22m
+[2m      [2mat performUnitOfWork ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:26568:5)[22m[2m[22m
+[2m      [2mat workLoopSync ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:26466:5)[22m[2m[22m
+[2m      [2mat renderRootSync ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:26434:7)[22m[2m[22m
+[2m      [2mat performConcurrentWorkOnRoot ([22m[2m../../node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/cjs/react-dom.development.js[2m:25738:74)[22m[2m[22m
+[2m      [2mat flushActQueue ([22m[2m../../node_modules/.pnpm/react@18.2.0/node_modules/react/cjs/react.development.js[2m:2667:24)[22m[2m[22m
+[2m      [2mat act ([22m[2m../../node_modules/.pnpm/react@18.2.0/node_modules/react/cjs/react.development.js[2m:2582:11)[22m[2m[22m
+[2m      [2mat [22m[2m../../node_modules/.pnpm/@testing-library+react@14.3.1_@types+react@18.3.25_react-dom@18.2.0_react@18.2.0/node_modules/@testing-library/react/dist/act-compat.js[2m:47:25[22m[2m[22m
+[2m      [2mat renderRoot ([22m[2m../../node_modules/.pnpm/@testing-library+react@14.3.1_@types+react@18.3.25_react-dom@18.2.0_react@18.2.0/node_modules/@testing-library/react/dist/pure.js[2m:180:26)[22m[2m[22m
+[2m      [2mat render ([22m[2m../../node_modules/.pnpm/@testing-library+react@14.3.1_@types+react@18.3.25_react-dom@18.2.0_react@18.2.0/node_modules/@testing-library/react/dist/pure.js[2m:271:10)[22m[2m[22m
+[2m      [2mat Object.<anonymous> ([22m[2m[0m[36msrc/components/__tests__/components.test.tsx[39m[0m[2m:25:13)[22m[2m[22m
+
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m ([0m[1m[41m11.344 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A  UI Components
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A    Button
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mrenders with default props (45 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mhandles click events (56 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mapplies different variants (17 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mapplies different sizes (12 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mshows loading state (6 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A    Card
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mrenders children correctly (3 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mhandles interactive cards (3 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mapplies custom className (2 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A    Input
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mrenders with label (179 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mhandles user input (100 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mshows error state (4 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mshows success state (7 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mdisplays left and right icons (83 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A    Textarea
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mrenders with placeholder (320 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mhandles user input (311 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mshows character count when maxLength is set (59 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mapplies different resize behaviors (186 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A    Badge
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mrenders with default styling (113 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mapplies different variants (11 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mapplies different sizes (40 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mrenders as dot when dot prop is true (16 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mapplies outline styling (5 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A    Avatar
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mrenders with image source (7 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mrenders with fallback text (3 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mapplies different sizes (9 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mapplies different shapes (41 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mshows status indicator (4 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mhandles click events (5 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A    Dialog
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mrenders when open (6 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mdoes not render when closed (2 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mcalls onClose when dismissed (4 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A      [32m✓[39m [2mapplies different sizes (36 ms)[22m
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2msrc/components/__tests__/[22m[1mcomponents.test.tsx[22m
+[K[1A[K[1A[999D[K[1mTest Suites: [22m[1m[32m1 passed[39m[22m, 1 total
+[1mTests:       [22m[1m[32m32 passed[39m[22m, 32 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        12.345 s, estimated 30 s
+[2mRan all test suites[22m[2m.[22m

@@ -1,0 +1,74 @@
+
+> @pawfectmatch/ui@0.1.0 type-check /Users/elvira/Downloads/pets-pr-1/packages/ui
+> tsc --noEmit
+
+[96msrc/components/Button/Button.stories.tsx[0m:[93m1[0m:[93m37[0m - [91merror[0m[90m TS2307: [0mCannot find module '@storybook/react' or its corresponding type declarations.
+
+[7m1[0m import type { Meta, StoryObj } from '@storybook/react';
+[7m [0m [91m                                    ~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Button/Button.stories.tsx[0m:[93m2[0m:[93m24[0m - [91merror[0m[90m TS2307: [0mCannot find module '@storybook/addon-actions' or its corresponding type declarations.
+
+[7m2[0m import { action } from '@storybook/addon-actions';
+[7m [0m [91m                       ~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Button/Button.stories.tsx[0m:[93m11[0m:[93m8[0m - [91merror[0m[90m TS2307: [0mCannot find module '@heroicons/react/24/outline' or its corresponding type declarations.
+
+[7m11[0m } from '@heroicons/react/24/outline';
+[7m  [0m [91m       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Loading/Loading.stories.tsx[0m:[93m1[0m:[93m37[0m - [91merror[0m[90m TS2307: [0mCannot find module '@storybook/react' or its corresponding type declarations.
+
+[7m1[0m import type { Meta, StoryObj } from '@storybook/react';
+[7m [0m [91m                                    ~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Loading/Loading.stories.tsx[0m:[93m4[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../apps/web/src/components/UI/EnhancedLoadingSystem' or its corresponding type declarations.
+
+[7m4[0m import { EnhancedLoading } from '../../apps/web/src/components/UI/EnhancedLoadingSystem';
+[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Loading/Loading.stories.tsx[0m:[93m5[0m:[93m40[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../apps/web/src/components/UI/UniversalLoadingStates' or its corresponding type declarations.
+
+[7m5[0m import { UniversalLoadingStates } from '../../apps/web/src/components/UI/UniversalLoadingStates';
+[7m [0m [91m                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Loading/Loading.stories.tsx[0m:[93m6[0m:[93m28[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../apps/web/src/components/UI/LoadingSpinner' or its corresponding type declarations.
+
+[7m6[0m import LoadingSpinner from '../../apps/web/src/components/UI/LoadingSpinner';
+[7m [0m [91m                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Loading/Loading.stories.tsx[0m:[93m7[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../apps/web/src/components/UI/PremiumSkeleton' or its corresponding type declarations.
+
+[7m7[0m import PremiumSkeleton from '../../apps/web/src/components/UI/PremiumSkeleton';
+[7m [0m [91m                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Premium/UnifiedPremiumButton.tsx[0m:[93m203[0m:[93m49[0m - [91merror[0m[90m TS2345: [0mArgument of type '"primary" | "secondary" | "glass" | "outline" | "ghost" | "text" | "danger" | "success" | "warning" | "holographic" | "neon"' is not assignable to parameter of type '"primary" | "secondary" | "glass" | "outline"'.
+  Type '"ghost"' is not assignable to type '"primary" | "secondary" | "glass" | "outline"'.
+
+[7m203[0m     const baseStyles = utils.createButtonStyles(variant, size, 'web');
+[7m   [0m [91m                                                ~~~~~~~[0m
+
+[96msrc/components/Tooltips/Tooltips.stories.tsx[0m:[93m1[0m:[93m37[0m - [91merror[0m[90m TS2307: [0mCannot find module '@storybook/react' or its corresponding type declarations.
+
+[7m1[0m import type { Meta, StoryObj } from '@storybook/react';
+[7m [0m [91m                                    ~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Tooltips/Tooltips.stories.tsx[0m:[93m8[0m:[93m8[0m - [91merror[0m[90m TS2307: [0mCannot find module '@heroicons/react/24/outline' or its corresponding type declarations.
+
+[7m8[0m } from '@heroicons/react/24/outline';
+[7m [0m [91m       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/Tooltips/Tooltips.stories.tsx[0m:[93m17[0m:[93m8[0m - [91merror[0m[90m TS2307: [0mCannot find module '../../../apps/web/src/components/UI/ContextualTooltips' or its corresponding type declarations.
+
+[7m17[0m } from '../../../apps/web/src/components/UI/ContextualTooltips';
+[7m  [0m [91m       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+Found 12 errors in 4 files.
+
+Errors  Files
+     3  src/components/Button/Button.stories.tsx[90m:1[0m
+     5  src/components/Loading/Loading.stories.tsx[90m:1[0m
+     1  src/components/Premium/UnifiedPremiumButton.tsx[90m:203[0m
+     3  src/components/Tooltips/Tooltips.stories.tsx[90m:1[0m
+[41m[30m ELIFECYCLE [39m[49m [31mCommand failed with exit code 2.[39m

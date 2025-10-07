@@ -136,7 +136,7 @@ export function PremiumButton({
     try {
       // Resume audio context if suspended
       if (audioContext.state === 'suspended') {
-        audioContext.resume();
+        void audioContext.resume();
       }
       
       const oscillator = audioContext.createOscillator();

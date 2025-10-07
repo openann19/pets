@@ -20,7 +20,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '../../contexts/AuthContext';
 import ThemeToggle from '../ThemeToggle';
-import PremiumButton from '../UI/PremiumButton';
+import { EnhancedButton, InteractionProvider } from '../UI/AdvancedInteractionSystem';
 
 import LanguageSelect from '@/components/UI/LanguageSelect';
 import { useClickOutside } from '@/hooks/useClickOutside';
@@ -114,9 +114,10 @@ const Header: React.FC = () => {
   ];
 
   return (
-    <header className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <InteractionProvider>
+      <header className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center space-x-1 sm:space-x-2">
             <div className="text-2xl">🐾</div>
@@ -133,17 +134,32 @@ const Header: React.FC = () => {
             {navigationItems.map((item) => {
               const Icon = isActive(item.path) ? item.iconSolid : item.icon;
               return (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive(item.path)
-                      ? 'text-pink-600 bg-pink-50'
-                      : 'text-gray-600 hover:text-pink-600 hover:bg-pink-50'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.name}</span>
+                <Link key={item.path} href={item.path} className="block">
+                  <EnhancedButton
+                    id={`nav-${item.path}`}
+                    variant="ghost"
+                    size="sm"
+                    effects={{
+                      hover: true,
+                      magnetic: true,
+                      glow: isActive(item.path),
+                      ripple: true,
+                      sound: true,
+                      haptic: true,
+                    }}
+                    className={`
+                      flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300
+                      ${isActive(item.path)
+                        ? 'text-pink-600 bg-pink-50 shadow-md'
+                        : 'text-gray-600 hover:text-pink-600 hover:bg-pink-50 hover:shadow-lg'
+                      }
+                    `}
+                    tooltip={`Navigate to ${item.name}`}
+                    aria-label={`Navigate to ${item.name}`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span>{item.name}</span>
+                  </EnhancedButton>
                 </Link>
               );
             })}
@@ -157,40 +173,72 @@ const Header: React.FC = () => {
             <ThemeToggle />
             {/* Add Pet Button */}
             <Link href="./pets/new">
-              <PremiumButton
-                size="md"
+              <EnhancedButton
+                id="add-pet-button"
                 variant="primary"
-                glow
-                magneticEffect
-                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 font-bold shadow-xl border-none justify-center"
+                size="md"
                 icon={<PlusIcon className="w-5 h-5" />}
+                effects={{
+                  hover: true,
+                  magnetic: true,
+                  glow: true,
+                  ripple: true,
+                  sound: true,
+                  haptic: true,
+                  shimmer: true,
+                }}
+                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 font-bold shadow-xl border-none"
+                tooltip="Add a new pet to your profile"
+                aria-label="Add a new pet to your profile"
+                apiOperation="add-pet"
               >
                 Add Pet
-              </PremiumButton>
+              </EnhancedButton>
             </Link>
 
             {/* Premium Button */}
             {typedUser?.premium?.isActive !== true && (
               <Link href="./premium">
-                <PremiumButton
+                <EnhancedButton
+                  id="premium-button"
+                  variant="holographic"
                   size="md"
-                  variant="primary"
-                  glow
-                  magneticEffect
-                  className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 font-bold shadow-xl border-none justify-center"
                   icon={<SparklesIcon className="w-5 h-5" />}
+                  effects={{
+                    hover: true,
+                    magnetic: true,
+                    glow: true,
+                    ripple: true,
+                    sound: true,
+                    haptic: true,
+                    shimmer: true,
+                    particles: true,
+                  }}
+                  className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 font-bold shadow-xl border-none"
+                  tooltip="Upgrade to Premium for exclusive features"
+                  aria-label="Upgrade to Premium for exclusive features"
+                  apiOperation="premium-upgrade"
                 >
                   Premium
-                </PremiumButton>
+                </EnhancedButton>
               </Link>
             )}
 
             {/* User Menu */}
             <div className="relative">
-              <PremiumButton
-                size="sm"
+              <EnhancedButton
+                id="user-menu-button"
                 variant="ghost"
+                size="sm"
                 onClick={handleLogout}
+                effects={{
+                  hover: true,
+                  magnetic: true,
+                  glow: false,
+                  ripple: true,
+                  sound: true,
+                  haptic: true,
+                }}
                 className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 px-3 py-2"
                 icon={
                   typedUser?.avatar ? (
@@ -205,24 +253,41 @@ const Header: React.FC = () => {
                     </div>
                   )
                 }
+                tooltip={`Logged in as ${typedUser?.firstName || 'User'}`}
+                aria-label={`User menu for ${typedUser?.firstName || 'User'}`}
+                apiOperation="user-logout"
               >
                 <span className="hidden lg:inline">{typedUser?.firstName || 'User'}</span>
-              </PremiumButton>
+              </EnhancedButton>
             </div>
           </div>
 
           {/* Mobile menu button */}
-          <button
+          <EnhancedButton
+            id="mobile-menu-button"
+            variant="ghost"
+            size="sm"
             onClick={handleMobileMenuToggle}
+            effects={{
+              hover: true,
+              magnetic: true,
+              glow: false,
+              ripple: true,
+              sound: true,
+              haptic: true,
+            }}
             className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-            ref={menuButtonRef}
+            tooltip={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMobileMenuOpen}
+            aria-haspopup="menu"
           >
             {isMobileMenuOpen ? (
               <XMarkIcon className="w-6 h-6" />
             ) : (
               <Bars3Icon className="w-6 h-6" />
             )}
-          </button>
+          </EnhancedButton>
         </div>
 
         {/* Mobile Navigation */}
@@ -232,18 +297,32 @@ const Header: React.FC = () => {
               {navigationItems.map((item) => {
                 const Icon = isActive(item.path) ? item.iconSolid : item.icon;
                 return (
-                  <Link
-                    key={item.path}
-                    href={item.path}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
-                      isActive(item.path)
-                        ? 'text-pink-600 bg-pink-50'
-                        : 'text-gray-600 hover:text-pink-600 hover:bg-pink-50'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span>{item.name}</span>
+                  <Link key={item.path} href={item.path} onClick={() => setIsMobileMenuOpen(false)} className="block">
+                    <EnhancedButton
+                      id={`mobile-nav-${item.path}`}
+                      variant="ghost"
+                      size="md"
+                      effects={{
+                        hover: true,
+                        magnetic: true,
+                        glow: isActive(item.path),
+                        ripple: true,
+                        sound: true,
+                        haptic: true,
+                      }}
+                      className={`
+                        w-full flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-all duration-300
+                        ${isActive(item.path)
+                          ? 'text-pink-600 bg-pink-50 shadow-md'
+                          : 'text-gray-600 hover:text-pink-600 hover:bg-pink-50 hover:shadow-lg'
+                        }
+                      `}
+                      tooltip={`Navigate to ${item.name}`}
+                      aria-label={`Navigate to ${item.name}`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{item.name}</span>
+                    </EnhancedButton>
                   </Link>
                 );
               })}
@@ -257,47 +336,83 @@ const Header: React.FC = () => {
                 </div>
                 
                 <Link href="/pets/new" onClick={handleMobileMenuClose}>
-                  <PremiumButton
-                    size="md"
+                  <EnhancedButton
+                    id="mobile-add-pet-button"
                     variant="primary"
-                    glow
-                    magneticEffect
-                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 font-bold shadow-xl border-none justify-center"
+                    size="md"
                     icon={<PlusIcon className="w-5 h-5" />}
+                    effects={{
+                      hover: true,
+                      magnetic: true,
+                      glow: true,
+                      ripple: true,
+                      sound: true,
+                      haptic: true,
+                      shimmer: true,
+                    }}
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 font-bold shadow-xl border-none"
+                    tooltip="Add a new pet to your profile"
+                    aria-label="Add a new pet to your profile"
+                    apiOperation="add-pet"
                   >
                     Add Pet
-                  </PremiumButton>
+                  </EnhancedButton>
                 </Link>
                 
                 {typedUser?.premium?.isActive !== true && (
                   <Link href="/premium" onClick={handleMobileMenuClose}>
-                    <PremiumButton
+                    <EnhancedButton
+                      id="mobile-premium-button"
+                      variant="holographic"
                       size="md"
-                      variant="primary"
-                      glow
-                      magneticEffect
-                      className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 font-bold shadow-xl border-none justify-center"
                       icon={<SparklesIcon className="w-5 h-5" />}
+                      effects={{
+                        hover: true,
+                        magnetic: true,
+                        glow: true,
+                        ripple: true,
+                        sound: true,
+                        haptic: true,
+                        shimmer: true,
+                        particles: true,
+                      }}
+                      className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 font-bold shadow-xl border-none"
+                      tooltip="Upgrade to Premium for exclusive features"
+                      aria-label="Upgrade to Premium for exclusive features"
+                      apiOperation="premium-upgrade"
                     >
                       Upgrade to Premium
-                    </PremiumButton>
+                    </EnhancedButton>
                   </Link>
                 )}
                 
-                <PremiumButton
-                  size="md"
+                <EnhancedButton
+                  id="mobile-logout-button"
                   variant="outline"
+                  size="md"
                   onClick={handleLogout}
-                  className="w-full bg-white/20 border-2 border-gray-300 hover:bg-gray-100 hover:border-gray-400 font-semibold justify-center"
+                  effects={{
+                    hover: true,
+                    magnetic: true,
+                    glow: false,
+                    ripple: true,
+                    sound: true,
+                    haptic: true,
+                  }}
+                  className="w-full bg-white/20 border-2 border-gray-300 hover:bg-gray-100 hover:border-gray-400 font-semibold"
+                  tooltip="Sign out of your account"
+                  aria-label="Sign out of your account"
+                  apiOperation="user-logout"
                 >
                   Logout
-                </PremiumButton>
+                </EnhancedButton>
               </div>
             </div>
           </div>
         )}
-      </div>
-    </header>
+        </div>
+      </header>
+    </InteractionProvider>
   );
 };
 
