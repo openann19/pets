@@ -3,6 +3,11 @@
  * Controls access to premium features with elegant upgrade prompts
  */
 
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
   View,
@@ -12,12 +17,9 @@ import {
   Modal,
   Dimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
+
 import { useTheme } from '../../contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
+
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -95,7 +97,7 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
               </LinearGradient>
 
               {/* Feature Icon */}
-              <View style={[styles.featureIcon, { backgroundColor: colors.primary + '20' }]}>
+              <View style={[styles.featureIcon, { backgroundColor: `${colors.primary  }20` }]}>
                 <Ionicons name={icon as any} size={40} color={colors.primary} />
               </View>
 
@@ -178,7 +180,7 @@ export const usePremiumGate = () => {
     icon: 'star',
   });
 
-  const showPremiumGate = (feature: string, description: string, icon: string = 'star') => {
+  const showPremiumGate = (feature: string, description: string, icon = 'star') => {
     setGateConfig({
       visible: true,
       feature,

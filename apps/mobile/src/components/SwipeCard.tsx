@@ -89,6 +89,7 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
   const handleLike = useCallback(async (pet: Pet) => {
     setIsProcessing(true);
     try {
+      // eslint-disable-next-line no-console
       console.log('Liked pet:', pet.name);
       // API call would go here
     } catch (error) {
@@ -101,6 +102,7 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
   const handlePass = useCallback(async (pet: Pet) => {
     setIsProcessing(true);
     try {
+      // eslint-disable-next-line no-console
       console.log('Passed pet:', pet.name);
       // API call would go here
     } catch (error) {
@@ -113,6 +115,7 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
   const handleSuperLike = useCallback(async (pet: Pet) => {
     setIsProcessing(true);
     try {
+      // eslint-disable-next-line no-console
       console.log('Super liked pet:', pet.name);
       // API call would go here
     } catch (error) {
@@ -136,7 +139,7 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
   
   // Check accessibility settings
   React.useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then(setIsAccessibilityEnabled);
+    void AccessibilityInfo.isReduceMotionEnabled().then(setIsAccessibilityEnabled);
   }, []);
 
   // Pan responder for gesture handling

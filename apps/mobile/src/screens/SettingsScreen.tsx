@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
   View,
@@ -9,8 +11,11 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+import { AdvancedCard, CardConfigs } from '../components/Advanced/AdvancedCard';
+import { AdvancedHeader, HeaderConfigs } from '../components/Advanced/AdvancedHeader';
+import { AdvancedButton } from '../components/Advanced/AdvancedInteractionSystem';
+import { matchesAPI } from '../services/api';
 
 type RootStackParamList = {
   Settings: undefined;
@@ -172,11 +177,24 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
     },
   ];
 
-  const handleToggle = (category: 'notifications' | 'preferences', id: string, value: boolean) => {
-    if (category === 'notifications') {
-      setNotifications(prev => ({ ...prev, [id]: value }));
-    } else {
-      setPreferences(prev => ({ ...prev, [id]: value }));
+  const handleToggle = async (category: 'notifications' | 'preferences', id: string, value: boolean) => {
+    try {
+      if (category === 'notifications') {
+        setNotifications(prev => ({ ...prev, [id]: value }));
+        // Update API
+        await matchesAPI.updateUserSettings({
+          notifications: { ...notifications, [id]: value }
+        } as any);
+      } else {
+        setPreferences(prev => ({ ...prev, [id]: value }));
+        // Update API
+        await matchesAPI.updateUserSettings({
+          preferences: { ...preferences, [id]: value }
+        } as any);
+      }
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      Alert.alert('Error', 'Failed to update settings. Please try again.');
     }
   };
 
@@ -310,17 +328,27 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#6B7280" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={styles.placeholder} />
-      </View>
+      {/* Advanced Header */}
+      <AdvancedHeader
+        {...HeaderConfigs.glass({
+          title: 'Settings',
+          rightButtons: [
+            {
+              type: 'search',
+              onPress: async () => {
+                console.log('Search settings');
+              },
+              variant: 'minimal',
+              haptic: 'light',
+            },
+          ],
+          apiActions: {
+            search: async () => {
+              console.log('Search settings API action');
+            },
+          },
+        })}
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -329,25 +357,39 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
       >
         {/* Profile Summary */}
         <View style={styles.profileSection}>
-          <View style={styles.profileCard}>
-            <View style={styles.profileAvatar}>
-              <Ionicons name="person" size={32} color="#9CA3AF" />
-            </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>John Doe</Text>
-              <Text style={styles.profileEmail}>john@example.com</Text>
-              <View style={styles.profileStatus}>
-                <View style={styles.statusDot} />
-                <Text style={styles.statusText}>Free Plan</Text>
+          <AdvancedCard
+            {...CardConfigs.glass({
+              interactions: ['hover', 'press', 'glow'],
+              haptic: 'light',
+              apiAction: async () => {
+                const userProfile = await matchesAPI.getUserProfile();
+                console.log('Loaded user profile:', userProfile);
+              },
+              actions: [
+                {
+                  icon: 'pencil',
+                  title: 'Edit',
+                  variant: 'minimal',
+                  onPress: () => handleNavigation('profile'),
+                },
+              ],
+            })}
+            style={styles.profileCard}
+          >
+            <View style={styles.profileCardContent}>
+              <View style={styles.profileAvatar}>
+                <Ionicons name="person" size={32} color="#9CA3AF" />
+              </View>
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>John Doe</Text>
+                <Text style={styles.profileEmail}>john@example.com</Text>
+                <View style={styles.profileStatus}>
+                  <View style={styles.statusDot} />
+                  <Text style={styles.statusText}>Free Plan</Text>
+                </View>
               </View>
             </View>
-            <TouchableOpacity
-              style={styles.editProfileButton}
-              onPress={() => handleNavigation('profile')}
-            >
-              <Ionicons name="pencil" size={16} color="#8B5CF6" />
-            </TouchableOpacity>
-          </View>
+          </AdvancedCard>
         </View>
 
         {/* Settings Sections */}
@@ -548,5 +590,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
     marginTop: 4,
+  },
+  profileCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

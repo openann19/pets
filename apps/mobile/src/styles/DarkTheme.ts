@@ -2,7 +2,7 @@ import { StyleSheet, Dimensions, Platform } from 'react-native';
 
 import { Typography, Spacing, BorderRadius } from './GlobalStyles';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 
 // === ELITE DARK THEME COLORS ===
 export const ColorsDark = {

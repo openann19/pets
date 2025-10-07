@@ -1,3 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as ImagePicker from 'expo-image-picker';
 import React, { useState, useRef } from 'react';
 import {
   View,
@@ -13,9 +16,6 @@ import {
   Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 const { width: screenWidth } = Dimensions.get('window');
 

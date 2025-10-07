@@ -1,0 +1,1 @@
+{"version":3,"file":"useSpringAnimation.d.ts","sourceRoot":"","sources":["../../src/hooks/useSpringAnimation.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAKH,MAAM,WAAW,YAAY;IAC3B,OAAO,CAAC,EAAE,MAAM,CAAC;IACjB,QAAQ,CAAC,EAAE,MAAM,CAAC;IAClB,IAAI,CAAC,EAAE,MAAM,CAAC;CACf;AAED,eAAO,MAAM,kBAAkB,GAAI,SAAQ,YAAiB;;uBAGpB,MAAM,aAAa,MAAM,IAAI;;CAiBpE,CAAC"}

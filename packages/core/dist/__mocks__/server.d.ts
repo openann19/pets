@@ -1,0 +1,3 @@
+import { type SetupServer } from 'msw/node';
+export declare const server: SetupServer;
+//# sourceMappingURL=server.d.ts.map

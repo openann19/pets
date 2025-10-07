@@ -2,6 +2,41 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import { Vibration } from 'react-native';
 
+// Mock Animated module specifically for this test
+jest.mock('react-native', () => {
+  const RN = jest.requireActual('react-native');
+  const createMockValue = (value) => {
+    const mockValue = jest.fn(() => value);
+    mockValue._value = value;
+    mockValue.setValue = jest.fn();
+    mockValue.interpolate = jest.fn((config) => {
+      const mockInterpolated = jest.fn(() => config.outputRange[0]);
+      mockInterpolated._config = config;
+      mockInterpolated._value = value;
+      return mockInterpolated;
+    });
+    mockValue.addListener = jest.fn();
+    mockValue.removeListener = jest.fn();
+    mockValue.removeAllListeners = jest.fn();
+    return mockValue;
+  };
+
+  return {
+    ...RN,
+    Animated: {
+      View: 'Animated.View',
+      Text: 'Animated.Text',
+      Value: createMockValue,
+      timing: jest.fn(() => ({ start: jest.fn() })),
+      spring: jest.fn(() => ({ start: jest.fn() })),
+      sequence: jest.fn(() => ({ start: jest.fn() })),
+      parallel: jest.fn(() => ({ start: jest.fn() })),
+      stagger: jest.fn(() => ({ start: jest.fn() })),
+      loop: jest.fn(() => ({ start: jest.fn(), stop: jest.fn() })),
+    },
+  };
+});
+
 // Mock WebRTCService before importing IncomingCallScreen
 jest.mock('../../../services/WebRTCService', () => ({
   __esModule: true,

@@ -10,6 +10,7 @@ import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
 import PremiumLayout from '@/components/Layout/PremiumLayout';
+import { EnhancedButton, EnhancedCard, InteractionProvider } from '@/components/UI/AdvancedInteractionSystem';
 
 export default function SwipePage() {
   const { pets, currentPet, swipe, isLoading, lastMatch, clearMatch, isPremium, refetch } = useSwipeData();
@@ -59,8 +60,9 @@ export default function SwipePage() {
 
   if (!currentPet) {
     return (
-      <PremiumLayout>
-        <div className="min-h-[60vh] flex items-center justify-center p-4">
+      <InteractionProvider>
+        <PremiumLayout>
+          <div className="min-h-[60vh] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -83,13 +85,15 @@ export default function SwipePage() {
             </PremiumButton>
           </motion.div>
         </div>
-      </PremiumLayout>
+        </PremiumLayout>
+      </InteractionProvider>
     );
   }
 
   return (
-    <PremiumLayout>
-      <div className="min-h-screen bg-transparent flex flex-col">
+    <InteractionProvider>
+      <PremiumLayout>
+        <div className="min-h-screen bg-transparent flex flex-col">
         {/* Premium Header */}
         <motion.header 
           initial={{ y: -100 }}
@@ -126,16 +130,28 @@ export default function SwipePage() {
           animate={{ opacity: 1, y: 0 }}
           className="px-4 py-3"
         >
-          <PremiumButton
-            onClick={() => setShowFilters(!showFilters)}
+          <EnhancedButton
+            id="filter-toggle-button"
             variant={showFilters ? "glass" : "gradient"}
             size="md"
             icon={<AdjustmentsHorizontalIcon className="w-4 h-4" />}
+            effects={{
+              hover: true,
+              magnetic: true,
+              glow: true,
+              ripple: true,
+              sound: true,
+              haptic: true,
+              shimmer: !showFilters,
+            }}
             className="w-full"
-            magneticEffect
+            onClick={() => setShowFilters(!showFilters)}
+            tooltip={showFilters ? "Hide advanced filters" : "Show advanced breed and pet filters"}
+            aria-label={showFilters ? "Hide advanced filters" : "Show advanced breed and pet filters"}
+            apiOperation="toggle-filters"
           >
             {showFilters ? 'Hide Filters' : 'Find Specific Breeds (Shiba Inu, etc.)'}
-          </PremiumButton>
+          </EnhancedButton>
         </motion.div>
 
         {/* Filter Panel */}
@@ -231,16 +247,39 @@ export default function SwipePage() {
 
                 {/* Apply Filters Button */}
                 <div className="flex gap-3">
-                  <PremiumButton
-                    onClick={() => refetch()}
+                  <EnhancedButton
+                    id="apply-filters-button"
                     variant="gradient"
                     size="md"
+                    effects={{
+                      hover: true,
+                      magnetic: true,
+                      glow: true,
+                      ripple: true,
+                      sound: true,
+                      haptic: true,
+                      shimmer: true,
+                    }}
                     className="flex-1"
-                    magneticEffect
+                    onClick={async () => { await refetch(); }}
+                    tooltip="Apply current filter settings"
+                    aria-label="Apply current filter settings"
+                    apiOperation="apply-filters"
                   >
                     Apply Filters
-                  </PremiumButton>
-                  <PremiumButton
+                  </EnhancedButton>
+                  <EnhancedButton
+                    id="reset-filters-button"
+                    variant="glass"
+                    size="md"
+                    effects={{
+                      hover: true,
+                      magnetic: true,
+                      glow: false,
+                      ripple: true,
+                      sound: true,
+                      haptic: true,
+                    }}
                     onClick={() => setFilters({
                       breed: '',
                       species: '',
@@ -252,11 +291,12 @@ export default function SwipePage() {
                       energyLevel: '',
                       familyFriendly: false
                     })}
-                    variant="glass"
-                    size="md"
+                    tooltip="Reset all filters to default"
+                    aria-label="Reset all filters to default"
+                    apiOperation="reset-filters"
                   >
                     Reset
-                  </PremiumButton>
+                  </EnhancedButton>
                 </div>
               </PremiumCard>
 
@@ -302,52 +342,82 @@ export default function SwipePage() {
               className="flex justify-center items-center gap-8 mt-10"
             >
               <div className="flex flex-col items-center gap-2">
-                <PremiumButton
-                  onClick={() => onSwipe('pass')}
+                <EnhancedButton
+                  id="pass-button"
                   variant="ghost"
                   size="lg"
-                  haptic
+                  effects={{
+                    hover: true,
+                    magnetic: true,
+                    glow: false,
+                    ripple: true,
+                    sound: true,
+                    haptic: true,
+                  }}
                   className="!w-20 !h-20 !rounded-full !min-h-0 !p-0 bg-white/10 hover:bg-red-500/30 border-2 border-red-500/50 hover:border-red-500 shadow-lg hover:shadow-red-500/50 transition-all duration-200"
+                  onClick={() => onSwipe('pass')}
+                  tooltip="Pass on this pet"
+                  aria-label="Pass on this pet"
+                  apiOperation="swipe-pass"
                 >
                   <XMarkIcon className="h-8 w-8 text-red-500" />
-                </PremiumButton>
+                </EnhancedButton>
                 <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Pass</span>
               </div>
               
               {isPremium && (
                 <div className="flex flex-col items-center gap-2">
-                  <PremiumButton
-                    onClick={() => onSwipe('superlike')}
+                  <EnhancedButton
+                    id="superlike-button"
                     variant="neon"
                     size="lg"
-                    glow
-                    magneticEffect
-                    haptic
-                    sound
+                    effects={{
+                      hover: true,
+                      magnetic: true,
+                      glow: true,
+                      ripple: true,
+                      sound: true,
+                      haptic: true,
+                      shimmer: true,
+                      particles: true,
+                    }}
                     className="!w-24 !h-24 !rounded-full !min-h-0 !p-0 relative bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 border-2 border-blue-400 shadow-xl hover:shadow-blue-500/50 transition-all duration-200"
+                    onClick={() => onSwipe('superlike')}
+                    tooltip="Super like this pet (Premium feature)"
+                    aria-label="Super like this pet (Premium feature)"
+                    apiOperation="swipe-superlike"
                   >
                     <StarIcon className="h-10 w-10 text-white" />
                     <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
                       <SparklesIcon className="w-4 h-4 text-white" />
                     </div>
-                  </PremiumButton>
+                  </EnhancedButton>
                   <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Super Like</span>
                 </div>
               )}
               
               <div className="flex flex-col items-center gap-2">
-                <PremiumButton
-                  onClick={() => onSwipe('like')}
+                <EnhancedButton
+                  id="like-button"
                   variant="primary"
                   size="lg"
-                  glow
-                  magneticEffect
-                  haptic
-                  sound
+                  effects={{
+                    hover: true,
+                    magnetic: true,
+                    glow: true,
+                    ripple: true,
+                    sound: true,
+                    haptic: true,
+                    shimmer: true,
+                  }}
                   className="!w-20 !h-20 !rounded-full !min-h-0 !p-0 bg-gradient-to-br from-pink-500 to-rose-600 hover:from-pink-400 hover:to-rose-500 border-2 border-pink-400 shadow-lg hover:shadow-pink-500/50 transition-all duration-200"
+                  onClick={() => onSwipe('like')}
+                  tooltip="Like this pet"
+                  aria-label="Like this pet"
+                  apiOperation="swipe-like"
                 >
                   <HeartIcon className="h-8 w-8 text-white" />
-                </PremiumButton>
+                </EnhancedButton>
                 <span className="text-xs font-semibold text-pink-400 uppercase tracking-wider">Like</span>
               </div>
             </motion.div>
@@ -368,7 +438,8 @@ export default function SwipePage() {
             matchedUser={(lastMatch as any).users[1] as any}
           />
         )}
-      </div>
-    </PremiumLayout>
+        </div>
+      </PremiumLayout>
+    </InteractionProvider>
   );
 }

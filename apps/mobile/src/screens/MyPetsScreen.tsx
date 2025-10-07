@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import type { Pet } from '@pawfectmatch/core';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,10 +14,10 @@ import {
   RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-const { width: screenWidth } = Dimensions.get('window');
+import { matchesAPI } from '../services/api';
+
+const { width: _screenWidth } = Dimensions.get('window');
 
 type RootStackParamList = {
   MyPets: undefined;
@@ -24,93 +27,37 @@ type RootStackParamList = {
 
 type MyPetsScreenProps = NativeStackScreenProps<RootStackParamList, 'MyPets'>;
 
-interface Pet {
-  _id: string;
-  name: string;
-  species: string;
-  breed: string;
-  age: number;
-  gender: string;
-  size: string;
-  photos: Array<{
-    url: string;
-    isPrimary: boolean;
-  }>;
-  intent: string;
-  stats: {
-    views: number;
-    likes: number;
-    matches: number;
-  };
-  isActive: boolean;
-  createdAt: string;
-}
+// Using Pet type from core package
 
 export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
   const [pets, setPets] = useState<Pet[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [_deleteConfirm, _setDeleteConfirm] = useState<string | null>(null);
 
-  // Mock data - replace with actual API call
-  const mockPets: Pet[] = [
-    {
-      _id: '1',
-      name: 'Buddy',
-      species: 'dog',
-      breed: 'Golden Retriever',
-      age: 3,
-      gender: 'male',
-      size: 'large',
-      photos: [{ url: 'https://via.placeholder.com/200', isPrimary: true }],
-      intent: 'playdate',
-      stats: { views: 45, likes: 12, matches: 3 },
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00.000Z'
-    },
-    {
-      _id: '2',
-      name: 'Luna',
-      species: 'cat',
-      breed: 'Siamese',
-      age: 2,
-      gender: 'female',
-      size: 'small',
-      photos: [{ url: 'https://via.placeholder.com/200', isPrimary: true }],
-      intent: 'adoption',
-      stats: { views: 23, likes: 8, matches: 1 },
-      isActive: true,
-      createdAt: '2024-01-15T00:00:00.000Z'
-    }
-  ];
-
-  useEffect(() => {
-    loadPets();
-  }, []);
-
-  const loadPets = async () => {
+  const loadPets = useCallback(async () => {
     setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      // const response = await petsAPI.getMyPets();
-      // setPets(response.data);
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setPets(mockPets);
+      const response = await matchesAPI.getMyPets();
+      setPets(response.data || []);
     } catch (error) {
       console.error('Error loading pets:', error);
-      Alert.alert('Error', 'Failed to load pets. Please try again.');
+      Alert.alert('Connection Error', 'Network error');
+      setPets([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const onRefresh = async () => {
+  useEffect(() => {
+    void loadPets();
+  }, [loadPets]);
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadPets();
     setRefreshing(false);
-  };
+  }, [loadPets]);
 
   const getSpeciesEmoji = (species: string) => {
     const emojis: Record<string, string> = {
@@ -120,7 +67,7 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
       rabbit: '🐰',
       other: '🐾'
     };
-    return emojis[species] || '🐾';
+    return emojis[species] ?? '🐾';
   };
 
   const getIntentColor = (intent: string) => {
@@ -130,7 +77,7 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
       playdate: '#3B82F6',
       all: '#8B5CF6'
     };
-    return colors[intent] || '#6B7280';
+    return colors[intent] ?? '#6B7280';
   };
 
   const getIntentLabel = (intent: string) => {
@@ -140,7 +87,7 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
       playdate: 'Playdates',
       all: 'Open to All'
     };
-    return labels[intent] || intent;
+    return labels[intent] ?? intent;
   };
 
   const handleDeletePet = (petId: string) => {
@@ -154,16 +101,10 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
           style: 'destructive',
           onPress: async () => {
             try {
-              // TODO: Replace with actual API call
-              // await petsAPI.deletePet(petId);
-
-              // Simulate API delay
-              await new Promise(resolve => setTimeout(resolve, 1000));
-
+              await matchesAPI.deletePet(petId);
               setPets(prev => prev.filter(pet => pet._id !== petId));
               Alert.alert('Success', 'Pet profile deleted successfully');
             } catch (error) {
-              console.error('Error deleting pet:', error);
               Alert.alert('Error', 'Failed to delete pet profile. Please try again.');
             }
           }
@@ -172,7 +113,7 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
     );
   };
 
-  const renderPetCard = ({ item }: { item: Pet }) => (
+  const renderPetCard = useCallback(({ item }: { item: Pet }) => (
     <TouchableOpacity
       style={styles.petCard}
       onPress={() => {
@@ -184,7 +125,7 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
       <View style={styles.petImageContainer}>
         {item.photos && item.photos.length > 0 ? (
           <Image
-            source={{ uri: item.photos.find(p => p.isPrimary)?.url || item.photos[0].url }}
+            source={{ uri: item.photos.find(p => p.isPrimary)?.url ?? item.photos[0]?.url ?? '' }}
             style={styles.petImage}
             resizeMode="cover"
           />
@@ -200,12 +141,12 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
         </View>
 
         {/* Photo count */}
-        {item.photos && item.photos.length > 1 && (
+        {item.photos && item.photos.length > 1 ? (
           <View style={styles.photoCountBadge}>
             <Ionicons name="camera" size={12} color="#FFFFFF" />
             <Text style={styles.photoCountText}>{item.photos.length}</Text>
           </View>
-        )}
+        ) : null}
       </View>
 
       {/* Pet Info */}
@@ -225,15 +166,15 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
         <View style={styles.petStats}>
           <View style={styles.stat}>
             <Ionicons name="eye" size={14} color="#6B7280" />
-            <Text style={styles.statText}>{item.stats.views}</Text>
+            <Text style={styles.statText}>{item.analytics.views}</Text>
           </View>
           <View style={styles.stat}>
             <Ionicons name="heart" size={14} color="#EF4444" />
-            <Text style={styles.statText}>{item.stats.likes}</Text>
+            <Text style={styles.statText}>{item.analytics.likes}</Text>
           </View>
           <View style={styles.stat}>
             <Ionicons name="people" size={14} color="#8B5CF6" />
-            <Text style={styles.statText}>{item.stats.matches}</Text>
+            <Text style={styles.statText}>{item.analytics.matches}</Text>
           </View>
         </View>
 
@@ -241,10 +182,10 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
         <View style={styles.petActions}>
           <TouchableOpacity
             style={[styles.actionButton, styles.viewButton]}
-            onPress={() => {
+            onPress={useCallback(() => {
               // TODO: Navigate to pet detail view
               Alert.alert('View Pet', `View details for ${item.name}`);
-            }}
+            }, [item.name])}
           >
             <Ionicons name="eye" size={16} color="#6B7280" />
             <Text style={styles.viewButtonText}>View</Text>
@@ -252,48 +193,48 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
 
           <TouchableOpacity
             style={[styles.actionButton, styles.editButton]}
-            onPress={() => {
+            onPress={useCallback(() => {
               // TODO: Navigate to pet edit screen
               Alert.alert('Edit Pet', `Edit details for ${item.name}`);
-            }}
+            }, [item.name])}
           >
             <Ionicons name="pencil" size={16} color="#FFFFFF" />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionButton, styles.deleteButton]}
-            onPress={() => handleDeletePet(item._id)}
+            onPress={useCallback(() => handleDeletePet(item._id), [item._id])}
           >
             <Ionicons name="trash" size={16} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
-  );
+  ), [handleDeletePet]);
 
-  const renderEmptyState = () => (
+  const renderEmptyState = useCallback(() => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyEmoji}>🐾</Text>
       <Text style={styles.emptyTitle}>No Pets Yet</Text>
       <Text style={styles.emptyText}>
-        Start building your pet's profile to find amazing matches and new friends!
+        Start building your pet&apos;s profile to find amazing matches and new friends!
       </Text>
       <TouchableOpacity
         style={styles.emptyButton}
-        onPress={() => navigation.navigate('CreatePet')}
+        onPress={useCallback(() => navigation.navigate('CreatePet'), [navigation])}
       >
         <Ionicons name="add-circle" size={20} color="#FFFFFF" />
         <Text style={styles.emptyButtonText}>Create Your First Pet Profile</Text>
       </TouchableOpacity>
     </View>
-  );
+  ), [navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={useCallback(() => navigation.goBack(), [navigation])}
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={24} color="#6B7280" />
@@ -301,7 +242,7 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
         <Text style={styles.headerTitle}>My Pets</Text>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => navigation.navigate('CreatePet')}
+          onPress={useCallback(() => navigation.navigate('CreatePet'), [navigation])}
         >
           <Ionicons name="add" size={24} color="#8B5CF6" />
         </TouchableOpacity>
@@ -322,7 +263,7 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
             tintColor="#8B5CF6"
           />
         }
-        ListEmptyComponent={!isLoading ? renderEmptyState : null}
+        ListEmptyComponent={!isLoading ? renderEmptyState() : null}
         ListHeaderComponent={
           pets.length > 0 ? (
             <View style={styles.listHeader}>

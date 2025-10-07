@@ -85,8 +85,8 @@ export const BUTTON_SYSTEM = {
       },
       mobile: {
         background: 'transparent',
-        color: COLORS.primary,
-        border: `2px solid ${COLORS.primary}`,
+        color: COLORS.primary[500],
+        border: `2px solid ${COLORS.primary[500]}`,
         shadow: 'none',
       },
     },
@@ -201,7 +201,7 @@ export const INPUT_SYSTEM = {
         color: COLORS.neutral[0],
         focus: {
           background: 'rgba(255, 255, 255, 0.15)',
-          border: `2px solid ${COLORS.primary}`,
+          border: `2px solid ${COLORS.primary[500]}`,
         },
       },
     },
@@ -222,7 +222,7 @@ export const INPUT_SYSTEM = {
         color: COLORS.neutral[800],
         focus: {
           background: COLORS.neutral[0],
-          border: `2px solid ${COLORS.primary}`,
+          border: `2px solid ${COLORS.primary[500]}`,
         },
       },
     },
@@ -241,7 +241,7 @@ export const INPUT_SYSTEM = {
         border: `2px solid ${COLORS.neutral[300]}`,
         color: COLORS.neutral[800],
         focus: {
-          border: `2px solid ${COLORS.primary}`,
+          border: `2px solid ${COLORS.primary[500]}`,
         },
       },
     },
@@ -299,7 +299,7 @@ export const INPUT_SYSTEM = {
         shadow: `0 0 0 3px ${COLORS.error[100]}`,
       },
       mobile: {
-        border: `2px solid ${COLORS.error}`,
+        border: `2px solid ${COLORS.error[500]}`,
         background: '#fef2f2',
       },
     },
@@ -310,7 +310,7 @@ export const INPUT_SYSTEM = {
         shadow: `0 0 0 3px ${COLORS.success[100]}`,
       },
       mobile: {
-        border: `2px solid ${COLORS.success}`,
+        border: `2px solid ${COLORS.success[500]}`,
         background: '#f0fdf4',
       },
     },
@@ -501,7 +501,7 @@ export const COLOR_SYSTEM = {
   },
   success: {
     web: COLORS.success[500],
-    mobile: COLORS.success,
+    mobile: COLORS.success[500],
   },
   warning: {
     web: COLORS.warning[500],
@@ -509,7 +509,7 @@ export const COLOR_SYSTEM = {
   },
   error: {
     web: COLORS.error[500],
-    mobile: COLORS.error,
+    mobile: COLORS.error[500],
   },
   text: {
     primary: {
@@ -568,7 +568,7 @@ export const utils = {
 
   // Check if form is valid to enable buttons
   shouldEnableButton: (formState: { isValid: boolean; isDirty: boolean; isLoading?: boolean }) =>
-    formState.isValid && formState.isDirty && !formState.isLoading,
+    formState.isValid && formState.isDirty && !(formState.isLoading ?? false),
 
   // Get theme-aware colors
   getThemeColor: (colorKey: keyof typeof COLOR_SYSTEM, platform: 'web' | 'mobile' = 'web') => {

@@ -129,6 +129,9 @@ export function useMyPets() {
   });
 }
 
+// Alias for useMyPets to match the import in MyPetsPage
+export const useUserPets = useMyPets;
+
 export function useCreatePet() {
   const queryClient = useQueryClient();
 
@@ -148,6 +151,18 @@ export function useUpdatePet() {
       apiClient.updatePet(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pets'] });
+    }
+  });
+}
+
+export function useDeletePet() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => apiClient.deletePet(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pets'] });
+      queryClient.invalidateQueries({ queryKey: ['pets', 'my'] });
     }
   });
 }

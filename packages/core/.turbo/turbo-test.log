@@ -1,0 +1,351 @@
+
+> @pawfectmatch/core@1.0.0 test /Users/elvira/Downloads/pets-pr-1/packages/core
+> jest
+
+[1m[2mDetermining test suites to run...[22m[22m[999D[K
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        0 s, estimated 30 s
+[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        0 s, estimated 30 s
+[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        1 s, estimated 30 s
+[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        2 s, estimated 30 s
+[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        3 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        4 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        5 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        6 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        7 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        8 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        9 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        10 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        11 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        12 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        13 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        14 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        15 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        16 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        17 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        18 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        19 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/stores/__tests__/[22m[1museWeatherStore.test.ts[22m ([0m[1m[41m16.184 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        19 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [1m...st.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m0 of 5 total
+[1mTests:       [22m0 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        19 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m[1m[32m1 passed[39m[22m, 1 of 5 total
+[1mTests:       [22m[1m[32m28 passed[39m[22m, 28 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        19 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/__tests__/[22m[1mbasic.test.ts[22m ([0m[1m[41m16.33 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mbasic.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m[1m[32m1 passed[39m[22m, 1 of 5 total
+[1mTests:       [22m[1m[32m28 passed[39m[22m, 28 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        19 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m[1m[32m2 passed[39m[22m, 2 of 5 total
+[1mTests:       [22m[1m[32m30 passed[39m[22m, 30 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        19 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/utils/__tests__/[22m[1mindex.test.ts[22m ([0m[1m[41m16.476 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...tests__/[22m[1mindex.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m[1m[32m2 passed[39m[22m, 2 of 5 total
+[1mTests:       [22m[1m[32m30 passed[39m[22m, 30 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        19 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m[1m[32m3 passed[39m[22m, 3 of 5 total
+[1mTests:       [22m[1m[32m31 passed[39m[22m, 31 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        19 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/api/__tests__/[22m[1mapi.test.ts[22m ([0m[1m[41m16.634 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...__tests__/[22m[1mapi.test.ts[22m
+
+[1mTest Suites: [22m[1m[32m3 passed[39m[22m, 3 of 5 total
+[1mTests:       [22m[1m[32m31 passed[39m[22m, 31 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        19 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+
+[1mTest Suites: [22m[1m[32m4 passed[39m[22m, 4 of 5 total
+[1mTests:       [22m[1m[32m39 passed[39m[22m, 39 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        19 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+
+[1mTest Suites: [22m[1m[32m4 passed[39m[22m, 4 of 5 total
+[1mTests:       [22m[1m[32m39 passed[39m[22m, 39 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        20 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+
+[1mTest Suites: [22m[1m[32m4 passed[39m[22m, 4 of 5 total
+[1mTests:       [22m[1m[32m48 passed[39m[22m, 48 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        20 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[0m[7m[1m[32m PASS [39m[22m[27m[0m [2msrc/stores/__tests__/[22m[1mstores.test.ts[22m ([0m[1m[41m17.732 s[49m[22m[0m)
+
+[0m[7m[33m[1m RUNS [22m[39m[27m[0m [2m...ests__/[22m[1mstores.test.ts[22m
+
+[1mTest Suites: [22m[1m[32m4 passed[39m[22m, 4 of 5 total
+[1mTests:       [22m[1m[32m48 passed[39m[22m, 48 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        20 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A
+
+[1mTest Suites: [22m[1m[32m5 passed[39m[22m, 5 total
+[1mTests:       [22m[1m[32m49 passed[39m[22m, 49 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        20 s, estimated 30 s
+[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[32m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[37m█[39m[K[1A[K[1A[K[1A[K[1A[K[1A[K[1A[999D[K
+[1mTest Suites: [22m[1m[32m5 passed[39m[22m, 5 total
+[1mTests:       [22m[1m[32m49 passed[39m[22m, 49 total
+[1mSnapshots:   [22m0 total
+[1mTime:[22m        21.167 s, estimated 30 s
+[2mRan all test suites[22m[2m.[22m

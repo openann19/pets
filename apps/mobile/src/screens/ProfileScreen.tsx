@@ -1,11 +1,11 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '@pawfectmatch/core';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuthStore } from '@pawfectmatch/core';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   Image,
@@ -17,6 +17,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { AdvancedCard, CardConfigs } from '../components/Advanced/AdvancedCard';
+import { AdvancedHeader, HeaderConfigs } from '../components/Advanced/AdvancedHeader';
+// import { AdvancedButton } from '../components/Advanced/AdvancedInteractionSystem';
+import { matchesAPI } from '../services/api';
 
 type RootStackParamList = {
   Profile: undefined;
@@ -42,7 +47,7 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
     showBreed: true,
   });
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
@@ -51,17 +56,19 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              logout?.();
-              await AsyncStorage.clear();
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-              });
-            } catch (error) {
-              console.error('Logout error:', error);
-            }
+          onPress: () => {
+            void (async () => {
+              try {
+                logout?.();
+                await AsyncStorage.clear();
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Login' }],
+                });
+              } catch (error) {
+                console.error('Logout error:', error);
+              }
+            })();
           },
         },
       ]
@@ -122,64 +129,128 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Advanced Header */}
+      <AdvancedHeader
+        {...HeaderConfigs.glass({
+          title: 'Profile',
+          rightButtons: [
+            {
+              type: 'edit',
+              onPress: () => {
+                console.log('Edit profile');
+              },
+              variant: 'glass',
+              haptic: 'light',
+            },
+            {
+              type: 'settings',
+              onPress: () => navigation.navigate('Settings'),
+              variant: 'minimal',
+              haptic: 'light',
+            },
+          ],
+          apiActions: {
+            edit: async () => {
+              const userProfile = await matchesAPI.getUserProfile();
+              console.log('Loaded user profile for editing:', userProfile);
+            },
+          },
+        })}
+      />
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <BlurView intensity={20} style={styles.headerBlur}>
-            <View style={styles.profileSection}>
-              <Image
-                source={{ uri: user?.avatar ?? 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150' }}
-                style={styles.profileImage}
-              />
-              <View style={styles.profileInfo}>
-                <Text style={styles.userName}>
-                  {user?.firstName ?? 'User'} {user?.lastName ?? ''}
-                </Text>
-                <Text style={styles.userEmail}>{user?.email ?? 'user@example.com'}</Text>
-                <Text style={styles.memberSince}>
-                  Member since {new Date().getFullYear()}
-                </Text>
-              </View>
+        {/* Profile Header Card */}
+        <AdvancedCard
+          {...CardConfigs.glass({
+            interactions: ['hover', 'press', 'glow'],
+            haptic: 'light',
+            apiAction: async () => {
+              const userProfile = await matchesAPI.getUserProfile();
+              console.log('Loaded user profile:', userProfile);
+            },
+          })}
+          style={styles.header}
+        >
+          <View style={styles.profileSection}>
+            <Image
+              source={{ uri: user?.avatar ?? 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150' }}
+              style={styles.profileImage}
+            />
+            <View style={styles.profileInfo}>
+              <Text style={styles.userName}>
+                {user?.firstName ?? 'User'} {user?.lastName ?? ''}
+              </Text>
+              <Text style={styles.userEmail}>{user?.email ?? 'user@example.com'}</Text>
+              <Text style={styles.memberSince}>
+                Member since {new Date().getFullYear()}
+              </Text>
             </View>
-          </BlurView>
-        </View>
+          </View>
+        </AdvancedCard>
 
         {/* Quick Stats */}
-        <View style={styles.statsSection}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>12</Text>
-            <Text style={styles.statLabel}>Matches</Text>
+        <AdvancedCard
+          {...CardConfigs.glass({
+            interactions: ['hover', 'press', 'glow'],
+            haptic: 'light',
+            apiAction: async () => {
+              const [matches] = await Promise.all([
+                matchesAPI.getMatches().catch(() => []),
+                matchesAPI.getUserProfile().catch(() => null),
+              ]);
+              console.log('Loaded stats:', { matches: matches.length });
+            },
+          })}
+          style={styles.statsSection}
+        >
+          <View style={styles.statsContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>12</Text>
+              <Text style={styles.statLabel}>Matches</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>8</Text>
+              <Text style={styles.statLabel}>Messages</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>3</Text>
+              <Text style={styles.statLabel}>Pets</Text>
+            </View>
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>8</Text>
-            <Text style={styles.statLabel}>Messages</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>3</Text>
-            <Text style={styles.statLabel}>Pets</Text>
-          </View>
-        </View>
+        </AdvancedCard>
 
         {/* Menu Items */}
         <View style={styles.menuSection}>
-          {menuItems.map((item, _index) => (
-            <TouchableOpacity
+          {menuItems.map((item) => (
+            <AdvancedCard
               key={item.title}
+              {...CardConfigs.glass({
+                interactions: ['hover', 'press', 'glow', 'bounce'],
+                haptic: 'medium',
+                onPress: () => {
+                  try {
+                    item.onPress();
+                  } catch (error) {
+                    console.error('Menu item action failed:', error);
+                  }
+                },
+                apiAction: async () => {
+                  console.log(`Menu item ${item.title} API action`);
+                },
+              })}
               style={styles.menuItem}
-              onPress={() => {
-                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                item.onPress();
-              }}
             >
-              <LinearGradient
-                colors={[`${item.color}20`, `${item.color}10`]}
-                style={styles.menuIcon}
-              >
-                <Ionicons name={item.icon as any} size={24} color={item.color} />
-              </LinearGradient>
-              <Text style={styles.menuText}>{item.title}</Text>
-              <Ionicons name="chevron-forward" size={20} color="#ccc" />
-            </TouchableOpacity>
+              <View style={styles.menuItemContent}>
+                <LinearGradient
+                  colors={[`${item.color}20`, `${item.color}10`]}
+                  style={styles.menuIcon}
+                >
+                  <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={24} color={item.color} />
+                </LinearGradient>
+                <Text style={styles.menuText}>{item.title}</Text>
+                <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              </View>
+            </AdvancedCard>
           ))}
         </View>
 
@@ -405,6 +476,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  statsContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  menuItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

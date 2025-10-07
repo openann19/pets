@@ -1,478 +1,345 @@
-import { apiClient } from '@pawfectmatch/core';
+import { 
+  apiClient, 
+  type Pet, 
+  type User, 
+  type Match, 
+  type Message, 
+  type PetFilters
+} from '@pawfectmatch/core';
 
-// API service for mobile app
+// Local type definition for adoption application
+interface AdoptionApplication {
+  _id: string;
+  petId: string;
+  applicantId: string;
+  applicant: User;
+  pet: Pet;
+  status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
+  applicationData: {
+    experience: string;
+    livingSituation: string;
+    otherPets: string;
+    timeAlone: string;
+    vetReference?: string;
+    personalReference?: string;
+    additionalInfo?: string;
+  };
+  submittedAt: string;
+}
+
+// API service for mobile app with proper typing
 export const matchesAPI = {
   // Get user's matches
-  getMatches: async () => {
-    try {
-      // Use the core API client
-      const response = await apiClient.get('/matches');
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch matches');
-    } catch (error) {
-      console.error('Error fetching matches:', error);
-      throw error;
+  getMatches: async (): Promise<Match[]> => {
+    const response = await apiClient.get<Match[]>('/matches');
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch matches');
   },
 
   // Get specific match details
-  getMatch: async (matchId: string) => {
-    try {
-      const response = await apiClient.get(`/matches/${matchId}`);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch match');
-    } catch (error) {
-      console.error('Error fetching match:', error);
-      throw error;
+  getMatch: async (matchId: string): Promise<Match> => {
+    const response = await apiClient.get<Match>(`/matches/${matchId}`);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch match');
   },
 
   // Create a new match (like/swipe)
-  createMatch: async (petId: string, targetPetId: string) => {
-    try {
-      const response = await apiClient.post('/matches', { petId, targetPetId });
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to create match');
-    } catch (error) {
-      console.error('Error creating match:', error);
-      throw error;
+  createMatch: async (petId: string, targetPetId: string): Promise<Match> => {
+    const response = await apiClient.post<Match>('/matches', { petId, targetPetId });
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to create match');
   },
 
   // Get chat messages for a match
-  getMessages: async (matchId: string) => {
-    try {
-      const response = await apiClient.get(`/chat/${matchId}`);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch messages');
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      throw error;
+  getMessages: async (matchId: string): Promise<Message[]> => {
+    const response = await apiClient.get<Message[]>(`/matches/${matchId}/messages`);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch messages');
   },
 
   // Send a message
-  sendMessage: async (matchId: string, content: string) => {
-    try {
-      const response = await apiClient.post('/chat', { matchId, content });
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to send message');
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
+  sendMessage: async (matchId: string, content: string): Promise<Message> => {
+    const response = await apiClient.post<Message>(`/matches/${matchId}/messages`, { content });
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to send message');
   },
 
   // Get pets for swiping
-  getPets: async (filters?: any) => {
-    try {
-      const queryString = filters ? `?${new URLSearchParams(filters).toString()}` : '';
-      const response = await apiClient.get(`/pets${queryString}`);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch pets');
-    } catch (error) {
-      console.error('Error fetching pets:', error);
-      throw error;
+  getPets: async (filters?: PetFilters): Promise<Pet[]> => {
+    const queryString = filters ? `?${new URLSearchParams(filters as Record<string, string>).toString()}` : '';
+    const response = await apiClient.get<Pet[]>(`/pets${queryString}`);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch pets');
   },
 
   // Get user profile
-  getUserProfile: async () => {
-    try {
-      const response = await apiClient.get('/users/me');
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch user profile');
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      throw error;
+  getUserProfile: async (): Promise<User> => {
+    const response = await apiClient.get<User>('/users/me');
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch user profile');
   },
 
   // Update user profile
-  updateUserProfile: async (profileData: any) => {
-    try {
-      const response = await apiClient.put('/users/me', profileData);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to update user profile');
-    } catch (error) {
-      console.error('Error updating user profile:', error);
-      throw error;
+  updateUserProfile: async (profileData: Partial<User>): Promise<User> => {
+    const response = await apiClient.put<User>('/users/me', profileData);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to update user profile');
   },
 
   // Upload pet photos
-  uploadPetPhotos: async (petId: string, photos: FormData) => {
-    try {
-      const response = await apiClient.post(`/pets/${petId}/photos`, photos, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to upload photos');
-    } catch (error) {
-      console.error('Error uploading photos:', error);
-      throw error;
+  uploadPetPhotos: async (petId: string, photos: FormData): Promise<Pet> => {
+    const response = await apiClient.post<Pet>(`/pets/${petId}/photos`, photos, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to upload photos');
   },
 
   // Get pet details
-  getPet: async (petId: string) => {
-    try {
-      const response = await apiClient.get(`/pets/${petId}`);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch pet');
-    } catch (error) {
-      console.error('Error fetching pet:', error);
-      throw error;
+  getPet: async (petId: string): Promise<Pet> => {
+    const response = await apiClient.get<Pet>(`/pets/${petId}`);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch pet');
   },
 
   // Create pet profile
-  createPet: async (petData: any) => {
-    try {
-      const response = await apiClient.post('/pets', petData);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to create pet');
-    } catch (error) {
-      console.error('Error creating pet:', error);
-      throw error;
+  createPet: async (petData: Partial<Pet>): Promise<Pet> => {
+    const response = await apiClient.post<Pet>('/pets', petData);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to create pet');
   },
 
   // Update pet profile
-  updatePet: async (petId: string, petData: any) => {
-    try {
-      const response = await apiClient.put(`/pets/${petId}`, petData);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to update pet');
-    } catch (error) {
-      console.error('Error updating pet:', error);
-      throw error;
+  updatePet: async (petId: string, petData: Partial<Pet>): Promise<Pet> => {
+    const response = await apiClient.put<Pet>(`/pets/${petId}`, petData);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to update pet');
   },
 
   // Delete pet profile
-  deletePet: async (petId: string) => {
-    try {
-      const response = await apiClient.delete(`/pets/${petId}`);
-      if (response.success) {
-        return true;
-      }
-      throw new Error('Failed to delete pet');
-    } catch (error) {
-      console.error('Error deleting pet:', error);
-      throw error;
+  deletePet: async (petId: string): Promise<boolean> => {
+    const response = await apiClient.delete<boolean>(`/pets/${petId}`);
+    if (response.success) {
+      return true;
     }
+    throw new Error(response.error ?? 'Failed to delete pet');
   },
 
   // Get adoption applications
-  getAdoptionApplications: async () => {
-    try {
-      const response = await apiClient.get('/adoption/applications');
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch adoption applications');
-    } catch (error) {
-      console.error('Error fetching adoption applications:', error);
-      throw error;
+  getAdoptionApplications: async (): Promise<AdoptionApplication[]> => {
+    const response = await apiClient.get<AdoptionApplication[]>('/adoption/applications');
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch adoption applications');
   },
 
   // Submit adoption application
-  submitAdoptionApplication: async (applicationData: any) => {
-    try {
-      const response = await apiClient.post('/adoption/applications', applicationData);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to submit adoption application');
-    } catch (error) {
-      console.error('Error submitting adoption application:', error);
-      throw error;
+  submitAdoptionApplication: async (applicationData: Omit<AdoptionApplication, '_id' | 'submittedAt' | 'applicant' | 'pet'>): Promise<AdoptionApplication> => {
+    const response = await apiClient.post<AdoptionApplication>('/adoption/applications', applicationData);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to submit adoption application');
   },
 
   // Get premium features
-  getPremiumFeatures: async () => {
-    try {
-      const response = await apiClient.get('/premium/features');
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch premium features');
-    } catch (error) {
-      console.error('Error fetching premium features:', error);
-      throw error;
+  getPremiumFeatures: async (): Promise<Record<string, boolean>> => {
+    const response = await apiClient.get<Record<string, boolean>>('/premium/features');
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch premium features');
   },
 
   // Subscribe to premium
-  subscribeToPremium: async (subscriptionData: any) => {
-    try {
-      const response = await apiClient.post('/premium/subscribe', subscriptionData);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to subscribe to premium');
-    } catch (error) {
-      console.error('Error subscribing to premium:', error);
-      throw error;
+  subscribeToPremium: async (subscriptionData: { plan: 'basic' | 'premium' | 'gold'; paymentMethodId: string }): Promise<{ success: boolean; subscriptionId: string }> => {
+    const response = await apiClient.post<{ success: boolean; subscriptionId: string }>('/premium/subscribe', subscriptionData);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to subscribe to premium');
   },
 
   // Cancel premium subscription
-  cancelPremiumSubscription: async () => {
-    try {
-      const response = await apiClient.post('/premium/cancel');
-      if (response.success) {
-        return true;
-      }
-      throw new Error('Failed to cancel premium subscription');
-    } catch (error) {
-      console.error('Error canceling premium subscription:', error);
-      throw error;
+  cancelPremiumSubscription: async (): Promise<boolean> => {
+    const response = await apiClient.post<boolean>('/premium/cancel');
+    if (response.success) {
+      return true;
     }
+    throw new Error(response.error ?? 'Failed to cancel premium subscription');
   },
 
   // Get user settings
-  getUserSettings: async () => {
-    try {
-      const response = await apiClient.get('/users/settings');
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch user settings');
-    } catch (error) {
-      console.error('Error fetching user settings:', error);
-      throw error;
+  getUserSettings: async (): Promise<User['preferences']> => {
+    const response = await apiClient.get<User['preferences']>('/users/settings');
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch user settings');
   },
 
   // Update user settings
-  updateUserSettings: async (settings: any) => {
-    try {
-      const response = await apiClient.put('/users/settings', settings);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to update user settings');
-    } catch (error) {
-      console.error('Error updating user settings:', error);
-      throw error;
+  updateUserSettings: async (settings: User['preferences']): Promise<User['preferences']> => {
+    const response = await apiClient.put<User['preferences']>('/users/settings', settings);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to update user settings');
   },
 
   // Get notifications
-  getNotifications: async () => {
-    try {
-      const response = await apiClient.get('/notifications');
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch notifications');
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      throw error;
+  getNotifications: async (): Promise<Array<{ _id: string; type: string; title: string; message: string; read: boolean; createdAt: string }>> => {
+    const response = await apiClient.get<Array<{ _id: string; type: string; title: string; message: string; read: boolean; createdAt: string }>>('/notifications');
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch notifications');
   },
 
   // Mark notification as read
-  markNotificationAsRead: async (notificationId: string) => {
-    try {
-      const response = await apiClient.put(`/notifications/${notificationId}/read`);
-      if (response.success) {
-        return true;
-      }
-      throw new Error('Failed to mark notification as read');
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-      throw error;
+  markNotificationAsRead: async (notificationId: string): Promise<boolean> => {
+    const response = await apiClient.put<boolean>(`/notifications/${notificationId}/read`);
+    if (response.success) {
+      return true;
     }
+    throw new Error(response.error ?? 'Failed to mark notification as read');
   },
 
   // Delete notification
-  deleteNotification: async (notificationId: string) => {
-    try {
-      const response = await apiClient.delete(`/notifications/${notificationId}`);
-      if (response.success) {
-        return true;
-      }
-      throw new Error('Failed to delete notification');
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-      throw error;
+  deleteNotification: async (notificationId: string): Promise<boolean> => {
+    const response = await apiClient.delete<boolean>(`/notifications/${notificationId}`);
+    if (response.success) {
+      return true;
     }
+    throw new Error(response.error ?? 'Failed to delete notification');
   },
 
   // Get app statistics
-  getAppStatistics: async () => {
-    try {
-      const response = await apiClient.get('/stats');
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch app statistics');
-    } catch (error) {
-      console.error('Error fetching app statistics:', error);
-      throw error;
+  getAppStatistics: async (): Promise<Record<string, number>> => {
+    const response = await apiClient.get<Record<string, number>>('/stats');
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch app statistics');
   },
 
   // Report user or content
-  reportContent: async (reportData: any) => {
-    try {
-      const response = await apiClient.post('/reports', reportData);
-      if (response.success) {
-        return true;
-      }
-      throw new Error('Failed to submit report');
-    } catch (error) {
-      console.error('Error submitting report:', error);
-      throw error;
+  reportContent: async (reportData: { type: 'user' | 'pet' | 'message'; targetId: string; reason: string; description?: string }): Promise<boolean> => {
+    const response = await apiClient.post<boolean>('/reports', reportData);
+    if (response.success) {
+      return true;
     }
+    throw new Error(response.error ?? 'Failed to submit report');
   },
 
   // Block user
-  blockUser: async (userId: string) => {
-    try {
-      const response = await apiClient.post('/users/block', { userId });
-      if (response.success) {
-        return true;
-      }
-      throw new Error('Failed to block user');
-    } catch (error) {
-      console.error('Error blocking user:', error);
-      throw error;
+  blockUser: async (userId: string): Promise<boolean> => {
+    const response = await apiClient.post<boolean>('/users/block', { userId });
+    if (response.success) {
+      return true;
     }
+    throw new Error(response.error ?? 'Failed to block user');
   },
 
   // Unblock user
-  unblockUser: async (userId: string) => {
-    try {
-      const response = await apiClient.post('/users/unblock', { userId });
-      if (response.success) {
-        return true;
-      }
-      throw new Error('Failed to unblock user');
-    } catch (error) {
-      console.error('Error unblocking user:', error);
-      throw error;
+  unblockUser: async (userId: string): Promise<boolean> => {
+    const response = await apiClient.post<boolean>('/users/unblock', { userId });
+    if (response.success) {
+      return true;
     }
+    throw new Error(response.error ?? 'Failed to unblock user');
   },
 
   // Get blocked users
-  getBlockedUsers: async () => {
-    try {
-      const response = await apiClient.get('/users/blocked');
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch blocked users');
-    } catch (error) {
-      console.error('Error fetching blocked users:', error);
-      throw error;
+  getBlockedUsers: async (): Promise<User[]> => {
+    const response = await apiClient.get<User[]>('/users/blocked');
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch blocked users');
   },
 
   // Search pets
-  searchPets: async (query: string, filters?: any) => {
-    try {
-      const params = new URLSearchParams({ q: query, ...filters });
-      const response = await apiClient.get(`/search/pets?${params.toString()}`);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to search pets');
-    } catch (error) {
-      console.error('Error searching pets:', error);
-      throw error;
+  searchPets: async (query: string, filters?: PetFilters): Promise<Pet[]> => {
+    const params = new URLSearchParams({ q: query, ...(filters as Record<string, string>) });
+    const response = await apiClient.get<Pet[]>(`/search/pets?${params.toString()}`);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to search pets');
   },
 
   // Get nearby pets
-  getNearbyPets: async (latitude: number, longitude: number, radius?: number) => {
-    try {
-      const params = new URLSearchParams({
-        lat: latitude.toString(),
-        lng: longitude.toString(),
-        ...(radius && { radius: radius.toString() })
-      });
-      const response = await apiClient.get(`/pets/nearby?${params.toString()}`);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch nearby pets');
-    } catch (error) {
-      console.error('Error fetching nearby pets:', error);
-      throw error;
+  getNearbyPets: async (latitude: number, longitude: number, radius?: number): Promise<Pet[]> => {
+    const params = new URLSearchParams({
+      lat: latitude.toString(),
+      lng: longitude.toString(),
+      ...(radius !== undefined && radius !== null && { radius: radius.toString() })
+    });
+    const response = await apiClient.get<Pet[]>(`/pets/nearby?${params.toString()}`);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch nearby pets');
   },
 
   // Get pet compatibility
-  getPetCompatibility: async (pet1Id: string, pet2Id: string) => {
-    try {
-      const response = await apiClient.get(`/compatibility/${pet1Id}/${pet2Id}`);
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch pet compatibility');
-    } catch (error) {
-      console.error('Error fetching pet compatibility:', error);
-      throw error;
+  getPetCompatibility: async (pet1Id: string, pet2Id: string): Promise<{ compatibility_score: number; factors: string[]; recommendation: string }> => {
+    const response = await apiClient.get<{ compatibility_score: number; factors: string[]; recommendation: string }>(`/compatibility/${pet1Id}/${pet2Id}`);
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch pet compatibility');
   },
 
   // Get user activity
-  getUserActivity: async () => {
-    try {
-      const response = await apiClient.get('/users/activity');
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch user activity');
-    } catch (error) {
-      console.error('Error fetching user activity:', error);
-      throw error;
+  getUserActivity: async (): Promise<Array<{ type: string; description: string; timestamp: string }>> => {
+    const response = await apiClient.get<Array<{ type: string; description: string; timestamp: string }>>('/users/activity');
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch user activity');
   },
 
   // Get app version info
-  getAppVersion: async () => {
-    try {
-      const response = await apiClient.get('/version');
-      if (response.success && response.data) {
-        return response.data;
-      }
-      throw new Error('Failed to fetch app version');
-    } catch (error) {
-      console.error('Error fetching app version:', error);
-      throw error;
+  getAppVersion: async (): Promise<{ version: string; build: string; environment: string }> => {
+    const response = await apiClient.get<{ version: string; build: string; environment: string }>('/version');
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch app version');
   }
 };
+
+// Export the main API service instance
+export const api = matchesAPI;
+
+// Export adoption API (alias for now, can be extended later)
+export const adoptionAPI = matchesAPI;

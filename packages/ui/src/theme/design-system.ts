@@ -159,6 +159,21 @@ export const COLORS = {
     950: '#450a0a',
   },
 
+  // === DANGER STATES (alias for error) ===
+  danger: {
+    50: '#fef2f2',
+    100: '#fee2e2',
+    200: '#fecaca',
+    300: '#fca5a5',
+    400: '#f87171',
+    500: '#ef4444',  // Main danger
+    600: '#dc2626',
+    700: '#b91c1c',
+    800: '#991b1b',
+    900: '#7f1d1d',
+    950: '#450a0a',
+  },
+
   // === NEUTRAL GRAYS ===
   neutral: {
     0: '#ffffff',
@@ -220,6 +235,17 @@ export const GRADIENTS = {
     cool: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
     sunset: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 25%, #fecfef 50%, #f093fb 75%, #a8edea 100%)',
   },
+
+  // Status gradients
+  success: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+  warning: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+  danger: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+
+  // Premium effect gradients
+  holographic: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
+  holographicHover: 'linear-gradient(135deg, #764ba2 0%, #f093fb 25%, #f5576c 50%, #4facfe 75%, #667eea 100%)',
+  neon: 'linear-gradient(135deg, #00f5ff 0%, #ff00ff 50%, #ffff00 100%)',
+  neonHover: 'linear-gradient(135deg, #ff00ff 0%, #ffff00 50%, #00f5ff 100%)',
 } as const;
 
 // ====== PREMIUM TYPOGRAPHY ======
@@ -337,6 +363,11 @@ export const SHADOWS = {
   successGlow: '0 20px 40px -12px rgba(34, 197, 94, 0.4)',
   warningGlow: '0 20px 40px -12px rgba(245, 158, 11, 0.4)',
   errorGlow: '0 20px 40px -12px rgba(239, 68, 68, 0.4)',
+  dangerGlow: '0 20px 40px -12px rgba(239, 68, 68, 0.4)',
+
+  // Premium effect shadows
+  holographicGlow: '0 20px 40px -12px rgba(102, 126, 234, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+  neonGlow: '0 0 20px rgba(0, 245, 255, 0.6), 0 0 40px rgba(255, 0, 255, 0.4), 0 0 60px rgba(255, 255, 0, 0.2)',
 
   // Glass morphism shadows
   glass: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',

@@ -1,7 +1,8 @@
-import React, { Component, ReactNode } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import type { ReactNode } from 'react';
+import React, { Component } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
   children: ReactNode;

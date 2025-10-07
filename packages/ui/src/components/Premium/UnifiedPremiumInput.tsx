@@ -80,7 +80,7 @@ export function UnifiedPremiumInput({
     const sizeStyle = baseStyles[size] ?? '';
     const variantStyle = variantStyles[variant] ?? variantStyles.default;
 
-    const stateStyle = error !== undefined && error !== null && error !== ''
+    const stateStyle = error != null && error !== ''
       ? variantStyle.error 
       : success === true
       ? variantStyle.success 
@@ -106,7 +106,7 @@ export function UnifiedPremiumInput({
   return (
     <div className={`w-full ${className}`}>
       {/* Label */}
-      {label && (
+      {label != null && label !== '' && (
         <label className="block text-sm font-medium text-white/80 mb-2">
           {label}
           {required && <span className="text-pink-500 ml-1">*</span>}
@@ -131,34 +131,34 @@ export function UnifiedPremiumInput({
         />
 
         {/* Icon */}
-        {icon && (
+        {icon != null && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60">
             {icon}
           </div>
         )}
 
         {/* Validation Indicators */}
-        {error && (
+        {error != null && error !== '' ? (
           <motion.div
             className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.2 }}
           />
-        )}
+        ) : null}
 
-        {success && !error && (
+        {success && (error == null || error === '') ? (
           <motion.div
             className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.2 }}
           />
-        )}
+        ) : null}
       </div>
 
       {/* Error Message */}
-      {error && (
+      {error != null && error !== '' ? (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
@@ -169,10 +169,10 @@ export function UnifiedPremiumInput({
           </svg>
           {error}
         </motion.div>
-      )}
+      ) : null}
 
       {/* Success Message */}
-      {success && !error && (
+      {success && (error == null || error === '') ? (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
@@ -183,7 +183,7 @@ export function UnifiedPremiumInput({
           </svg>
           Valid input
         </motion.div>
-      )}
+      ) : null}
     </div>
   );
 }

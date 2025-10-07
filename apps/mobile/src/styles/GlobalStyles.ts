@@ -1,6 +1,16 @@
 import { StyleSheet, Dimensions, Platform } from 'react-native';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+// Lazy load dimensions to avoid issues in test environment
+const getScreenDimensions = () => {
+  try {
+    return Dimensions.get('window');
+  } catch (error) {
+    // Fallback for test environment
+    return { width: 375, height: 812 };
+  }
+};
+
+const { width: screenWidth, height: screenHeight } = getScreenDimensions();
 
 // === ELITE DESIGN TOKENS ===
 export const Colors = {
@@ -239,7 +249,7 @@ export const GlobalStyles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1000,
-    paddingTop: Platform.OS === 'ios' ? 0 : 24,
+    paddingTop: (Platform?.OS === 'ios') ? 0 : 24,
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.glassDark,
   },
@@ -633,15 +643,15 @@ export const AnimationConfigs = {
   },
   timing: {
     duration: 600,
-    easing: 'bezier(0.4, 0, 0.2, 1)' as any,
+    easing: 'bezier(0.4, 0, 0.2, 1)' as const,
   },
   timingFast: {
     duration: 300,
-    easing: 'bezier(0.4, 0, 0.2, 1)' as any,
+    easing: 'bezier(0.4, 0, 0.2, 1)' as const,
   },
   timingSlow: {
     duration: 800,
-    easing: 'bezier(0.4, 0, 0.2, 1)' as any,
+    easing: 'bezier(0.4, 0, 0.2, 1)' as const,
   },
 };
 
@@ -652,8 +662,8 @@ export const Device = {
   isSmall: screenWidth < 375,
   isMedium: screenWidth >= 375 && screenWidth < 414,
   isLarge: screenWidth >= 414,
-  isIOS: Platform.OS === 'ios',
-  isAndroid: Platform.OS === 'android',
+  isIOS: (Platform?.OS === 'ios'),
+  isAndroid: (Platform?.OS === 'android'),
 };
 
 export default GlobalStyles;

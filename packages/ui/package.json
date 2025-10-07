@@ -12,7 +12,9 @@
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@react-aria/button": "^3.9.2",
@@ -31,6 +33,19 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@heroicons/react": "^2.0.0",
+    "@storybook/addon-actions": "^7.6.0",
+    "@storybook/addon-a11y": "^7.6.0",
+    "@storybook/addon-backgrounds": "^7.6.0",
+    "@storybook/addon-controls": "^7.6.0",
+    "@storybook/addon-docs": "^7.6.0",
+    "@storybook/addon-essentials": "^7.6.0",
+    "@storybook/addon-interactions": "^7.6.0",
+    "@storybook/addon-measure": "^7.6.0",
+    "@storybook/addon-outline": "^7.6.0",
+    "@storybook/addon-viewport": "^7.6.0",
+    "@storybook/react": "^7.6.0",
+    "@storybook/react-vite": "^7.6.0",
     "@testing-library/jest-dom": "^5.16.0",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.0",
@@ -39,8 +54,11 @@
     "@types/react-dom": "^18.2.7",
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.5.0",
+    "storybook": "^7.6.0",
+    "tailwindcss": "^3.4.0",
     "ts-jest": "^29.1.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vite": "^5.0.0"
   },
   "peerDependencies": {
     "react": "^18.2.0",
