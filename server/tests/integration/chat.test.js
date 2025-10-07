@@ -18,6 +18,11 @@ beforeAll(async () => {
     instanceOpts: { replSet: { count: 1 } }
   });
   const mongoUri = mongoServer.getUri();
+  
+  // Disconnect existing connection and connect to test database
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.disconnect();
+  }
   await mongoose.connect(mongoUri);
 
   // Create two users with pets and a match
@@ -98,15 +103,25 @@ beforeAll(async () => {
 }, 30000);
 
 afterAll(async () => {
-  if (httpServer) {
-    await httpServer.close();
+  try {
+    if (httpServer) {
+      await new Promise((resolve) => {
+        httpServer.close(() => resolve());
+      });
+    }
+    
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.dropDatabase();
+      await mongoose.connection.close();
+    }
+    
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
+  } catch (error) {
+    console.error('Error in afterAll cleanup:', error);
   }
-  await mongoose.connection.dropDatabase();
-  await mongoose.connection.close();
-  if (mongoServer) {
-    await mongoServer.stop();
-  }
-});
+}, 10000);
 
 describe('Chat & Messaging Tests', () => {
   describe('GET /api/chat/history/:matchId', () => {
