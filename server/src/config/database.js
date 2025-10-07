@@ -1,354 +1,207 @@
 const mongoose = require('mongoose');
 const logger = require('../utils/logger');
 
-/**
- * Database Configuration and Connection Management
- * Provides optimized MongoDB connection with pooling and monitoring
- */
+// MongoDB connection configuration with robust error handling
+class DatabaseConnection {
+  constructor() {
+    this.isConnected = false;
+    this.connectionRetries = 0;
+    this.maxRetries = 5;
+    this.retryDelay = 5000;
+    this.reconnectInterval = null;
+  }
 
-// Production-optimized connection options
-const getConnectionOptions = () => {
-  const isProduction = process.env.NODE_ENV === 'production';
-  
-  return {
-    // Connection Pool Settings
-    maxPoolSize: isProduction ? 20 : 10, // Maximum number of connections
-    minPoolSize: isProduction ? 5 : 2,   // Minimum number of connections
-    maxIdleTimeMS: 30000,                // Close connections after 30 seconds of inactivity
-    serverSelectionTimeoutMS: 5000,      // How long to try selecting a server
-    socketTimeoutMS: 45000,              // How long a send or receive on a socket can take
-    family: 4,                           // Use IPv4, skip trying IPv6
-    
-    // Write Concern Settings
-    w: 'majority',                       // Write to majority of replica set members
-    j: true,                             // Wait for journal write
-    wtimeout: 10000,                     // Write concern timeout
-    
-    // Read Preference
-    readPreference: 'primaryPreferred',  // Prefer primary, fallback to secondary
-    
-    // Retry Settings
-    retryWrites: true,                   // Retry writes on transient errors
-    retryReads: true,                    // Retry reads on transient errors
-    
-    // Buffer Settings
-    bufferMaxEntries: 0,                 // Disable mongoose buffering
-    bufferCommands: false,               // Disable mongoose buffering
-    
-    // Compression
-    compressors: ['zlib'],               // Enable compression
-    
-    // SSL/TLS
-    ssl: isProduction,                   // Use SSL in production
-    sslValidate: isProduction,           // Validate SSL certificates in production
-    
-    // Monitoring
-    monitorCommands: isProduction,       // Enable command monitoring in production
-  };
-};
+  async connect() {
+    // Skip if already connected
+    if (this.isConnected) {
+      logger.info('📊 MongoDB already connected');
+      return;
+    }
 
-/**
- * Initialize database connection with optimized settings
- */
-async function connectDatabase() {
-  try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/pawfectmatch';
-    const options = getConnectionOptions();
+    const mongoUri = process.env.MONGODB_URI;
     
-    logger.info('Connecting to MongoDB...', {
-      uri: mongoUri.replace(/\/\/.*@/, '//***:***@'), // Hide credentials in logs
-      options: {
-        maxPoolSize: options.maxPoolSize,
-        minPoolSize: options.minPoolSize,
-        ssl: options.ssl
-      }
+    if (!mongoUri) {
+      logger.error('❌ MONGODB_URI not provided in environment variables');
+      throw new Error('MongoDB URI is required');
+    }
+
+    // Validate URI format
+    try {
+      new URL(mongoUri);
+    } catch (error) {
+      logger.error('❌ Invalid MONGODB_URI format:', mongoUri);
+      throw new Error('Invalid MongoDB URI format');
+    }
+
+    // Configure mongoose options for better reliability
+    const mongooseOptions = {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      family: 4, // Force IPv4
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      retryWrites: true,
+      w: 'majority',
+    };
+
+    try {
+      await this.attemptConnection(mongoUri, mongooseOptions);
+      this.setupEventHandlers();
+      this.isConnected = true;
+      this.connectionRetries = 0;
+    } catch (error) {
+      await this.handleConnectionError(error, mongoUri, mongooseOptions);
+    }
+  }
+
+  async attemptConnection(uri, options) {
+    logger.info('🔄 Attempting MongoDB connection...');
+    
+    const conn = await mongoose.connect(uri, options);
+    
+    logger.info(`✅ MongoDB Connected Successfully`);
+    logger.info(`📍 Host: ${conn.connection.host}`);
+    logger.info(`📊 Database: ${conn.connection.name}`);
+    logger.info(`🔌 Port: ${conn.connection.port}`);
+    
+    return conn;
+  }
+
+  async handleConnectionError(error, uri, options) {
+    this.connectionRetries++;
+    
+    logger.error(`❌ MongoDB connection attempt ${this.connectionRetries}/${this.maxRetries} failed`);
+    logger.error(`📝 Error: ${error.message}`);
+    
+    if (this.connectionRetries >= this.maxRetries) {
+      logger.error('❌ All MongoDB connection attempts exhausted');
+      throw new Error('Failed to connect to MongoDB after maximum retries');
+    }
+    
+    logger.info(`⏳ Retrying connection in ${this.retryDelay / 1000} seconds...`);
+    
+    await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+    
+    // Exponential backoff for retry delay
+    this.retryDelay = Math.min(this.retryDelay * 1.5, 30000);
+    
+    // Recursive retry
+    await this.connect();
+  }
+
+  setupEventHandlers() {
+    // Connection event handlers
+    mongoose.connection.on('connected', () => {
+      logger.info('✅ Mongoose connected to MongoDB');
+      this.isConnected = true;
+      this.clearReconnectInterval();
     });
+
+    mongoose.connection.on('error', (err) => {
+      logger.error('❌ Mongoose connection error:', err);
+      this.isConnected = false;
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      logger.warn('⚠️  Mongoose disconnected from MongoDB');
+      this.isConnected = false;
+      this.scheduleReconnect();
+    });
+
+    mongoose.connection.on('reconnected', () => {
+      logger.info('✅ Mongoose reconnected to MongoDB');
+      this.isConnected = true;
+      this.clearReconnectInterval();
+    });
+
+    // Process event handlers
+    process.on('SIGINT', async () => {
+      await this.gracefulShutdown('SIGINT');
+    });
+
+    process.on('SIGTERM', async () => {
+      await this.gracefulShutdown('SIGTERM');
+    });
+  }
+
+  scheduleReconnect() {
+    if (this.reconnectInterval) return;
     
-    await mongoose.connect(mongoUri, options);
+    this.reconnectInterval = setInterval(async () => {
+      if (!this.isConnected) {
+        logger.info('🔄 Attempting to reconnect to MongoDB...');
+        try {
+          await this.connect();
+        } catch (error) {
+          logger.error('❌ Reconnection failed:', error.message);
+        }
+      }
+    }, 10000); // Try every 10 seconds
+  }
+
+  clearReconnectInterval() {
+    if (this.reconnectInterval) {
+      clearInterval(this.reconnectInterval);
+      this.reconnectInterval = null;
+    }
+  }
+
+  async gracefulShutdown(signal) {
+    logger.info(`📴 ${signal} received: closing MongoDB connection`);
     
-    logger.info('✅ MongoDB connected successfully', {
+    this.clearReconnectInterval();
+    
+    try {
+      await mongoose.connection.close();
+      logger.info('✅ MongoDB connection closed gracefully');
+      process.exit(0);
+    } catch (error) {
+      logger.error('❌ Error during graceful shutdown:', error);
+      process.exit(1);
+    }
+  }
+
+  async disconnect() {
+    if (this.isConnected) {
+      await mongoose.connection.close();
+      this.isConnected = false;
+      logger.info('📊 MongoDB disconnected');
+    }
+  }
+
+  getConnectionStatus() {
+    return {
+      isConnected: this.isConnected,
+      readyState: mongoose.connection.readyState,
       host: mongoose.connection.host,
       port: mongoose.connection.port,
       name: mongoose.connection.name,
-      readyState: mongoose.connection.readyState
-    });
-    
-    // Set up connection event listeners
-    setupConnectionListeners();
-    
-    return mongoose.connection;
-    
-  } catch (error) {
-    logger.error('❌ MongoDB connection failed:', error);
-    throw error;
-  }
-}
-
-/**
- * Set up database connection event listeners
- */
-function setupConnectionListeners() {
-  const connection = mongoose.connection;
-  
-  connection.on('connected', () => {
-    logger.info('📡 MongoDB connection established');
-  });
-  
-  connection.on('error', (error) => {
-    logger.error('❌ MongoDB connection error:', error);
-  });
-  
-  connection.on('disconnected', () => {
-    logger.warn('⚠️ MongoDB connection lost');
-  });
-  
-  connection.on('reconnected', () => {
-    logger.info('🔄 MongoDB reconnected');
-  });
-  
-  // Monitor slow operations in production
-  if (process.env.NODE_ENV === 'production') {
-    mongoose.set('debug', (collectionName, method, query, doc) => {
-      logger.debug('MongoDB Query:', {
-        collection: collectionName,
-        method: method,
-        query: JSON.stringify(query),
-        doc: doc ? JSON.stringify(doc) : undefined
-      });
-    });
-  }
-}
-
-/**
- * Create database indexes for optimal performance
- */
-async function createIndexes() {
-  try {
-    logger.info('📊 Creating database indexes...');
-    
-    const User = require('../models/User');
-    const Pet = require('../models/Pet');
-    const Match = require('../models/Match');
-    const BreedProfile = require('../models/BreedProfile');
-    
-    // User indexes
-    await User.collection.createIndex({ email: 1 }, { unique: true });
-    await User.collection.createIndex({ 'location.coordinates': '2dsphere' });
-    await User.collection.createIndex({ isActive: 1 });
-    await User.collection.createIndex({ createdAt: -1 });
-    await User.collection.createIndex({ 'subscription.status': 1 });
-    await User.collection.createIndex({ 'subscription.plan': 1 });
-    
-    // Pet indexes
-    await Pet.collection.createIndex({ owner: 1 });
-    await Pet.collection.createIndex({ species: 1 });
-    await Pet.collection.createIndex({ breed: 1 });
-    await Pet.collection.createIndex({ isActive: 1 });
-    await Pet.collection.createIndex({ age: 1 });
-    await Pet.collection.createIndex({ size: 1 });
-    await Pet.collection.createIndex({ createdAt: -1 });
-    
-    // Compound indexes for common queries
-    await Pet.collection.createIndex({ owner: 1, isActive: 1 });
-    await Pet.collection.createIndex({ species: 1, breed: 1 });
-    await Pet.collection.createIndex({ species: 1, age: 1, size: 1 });
-    
-    // Match indexes
-    await Match.collection.createIndex({ user1: 1, user2: 1 });
-    await Match.collection.createIndex({ status: 1 });
-    await Match.collection.createIndex({ lastActivity: -1 });
-    await Match.collection.createIndex({ matchedAt: -1 });
-    await Match.collection.createIndex({ 'userActions.user1.isBlocked': 1 });
-    await Match.collection.createIndex({ 'userActions.user2.isBlocked': 1 });
-    
-    // Compound indexes for match queries
-    await Match.collection.createIndex({ user1: 1, status: 1 });
-    await Match.collection.createIndex({ user2: 1, status: 1 });
-    await Match.collection.createIndex({ status: 1, lastActivity: -1 });
-    
-    // Breed profile indexes
-    await BreedProfile.collection.createIndex({ species: 1 });
-    await BreedProfile.collection.createIndex({ name: 1 });
-    await BreedProfile.collection.createIndex({ isActive: 1 });
-    await BreedProfile.collection.createIndex({ species: 1, name: 1 });
-    
-    logger.info('✅ Database indexes created successfully');
-    
-  } catch (error) {
-    logger.error('❌ Error creating database indexes:', error);
-    throw error;
-  }
-}
-
-/**
- * Get database connection statistics
- */
-async function getConnectionStats() {
-  try {
-    const connection = mongoose.connection;
-    const admin = connection.db.admin();
-    
-    const stats = await admin.serverStatus();
-    const dbStats = await connection.db.stats();
-    
-    return {
-      connection: {
-        readyState: connection.readyState,
-        host: connection.host,
-        port: connection.port,
-        name: connection.name
-      },
-      pool: {
-        maxPoolSize: connection.config.maxPoolSize,
-        minPoolSize: connection.config.minPoolSize,
-        currentConnections: stats.connections?.current || 0,
-        availableConnections: stats.connections?.available || 0
-      },
-      database: {
-        collections: dbStats.collections,
-        dataSize: dbStats.dataSize,
-        storageSize: dbStats.storageSize,
-        indexes: dbStats.indexes,
-        indexSize: dbStats.indexSize
-      },
-      operations: {
-        insert: stats.opcounters?.insert || 0,
-        query: stats.opcounters?.query || 0,
-        update: stats.opcounters?.update || 0,
-        delete: stats.opcounters?.delete || 0
-      }
+      models: Object.keys(mongoose.connection.models),
     };
-    
-  } catch (error) {
-    logger.error('Error getting database stats:', error);
-    return null;
   }
-}
 
-/**
- * Health check for database connection
- */
-async function healthCheck() {
-  try {
-    const connection = mongoose.connection;
-    
-    if (connection.readyState !== 1) {
+  // Health check method
+  async healthCheck() {
+    if (!this.isConnected) {
+      throw new Error('Database not connected');
+    }
+
+    try {
+      // Ping the database
+      await mongoose.connection.db.admin().ping();
+      
       return {
-        status: 'error',
-        message: 'Database not connected',
-        readyState: connection.readyState
+        status: 'healthy',
+        responseTime: Date.now(),
+        connection: this.getConnectionStatus()
       };
+    } catch (error) {
+      throw new Error(`Database health check failed: ${error.message}`);
     }
-    
-    // Test basic operations
-    await connection.db.admin().ping();
-    
-    const stats = await getConnectionStats();
-    
-    return {
-      status: 'healthy',
-      message: 'Database connection is healthy',
-      stats: stats
-    };
-    
-  } catch (error) {
-    logger.error('Database health check failed:', error);
-    return {
-      status: 'error',
-      message: error.message
-    };
   }
 }
 
-/**
- * Graceful database shutdown
- */
-async function disconnectDatabase() {
-  try {
-    await mongoose.disconnect();
-    logger.info('📡 MongoDB connection closed');
-  } catch (error) {
-    logger.error('Error disconnecting from MongoDB:', error);
-  }
-}
+// Create singleton instance
+const databaseConnection = new DatabaseConnection();
 
-/**
- * Query optimization utilities
- */
-const queryOptimization = {
-  /**
-   * Add pagination to queries
-   */
-  paginate: (query, page = 1, limit = 20) => {
-    const skip = (page - 1) * limit;
-    return query.skip(skip).limit(limit);
-  },
-  
-  /**
-   * Add sorting to queries
-   */
-  sort: (query, sortBy = 'createdAt', order = 'desc') => {
-    const sortOrder = order === 'asc' ? 1 : -1;
-    return query.sort({ [sortBy]: sortOrder });
-  },
-  
-  /**
-   * Add text search to queries
-   */
-  search: (query, searchTerm, searchFields) => {
-    if (!searchTerm) return query;
-    
-    const searchRegex = new RegExp(searchTerm, 'i');
-    const searchConditions = searchFields.map(field => ({
-      [field]: { $regex: searchRegex }
-    }));
-    
-    return query.or(searchConditions);
-  },
-  
-  /**
-   * Add date range filtering
-   */
-  dateRange: (query, dateField, startDate, endDate) => {
-    const dateFilter = {};
-    
-    if (startDate) {
-      dateFilter.$gte = new Date(startDate);
-    }
-    
-    if (endDate) {
-      dateFilter.$lte = new Date(endDate);
-    }
-    
-    if (Object.keys(dateFilter).length > 0) {
-      query.where(dateField, dateFilter);
-    }
-    
-    return query;
-  },
-  
-  /**
-   * Add geospatial filtering
-   */
-  near: (query, locationField, coordinates, maxDistance) => {
-    return query.where(locationField).near({
-      center: coordinates,
-      maxDistance: maxDistance * 1609.34, // Convert miles to meters
-      spherical: true
-    });
-  }
-};
-
-// Handle process termination
-process.on('SIGTERM', disconnectDatabase);
-process.on('SIGINT', disconnectDatabase);
-
-module.exports = {
-  connectDatabase,
-  createIndexes,
-  getConnectionStats,
-  healthCheck,
-  disconnectDatabase,
-  queryOptimization,
-  getConnectionOptions
-};
+module.exports = databaseConnection;
