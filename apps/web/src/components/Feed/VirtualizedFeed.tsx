@@ -127,7 +127,9 @@ export default function VirtualizedFeed({
 }
 
 // Optimized post item component for virtualization
-interface VirtualizedPostItemProps extends ListChildComponentProps {
+interface VirtualizedPostItemProps {
+  index: number;
+  style: React.CSSProperties;
   data: any[];
 }
 

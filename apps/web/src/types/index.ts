@@ -44,6 +44,7 @@ export interface PetOwner {
   firstName: string;
   lastName: string;
   avatar?: string;
+  location?: PetLocation;
   premium?: {
     isActive: boolean;
     tier?: 'basic' | 'premium' | 'ultra';
@@ -167,6 +168,7 @@ export interface Message {
   metadata?: MessageMetadata;
   attachments?: MessageAttachment[];
   read: boolean;
+  isEdited?: boolean;
   createdAt: string;
   updatedAt: string;
 }

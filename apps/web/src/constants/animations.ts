@@ -5,6 +5,14 @@
 
 // Spring physics configuration for smooth, natural animations
 export const SPRING_CONFIG = {
+  // Micro spring for tiny interactions
+  micro: {
+    type: 'spring' as const,
+    stiffness: 150,
+    damping: 15,
+    mass: 0.5,
+  },
+  
   // Gentle spring for subtle interactions
   gentle: {
     type: 'spring' as const,

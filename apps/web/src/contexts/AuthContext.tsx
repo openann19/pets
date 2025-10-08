@@ -72,10 +72,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       setError(null);
       
-      const response = await api.login(email, password);
-      
-      setTokens(response.accessToken, response.refreshToken);
-      setUser(response.user);
+    const response = await api.login(email, password);
+    
+    if (response.success && response.data) {
+      setTokens(response.data.accessToken, response.data.refreshToken);
+      setUser(response.data.user);
+    } else {
+      throw new Error('Invalid response structure');
+    }
     } catch (error: any) {
       setError(error.message || 'Login failed');
       throw error;
@@ -91,8 +95,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       const response = await api.register({ email, password, firstName, lastName });
       
-      setTokens(response.accessToken, response.refreshToken);
-      setUser(response.user);
+      if (response.success && response.data) {
+        setTokens(response.data.accessToken, response.data.refreshToken);
+        setUser(response.data.user);
+      } else {
+        throw new Error('Invalid response structure');
+      }
     } catch (error: any) {
       setError(error.message || 'Registration failed');
       throw error;
