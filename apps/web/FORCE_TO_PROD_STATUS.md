@@ -10,7 +10,7 @@ Last Updated: 2024-10-08 22:00 UTC
 |---|------|--------|---------|--------|
 | 1 | **TypeScript** | `pnpm tsc --noEmit` → 0 errors | 1003 errors (many User.id issues) | ❌ FAIL |
 | 2 | **ESLint** | `pnpm eslint . --max-warnings 0` → clean | ~500 errors, ~100 warnings | ❌ FAIL |
-| 3 | **Tests** | `pnpm test` ≥ 95% passing | 63.8% (252/395 passing) | ❌ FAIL |
+| 3 | **Tests** | `pnpm test` ≥ 95% passing | 66% (257/389 passing, need 370) | ❌ FAIL |
 | 4 | **Lighthouse (mobile)** | P ≥90, A11y ≥90, BP 100, SEO 100 | Not tested yet | ⚠️ PENDING |
 | 5 | **Axe-core** | 0 critical/serious violations | Not tested yet | ⚠️ PENDING |
 | 6 | **Bundle size** | JS < 280 KB gzip, CSS < 90 KB gzip | Build timeout issue | ⚠️ PENDING |

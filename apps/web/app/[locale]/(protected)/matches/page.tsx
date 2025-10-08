@@ -18,7 +18,8 @@ import { formatLastSeen } from '@/utils/dateHelpers';
 
 export default function MatchesPage() {
   const router = useRouter();
-  const { data: matches, isLoading, error, refetch } = useMatches();
+  const { data: matchesData, isLoading, error, refetch } = useMatches();
+  const matches = Array.isArray(matchesData) ? matchesData : [];
 
   // Window scroll position memory
   useEffect(() => {

@@ -2,7 +2,7 @@
  * Playwright Global Teardown
  * Cleans up test environment after all tests complete
  */
-import { FullConfig } from '@playwright/test';
+import type { FullConfig } from '@playwright/test';
 
 async function globalTeardown(config: FullConfig) {
   console.log('🧹 Starting Playwright global teardown...');

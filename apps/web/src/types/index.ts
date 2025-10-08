@@ -96,9 +96,11 @@ export interface Pet {
 // ===== User Types =====
 export interface User {
   _id: string;
+  id: string;  // Alias for _id for compatibility
   email: string;
   firstName: string;
   lastName: string;
+  name?: string;  // Full name for compatibility
   avatar?: string;
   dateOfBirth?: string;
   location?: PetLocation;

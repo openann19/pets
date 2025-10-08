@@ -1,4 +1,4 @@
-import { DefaultSession } from 'next-auth';
+import type { DefaultSession } from 'next-auth';
 
 declare global {
   namespace NodeJS {

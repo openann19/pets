@@ -165,11 +165,11 @@ export default function AdminPanel() {
         ]);
 
         setApiEndpoints([
-          { method: 'GET', path: '/api/users', calls: 1250, avgTime: '45ms', errors: 2 },
-          { method: 'POST', path: '/api/pets', calls: 890, avgTime: '120ms', errors: 5 },
-          { method: 'GET', path: '/api/matches', calls: 2100, avgTime: '65ms', errors: 1 },
-          { method: 'POST', path: '/api/auth/login', calls: 3400, avgTime: '85ms', errors: 12 },
-          { method: 'GET', path: '/api/pets/discover', calls: 5600, avgTime: '95ms', errors: 8 }
+          { endpoint: '/api/users', method: 'GET', status: 'healthy', responseTime: 45, path: '/api/users', calls: 1250, avgTime: 45, errors: 2 },
+          { endpoint: '/api/pets', method: 'POST', status: 'healthy', responseTime: 120, path: '/api/pets', calls: 890, avgTime: 120, errors: 5 },
+          { endpoint: '/api/matches', method: 'GET', status: 'healthy', responseTime: 65, path: '/api/matches', calls: 2100, avgTime: 65, errors: 1 },
+          { endpoint: '/api/auth/login', method: 'POST', status: 'warning', responseTime: 85, path: '/api/auth/login', calls: 3400, avgTime: 85, errors: 12 },
+          { endpoint: '/api/pets/discover', method: 'GET', status: 'healthy', responseTime: 95, path: '/api/pets/discover', calls: 5600, avgTime: 95, errors: 8 }
         ]);
 
         setIsLoading(false);
@@ -744,15 +744,15 @@ export default function AdminPanel() {
                     </span>
                   </td>
                   <td className="py-3 px-4 font-mono text-sm">{endpoint.path}</td>
-                  <td className="py-3 px-4">{endpoint.calls.toLocaleString()}</td>
-                  <td className="py-3 px-4">{endpoint.avgTime}</td>
+                  <td className="py-3 px-4">{endpoint.calls?.toLocaleString() ?? 'N/A'}</td>
+                  <td className="py-3 px-4">{endpoint.avgTime ? `${endpoint.avgTime}ms` : 'N/A'}</td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-1 text-xs rounded ${
                       endpoint.errors === 0 ? 'bg-green-100 text-green-800' :
-                      endpoint.errors < 5 ? 'bg-yellow-100 text-yellow-800' :
+                      endpoint.errors && endpoint.errors < 5 ? 'bg-yellow-100 text-yellow-800' :
                       'bg-red-100 text-red-800'
                     }`}>
-                      {endpoint.errors}
+                      {endpoint.errors ?? 0}
                     </span>
                   </td>
                   <td className="py-3 px-4">

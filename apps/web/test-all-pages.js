@@ -32,7 +32,7 @@ const testPage = (path) => {
     const options = {
       hostname: 'localhost',
       port: PORT,
-      path: path,
+      path,
       method: 'GET',
       timeout: 5000
     };

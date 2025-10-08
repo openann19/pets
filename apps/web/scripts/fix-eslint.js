@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 console.log('🔧 Starting comprehensive ESLint fix...');
 
@@ -161,10 +161,10 @@ function fixUnusedVariables(dir) {
       // Prefix unused parameters with underscore
       content = content.replace(/\((\w+), (\w+)\) => \{/g, (match, p1, p2) => {
         if (!content.includes(p1) && p1 !== '_') {
-          p1 = '_' + p1;
+          p1 = `_${p1}`;
         }
         if (!content.includes(p2) && p2 !== '_') {
-          p2 = '_' + p2;
+          p2 = `_${p2}`;
         }
         return `(${p1}, ${p2}) => {`;
       });

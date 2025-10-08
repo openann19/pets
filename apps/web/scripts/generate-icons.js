@@ -7,6 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
+
 const sharp = require('sharp');
 
 // Base SVG icon (PawfectMatch logo)

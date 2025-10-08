@@ -6,6 +6,7 @@ import React from 'react';
 // Mock axios before importing apiClient
 jest.mock('axios');
 import axios from 'axios';
+
 import { apiClient, useApiQuery, useApiMutation } from '../index';
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;

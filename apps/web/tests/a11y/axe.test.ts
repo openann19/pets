@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { test, expect } from '@playwright/test';
 
 const pages = [
   { name: 'Homepage', url: '/' },
@@ -21,7 +21,7 @@ test.describe('Accessibility Tests', () => {
         .analyze();
       
       // Check for violations
-      const violations = accessibilityScanResults.violations;
+      const {violations} = accessibilityScanResults;
       
       // Log violations for debugging
       if (violations.length > 0) {

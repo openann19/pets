@@ -4,7 +4,7 @@ export class DeepSeekClient {
   async complete(prompt: string) {
     return {
       choices: [{
-        text: 'Mocked AI response for: ' + prompt,
+        text: `Mocked AI response for: ${  prompt}`,
         index: 0,
         logprobs: null,
         finish_reason: 'stop',

@@ -101,9 +101,16 @@ export const useAuthStore = create<AuthState>()(
       isInitialized: false,
 
       setUser: (user) => {
+        // Ensure user has both _id and id for compatibility
+        const normalizedUser = user ? {
+          ...user,
+          id: user.id || user._id,
+          name: user.name || `${user.firstName} ${user.lastName}`.trim()
+        } : null;
+        
         set({ 
-          user, 
-          isAuthenticated: !!user,
+          user: normalizedUser, 
+          isAuthenticated: !!normalizedUser,
           error: null 
         });
       },

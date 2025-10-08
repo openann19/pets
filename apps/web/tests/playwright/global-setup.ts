@@ -2,7 +2,8 @@
  * Playwright Global Setup
  * Prepares test environment with database seeding and authentication
  */
-import { chromium, FullConfig } from '@playwright/test';
+import type { FullConfig } from '@playwright/test';
+import { chromium } from '@playwright/test';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
@@ -48,7 +49,7 @@ async function globalSetup(config: FullConfig) {
 async function seedTestData() {
   console.log('🌱 Seeding test data...');
   
-  const db = mongoose.connection.db;
+  const {db} = mongoose.connection;
   
   // Create test users
   await db.collection('users').insertMany([
