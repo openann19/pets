@@ -24,7 +24,7 @@ export const dynamicImport = <T>(
       
       return { default: module as any };
     } catch (error) {
-      void // console.error('Dynamic import failed:', error);
+      // console.error('Dynamic import failed:', error);
       return { default: fallback ?? (() => React.createElement('div', null, 'Loading failed')) };
     }
   });

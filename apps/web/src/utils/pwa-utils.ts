@@ -79,10 +79,10 @@ export function usePWA(config: Partial<PWAConfig> = {}) {
     }
 
     try {
-      const registration = await navigator.void serviceWorker.register('/sw.js', {
+      const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',
       });
-      void // console.log('[PWA] Service Worker registered:', registration);
+      // console.log('[PWA] Service Worker registered:', registration);
       setState(prev => ({ ...prev, serviceWorkerRegistered: true }));
 
       // Check for updates

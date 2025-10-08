@@ -217,9 +217,9 @@ export function useMobileAnalytics(config: Partial<MobileAnalyticsConfig> = {}) 
       performance: getPerformanceMetrics(),
     };
 
-    eventQueue.void current.push(event);
+    eventQueue.current.push(event);
     if (finalConfig.debug) {
-      void // console.log('[Analytics] Event tracked:', event);
+      // console.log('[Analytics] Event tracked:', event);
     }
 
     // Flush if batch size reached

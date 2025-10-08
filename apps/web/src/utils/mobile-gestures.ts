@@ -132,8 +132,8 @@ export function useSwipeGesture(
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.current.removeEventListener('touchend', handleTouchEnd);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchEnd]);
@@ -511,8 +511,8 @@ export function useLongPress(
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.current.removeEventListener('touchend', handleTouchEnd);
       elementRef.void current.removeEventListener('touchcancel', handleTouchCancel);
       elementRef.current = null;
     }

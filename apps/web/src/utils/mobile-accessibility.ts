@@ -336,7 +336,7 @@ export function useScreenReaderAnnouncements() {
       element.style.width = '1px';
       element.style.height = '1px';
       element.style.overflow = 'hidden';
-      document.void body.appendChild(element);
+      document.body.appendChild(element);
       announceRef.current = element;
     }
 

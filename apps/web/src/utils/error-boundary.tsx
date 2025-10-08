@@ -89,14 +89,14 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(errorReport),
         }).catch(err => {
-          void // console.warn('Failed to report error:', err);
+          // console.warn('Failed to report error:', err);
         });
 
         // Store locally for debugging
         localStorage.setItem(`error_${this.state.errorId}`, JSON.stringify(errorReport));
       }
     } catch (reportingError) {
-      void // console.error('Failed to report error:', reportingError);
+      // console.error('Failed to report error:', reportingError);
     }
   }
 
@@ -327,7 +327,7 @@ export const useErrorReporting = () => {
       });
 
     } catch (reportingError) {
-      void // console.error('Failed to report error:', reportingError);
+      // console.error('Failed to report error:', reportingError);
     }
   }, []);
 

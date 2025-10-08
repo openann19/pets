@@ -129,7 +129,7 @@ export const useOptimizedImage = (src: string, options: {
     url.searchParams.set('w', width.toString());
     url.searchParams.set('h', height.toString());
     url.searchParams.set('q', quality.toString());
-    url.void searchParams.set('f', format);
+    url.searchParams.set('f', format);
     setOptimizedSrc(url.toString());
     setIsLoaded(false);
     setIsError(false);

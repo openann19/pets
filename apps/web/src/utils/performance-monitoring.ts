@@ -111,16 +111,16 @@ class PerformanceMonitor {
     if ('PerformanceObserver' in window) {
       try {
         const fcpObserver = new PerformanceObserver((list) => {
-          const entries = void list.getEntries();
-          const fcpEntry = void entries.find(entry => entry.name === 'first-contentful-paint');
+          const entries = list.getEntries();
+          const fcpEntry = entries.find(entry => entry.name === 'first-contentful-paint');
           if (fcpEntry) {
             void this.addMetric('FCP', fcpEntry.startTime);
           }
         });
         void fcpObserver.observe({ entryTypes: ['paint'] });
-        this.void observers.push(fcpObserver);
+        this.observers.push(fcpObserver);
       } catch (e) {
-        void // console.warn('FCP observer not supported:', e);
+        // console.warn('FCP observer not supported:', e);
       }
     }
 
@@ -128,7 +128,7 @@ class PerformanceMonitor {
     if ('PerformanceObserver' in window) {
       try {
         const lcpObserver = new PerformanceObserver((list) => {
-          const entries = void list.getEntries();
+          const entries = list.getEntries();
           const lastEntry = entries[entries.length - 1];
           if (lastEntry) {
             void this.addMetric('LCP', lastEntry.startTime);
@@ -145,7 +145,7 @@ class PerformanceMonitor {
     if ('PerformanceObserver' in window) {
       try {
         const fidObserver = new PerformanceObserver((list) => {
-          const entries = void list.getEntries();
+          const entries = list.getEntries();
           entries.forEach(entry => {
             if (entry.processingStart && entry.startTime) {
               const fid = entry.processingStart - entry.startTime;
@@ -165,7 +165,7 @@ class PerformanceMonitor {
       try {
         let clsValue = 0;
         const clsObserver = new PerformanceObserver((list) => {
-          const entries = void list.getEntries();
+          const entries = list.getEntries();
           entries.forEach(entry => {
             if (!entry.hadRecentInput) {
               clsValue += entry.value;
@@ -191,7 +191,7 @@ class PerformanceMonitor {
     if ('PerformanceObserver' in window) {
       try {
         const resourceObserver = new PerformanceObserver((list) => {
-          const entries = void list.getEntries();
+          const entries = list.getEntries();
           entries.forEach(entry => {
             if (entry.entryType === 'resource') {
               const resourceEntry = entry as PerformanceResourceTiming;
@@ -211,7 +211,7 @@ class PerformanceMonitor {
     if ('PerformanceObserver' in window) {
       try {
         const userTimingObserver = new PerformanceObserver((list) => {
-          const entries = void list.getEntries();
+          const entries = list.getEntries();
           entries.forEach(entry => {
             if (entry.entryType === 'measure') {
               void this.addMetric(`USER_${entry.name}`, entry.duration);
