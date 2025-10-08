@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
+import React, { useState, useEffect, Suspense } from 'react';
+
+import type { PetCardData } from '../../../src/components/Pet/SwipeCardV2';
 import LoadingSpinner from '../../../src/components/UI/LoadingSpinner';
 
 // Dynamic imports for heavy components
@@ -48,8 +50,8 @@ const ArrowPathIcon = dynamic(() => import('@heroicons/react/24/solid').then(mod
 
 // Import hooks and motion components normally (they're lightweight)
 import { motion, AnimatePresence } from 'framer-motion';
+
 import { useSwipeData } from '../../../src/hooks/api-hooks';
-import type { PetCardData } from '../../../src/components/Pet/SwipeCardV2';
 
 // Map API Pet -> SwipeCardV2 data shape
 function normalizeSize(s: any): PetCardData['size'] {
@@ -67,11 +69,11 @@ function toCardData(pet: any): PetCardData {
     age: typeof pet.age === 'number' ? pet.age : 0,
     size: normalizeSize(pet.size),
     distanceKm: pet.owner?.location ? 5 : 0,
-    bio: pet.description || (pet as any).bio || '',
+    bio: pet.description || (pet).bio || '',
     photos: Array.isArray(pet.photos) ? pet.photos.map((ph: any) => ph?.url).filter(Boolean) : [],
-    compatibility: (pet as any).compatibilityScore,
-    gender: (pet as any).gender,
-    species: (pet as any).species,
+    compatibility: (pet).compatibilityScore,
+    gender: (pet).gender,
+    species: (pet).species,
   };
 }
 

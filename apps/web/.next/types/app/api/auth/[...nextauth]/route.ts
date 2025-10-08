@@ -1,4 +1,4 @@
-// File: /home/ben/datapartition_backup/Downloads/pawfectmatch-premium/apps/web/app/api/auth/[...nextauth]/route.ts
+// File: /workspace/apps/web/app/api/auth/[...nextauth]/route.ts
 import * as entry from '../../../../../../app/api/auth/[...nextauth]/route.js'
 import type { NextRequest } from 'next/server.js'
 

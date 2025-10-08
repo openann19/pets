@@ -5,11 +5,12 @@
 
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
 import { SparklesIcon, HeartIcon } from '@heroicons/react/24/outline';
-import { SPRING_CONFIG } from '@/constants/animations';
+import { motion } from 'framer-motion';
+import React from 'react';
+
 import HoloLogo from '@/components/Brand/HoloLogo';
+import { SPRING_CONFIG } from '@/constants/animations';
 
 export default function Loading() {
   return (

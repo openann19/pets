@@ -1,11 +1,5 @@
 'use client';
 
-import PremiumLayout from '@/components/Layout/PremiumLayout';
-import LikeAnimation, { MatchAnimation } from '@/components/UI/LikeAnimation';
-import LoadingSpinner from '@/components/UI/LoadingSpinner';
-import PremiumButton from '@/components/UI/PremiumButton';
-import PremiumCard from '@/components/UI/PremiumCard';
-import { petsAPI } from '@/services/api';
 import {
     AdjustmentsHorizontalIcon,
     ArrowPathIcon,
@@ -20,6 +14,13 @@ import {
 import { CheckCircleIcon, HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+
+import PremiumLayout from '@/components/Layout/PremiumLayout';
+import LikeAnimation, { MatchAnimation } from '@/components/UI/LikeAnimation';
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
+import PremiumButton from '@/components/UI/PremiumButton';
+import PremiumCard from '@/components/UI/PremiumCard';
+import { petsAPI } from '@/services/api';
 
 interface BrowsePet {
   _id: string;

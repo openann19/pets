@@ -1,8 +1,11 @@
 'use client';
 
-import React, { Suspense, lazy, ComponentType } from 'react';
 import { motion } from 'framer-motion';
+import type { ComponentType } from 'react';
+import React, { Suspense, lazy } from 'react';
+
 import PremiumSkeleton from './UI/PremiumSkeleton';
+
 import { ComponentType as CommonComponentType } from '@/types/common';
 
 // Loading component with premium styling
@@ -13,7 +16,7 @@ const LoadingComponent = ({ className = '' }: { className?: string }) => (
       animate={{ opacity: 1, scale: 1 }}
       className="text-center"
     >
-      <div className="w-12 h-12 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin mx-auto mb-4"></div>
+      <div className="w-12 h-12 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin mx-auto mb-4" />
       <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
     </motion.div>
   </div>

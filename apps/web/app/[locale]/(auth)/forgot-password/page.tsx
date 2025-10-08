@@ -1,16 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { EnvelopeIcon, ArrowLeftIcon, CheckCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import HoloLogo from '@/components/Brand/HoloLogo';
+import PremiumLayout from '@/components/Layout/PremiumLayout';
 import PremiumButton from '@/components/UI/PremiumButton';
 import apiClient from '@/lib/api-client';
-import PremiumLayout from '@/components/Layout/PremiumLayout';
-import HoloLogo from '@/components/Brand/HoloLogo';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),

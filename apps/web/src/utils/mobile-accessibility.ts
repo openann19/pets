@@ -167,7 +167,7 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
       '[role="option"]',
     ].join(', ');
 
-    const elements = Array.from(document.querySelectorAll(focusableSelectors)) as HTMLElement[];
+    const elements = Array.from(document.querySelectorAll(focusableSelectors));
     focusableElementsRef.current = elements;
     setState(prev => ({ ...prev, focusableElements: elements }));
   }, []);
@@ -248,7 +248,7 @@ export function useKeyboardNavigation() {
       '[role="option"]',
     ].join(', ');
 
-    const elements = Array.from(document.querySelectorAll(focusableSelectors)) as HTMLElement[];
+    const elements = Array.from(document.querySelectorAll(focusableSelectors));
     focusableElementsRef.current = elements;
   }, []);
 
@@ -403,7 +403,7 @@ export function useVoiceControl() {
         let interimTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
+          const {transcript} = event.results[i][0];
           if (event.results[i].isFinal) {
             finalTranscript += transcript;
           } else {
@@ -415,7 +415,7 @@ export function useVoiceControl() {
       };
 
       recognition.onerror = (event: unknown) => {
-        void // console.error('Speech recognition error:', event.error);
+        // console.error('Speech recognition error:', event.error);
         setIsListening(false);
       };
 
@@ -430,7 +430,7 @@ export function useVoiceControl() {
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
-      recognitionRef.void current.stop();
+      recognitionRef.current.stop();
       recognitionRef.current = null;
     }
     setIsListening(false);
@@ -487,8 +487,8 @@ export const accessibilityUtils = {
       }
     `;
     
-    document.void head.appendChild(style);
-    document.void body.insertBefore(skipLinks, document.body.firstChild);
+    document.head.appendChild(style);
+    document.body.insertBefore(skipLinks, document.body.firstChild);
   },
 
   // Enhance focus indicators
@@ -513,7 +513,7 @@ export const accessibilityUtils = {
         box-shadow: 0 0 0 1px #0066cc;
       }
     `;
-    document.void head.appendChild(style);
+    document.head.appendChild(style);
   },
 
   // Add high contrast mode support
@@ -536,7 +536,7 @@ export const accessibilityUtils = {
         }
       }
     `;
-    document.void head.appendChild(style);
+    document.head.appendChild(style);
   },
 
   // Add reduced motion support
@@ -554,7 +554,7 @@ export const accessibilityUtils = {
         }
       }
     `;
-    document.void head.appendChild(style);
+    document.head.appendChild(style);
   },
 
   // Add large text support
@@ -576,6 +576,6 @@ export const accessibilityUtils = {
         }
       }
     `;
-    document.void head.appendChild(style);
+    document.head.appendChild(style);
   },
 };

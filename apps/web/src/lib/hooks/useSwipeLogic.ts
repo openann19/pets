@@ -4,8 +4,9 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Pet, SwipeAction, SwipeResult } from '../types/swipe';
+
 import { useAuthStore } from '../stores/authStore';
+import type { Pet, SwipeAction, SwipeResult } from '../types/swipe';
 
 export interface UseSwipeLogicProps {
   onMatch?: (result: SwipeResult) => void;

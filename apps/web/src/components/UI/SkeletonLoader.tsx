@@ -1,5 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
 
 interface SkeletonLoaderProps {
   variant?: 'matchCard' | 'message' | 'avatar' | 'text' | 'rectangle';
@@ -33,22 +33,22 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4 flex-1">
             {/* Avatar */}
-            <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+            <div className="w-12 h-12 bg-gray-200 rounded-full" />
             
             <div className="flex-1">
               {/* Name */}
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
               {/* Message preview */}
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2" />
             </div>
           </div>
           
           <div className="flex items-center space-x-2">
             {/* Time */}
-            <div className="h-3 bg-gray-200 rounded w-12 mr-3"></div>
+            <div className="h-3 bg-gray-200 rounded w-12 mr-3" />
             {/* Action buttons */}
-            <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-            <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+            <div className="w-8 h-8 bg-gray-200 rounded-full" />
+            <div className="w-8 h-8 bg-gray-200 rounded-full" />
           </div>
         </div>
       </motion.div>
@@ -63,8 +63,8 @@ const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
         data-testid="skeleton"
       >
         <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-200">
-          <div className="h-4 bg-gray-300 rounded w-24 mb-1"></div>
-          <div className="h-3 bg-gray-300 rounded w-16"></div>
+          <div className="h-4 bg-gray-300 rounded w-24 mb-1" />
+          <div className="h-3 bg-gray-300 rounded w-16" />
         </div>
       </motion.div>
     );

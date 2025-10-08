@@ -1,7 +1,5 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CreditCardIcon,
   CheckCircleIcon,
@@ -15,9 +13,14 @@ import {
   CurrencyDollarIcon,
   FireIcon
 } from '@heroicons/react/24/outline';
-import { useAuthStore } from '@/lib/auth-store';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+
+
 import { api } from '../../services/api';
 import { logger } from '../../services/logger';
+
+import { useAuthStore } from '@/lib/auth-store';
 
 interface PricingPlan {
   id: string;

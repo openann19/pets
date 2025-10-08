@@ -7,10 +7,6 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   HomeIcon,
   HeartIcon,
@@ -24,11 +20,16 @@ import {
   Bars3Icon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { useAuthStore } from '@/lib/auth-store';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import React, { useState, useRef, useEffect } from 'react';
+
 import HoloLogo from '@/components/Brand/HoloLogo';
 import SafeImage from '@/components/UI/SafeImage';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { useAuthStore } from '@/lib/auth-store';
 
 interface UniversalHeaderProps {
   showNav?: boolean;
@@ -98,7 +99,7 @@ export default function UniversalHeader({ showNav = true }: UniversalHeaderProps
     router.push('/login');
   };
 
-  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
+  const isActive = (href: string) => pathname === href || pathname?.startsWith(`${href  }/`);
 
   return (
     <>
@@ -162,7 +163,7 @@ export default function UniversalHeader({ showNav = true }: UniversalHeaderProps
                 >
                   <BellIcon className="w-6 h-6" />
                   {/* Notification Badge */}
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                 </motion.button>
 
                 {/* Notifications Dropdown */}

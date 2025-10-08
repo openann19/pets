@@ -1,7 +1,9 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
+
 import { SPRING_CONFIG } from '../../constants/animations';
-import { Message, User } from '../../types';
+import type { Message, User } from '../../types';
+
 import MessageBubble from './MessageBubble';
 
 interface SimpleMessageListProps {

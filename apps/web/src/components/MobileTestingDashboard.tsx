@@ -1,17 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  useMobileTesting, 
-  MobileTestResults, 
-  TouchTargetTest, 
-  ResponsiveTest, 
-  PerformanceTest, 
-  AccessibilityTest, 
-  SafeAreaTest,
-  quickMobileHealthCheck 
-} from '@/utils/mobile-testing';
 import { 
   CheckCircleIcon, 
   XCircleIcon, 
@@ -24,6 +12,21 @@ import {
   EyeIcon,
   ShieldCheckIcon
 } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
+
+import type { 
+  MobileTestResults, 
+  TouchTargetTest, 
+  ResponsiveTest, 
+  PerformanceTest, 
+  AccessibilityTest, 
+  SafeAreaTest} from '@/utils/mobile-testing';
+import { 
+  useMobileTesting,
+  quickMobileHealthCheck 
+} from '@/utils/mobile-testing';
+
 
 interface MobileTestingDashboardProps {
   className?: string;

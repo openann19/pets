@@ -5,8 +5,6 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { 
   BellIcon, 
   CheckCircleIcon, 
@@ -14,8 +12,11 @@ import {
   XMarkIcon,
   Cog6ToothIcon
 } from '@heroicons/react/24/outline'
-import { useFirebaseMessaging } from '@/services/firebase-messaging'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect } from 'react'
+
 import { InteractiveButton } from '@/components/ui/Interactive'
+import { useFirebaseMessaging } from '@/services/firebase-messaging'
 
 interface PushNotificationSetupProps {
   onComplete?: (enabled: boolean) => void

@@ -1,9 +1,12 @@
 // @ts-nocheck
-import React from 'react';
 import { useRouter } from 'next/navigation';
+import React from 'react';
+
 import { useAuth } from '../contexts/AuthContext';
+import type { LoginFormData, RegisterFormData} from '../schemas/auth';
+import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema, ForgotPasswordFormData, ResetPasswordFormData } from '../schemas/auth';
+
 import { useFormValidation, useAsyncSubmit } from './useFormValidation';
-import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema, LoginFormData, RegisterFormData, ForgotPasswordFormData, ResetPasswordFormData } from '../schemas/auth';
 // import { toast } from 'react-hot-toast';
 const toast = { success: (msg: string) => console.log(msg), error: (msg: string) => console.error(msg) };
 

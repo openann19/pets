@@ -47,7 +47,7 @@ export interface UserGamification {
 }
 
 class GamificationService {
-  private apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
+  private readonly apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
 
   /**
    * Get user's gamification data
@@ -140,7 +140,7 @@ class GamificationService {
   /**
    * Get leaderboard
    */
-  async getLeaderboard(type: 'points' | 'streaks' | 'badges', limit: number = 10): Promise<Array<{
+  async getLeaderboard(type: 'points' | 'streaks' | 'badges', limit = 10): Promise<Array<{
     userId: string
     userName: string
     userAvatar?: string

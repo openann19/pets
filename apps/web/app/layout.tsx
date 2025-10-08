@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+
 import './globals.css';
 import '../src/polyfills'; // Import polyfills first
 import { Providers } from './providers';
-import ThemeToggle from '@/components/ThemeToggle';
+
 import BackgroundProvider from '@/components/Background/BackgroundProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { SafeAreaProvider } from '@/components/SafeAreaProvider';
 import { MobileOptimizationInit } from '@/components/MobileOptimizationInit';
+import { SafeAreaProvider } from '@/components/SafeAreaProvider';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const inter = Inter({
   subsets: ['latin'], // Optimized subset for perf

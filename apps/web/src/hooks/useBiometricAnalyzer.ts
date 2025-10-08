@@ -51,7 +51,7 @@ export const useBiometricAnalyzer = (config: BiometricAnalyzerConfig) => {
   const timingBuffer = useRef<number[]>([]);
 
   // Track keystroke timing
-  const trackKeystroke = useCallback((timestamp: number, pressure: number = 1) => {
+  const trackKeystroke = useCallback((timestamp: number, pressure = 1) => {
     const now = Date.now();
 
     if (keystrokeBuffer.current.length > 0) {
@@ -102,7 +102,7 @@ export const useBiometricAnalyzer = (config: BiometricAnalyzerConfig) => {
   }, [config.sensitivity]);
 
   // Calculate typing speed (characters per minute)
-  const calculateTypingSpeed = useCallback((keystrokes: number[], timeWindow: number = 60000): number => {
+  const calculateTypingSpeed = useCallback((keystrokes: number[], timeWindow = 60000): number => {
     if (keystrokes.length < 2) return 0;
 
     const startTime = keystrokes[0];
@@ -201,7 +201,7 @@ export const useBiometricAnalyzer = (config: BiometricAnalyzerConfig) => {
     const rhythmScore = biometricData.rhythmAnalysis.consistencyScore;
     const pressureStability = 1 - (biometricData.pressureData[1] || 0); // Lower variance = higher stability
     const neuralStability = neuralData.predictionAccuracy;
-    const cognitiveLoad = neuralData.cognitiveLoad;
+    const {cognitiveLoad} = neuralData;
 
     // Calculate overall confidence
     const confidence = (rhythmScore * 0.4 + pressureStability * 0.3 + neuralStability * 0.3);

@@ -1,7 +1,16 @@
 'use client'
 
-import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useState } from 'react'
+
+import { ThemeSwitch, ThemeSelector } from './ThemeSwitch'
+import { 
+  Interactive, 
+  InteractiveButton, 
+  InteractiveCard, 
+  InteractiveSwipeCard 
+} from './ui/Interactive'
+import SafeImage from './UI/SafeImage'
 import { 
   SkeletonCard, 
   SkeletonMessage, 
@@ -9,14 +18,7 @@ import {
   SkeletonText,
   SkeletonGrid 
 } from './ui/Skeleton'
-import { 
-  Interactive, 
-  InteractiveButton, 
-  InteractiveCard, 
-  InteractiveSwipeCard 
-} from './ui/Interactive'
-import { ThemeSwitch, ThemeSelector } from './ThemeSwitch'
-import SafeImage from './UI/SafeImage'
+
 import { triggerCommandPalette } from '@/providers/CommandPalette'
 
 export function UXPackDemo() {
@@ -295,15 +297,15 @@ export function UXPackDemo() {
               </p>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-primary-500 rounded"></div>
+                  <div className="w-4 h-4 bg-primary-500 rounded" />
                   <span className="text-sm">Primary: 4.8:1</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-secondary-500 rounded"></div>
+                  <div className="w-4 h-4 bg-secondary-500 rounded" />
                   <span className="text-sm">Secondary: 5.2:1</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-success-500 rounded"></div>
+                  <div className="w-4 h-4 bg-success-500 rounded" />
                   <span className="text-sm">Success: 4.9:1</span>
                 </div>
               </div>

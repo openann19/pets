@@ -5,9 +5,9 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
 
 interface LikeAnimationProps {
   show: boolean;

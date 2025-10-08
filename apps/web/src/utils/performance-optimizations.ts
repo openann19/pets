@@ -155,7 +155,7 @@ export const useMemoryOptimization = () => {
   useEffect(() => {
     const updateMemoryUsage = () => {
       if ('memory' in performance) {
-        const memory = (performance as any).memory;
+        const {memory} = (performance as any);
         setMemoryUsage(memory.usedJSHeapSize / memory.jsHeapSizeLimit);
       }
     };
@@ -288,7 +288,7 @@ export const useBundleOptimization = () => {
       const module = await import(moduleName);
       return module;
     } catch (error) {
-      void // console.error(`Failed to load module: ${moduleName}`, error);
+      // console.error(`Failed to load module: ${moduleName}`, error);
       return null;
     }
   }, [isLoaded]);

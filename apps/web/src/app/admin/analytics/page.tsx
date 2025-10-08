@@ -5,8 +5,6 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { 
   ChartBarIcon,
   UsersIcon,
@@ -16,6 +14,8 @@ import {
   CalendarIcon,
   Cog6ToothIcon
 } from '@heroicons/react/24/outline'
+import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
 import { 
   LineChart, 
   Line, 
@@ -33,8 +33,9 @@ import {
   Legend, 
   ResponsiveContainer 
 } from 'recharts'
-import { useAdminAnalytics } from '@/hooks/useAdminAnalytics'
+
 import { InteractiveButton } from '@/components/ui/Interactive'
+import { useAdminAnalytics } from '@/hooks/useAdminAnalytics'
 
 export default function AdminAnalyticsPage() {
   const { 
@@ -57,13 +58,13 @@ export default function AdminAnalyticsPage() {
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-8" />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
+                <div key={i} className="h-32 bg-gray-200 rounded-lg" />
               ))}
             </div>
-            <div className="h-96 bg-gray-200 rounded-lg"></div>
+            <div className="h-96 bg-gray-200 rounded-lg" />
           </div>
         </div>
       </div>

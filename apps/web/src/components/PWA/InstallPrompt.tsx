@@ -1,7 +1,5 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { 
   XMarkIcon, 
   ArrowDownTrayIcon, 
@@ -9,6 +7,9 @@ import {
   ComputerDesktopIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect } from 'react'
+
 import { InteractiveButton } from '../ui/Interactive'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -42,7 +43,7 @@ export function InstallPrompt({ className = '' }: InstallPromptProps) {
     const userAgent = navigator.userAgent.toLowerCase()
     if (/iphone|ipad|ipod/.test(userAgent)) {
       setPlatform('ios')
-    } else if (/android/.test(userAgent)) {
+    } else if (userAgent.includes('android')) {
       setPlatform('android')
     } else {
       setPlatform('desktop')
@@ -151,19 +152,19 @@ export function InstallPrompt({ className = '' }: InstallPromptProps) {
           {/* Features */}
           <div className="space-y-2 mb-6">
             <div className="flex items-center gap-3 text-sm">
-              <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
+              <div className="w-2 h-2 bg-primary-500 rounded-full" />
               <span className="text-neutral-700 dark:text-neutral-300">
                 Faster loading & offline access
               </span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <div className="w-2 h-2 bg-secondary-500 rounded-full"></div>
+              <div className="w-2 h-2 bg-secondary-500 rounded-full" />
               <span className="text-neutral-700 dark:text-neutral-300">
                 Push notifications for matches
               </span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <div className="w-2 h-2 bg-success-500 rounded-full"></div>
+              <div className="w-2 h-2 bg-success-500 rounded-full" />
               <span className="text-neutral-700 dark:text-neutral-300">
                 Native app-like experience
               </span>

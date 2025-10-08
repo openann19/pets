@@ -5,9 +5,10 @@
 
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
-import { useTypingIndicator } from '@/hooks/useTypingIndicator'
 import { UserCircleIcon } from '@heroicons/react/24/outline'
+import { motion, AnimatePresence } from 'framer-motion'
+
+import { useTypingIndicator } from '@/hooks/useTypingIndicator'
 
 interface TypingIndicatorProps {
   chatId: string
@@ -174,7 +175,7 @@ export function ChatInputWithTyping({
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+    const {value} = e.target
     setMessage(value)
     handleInputChange(value)
   }

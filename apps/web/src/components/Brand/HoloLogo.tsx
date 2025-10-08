@@ -1,6 +1,7 @@
 'use client';
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
+
 import { SPRING_CONFIG } from '@/constants/animations';
 
 interface HoloLogoProps {

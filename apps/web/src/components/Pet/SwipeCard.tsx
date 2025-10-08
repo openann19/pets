@@ -1,11 +1,13 @@
 "use client";
-import React, { useState } from 'react';
-import Image from 'next/image';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { HeartIcon, XMarkIcon, SparklesIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import type { PanInfo } from 'framer-motion';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
+import Image from 'next/image';
+import React, { useState } from 'react';
+
 import { SPRING_CONFIG } from '@/constants/animations';
-import { Pet } from '@/types';
+import type { Pet } from '@/types';
 
 interface SwipeCardProps {
   pet: Pet;
@@ -336,13 +338,13 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
               <div className="flex items-center space-x-4 text-sm text-white/70">
                 {(pet as any).healthInfo.vaccinated && (
                   <span className="flex items-center space-x-1">
-                    <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    <span className="w-2 h-2 bg-emerald-400 rounded-full" />
                     <span>Vaccinated</span>
                   </span>
                 )}
                 {(pet as any).healthInfo.spayedNeutered && (
                   <span className="flex items-center space-x-1">
-                    <span className="w-2 h-2 bg-sky-400 rounded-full"></span>
+                    <span className="w-2 h-2 bg-sky-400 rounded-full" />
                     <span>Spayed/Neutered</span>
                   </span>
                 )}

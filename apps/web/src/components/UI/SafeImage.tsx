@@ -10,9 +10,10 @@
  * - Dark mode support
  */
 
-import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import React, { useState, useEffect } from 'react';
+
 import { getBlurData, getPetPhotoBlur } from '@/lib/getBlur';
 
 interface SafeImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {

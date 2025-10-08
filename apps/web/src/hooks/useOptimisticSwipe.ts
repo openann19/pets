@@ -2,10 +2,11 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
-import { petsAPI } from '@/services/api';
-import { useAuthStore } from '@/lib/auth-store';
 import { toast } from 'react-hot-toast';
-import { ApiResponse, Pet, SwipeFilters } from '@/types/common';
+
+import { useAuthStore } from '@/lib/auth-store';
+import { petsAPI } from '@/services/api';
+import type { ApiResponse, Pet, SwipeFilters } from '@/types/common';
 
 interface SwipeAction {
   petId: string;
@@ -77,7 +78,7 @@ export function useOptimisticSwipe(options: OptimisticSwipeOptions = {}) {
         toast.error('Swipe failed. Please try again.');
       }
       
-      onError?.(error as Error);
+      onError?.(error);
     },
     onSuccess: (data, variables) => {
       // Invalidate and refetch swipe queue

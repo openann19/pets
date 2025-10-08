@@ -1,5 +1,6 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
+
 import { BOUNCY_CONFIG } from '../../constants/animations';
 
 interface LoadingSpinnerProps {
@@ -46,7 +47,7 @@ export default function LoadingSpinner({
       transition={{
         duration: 1.5,
         repeat: Infinity,
-        delay: delay,
+        delay,
         ...BOUNCY_CONFIG,
       }}
       style={{

@@ -1,5 +1,5 @@
-import React from 'react';
 import { motion, MotionProps } from 'framer-motion';
+import React from 'react';
 
 interface FadeInUpDivProps {
   children: React.ReactNode;

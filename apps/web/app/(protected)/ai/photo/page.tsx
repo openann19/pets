@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
-import { PhotoAnalyzer } from '../../../../src/components/AI/PhotoAnalyzer';
-import { motion } from 'framer-motion';
 import { ArrowLeftIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
+import React from 'react';
+
+import { PhotoAnalyzer } from '../../../../src/components/AI/PhotoAnalyzer';
 
 export default function AiPhotoPage() {
   return (

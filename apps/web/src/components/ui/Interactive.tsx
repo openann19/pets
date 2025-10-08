@@ -1,6 +1,8 @@
-import { motion, MotionProps } from 'framer-motion'
-import { ReactNode, forwardRef } from 'react'
 import clsx from 'clsx'
+import type { MotionProps } from 'framer-motion';
+import { motion } from 'framer-motion'
+import type { ReactNode} from 'react';
+import { forwardRef } from 'react'
 
 // Base interactive wrapper with hover and tap animations
 interface InteractiveProps extends MotionProps {

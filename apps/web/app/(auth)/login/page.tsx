@@ -1,16 +1,18 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
+import { EnvelopeIcon, LockClosedIcon, SparklesIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import React from 'react';
 // import { useRouter } from 'next/navigation'; // TODO: Re-enable when routing is needed
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { EnvelopeIcon, LockClosedIcon, SparklesIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
-import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
-import { useAuth } from '../../../src/hooks/api-hooks';
+
 import PremiumButton from '../../../src/components/UI/PremiumButton';
+import { useAuth } from '../../../src/hooks/api-hooks';
+
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -90,7 +92,7 @@ export default function LoginPage() {
             Welcome back!
           </h2>
           <p className="text-base text-gray-600">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/register" className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 transition-all">
               Sign up
             </Link>
@@ -100,7 +102,7 @@ export default function LoginPage() {
         {/* Main Form Card */}
         <motion.form 
           className="space-y-6" 
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={(e) => void handleSubmit(onSubmit)(e)}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -205,7 +207,7 @@ export default function LoginPage() {
               size="lg"
               disabled={isLoading}
               loading={isLoading}
-              onClick={handleSubmit(onSubmit)}
+              onClick={() => void handleSubmit(onSubmit)()}
               className="w-full shadow-xl hover:shadow-2xl"
             >
               <span className="flex items-center justify-center gap-2">

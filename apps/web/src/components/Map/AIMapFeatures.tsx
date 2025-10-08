@@ -1,8 +1,5 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import LoadingSpinner from '../UI/LoadingSpinner';
 import { 
   SparklesIcon, 
   LightBulbIcon, 
@@ -12,6 +9,12 @@ import {
   ExclamationTriangleIcon,
   MapPinIcon
 } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+
+import LoadingSpinner from '../UI/LoadingSpinner';
+
+
 import { useAuthStore } from '@/lib/auth-store';
 
 interface AIInsight {
@@ -250,15 +253,15 @@ const AIMapFeatures: React.FC<AIMapFeaturesProps> = ({
   const generateActivityRecommendations = (pins: any[], userLoc: { latitude: number; longitude: number }) => {
     const insights: AIInsight[] = [];
     
-    const activityCounts = pins.reduce((acc, pin) => {
+    const activityCounts = pins.reduce<Record<string, number>>((acc, pin) => {
       acc[pin.activity] = (acc[pin.activity] || 0) + 1;
       return acc;
-    }, {} as Record<string, number>);
+    }, {});
 
     const topActivity = Object.entries(activityCounts)
-      .sort(([,a], [,b]) => (b as number) - (a as number))[0];
+      .sort(([,a], [,b]) => (b) - (a))[0];
 
-    if (topActivity && (topActivity[1] as number) > 3) {
+    if (topActivity && (topActivity[1]) > 3) {
       const activityNames: Record<string, string> = {
         walking: 'dog walking',
         playing: 'playtime',
@@ -421,7 +424,7 @@ const AIMapFeatures: React.FC<AIMapFeaturesProps> = ({
                           </h4>
                           <div className="flex items-center space-x-1">
                             {insight.priority === 'high' && (
-                              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                              <span className="w-2 h-2 bg-red-500 rounded-full" />
                             )}
                             <span className="text-xs text-gray-500 dark:text-gray-400">
                               {Math.round(insight.confidence * 100)}%

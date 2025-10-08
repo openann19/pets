@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+
 import LoadingSpinner from './UI/LoadingSpinner';
 
 export default function HydrationBoundary({ children }: { children: React.ReactNode }) {

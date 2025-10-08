@@ -5,14 +5,15 @@
 
 'use client';
 
+import { VideoCameraIcon } from '@heroicons/react/24/solid';
+import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
 import VideoCallRoom from '@/components/VideoCall/VideoCallRoom';
 import { usePremiumTier } from '@/hooks/premium-hooks';
 import { useAuthStore } from '@/lib/auth-store';
-import { VideoCameraIcon } from '@heroicons/react/24/solid';
-import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 export default function VideoCallPage() {
   const params = useParams();

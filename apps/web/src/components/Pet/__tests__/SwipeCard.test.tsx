@@ -8,6 +8,7 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
 import SwipeCard from '../SwipeCard';
 
 // Mock framer-motion to avoid animation issues in tests

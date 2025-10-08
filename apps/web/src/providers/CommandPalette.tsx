@@ -1,9 +1,5 @@
 'use client'
 
-import { KBarProvider, KBarPortal, KBarPositioner, KBarAnimator, KBarSearch, KBarResults, useMatches } from 'kbar'
-import { useRouter } from 'next/navigation'
-import { useTheme } from 'next-themes'
-import { ReactNode, useEffect } from 'react'
 import { 
   HomeIcon, 
   UserIcon, 
@@ -17,6 +13,11 @@ import {
   PlusIcon,
   BellIcon
 } from '@heroicons/react/24/outline'
+import { KBarProvider, KBarPortal, KBarPositioner, KBarAnimator, KBarSearch, KBarResults, useMatches } from 'kbar'
+import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
+import type { ReactNode} from 'react';
+import { useEffect } from 'react'
 
 interface CommandPaletteProps {
   children: ReactNode

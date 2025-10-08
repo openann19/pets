@@ -48,7 +48,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}) {
 
     const elements = Array.from(
       containerRef.current.querySelectorAll(focusableSelectors)
-    ) as HTMLElement[];
+    );
 
     // Filter out elements that are not visible or have negative tabindex
     return elements.filter(element => {
@@ -222,7 +222,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}) {
 }
 
 // Hook for managing focus restoration
-export function useFocusRestoration(enabled: boolean = true) {
+export function useFocusRestoration(enabled = true) {
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
 
   const saveFocus = useCallback(() => {
@@ -276,7 +276,7 @@ export function useFocusManagement(containerRef: React.RefObject<HTMLElement>) {
 
     const focusableElements = Array.from(
       containerRef.current.querySelectorAll(focusableSelectors)
-    ) as HTMLElement[];
+    );
 
     const lastFocusable = focusableElements[focusableElements.length - 1];
     lastFocusable?.focus();

@@ -1,0 +1,55 @@
+name: Web CI
+on: 
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - '.github/workflows/web-ci.yml'
+  push:
+    branches: [main]
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v2
+        with: 
+          version: 8
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Lint with production config
+        run: |
+          cd apps/web
+          pnpm eslint . --config .eslintrc.production.json --ext .ts,.tsx
+          
+      - name: TypeScript check with production config
+        run: |
+          cd apps/web
+          pnpm tsc -p tsconfig.production.json --noEmit
+          
+      - name: Run tests
+        run: |
+          cd apps/web
+          NODE_ENV=test npm test -- --runInBand --passWithNoTests
+          
+      - name: Build application
+        run: |
+          cd apps/web
+          pnpm build
+          
+      - name: Analyze bundle size
+        run: |
+          cd apps/web
+          if [ -d ".next" ]; then
+            echo "Bundle analysis:"
+            du -sh .next/static/chunks/*.js | head -10
+          fi

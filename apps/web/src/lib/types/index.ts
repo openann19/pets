@@ -359,7 +359,7 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
-export interface PaginatedResponse<T = any> extends ApiResponse<{
+export type PaginatedResponse<T = any> = ApiResponse<{
   items?: T[];
   pets?: T[];
   matches?: T[];
@@ -369,7 +369,7 @@ export interface PaginatedResponse<T = any> extends ApiResponse<{
     total?: number;
     hasMore: boolean;
   };
-}> {}
+}>
 
 // UI Types
 export interface NotificationProps {

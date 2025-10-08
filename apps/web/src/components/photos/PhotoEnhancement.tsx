@@ -5,8 +5,6 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { 
   SparklesIcon,
   PhotoIcon,
@@ -14,8 +12,12 @@ import {
   ExclamationTriangleIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline'
-import { usePhotoEnhancement, PhotoEnhancementOptions } from '@/services/photo-enhancement'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect } from 'react'
+
 import { InteractiveButton } from '@/components/ui/Interactive'
+import type { PhotoEnhancementOptions } from '@/services/photo-enhancement';
+import { usePhotoEnhancement } from '@/services/photo-enhancement'
 
 interface PhotoEnhancementProps {
   imageUrl: string

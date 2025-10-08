@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import { LockClosedIcon, CheckCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { LockClosedIcon, CheckCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+
 import PremiumButton from '../../../src/components/UI/PremiumButton';
 import apiClient from '../../../src/lib/api-client';
 
@@ -39,13 +40,13 @@ function ResetPasswordContent() {
   });
 
   useEffect(() => {
-    if (!token) {
+    if (token === null || token.length === 0) {
       setError('Invalid or missing reset token');
     }
   }, [token]);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
-    if (!token) {
+    if (token === null || token.length === 0) {
       setError('Invalid or missing reset token');
       return;
     }
@@ -54,16 +55,16 @@ function ResetPasswordContent() {
     setError(null);
     
     try {
-      const response: any = await apiClient.resetPassword(token, data.password);
+      const response = await apiClient.resetPassword(token, data.password) as { success?: boolean; error?: string };
       
-      if (response.success) {
+      if (response && (response as {success: boolean}).success === true) {
         setIsSuccess(true);
         // Redirect to login after 3 seconds
         setTimeout(() => {
           router.push('/login');
         }, 3000);
       } else {
-        setError(response.error || 'Failed to reset password');
+        setError(response?.error ?? 'Failed to reset password');
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to reset password. Please try again.';
@@ -153,14 +154,14 @@ function ResetPasswordContent() {
         {!isSuccess ? (
           <motion.form 
             className="space-y-6" 
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={(e) => void handleSubmit(onSubmit)(e)}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
             <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-2xl space-y-6 border border-white/20">
               <AnimatePresence>
-                {error && (
+                {error !== null && error.length > 0 && (
                   <motion.div 
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
@@ -235,9 +236,9 @@ function ResetPasswordContent() {
 
               <PremiumButton
                 size="lg"
-                disabled={isLoading || !token}
+                disabled={isLoading || token === null || token.length === 0}
                 loading={isLoading}
-                onClick={handleSubmit(onSubmit)}
+                onClick={() => void handleSubmit(onSubmit)()}
                 className="w-full shadow-xl hover:shadow-2xl"
               >
                 <span className="flex items-center justify-center gap-2">

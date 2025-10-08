@@ -1,6 +1,6 @@
-import React from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import React from 'react';
 import '@testing-library/jest-dom';
 
 // Test React Query integration and configuration

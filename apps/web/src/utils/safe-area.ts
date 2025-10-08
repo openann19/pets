@@ -53,7 +53,7 @@ export function isIOS(): boolean {
  */
 export function isAndroid(): boolean {
   if (typeof window === 'undefined') return false;
-  return /Android/.test(navigator.userAgent);
+  return navigator.userAgent.includes('Android');
 }
 
 /**

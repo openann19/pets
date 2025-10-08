@@ -5,8 +5,6 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { 
   SparklesIcon,
   HeartIcon,
@@ -16,8 +14,12 @@ import {
   CheckCircleIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline'
-import { useNameSuggestions, PetInfo, NameSuggestion } from '@/services/ai-name-suggestions'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect } from 'react'
+
 import { InteractiveButton } from '@/components/ui/Interactive'
+import type { PetInfo, NameSuggestion } from '@/services/ai-name-suggestions';
+import { useNameSuggestions } from '@/services/ai-name-suggestions'
 
 interface NameSuggestionWidgetProps {
   petInfo: PetInfo

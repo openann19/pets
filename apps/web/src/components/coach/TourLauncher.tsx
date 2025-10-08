@@ -5,8 +5,6 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { 
   PlayIcon,
   QuestionMarkCircleIcon,
@@ -14,8 +12,11 @@ import {
   CheckCircleIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline'
-import { useCoachTooltips } from '@/services/coach-tooltips'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect } from 'react'
+
 import { InteractiveButton } from '@/components/ui/Interactive'
+import { useCoachTooltips } from '@/services/coach-tooltips'
 
 interface TourLauncherProps {
   className?: string

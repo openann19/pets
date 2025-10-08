@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
-import { ErrorBoundary } from './ErrorBoundary';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import React from 'react';
+
+import { ErrorBoundary } from './ErrorBoundary';
 
 interface SectionErrorBoundaryProps {
   children: React.ReactNode;

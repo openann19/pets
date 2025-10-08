@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import React, { useMemo } from 'react';
+
 // Import from local copy for now
 // import { useWeather } from '../../services/WeatherService';
 import { SPRING_CONFIG } from '../../constants/animations';

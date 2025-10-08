@@ -6,19 +6,20 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useAuthStore } from '@/lib/auth-store'
-import { useSessionReplay } from '@/services/session-replay'
-import { usePWAOffline } from '@/services/pwa-offline'
-import { useGamification } from '@/services/gamification'
-import { useFirebaseMessaging } from '@/services/firebase-messaging'
-import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
+
 import { TourLauncher } from '@/components/coach/TourLauncher'
-import { PushNotificationSetup } from '@/components/notifications/PushNotificationSetup'
-import { BadgeSystem } from '@/components/gamification/BadgeSystem'
-import { CompactNameSuggestion } from '@/components/pets/NameSuggestionWidget'
 import { CompactCompatibilityHeatMap } from '@/components/compatibility/CompatibilityHeatMap'
-import { SuccessStoriesCarousel } from '@/components/stories/SuccessStoriesCarousel'
+import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
+import { BadgeSystem } from '@/components/gamification/BadgeSystem'
+import { PushNotificationSetup } from '@/components/notifications/PushNotificationSetup'
+import { CompactNameSuggestion } from '@/components/pets/NameSuggestionWidget'
 import { AutoEnhancePetPhoto } from '@/components/photos/PhotoEnhancement'
+import { SuccessStoriesCarousel } from '@/components/stories/SuccessStoriesCarousel'
+import { useAuthStore } from '@/lib/auth-store'
+import { useFirebaseMessaging } from '@/services/firebase-messaging'
+import { useGamification } from '@/services/gamification'
+import { usePWAOffline } from '@/services/pwa-offline'
+import { useSessionReplay } from '@/services/session-replay'
 
 interface EnhancementProviderProps {
   children: React.ReactNode

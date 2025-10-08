@@ -37,11 +37,11 @@ export default function ForgotPasswordPage() {
     try {
       const response = await apiClient.forgotPassword(data.email);
       
-      if (response && typeof response === 'object' && 'success' in response && response.success) {
+      if (response && typeof response === 'object' && 'success' in response && (response as {success: boolean}).success === true) {
         setIsSuccess(true);
       } else {
         const errorResponse = response as { error?: string };
-        setError(errorResponse?.error || 'Failed to send reset email');
+        setError(errorResponse?.error ?? 'Failed to send reset email');
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send reset email. Please try again.';
@@ -109,7 +109,7 @@ export default function ForgotPasswordPage() {
                 Forgot Password?
               </h2>
               <p className="text-base text-gray-600">
-                No worries! Enter your email and we'll send you reset instructions.
+                No worries! Enter your email and we&apos;ll send you reset instructions.
               </p>
             </>
           ) : (
@@ -121,7 +121,7 @@ export default function ForgotPasswordPage() {
                 Check Your Email
               </h2>
               <p className="text-base text-gray-600">
-                We've sent password reset instructions to your email address.
+                We&apos;ve sent password reset instructions to your email address.
               </p>
             </>
           )}
@@ -131,14 +131,14 @@ export default function ForgotPasswordPage() {
         {!isSuccess ? (
           <motion.form 
             className="space-y-6" 
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={(e) => void handleSubmit(onSubmit)(e)}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
             <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-2xl space-y-6 border border-white/20">
               <AnimatePresence>
-                {error && (
+                {error !== null && error.length > 0 && (
                   <motion.div 
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
@@ -185,7 +185,7 @@ export default function ForgotPasswordPage() {
                 size="lg"
                 disabled={isLoading}
                 loading={isLoading}
-                onClick={handleSubmit(onSubmit)}
+                onClick={() => void handleSubmit(onSubmit)()}
                 className="w-full shadow-xl hover:shadow-2xl"
               >
                 <span className="flex items-center justify-center gap-2">
@@ -214,10 +214,10 @@ export default function ForgotPasswordPage() {
           >
             <div className="space-y-4 text-center">
               <p className="text-gray-600">
-                If an account exists with that email, you'll receive password reset instructions shortly.
+                If an account exists with that email, you&apos;ll receive password reset instructions shortly.
               </p>
               <p className="text-sm text-gray-500">
-                Didn't receive the email? Check your spam folder or try again.
+                Didn&apos;t receive the email? Check your spam folder or try again.
               </p>
             </div>
 

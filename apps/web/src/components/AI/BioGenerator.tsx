@@ -1,10 +1,5 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   SparklesIcon, 
   PhotoIcon, 
@@ -15,6 +10,12 @@ import {
   CheckCircleIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
 import { useAuthStore } from '../../lib/auth-store';
 import { api } from '../../services/api';
 import { logger } from '../../services/logger';
@@ -451,11 +452,11 @@ export function BioGenerator() {
                 <p className="text-sm font-semibold text-gray-600 mb-2">Sentiment Analysis:</p>
                 <div className="flex gap-4">
                   <div className="flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2" />
                     <span className="text-sm">Positive: {(generatedBio.sentiment.positive * 100).toFixed(0)}%</span>
                   </div>
                   <div className="flex items-center">
-                    <div className="w-3 h-3 bg-gray-500 rounded-full mr-2"></div>
+                    <div className="w-3 h-3 bg-gray-500 rounded-full mr-2" />
                     <span className="text-sm">Neutral: {(generatedBio.sentiment.neutral * 100).toFixed(0)}%</span>
                   </div>
                 </div>

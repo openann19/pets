@@ -5,10 +5,10 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { BellIcon as BellSolidIcon } from '@heroicons/react/24/solid';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
 
 interface NotificationBellProps {
   count?: number;

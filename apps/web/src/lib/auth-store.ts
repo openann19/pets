@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
 import type { User } from '../types';
 
 interface AuthState {
@@ -126,7 +127,7 @@ export const useAuthStore = create<AuthState>()(
         if (typeof window !== 'undefined') {
           try {
             const apiService = require('../services/api').default;
-            if (apiService && apiService.setAuthToken) {
+            if (apiService?.setAuthToken) {
               apiService.setAuthToken(accessToken);
             }
           } catch (error) {
@@ -192,12 +193,12 @@ export const useAuthStore = create<AuthState>()(
               // Sync with API service
               try {
                 const apiService = require('../services/api').default;
-                if (apiService && apiService.setAuthToken) {
+                if (apiService?.setAuthToken) {
                   apiService.setAuthToken(storedToken);
                 }
                 
                 // Optionally validate token with backend
-                if (apiService && apiService.validateToken) {
+                if (apiService?.validateToken) {
                   const isValid = await apiService.validateToken(storedToken);
                   if (!isValid) {
                     get().clearTokens();

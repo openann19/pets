@@ -5,8 +5,9 @@
 
 'use client';
 
-import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useRef } from 'react';
+
 import { SPRING_CONFIG, MICRO_CONFIG } from '../../constants/animations';
 
 interface PremiumInputProps {

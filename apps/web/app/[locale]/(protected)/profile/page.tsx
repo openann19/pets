@@ -1,8 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   UserCircleIcon,
   CameraIcon,
@@ -16,13 +13,17 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
+
 import PremiumLayout from '@/components/Layout/PremiumLayout';
+import { ProfileSkeleton } from '@/components/UI/LoadingSkeleton';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
 import SafeImage from '@/components/UI/SafeImage';
-import { ProfileSkeleton } from '@/components/UI/LoadingSkeleton';
-import { useAuthStore } from '@/lib/auth-store';
 import { useCurrentUser, useUpdateProfile } from '@/hooks/api-hooks';
+import { useAuthStore } from '@/lib/auth-store';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -199,7 +200,7 @@ export default function ProfilePage() {
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
-                <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-full blur-lg opacity-75 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-full blur-lg opacity-75 group-hover:opacity-100 transition-opacity" />
                 <div className="relative">
                   <SafeImage
                     src={userData?.avatar}

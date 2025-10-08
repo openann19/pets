@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import PremiumButton from '@/components/UI/PremiumButton';
 

@@ -6,6 +6,7 @@
 
 // @ts-nocheck
 import { useState, useEffect, useCallback, useRef } from 'react';
+
 import { useAuth } from '@/components/providers/AuthProvider';
 import { api } from '@/services/api';
 import { logger } from '@/services/logger';
@@ -121,7 +122,7 @@ export const useOptimizedAuth = (
     startLoadingAnimation();
     triggerSound('loading');
 
-    const attemptLogin = async (attempt: number = 1): Promise<void> => {
+    const attemptLogin = async (attempt = 1): Promise<void> => {
       try {
         const userData = await login(email, password);
         setIsLoading(false);

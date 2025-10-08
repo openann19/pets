@@ -1,5 +1,5 @@
-import ContentLoader from 'react-content-loader'
 import { motion } from 'framer-motion'
+import ContentLoader from 'react-content-loader'
 
 // Base skeleton with shimmer effect
 export const SkeletonBase = (props: any) => (

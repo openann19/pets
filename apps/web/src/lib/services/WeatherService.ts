@@ -74,10 +74,10 @@ function getSeason(): 'spring' | 'summer' | 'fall' | 'winter' {
  */
 function generatePetTips(weather: WeatherResponse, timeOfDay: string, season: string): string[] {
   const tips: string[] = [];
-  const temp = weather.main.temp;
+  const {temp} = weather.main;
   const condition = weather.weather[0]?.main.toLowerCase();
   const windSpeed = weather.wind.speed;
-  const humidity = weather.main.humidity;
+  const {humidity} = weather.main;
 
   // Temperature-based tips
   if (temp < 5) {
@@ -117,7 +117,7 @@ function generatePetTips(weather: WeatherResponse, timeOfDay: string, season: st
  */
 function generateActivitySuggestions(weather: WeatherResponse, timeOfDay: string, season: string): string[] {
   const suggestions: string[] = [];
-  const temp = weather.main.temp;
+  const {temp} = weather.main;
   const condition = weather.weather[0]?.main.toLowerCase();
   const windSpeed = weather.wind.speed;
 

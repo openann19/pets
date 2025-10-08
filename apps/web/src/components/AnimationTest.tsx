@@ -3,8 +3,9 @@
 // Animation Test Component
 // Tests the new micro-interactions and animations
 
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
+
 import PremiumCard from './UI/PremiumCard';
 import PremiumInput from './UI/PremiumInput';
 import PremiumSkeleton, { SkeletonCard, SkeletonProfile, SkeletonList } from './UI/PremiumSkeleton';
@@ -82,9 +83,9 @@ const AnimationTest: React.FC = () => {
         <div className="grid grid-cols-3 gap-4">
           {[1,2,3].map(i => (
             <div key={i} className="bg-white p-4 rounded-xl shadow-md">
-              <div className="skeleton h-40 rounded-lg mb-4"></div>
-              <div className="skeleton h-4 rounded mb-2"></div>
-              <div className="skeleton h-4 w-1/2 rounded"></div>
+              <div className="skeleton h-40 rounded-lg mb-4" />
+              <div className="skeleton h-4 rounded mb-2" />
+              <div className="skeleton h-4 w-1/2 rounded" />
             </div>
           ))}
         </div>

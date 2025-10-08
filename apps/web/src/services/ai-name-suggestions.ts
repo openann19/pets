@@ -32,15 +32,15 @@ export interface NameSuggestionsResponse {
 }
 
 class AINameSuggestionService {
-  private apiUrl = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8000'
-  private apiKey = process.env.DEEPSEEK_API_KEY
+  private readonly apiUrl = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8000'
+  private readonly apiKey = process.env.DEEPSEEK_API_KEY
 
   /**
    * Generate name suggestions for a pet
    */
   async generateNameSuggestions(
     petInfo: PetInfo,
-    count: number = 10,
+    count = 10,
     categories: string[] = ['classic', 'trendy', 'unique', 'cute']
   ): Promise<NameSuggestionsResponse> {
     try {
@@ -94,7 +94,7 @@ class AINameSuggestionService {
   async getNamesByCategory(
     category: NameSuggestion['category'],
     species: PetInfo['species'],
-    count: number = 5
+    count = 5
   ): Promise<NameSuggestion[]> {
     const petInfo: PetInfo = { species }
     const response = await this.generateNameSuggestions(petInfo, count, [category])
@@ -104,14 +104,14 @@ class AINameSuggestionService {
   /**
    * Get trending pet names
    */
-  async getTrendingNames(species: PetInfo['species'], count: number = 10): Promise<NameSuggestion[]> {
+  async getTrendingNames(species: PetInfo['species'], count = 10): Promise<NameSuggestion[]> {
     return this.getNamesByCategory('trendy', species, count)
   }
 
   /**
    * Get unique/rare names
    */
-  async getUniqueNames(species: PetInfo['species'], count: number = 10): Promise<NameSuggestion[]> {
+  async getUniqueNames(species: PetInfo['species'], count = 10): Promise<NameSuggestion[]> {
     return this.getNamesByCategory('unique', species, count)
   }
 
@@ -173,7 +173,7 @@ Make sure names are:
   private parseNameSuggestions(aiResponse: string, petInfo: PetInfo): NameSuggestion[] {
     try {
       // Try to extract JSON from the response
-      const jsonMatch = aiResponse.match(/\[[\s\S]*\]/)
+      const jsonMatch = /\[[\s\S]*\]/.exec(aiResponse)
       if (jsonMatch) {
         const suggestions = JSON.parse(jsonMatch[0])
         return suggestions.map((suggestion: any) => ({
@@ -347,7 +347,7 @@ export function useNameSuggestions() {
 
   const generateSuggestions = async (
     petInfo: PetInfo,
-    count: number = 10,
+    count = 10,
     categories: string[] = ['classic', 'trendy', 'unique', 'cute']
   ) => {
     setIsLoading(true)
@@ -365,7 +365,7 @@ export function useNameSuggestions() {
     }
   }
 
-  const getTrendingNames = async (species: PetInfo['species'], count: number = 10) => {
+  const getTrendingNames = async (species: PetInfo['species'], count = 10) => {
     setIsLoading(true)
     setError(null)
 
@@ -381,7 +381,7 @@ export function useNameSuggestions() {
     }
   }
 
-  const getUniqueNames = async (species: PetInfo['species'], count: number = 10) => {
+  const getUniqueNames = async (species: PetInfo['species'], count = 10) => {
     setIsLoading(true)
     setError(null)
 

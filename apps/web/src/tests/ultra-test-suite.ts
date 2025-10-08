@@ -15,8 +15,8 @@ interface TestResult {
 }
 
 class UltraTestSuite {
-  private results: TestResult[] = [];
-  private startTime = Date.now();
+  private readonly results: TestResult[] = [];
+  private readonly startTime = Date.now();
 
   async runAllTests(): Promise<TestResult[]> {
     console.log('🚀 ULTRA TESTING MODE ACTIVATED!');

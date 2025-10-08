@@ -6,6 +6,7 @@
 'use client';
 
 import React from 'react';
+
 import { logger } from '../services/logger';
 
 interface AnalyticsEvent {
@@ -31,23 +32,23 @@ interface PerformanceMetrics {
 }
 
 class AdvancedAnalytics {
-  private sessionId: string;
+  private readonly sessionId: string;
   private userId: string | null = null;
   private pageStartTime: number = Date.now();
-  private userBehavior: UserBehavior = {
+  private readonly userBehavior: UserBehavior = {
     swipes: [],
     messages: [],
     pageViews: [],
     interactions: [],
   };
-  private performanceMetrics: PerformanceMetrics = {
+  private readonly performanceMetrics: PerformanceMetrics = {
     pageLoad: [],
     apiCalls: [],
     errors: [],
     memoryUsage: [],
   };
-  private queue: AnalyticsEvent[] = [];
-  private isOnline: boolean = true;
+  private readonly queue: AnalyticsEvent[] = [];
+  private isOnline = true;
 
   constructor() {
     this.sessionId = this.generateSessionId();
@@ -99,7 +100,7 @@ class AdvancedAnalytics {
       // @ts-ignore
       if (performance.memory) {
         // @ts-ignore
-        const memory = performance.memory;
+        const {memory} = performance;
         this.performanceMetrics.memoryUsage.push(memory.usedJSHeapSize);
         
         // Keep only last 20 measurements
@@ -493,6 +494,3 @@ export const trackAPIPerformance = (originalFetch: typeof fetch) => {
   };
 };
 
-// ====== EXPORTS ======
-export { AdvancedAnalytics };
-export default getAnalytics;

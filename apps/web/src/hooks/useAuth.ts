@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCallback, useEffect } from 'react';
+
 import { useAuthStore } from '../lib/auth-store';
 import { api } from '../services/api';
 import { logger } from '../services/logger';

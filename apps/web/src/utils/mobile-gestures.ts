@@ -222,9 +222,9 @@ export function usePinchGesture(
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.void current.removeEventListener('touchmove', handleTouchMove);
-      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.current.removeEventListener('touchmove', handleTouchMove);
+      elementRef.current.removeEventListener('touchend', handleTouchEnd);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
@@ -316,9 +316,9 @@ export function usePanGesture(
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.void current.removeEventListener('touchmove', handleTouchMove);
-      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.current.removeEventListener('touchmove', handleTouchMove);
+      elementRef.current.removeEventListener('touchend', handleTouchEnd);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
@@ -414,7 +414,7 @@ export function usePullToRefresh(
       try {
         await onRefresh();
       } catch (error) {
-        void // console.error('Pull-to-refresh failed:', error);
+        // console.error('Pull-to-refresh failed:', error);
       } finally {
         setState({
           isPulling: false,
@@ -444,9 +444,9 @@ export function usePullToRefresh(
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.void current.removeEventListener('touchmove', handleTouchMove);
-      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.current.removeEventListener('touchmove', handleTouchMove);
+      elementRef.current.removeEventListener('touchend', handleTouchEnd);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
@@ -513,7 +513,7 @@ export function useLongPress(
     if (elementRef.current) {
       elementRef.current.removeEventListener('touchstart', handleTouchStart);
       elementRef.current.removeEventListener('touchend', handleTouchEnd);
-      elementRef.void current.removeEventListener('touchcancel', handleTouchCancel);
+      elementRef.current.removeEventListener('touchcancel', handleTouchCancel);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchEnd, handleTouchCancel]);
@@ -550,7 +550,7 @@ export const gestureUtils = {
   },
 
   // Get touch point from event
-  getTouchPoint: (e: TouchEvent, index: number = 0) => {
+  getTouchPoint: (e: TouchEvent, index = 0) => {
     if (e.touches.length > index) {
       return {
         x: e.touches[index].clientX,

@@ -3,9 +3,11 @@
  * React hooks for admin panel functionality
  */
 
-import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import adminApiService, { AdminStats, User, Pet, Match, SystemLog, NotificationRequest } from '../services/adminApi';
+import { useState, useEffect, useCallback } from 'react';
+
+import type { User, NotificationRequest } from '../services/adminApi';
+import adminApiService, { AdminStats, Pet, Match, SystemLog } from '../services/adminApi';
 
 /**
  * Hook for admin dashboard statistics

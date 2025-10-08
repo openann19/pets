@@ -5,14 +5,14 @@
 
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
 import { 
   HeartIcon,
   SparklesIcon,
   ChartBarIcon,
   InformationCircleIcon
 } from '@heroicons/react/24/outline'
+import { motion } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
 
 interface CompatibilityData {
   personality: number

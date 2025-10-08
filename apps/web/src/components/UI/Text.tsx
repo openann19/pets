@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
+
 import { THEME } from '@/theme/unified-design-system';
 
 interface TextProps extends React.HTMLAttributes<HTMLElement> {
   variant?: 'heading1' | 'heading2' | 'heading3' | 'heading4' | 'body' | 'bodyLarge' | 'caption' | 'small';
   as?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span' | 'div';
-  color?: keyof typeof THEME.colors.primary | keyof typeof THEME.colors.neutral | keyof typeof THEME.colors.error | keyof typeof THEME.colors.success;
+  color?: keyof typeof THEME.colors.primary      ;
   weight?: keyof typeof THEME.typography.fontWeight;
   children: React.ReactNode;
 }

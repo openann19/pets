@@ -1,19 +1,20 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChatBubbleLeftRightIcon, PhoneIcon, VideoCameraIcon, HeartIcon, MapPinIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
+
+import PremiumLayout from '@/components/Layout/PremiumLayout';
+import { NoMatchesEmptyState } from '@/components/UI/EmptyState';
+import { MatchCardSkeleton } from '@/components/UI/LoadingSkeleton';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
-import PremiumLayout from '@/components/Layout/PremiumLayout';
 import SafeImage from '@/components/UI/SafeImage';
-import { MatchCardSkeleton } from '@/components/UI/LoadingSkeleton';
-import { NoMatchesEmptyState } from '@/components/UI/EmptyState';
-import { formatLastSeen } from '@/utils/dateHelpers';
 import { useMatches } from '@/hooks/api-hooks';
+import { formatLastSeen } from '@/utils/dateHelpers';
 
 export default function MatchesPage() {
   const router = useRouter();
@@ -114,7 +115,7 @@ export default function MatchesPage() {
                 </span>
               </h1>
               <p className="text-white/70 text-lg">
-                {matches && matches.length > 0 
+                {matches && Array.isArray(matches) && matches.length > 0 
                   ? `You have ${matches.length} perfect ${matches.length === 1 ? 'match' : 'matches'}!`
                   : 'Your matches will appear here'
                 }
@@ -122,7 +123,7 @@ export default function MatchesPage() {
             </div>
             
             {/* Quick Actions */}
-            {matches && matches.length > 0 && (
+            {matches && Array.isArray(matches) && matches.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}

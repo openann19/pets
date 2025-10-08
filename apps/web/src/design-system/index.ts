@@ -817,22 +817,3 @@ export const WCAG = {
   },
 } as const;
 
-// ====== EXPORT UNIFIED THEME ======
-export const THEME = {
-  colors: COLORS,
-  darkColors: DARK_COLORS,
-  typography: TYPOGRAPHY,
-  spacing: SPACING,
-  radius: RADIUS,
-  shadows: SHADOWS,
-  gradients: GRADIENTS,
-  transitions: TRANSITIONS,
-  zIndex: ZINDEX,
-  breakpoints: BREAKPOINTS,
-  variants: VARIANTS,
-  sizes: SIZES,
-  wcag: WCAG,
-  createStyle,
-} as const;
-
-export default THEME;

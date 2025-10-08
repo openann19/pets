@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAnimation, useMotionValue, useTransform } from 'framer-motion';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 interface NeuralNetworkConfig {
   layers: number[];

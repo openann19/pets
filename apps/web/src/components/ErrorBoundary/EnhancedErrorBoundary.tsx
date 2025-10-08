@@ -1,8 +1,9 @@
 'use client';
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ExclamationTriangleIcon, ArrowPathIcon, HomeIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -61,7 +62,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     }
   }
 
-  private logError = (error: Error, errorInfo: ErrorInfo) => {
+  private readonly logError = (error: Error, errorInfo: ErrorInfo) => {
     const errorData = {
       message: error.message,
       stack: error.stack,
@@ -93,7 +94,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     this.sendToAnalytics(errorData);
   };
 
-  private sendToAnalytics = (errorData: any) => {
+  private readonly sendToAnalytics = (errorData: any) => {
     // Send to your analytics service
     if (typeof window !== 'undefined' && (window as any).gtag) {
       (window as any).gtag('event', 'exception', {
@@ -105,7 +106,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     }
   };
 
-  private shouldAutoRetry = (error: Error): boolean => {
+  private readonly shouldAutoRetry = (error: Error): boolean => {
     // Auto-retry for network errors, chunk loading errors, etc.
     const retryableErrors = [
       'ChunkLoadError',
@@ -119,7 +120,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     );
   };
 
-  private scheduleAutoRetry = () => {
+  private readonly scheduleAutoRetry = () => {
     if (this.retryTimeout) {
       clearTimeout(this.retryTimeout);
     }
@@ -129,7 +130,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     }, 3000); // Retry after 3 seconds
   };
 
-  private handleRetry = () => {
+  private readonly handleRetry = () => {
     this.setState({
       hasError: false,
       error: null,
@@ -143,11 +144,11 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     }
   };
 
-  private handleGoHome = () => {
+  private readonly handleGoHome = () => {
     window.location.href = '/';
   };
 
-  private handleReload = () => {
+  private readonly handleReload = () => {
     window.location.reload();
   };
 
@@ -278,7 +279,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 
-  private getErrorContainerClasses = (): string => {
+  private readonly getErrorContainerClasses = (): string => {
     const baseClasses = "flex items-center justify-center p-8";
     
     switch (this.props.level) {
@@ -292,7 +293,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     }
   };
 
-  private getErrorTitle = (): string => {
+  private readonly getErrorTitle = (): string => {
     switch (this.props.level) {
       case 'page':
         return 'Something went wrong';
@@ -304,7 +305,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     }
   };
 
-  private getErrorMessage = (): string => {
+  private readonly getErrorMessage = (): string => {
     switch (this.props.level) {
       case 'page':
         return 'We encountered an unexpected error. Please try refreshing the page or contact support if the problem persists.';

@@ -1,8 +1,8 @@
 'use client'
 
-import { useTheme } from 'next-themes'
-import { motion } from 'framer-motion'
 import { SunIcon, MoonIcon, ComputerDesktopIcon } from '@heroicons/react/24/solid'
+import { motion } from 'framer-motion'
+import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
 
 export function ThemeSwitch() {

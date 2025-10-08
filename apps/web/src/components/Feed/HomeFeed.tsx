@@ -5,8 +5,6 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   HeartIcon, 
   ChatBubbleLeftRightIcon, 
@@ -17,7 +15,9 @@ import {
   PauseIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon, BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 interface Post {

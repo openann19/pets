@@ -1,8 +1,5 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
-// import { motion } from 'framer-motion';
 import { 
   EyeIcon,
   HeartIcon,
@@ -12,8 +9,12 @@ import {
   ArrowRightIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
-import PremiumCard from '@/components/UI/PremiumCard';
+import Link from 'next/link';
+import React from 'react';
+// import { motion } from 'framer-motion';
+
 import PremiumButton from '@/components/UI/PremiumButton';
+import PremiumCard from '@/components/UI/PremiumCard';
 // import { SPRING_CONFIG } from '@/constants/animations';
 
 export default function DemoWorkflowPage() {

@@ -1,12 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   UserIcon, 
   EnvelopeIcon, 
@@ -16,11 +9,19 @@ import {
   ShieldCheckIcon,
   HeartIcon
 } from '@heroicons/react/24/outline';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import HoloLogo from '@/components/Brand/HoloLogo';
+import PremiumLayout from '@/components/Layout/PremiumLayout';
 import { useAuth } from '@/components/providers/AuthProvider';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
-import PremiumLayout from '@/components/Layout/PremiumLayout';
-import HoloLogo from '@/components/Brand/HoloLogo';
 
 const registerSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -96,7 +97,7 @@ export default function RegisterPage() {
             >
               <Link href="/" className="inline-flex justify-center items-center mb-10">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-3xl blur-xl opacity-60"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-3xl blur-xl opacity-60" />
                   <div className="relative">
                     <HoloLogo size={80} withText monochrome />
                   </div>

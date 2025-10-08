@@ -5,10 +5,10 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDownIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface Locale {
   code: string;

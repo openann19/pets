@@ -5,8 +5,6 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   PaperAirplaneIcon, 
   PhotoIcon, 
@@ -17,8 +15,13 @@ import {
   ExclamationCircleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
-import LoadingSpinner from '../UI/LoadingSpinner';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import React, { useState, useRef, useEffect } from 'react';
+
+import LoadingSpinner from '../UI/LoadingSpinner';
+
+
 import { useAnalytics } from '@/utils/analytics-system';
 
 interface EnhancedMessageInputProps {
@@ -102,7 +105,7 @@ export default function EnhancedMessageInput({
   }, [isTyping, onTyping]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
+    const {value} = e.target;
     setMessage(value);
 
     // Handle typing indicator

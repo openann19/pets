@@ -5,8 +5,6 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   ServerIcon,
   CpuChipIcon,
@@ -44,8 +42,11 @@ import {
   ArrowDownTrayIcon,
   PrinterIcon,
 } from '@heroicons/react/24/outline';
-import PremiumCard from '@/components/UI/PremiumCard';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+
 import PremiumButton from '@/components/UI/PremiumButton';
+import PremiumCard from '@/components/UI/PremiumCard';
 import { PREMIUM_VARIANTS, SPRING_CONFIGS, STAGGER_CONFIG } from '@/constants/animations';
 
 interface APIEndpoint {
@@ -807,7 +808,7 @@ export default function APIManagement() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading API management...</p>
         </div>
       </div>

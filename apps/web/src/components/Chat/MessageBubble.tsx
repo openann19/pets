@@ -1,9 +1,10 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { CheckIcon } from '@heroicons/react/24/outline';
 import { CheckIcon as CheckSolidIcon } from '@heroicons/react/24/solid';
-import { Message, User } from '../../types';
+import { motion } from 'framer-motion';
+import Image from 'next/image';
+import React from 'react';
+
+import type { Message, User } from '../../types';
 
 interface MessageBubbleProps {
   message: Message;
@@ -82,7 +83,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 <div key={index} className="rounded-lg overflow-hidden">
                   <Image
                     src={attachment.url}
-                    alt={(attachment as any).fileName || 'Image'}
+                    alt={(attachment).fileName || 'Image'}
                     width={200}
                     height={200}
                     className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"

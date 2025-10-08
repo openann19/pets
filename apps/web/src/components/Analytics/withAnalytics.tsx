@@ -8,6 +8,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+
 import { useAnalytics } from '@/utils/analytics-system';
 
 /**

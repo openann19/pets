@@ -5,11 +5,12 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { XMarkIcon, HeartIcon, ChatBubbleLeftRightIcon, ShareIcon, EllipsisHorizontalIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import Image from 'next/image';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 
 interface Story {
@@ -445,7 +446,7 @@ export function useStories() {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
 
-  const openStories = (storyIndex: number = 0) => {
+  const openStories = (storyIndex = 0) => {
     setCurrentStoryIndex(storyIndex);
     setIsOpen(true);
   };

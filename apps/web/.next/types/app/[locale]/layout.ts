@@ -1,4 +1,4 @@
-// File: /home/ben/datapartition_backup/Downloads/pawfectmatch-premium/apps/web/app/[locale]/layout.tsx
+// File: /workspace/apps/web/app/[locale]/layout.tsx
 import * as entry from '../../../../app/[locale]/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

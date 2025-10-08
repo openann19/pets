@@ -4,7 +4,9 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+
 import { useEnhancedSocket } from './useEnhancedSocket'
+
 import { useAuthStore } from '@/lib/auth-store'
 
 interface TypingUser {

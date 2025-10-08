@@ -3,12 +3,13 @@
  * Tests all PWA features: install prompt, splash screen, service worker, etc.
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ThemeProvider } from 'next-themes'
+
 import { InstallPrompt, usePWAInstall } from '../components/PWA/InstallPrompt'
-import { SplashScreen } from '../components/PWA/SplashScreen'
 import { PWAManager, usePWAStatus, PWAUtils } from '../components/PWA/PWAManager'
+import { SplashScreen } from '../components/PWA/SplashScreen'
 
 // Mock next-themes
 jest.mock('next-themes', () => ({
@@ -461,7 +462,7 @@ describe('PWA - Error Handling', () => {
   })
 
   test('handles share failure gracefully', async () => {
-    ;(navigator.share as jest.Mock).mockRejectedValueOnce(new Error('Share failed'))
+    (navigator.share as jest.Mock).mockRejectedValueOnce(new Error('Share failed'))
     
     const result = await PWAUtils.share({ title: 'Test' })
     expect(result).toBe(false)

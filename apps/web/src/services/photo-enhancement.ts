@@ -37,8 +37,8 @@ export interface EnhancedPhoto {
 }
 
 class PhotoEnhancementService {
-  private cloudinaryUrl = process.env.NEXT_PUBLIC_CLOUDINARY_URL
-  private cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+  private readonly cloudinaryUrl = process.env.NEXT_PUBLIC_CLOUDINARY_URL
+  private readonly cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
 
   /**
    * Enhance a photo with automatic improvements

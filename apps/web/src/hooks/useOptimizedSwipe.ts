@@ -4,8 +4,9 @@
  * Provides smooth, responsive swipe interactions with haptic feedback
  */
 
+import type { PanInfo } from 'framer-motion';
+import { useMotionValue, useTransform } from 'framer-motion';
 import { useCallback, useRef, useState } from 'react';
-import { useMotionValue, useTransform, PanInfo } from 'framer-motion';
 
 interface SwipeConfig {
   threshold?: number;

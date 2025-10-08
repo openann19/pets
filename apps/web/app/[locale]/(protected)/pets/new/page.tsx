@@ -1,8 +1,5 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import {
   ArrowLeftIcon,
   PhotoIcon,
@@ -13,13 +10,16 @@ import {
   PlusIcon,
   HeartIcon
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useState, useCallback } from 'react';
 
 import PremiumLayout from '@/components/Layout/PremiumLayout';
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
 import PremiumInput from '@/components/UI/PremiumInput';
-import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import { PREMIUM_VARIANTS, STAGGER_CONFIG } from '@/constants/animations';
 import { useCreatePet } from '@/hooks/api-hooks';
 
@@ -97,7 +97,7 @@ export default function CreatePetPage() {
   };
 
   const handlePhotoUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
+    const {files} = event.target;
     if (!files) return;
 
     const maxPhotos = 10;

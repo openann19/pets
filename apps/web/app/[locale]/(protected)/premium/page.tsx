@@ -1,13 +1,15 @@
 'use client';
 
-import React from 'react';
-import { useTranslations } from 'next-intl';
-import PremiumLayout from '@/components/Layout/PremiumLayout';
-import PremiumCard from '@/components/UI/PremiumCard';
-import PremiumButton from '@/components/UI/PremiumButton';
-import LanguageSelect from '@/components/UI/LanguageSelect';
-import { motion } from 'framer-motion';
 import { StarIcon, CheckCircleIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import React from 'react';
+
+import PremiumLayout from '@/components/Layout/PremiumLayout';
+import LanguageSelect from '@/components/UI/LanguageSelect';
+import PremiumButton from '@/components/UI/PremiumButton';
+import PremiumCard from '@/components/UI/PremiumCard';
+
 
 export default function PremiumPage() {
   // Handle missing translations gracefully

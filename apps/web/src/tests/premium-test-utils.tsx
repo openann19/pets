@@ -3,11 +3,12 @@
  * Advanced testing utilities for premium components and animations
  */
 
-import React from 'react';
-import { render, RenderOptions, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { RenderOptions} from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { motion, MotionConfig } from 'framer-motion';
+import React from 'react';
 
 // ====== ENHANCED TEST PROVIDERS ======
 interface TestProvidersProps {
@@ -105,7 +106,7 @@ export const animationTestUtils = {
   },
 
   // Wait for animation to complete
-  waitForAnimation: async (duration: number = 500) => {
+  waitForAnimation: async (duration = 500) => {
     await new Promise(resolve => setTimeout(resolve, duration));
   },
 
@@ -178,7 +179,7 @@ export const socketTestUtils = {
 // ====== API TESTING UTILITIES ======
 export const apiTestUtils = {
   // Mock API responses
-  mockApiResponse: (data: any, status: number = 200) => {
+  mockApiResponse: (data: any, status = 200) => {
     global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: status < 400,
@@ -190,7 +191,7 @@ export const apiTestUtils = {
   },
 
   // Mock API error
-  mockApiError: (message: string, status: number = 500) => {
+  mockApiError: (message: string, status = 500) => {
     global.fetch = jest.fn(() =>
       Promise.reject(new Error(message))
     );
@@ -299,7 +300,7 @@ export const performanceTestUtils = {
   // Test for memory leaks
   testMemoryLeaks: async (
     ComponentFactory: () => React.ReactElement,
-    iterations: number = 100
+    iterations = 100
   ) => {
     const initialMemory = (performance as any).memory?.usedJSHeapSize || 0;
     
@@ -378,7 +379,7 @@ export const errorBoundaryTestUtils = {
   },
 
   // Create component that throws error
-  createThrowingComponent: (errorMessage: string = 'Test error') => {
+  createThrowingComponent: (errorMessage = 'Test error') => {
     return () => {
       throw new Error(errorMessage);
     };
@@ -422,8 +423,8 @@ export const a11yTestUtils = {
     
     textElements.forEach(element => {
       const styles = window.getComputedStyle(element);
-      const color = styles.color;
-      const backgroundColor = styles.backgroundColor;
+      const {color} = styles;
+      const {backgroundColor} = styles;
       
       // Basic check - ensure text isn't transparent
       expect(color).not.toBe('rgba(0, 0, 0, 0)');
@@ -434,30 +435,3 @@ export const a11yTestUtils = {
   },
 };
 
-// ====== EXPORTS ======
-export {
-  renderWithProviders as render,
-  animationTestUtils,
-  socketTestUtils,
-  apiTestUtils,
-  premiumTestUtils,
-  performanceTestUtils,
-  errorBoundaryTestUtils,
-  a11yTestUtils,
-};
-
-// Re-export common testing utilities
-export { screen, waitFor, userEvent };
-export * from '@testing-library/react';
-
-// ====== DEFAULT EXPORT ======
-export default {
-  render: renderWithProviders,
-  animation: animationTestUtils,
-  socket: socketTestUtils,
-  api: apiTestUtils,
-  premium: premiumTestUtils,
-  performance: performanceTestUtils,
-  errorBoundary: errorBoundaryTestUtils,
-  a11y: a11yTestUtils,
-};

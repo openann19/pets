@@ -1,7 +1,7 @@
 'use client';
 
 import { NextIntlClientProvider } from 'next-intl';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface LocaleProviderProps {
   locale: string;

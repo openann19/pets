@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { Pet, Match, User } from '../types';
+
+import type { Pet, Match} from '../types';
+import { User } from '../types';
 
 export interface MatchState {
   // Current pet being viewed in swipe

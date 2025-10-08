@@ -1,4 +1,5 @@
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 
 export interface WebSocketConfig {
   maxReconnectAttempts?: number;
@@ -17,12 +18,12 @@ export class WebSocketManager {
   private socket: Socket | null = null;
   private userId: string | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 10;
-  private reconnectDelay = 1000;
+  private readonly maxReconnectAttempts = 10;
+  private readonly reconnectDelay = 1000;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private isConnecting = false;
   private messageQueue: QueuedMessage[] = [];
-  private enableLogging = true;
+  private readonly enableLogging = true;
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private lastPingTime = 0;
   private connectionPromise: Promise<Socket> | null = null;

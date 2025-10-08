@@ -6,7 +6,9 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
+
 import { useAuthStore } from '../lib/auth-store';
 import { logger } from '../services/logger';
 

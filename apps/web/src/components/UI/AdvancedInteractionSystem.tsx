@@ -9,8 +9,9 @@
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import React, { useCallback, useRef, useState, useEffect, createContext, useContext } from 'react';
 
-import { SPRING_CONFIG } from '@/constants/animations';
 import { useAPILoading } from './UniversalLoadingStates';
+
+import { SPRING_CONFIG } from '@/constants/animations';
 
 // ====== INTERACTION CONTEXT ======
 
@@ -631,11 +632,4 @@ export const EnhancedCard: React.FC<EnhancedCardProps> = ({
   );
 };
 
-// ====== EXPORT ALL COMPONENTS ======
-
-export {
-  InteractionProvider as default,
-  EnhancedInteractive,
-  EnhancedButton,
-  EnhancedCard,
-};
+export default InteractionProvider;

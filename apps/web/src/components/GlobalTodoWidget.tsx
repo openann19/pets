@@ -5,8 +5,6 @@
 
 'use client';
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircleIcon, 
   CircleIcon, 
@@ -19,9 +17,14 @@ import {
   XMarkIcon,
   EllipsisVerticalIcon
 } from '@heroicons/react/24/outline';
-import { useGlobalTodos, TodoItem, TodoStats } from '@/hooks/useGlobalTodos';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
+
+
 import PremiumButton from './UI/PremiumButton';
 import PremiumCard from './UI/PremiumCard';
+
+import { useGlobalTodos, TodoItem, TodoStats } from '@/hooks/useGlobalTodos';
 
 interface GlobalTodoWidgetProps {
   variant?: 'compact' | 'full' | 'minimal';
@@ -97,9 +100,9 @@ export default function GlobalTodoWidget({
     return (
       <PremiumCard className={`p-4 ${className}`}>
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-300 rounded w-1/4 mb-2"></div>
-          <div className="h-3 bg-gray-300 rounded w-3/4 mb-1"></div>
-          <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-300 rounded w-1/4 mb-2" />
+          <div className="h-3 bg-gray-300 rounded w-3/4 mb-1" />
+          <div className="h-3 bg-gray-300 rounded w-1/2" />
         </div>
       </PremiumCard>
     );

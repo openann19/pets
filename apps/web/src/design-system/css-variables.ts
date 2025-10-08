@@ -4,8 +4,9 @@
  */
 
 import { COLORS } from '../constants/design-tokens';
-import { TYPOGRAPHY_CSS_VARS } from './typography';
+
 import { ELEVATION_CSS_VARS } from './elevation';
+import { TYPOGRAPHY_CSS_VARS } from './typography';
 
 // Spacing scale (8-pt system)
 export const SPACING_CSS_VARS = `

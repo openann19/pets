@@ -1,8 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
 import {
   PlusIcon,
   PencilIcon,
@@ -14,11 +11,14 @@ import {
   CheckIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import React, { useState } from 'react';
 
 import PremiumLayout from '@/components/Layout/PremiumLayout';
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
-import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import SafeImage from '@/components/UI/SafeImage';
 import { PREMIUM_VARIANTS, STAGGER_CONFIG } from '@/constants/animations';
 import { useUserPets, useDeletePet } from '@/hooks/api-hooks';
