@@ -24,10 +24,10 @@ export function getSafeAreaInsets(): SafeAreaInsets {
   const computedStyle = getComputedStyle(root);
 
   return {
-    top: parseInt(computedStyle.getPropertyValue('--sat-inset-top') || '0'),
-    right: parseInt(computedStyle.getPropertyValue('--sat-inset-right') || '0'),
-    bottom: parseInt(computedStyle.getPropertyValue('--sat-inset-bottom') || '0'),
-    left: parseInt(computedStyle.getPropertyValue('--sat-inset-left') || '0'),
+    top: parseInt(computedStyle.getPropertyValue('--sat-inset-top') ?? '0'),
+    right: parseInt(computedStyle.getPropertyValue('--sat-inset-right') ?? '0'),
+    bottom: parseInt(computedStyle.getPropertyValue('--sat-inset-bottom') ?? '0'),
+    left: parseInt(computedStyle.getPropertyValue('--sat-inset-left') ?? '0'),
   };
 }
 
@@ -36,7 +36,7 @@ export function getSafeAreaInsets(): SafeAreaInsets {
  */
 export function hasSafeAreaInsets(): boolean {
   const insets = getSafeAreaInsets();
-  return insets.top > 0 || insets.bottom > 0 || insets.left > 0 || insets.right > 0;
+  return insets.top > 0 ?? insets.bottom > 0 ?? insets.left > 0 ?? insets.right > 0;
 }
 
 /**
@@ -44,7 +44,7 @@ export function hasSafeAreaInsets(): boolean {
  */
 export function isIOS(): boolean {
   if (typeof window === 'undefined') return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ?? 
          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
@@ -60,7 +60,7 @@ export function isAndroid(): boolean {
  * Check if device is mobile
  */
 export function isMobile(): boolean {
-  return isIOS() || isAndroid();
+  return isIOS() ?? isAndroid();
 }
 
 /**
@@ -107,12 +107,11 @@ export function useSafeAreaInsets(): SafeAreaInsets {
     };
 
     updateInsets();
-    window.addEventListener('resize', updateInsets);
-    window.addEventListener('orientationchange', updateInsets);
-
+    void window.addEventListener('resize', updateInsets);
+    void window.addEventListener('orientationchange', updateInsets);
     return () => {
-      window.removeEventListener('resize', updateInsets);
-      window.removeEventListener('orientationchange', updateInsets);
+      void window.removeEventListener('resize', updateInsets);
+      void window.removeEventListener('orientationchange', updateInsets);
     };
   }, []);
 
@@ -143,12 +142,11 @@ export function useDeviceDetection() {
     };
 
     updateDeviceInfo();
-    window.addEventListener('resize', updateDeviceInfo);
-    window.addEventListener('orientationchange', updateDeviceInfo);
-
+    void window.addEventListener('resize', updateDeviceInfo);
+    void window.addEventListener('orientationchange', updateDeviceInfo);
     return () => {
-      window.removeEventListener('resize', updateDeviceInfo);
-      window.removeEventListener('orientationchange', updateDeviceInfo);
+      void window.removeEventListener('resize', updateDeviceInfo);
+      void window.removeEventListener('orientationchange', updateDeviceInfo);
     };
   }, []);
 

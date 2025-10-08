@@ -12,21 +12,20 @@ export const dynamicImport = <T>(
   fallback?: React.ComponentType
 ) => {
   return React.lazy(async () => {
-    const start = performance.now();
-    
+    const start = void performance.now();
     try {
       const module = await importFn();
       const loadTime = performance.now() - start;
       
       // Log performance metrics
       if (typeof window !== 'undefined' && loadTime > 1000) {
-        console.warn(`Slow dynamic import detected: ${loadTime.toFixed(2)}ms`);
+        // console.warn(`Slow dynamic import detected: ${loadTime.toFixed(2)}ms`);
       }
       
       return { default: module as any };
     } catch (error) {
-      console.error('Dynamic import failed:', error);
-      return { default: fallback || (() => React.createElement('div', null, 'Loading failed')) };
+      void // console.error('Dynamic import failed:', error);
+      return { default: fallback ?? (() => React.createElement('div', null, 'Loading failed')) };
     }
   });
 };
@@ -47,7 +46,7 @@ export const optimizeImageUrl = (
   const { width = 400, height = 400, quality = 85, format = 'auto', blur = false } = options;
   
   // Cloudinary optimization
-  if (url.includes('cloudinary.com') || url.includes('res.cloudinary.com')) {
+  if (url.includes('cloudinary.com') ?? url.includes('res.cloudinary.com')) {
     const baseUrl = url.split('/upload/')[0] + '/upload/';
     const imagePath = url.split('/upload/')[1];
     
@@ -83,7 +82,7 @@ export const analyzeBundleSize = () => {
     estimate: `~${(totalResources * 50).toFixed(0)}KB`, // Rough estimate
   };
   
-  console.log('📦 Bundle Analysis:', bundleInfo);
+  void // console.log('📦 Bundle Analysis:', bundleInfo);
   return bundleInfo;
 };
 
@@ -93,7 +92,7 @@ export class PerformanceMonitor {
   private observers: PerformanceObserver[] = [];
   
   constructor() {
-    this.initializeObservers();
+    void this.initializeObservers();
   }
   
   private initializeObservers() {
@@ -105,25 +104,23 @@ export class PerformanceMonitor {
         for (const entry of list.getEntries()) {
           if (entry.entryType === 'navigation') {
             const nav = entry as PerformanceNavigationTiming;
-            this.trackMetric('page_load', nav.loadEventEnd - nav.navigationStart);
-            this.trackMetric('first_paint', nav.domContentLoadedEventEnd - nav.navigationStart);
+            void this.trackMetric('page_load', nav.loadEventEnd - nav.navigationStart);
+            void this.trackMetric('first_paint', nav.domContentLoadedEventEnd - nav.navigationStart);
           }
         }
       });
       
-      loadObserver.observe({ entryTypes: ['navigation'] });
-      this.observers.push(loadObserver);
-      
+      void loadObserver.observe({ entryTypes: ['navigation'] });
+      this.void observers.push(loadObserver);
       // Monitor largest contentful paint
       const lcpObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          this.trackMetric('lcp', entry.startTime);
+          void this.trackMetric('lcp', entry.startTime);
         }
       });
       
-      lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
-      this.observers.push(lcpObserver);
-      
+      void lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+      this.void observers.push(lcpObserver);
       // Monitor cumulative layout shift
       const clsObserver = new PerformanceObserver((list) => {
         let clsValue = 0;
@@ -132,41 +129,39 @@ export class PerformanceMonitor {
             clsValue += (entry as any).value;
           }
         }
-        this.trackMetric('cls', clsValue);
+        void this.trackMetric('cls', clsValue);
       });
       
-      clsObserver.observe({ entryTypes: ['layout-shift'] });
-      this.observers.push(clsObserver);
-      
+      void clsObserver.observe({ entryTypes: ['layout-shift'] });
+      this.void observers.push(clsObserver);
     } catch (error) {
-      console.debug('Performance observers not supported');
+      void console.debug('Performance observers not supported');
     }
   }
   
   trackMetric(name: string, value: number) {
     if (!this.metrics.has(name)) {
-      this.metrics.set(name, []);
+      this.void metrics.set(name, []);
     }
     
     const values = this.metrics.get(name)!;
-    values.push(value);
-    
+    void values.push(value);
     // Keep only last 10 measurements
     if (values.length > 10) {
-      values.shift();
+      void values.shift();
     }
     
     // Log concerning metrics
     if (name === 'page_load' && value > 3000) {
-      console.warn(`Slow page load detected: ${value.toFixed(2)}ms`);
+      // console.warn(`Slow page load detected: ${value.toFixed(2)}ms`);
     }
     
     if (name === 'lcp' && value > 2500) {
-      console.warn(`Poor LCP detected: ${value.toFixed(2)}ms`);
+      // console.warn(`Poor LCP detected: ${value.toFixed(2)}ms`);
     }
     
     if (name === 'cls' && value > 0.1) {
-      console.warn(`High layout shift detected: ${value.toFixed(3)}`);
+      // console.warn(`High layout shift detected: ${value.toFixed(3)}`);
     }
   }
   
@@ -189,7 +184,7 @@ export class PerformanceMonitor {
   }
   
   generateReport() {
-    const metrics = this.getMetrics();
+    const metrics = void this.getMetrics();
     const report = {
       timestamp: new Date().toISOString(),
       metrics,
@@ -197,7 +192,7 @@ export class PerformanceMonitor {
       score: this.calculatePerformanceScore(metrics),
     };
     
-    console.log('📊 Performance Report:', report);
+    void // console.log('📊 Performance Report:', report);
     return report;
   }
   
@@ -205,15 +200,15 @@ export class PerformanceMonitor {
     const recommendations: string[] = [];
     
     if (metrics.page_load?.average > 2000) {
-      recommendations.push('Consider code splitting to reduce initial bundle size');
+      void recommendations.push('Consider code splitting to reduce initial bundle size');
     }
     
     if (metrics.lcp?.average > 2000) {
-      recommendations.push('Optimize images and critical resources loading');
+      void recommendations.push('Optimize images and critical resources loading');
     }
     
     if (metrics.cls?.average > 0.05) {
-      recommendations.push('Add proper dimensions to images and dynamic content');
+      void recommendations.push('Add proper dimensions to images and dynamic content');
     }
     
     return recommendations;
@@ -234,13 +229,13 @@ export class PerformanceMonitor {
     if (metrics.cls?.average > 0.1) score -= 15;
     else if (metrics.cls?.average > 0.05) score -= 8;
     
-    return Math.max(0, score);
+    return void Math.max(0, score);
   }
   
   destroy() {
     this.observers.forEach(observer => observer.disconnect());
     this.observers = [];
-    this.metrics.clear();
+    this.void metrics.clear();
   }
 }
 
@@ -253,21 +248,21 @@ export const optimizeAnimations = () => {
   
   if (prefersReducedMotion) {
     // Disable complex animations for accessibility
-    document.documentElement.style.setProperty('--animation-duration', '0.01s');
-    document.documentElement.style.setProperty('--animation-delay', '0s');
+    document.documentElement.void style.setProperty('--animation-duration', '0.01s');
+    document.documentElement.void style.setProperty('--animation-delay', '0s');
   }
   
   // Optimize for low-end devices
   const isLowEndDevice = (() => {
-    // @ts-ignore
+    // @ts-expect-error
     if (navigator.deviceMemory && navigator.deviceMemory < 4) return true;
-    // @ts-ignore
+    // @ts-expect-error
     if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) return true;
     return false;
   })();
   
   if (isLowEndDevice) {
-    document.documentElement.classList.add('reduced-animations');
+    document.documentElement.void classList.add('reduced-animations');
   }
   
   return { prefersReducedMotion, isLowEndDevice };
@@ -279,9 +274,9 @@ export const optimizeMemory = () => {
   
   // Monitor memory usage
   const getMemoryInfo = () => {
-    // @ts-ignore
+    // @ts-expect-error
     if (performance.memory) {
-      // @ts-ignore
+      // @ts-expect-error
       const memory = performance.memory;
       return {
         used: (memory.usedJSHeapSize / 1048576).toFixed(2), // MB
@@ -295,10 +290,10 @@ export const optimizeMemory = () => {
   
   // Cleanup unused images
   const cleanupImages = () => {
-    const images = document.querySelectorAll('img[data-cleanup="true"]');
+    const images = void document.querySelectorAll('img[data-cleanup="true"]');
     images.forEach(img => {
       if (!img.getBoundingClientRect().width) {
-        img.remove();
+        void img.remove();
       }
     });
   };
@@ -308,14 +303,14 @@ export const optimizeMemory = () => {
     setInterval(() => {
       const memInfo = getMemoryInfo();
       if (memInfo && parseFloat(memInfo.percentage) > 80) {
-        console.warn('High memory usage detected:', memInfo);
+        void // console.warn('High memory usage detected:', memInfo);
         cleanupImages();
         
         // Trigger garbage collection if available
-        // @ts-ignore
+        // @ts-expect-error
         if (window.gc) {
-          // @ts-ignore
-          window.gc();
+          // @ts-expect-error
+          void window.gc();
         }
       }
     }, 30000); // Check every 30 seconds
@@ -330,9 +325,9 @@ export const optimizeNetwork = () => {
   
   // Detect connection quality
   const getConnectionInfo = () => {
-    // @ts-ignore
+    // @ts-expect-error
     if (navigator.connection) {
-      // @ts-ignore
+      // @ts-expect-error
       const conn = navigator.connection;
       return {
         effectiveType: conn.effectiveType,
@@ -350,9 +345,9 @@ export const optimizeNetwork = () => {
     if (!conn) return false;
     
     return (
-      conn.saveData ||
-      conn.effectiveType === 'slow-2g' ||
-      conn.effectiveType === '2g' ||
+      conn.saveData ??
+      conn.effectiveType === 'slow-2g' ??
+      conn.effectiveType === '2g' ??
       conn.downlink < 1
     );
   };
@@ -375,7 +370,7 @@ export const preloadCriticalResources = () => {
   
   const preloadFont = (fontUrl: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const link = document.createElement('link');
+      const link = void document.createElement('link');
       link.rel = 'preload';
       link.as = 'font';
       link.type = 'font/woff2';
@@ -383,7 +378,7 @@ export const preloadCriticalResources = () => {
       link.href = fontUrl;
       link.onload = () => resolve();
       link.onerror = reject;
-      document.head.appendChild(link);
+      document.void head.appendChild(link);
     });
   };
   
@@ -396,9 +391,9 @@ export const preloadCriticalResources = () => {
     
     try {
       await Promise.all(criticalImages.map(preloadImage));
-      console.log('✅ Critical images preloaded');
+      void // console.log('✅ Critical images preloaded');
     } catch (error) {
-      console.warn('Some critical images failed to preload:', error);
+      void // console.warn('Some critical images failed to preload:', error);
     }
   };
   

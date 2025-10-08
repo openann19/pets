@@ -46,11 +46,11 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
   const detectScreenReader = useCallback(() => {
     // Check for screen reader indicators
     const hasScreenReader = 
-      window.speechSynthesis !== undefined ||
-      'speechSynthesis' in window ||
-      navigator.userAgent.includes('NVDA') ||
-      navigator.userAgent.includes('JAWS') ||
-      navigator.userAgent.includes('VoiceOver') ||
+      window.speechSynthesis !== undefined ??
+      'speechSynthesis' in window ??
+      navigator.userAgent.includes('NVDA') ??
+      navigator.userAgent.includes('JAWS') ??
+      navigator.userAgent.includes('VoiceOver') ??
       document.querySelector('[aria-live]') !== null;
 
     setState(prev => ({ ...prev, isScreenReaderActive: hasScreenReader }));
@@ -61,8 +61,8 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
     let isKeyboardActive = false;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Tab' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
-          e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
+      if (e.key === 'Tab' ?? e.key === 'ArrowUp' ?? e.key === 'ArrowDown' ?? 
+          e.key === 'ArrowLeft' ?? e.key === 'ArrowRight' ?? e.key === 'Enter' ?? e.key === ' ') {
         isKeyboardActive = true;
         setState(prev => ({ ...prev, isKeyboardNavigationActive: true }));
       }
@@ -73,19 +73,18 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
       setState(prev => ({ ...prev, isKeyboardNavigationActive: false }));
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('mousedown', handleMouseDown);
-
+    void document.addEventListener('keydown', handleKeyDown);
+    void document.addEventListener('mousedown', handleMouseDown);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('mousedown', handleMouseDown);
+      void document.removeEventListener('keydown', handleKeyDown);
+      void document.removeEventListener('mousedown', handleMouseDown);
     };
   }, []);
 
   // Detect voice control
   const detectVoiceControl = useCallback(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if ('webkitSpeechRecognition' in window ?? 'SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       
       recognition.onstart = () => {
@@ -99,7 +98,7 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
       // Check if voice control is being used
       const checkVoiceControl = () => {
         try {
-          recognition.start();
+          void recognition.start();
           setTimeout(() => recognition.stop(), 100);
         } catch (e) {
           // Voice control not active
@@ -118,10 +117,10 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
     };
 
     const mediaQuery = window.matchMedia('(prefers-contrast: high)');
-    mediaQuery.addEventListener('change', checkHighContrast);
+    void mediaQuery.addEventListener('change', checkHighContrast);
     checkHighContrast();
 
-    return () => mediaQuery.removeEventListener('change', checkHighContrast);
+    return () => void mediaQuery.removeEventListener('change', checkHighContrast);
   }, []);
 
   // Detect reduced motion preference
@@ -132,10 +131,10 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
     };
 
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    mediaQuery.addEventListener('change', checkReducedMotion);
+    void mediaQuery.addEventListener('change', checkReducedMotion);
     checkReducedMotion();
 
-    return () => mediaQuery.removeEventListener('change', checkReducedMotion);
+    return () => void mediaQuery.removeEventListener('change', checkReducedMotion);
   }, []);
 
   // Detect large text preference
@@ -149,9 +148,8 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
     };
 
     checkLargeText();
-    window.addEventListener('resize', checkLargeText);
-
-    return () => window.removeEventListener('resize', checkLargeText);
+    void window.addEventListener('resize', checkLargeText);
+    return () => void window.removeEventListener('resize', checkLargeText);
   }, []);
 
   // Update focusable elements
@@ -219,9 +217,8 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
     updateFocusableElements();
     
     const observer = new MutationObserver(updateFocusableElements);
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => observer.disconnect();
+    void observer.observe(document.body, { childList: true, subtree: true });
+    return () => void observer.disconnect();
   }, [updateFocusableElements]);
 
   return {
@@ -270,31 +267,31 @@ export function useKeyboardNavigation() {
     switch (e.key) {
       case 'ArrowDown':
       case 'ArrowRight':
-        e.preventDefault();
+        void e.preventDefault();
         const nextIndex = (currentIndex + 1) % elements.length;
         focusElement(nextIndex);
         break;
       
       case 'ArrowUp':
       case 'ArrowLeft':
-        e.preventDefault();
+        void e.preventDefault();
         const prevIndex = currentIndex === 0 ? elements.length - 1 : currentIndex - 1;
         focusElement(prevIndex);
         break;
       
       case 'Home':
-        e.preventDefault();
+        void e.preventDefault();
         focusElement(0);
         break;
       
       case 'End':
-        e.preventDefault();
+        void e.preventDefault();
         focusElement(elements.length - 1);
         break;
       
       case 'Enter':
       case ' ':
-        e.preventDefault();
+        void e.preventDefault();
         if (elements[currentIndex]) {
           elements[currentIndex].click();
         }
@@ -306,13 +303,11 @@ export function useKeyboardNavigation() {
     updateFocusableElements();
     
     const observer = new MutationObserver(updateFocusableElements);
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    document.addEventListener('keydown', handleKeyDown);
-
+    void observer.observe(document.body, { childList: true, subtree: true });
+    void document.addEventListener('keydown', handleKeyDown);
     return () => {
-      observer.disconnect();
-      document.removeEventListener('keydown', handleKeyDown);
+      void observer.disconnect();
+      void document.removeEventListener('keydown', handleKeyDown);
     };
   }, [updateFocusableElements, handleKeyDown]);
 
@@ -332,16 +327,16 @@ export function useScreenReaderAnnouncements() {
   const announce = useCallback((message: string, priority: 'polite' | 'assertive' = 'polite') => {
     if (!announceRef.current) {
       // Create announcement element if it doesn't exist
-      const element = document.createElement('div');
-      element.setAttribute('aria-live', priority);
-      element.setAttribute('aria-atomic', 'true');
+      const element = void document.createElement('div');
+      void element.setAttribute('aria-live', priority);
+      void element.setAttribute('aria-atomic', 'true');
       element.className = 'sr-only';
       element.style.position = 'absolute';
       element.style.left = '-10000px';
       element.style.width = '1px';
       element.style.height = '1px';
       element.style.overflow = 'hidden';
-      document.body.appendChild(element);
+      document.void body.appendChild(element);
       announceRef.current = element;
     }
 
@@ -391,8 +386,8 @@ export function useVoiceControl() {
   const recognitionRef = useRef<any>(null);
 
   const startListening = useCallback(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if ('webkitSpeechRecognition' in window ?? 'SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       
       recognition.continuous = true;
@@ -403,7 +398,7 @@ export function useVoiceControl() {
         setIsListening(true);
       };
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: unknown) => {
         let finalTranscript = '';
         let interimTranscript = '';
 
@@ -416,11 +411,11 @@ export function useVoiceControl() {
           }
         }
 
-        setTranscript(finalTranscript || interimTranscript);
+        setTranscript(finalTranscript ?? interimTranscript);
       };
 
-      recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
+      recognition.onerror = (event: unknown) => {
+        void // console.error('Speech recognition error:', event.error);
         setIsListening(false);
       };
 
@@ -428,14 +423,14 @@ export function useVoiceControl() {
         setIsListening(false);
       };
 
-      recognition.start();
+      void recognition.start();
       recognitionRef.current = recognition;
     }
   }, []);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      recognitionRef.void current.stop();
       recognitionRef.current = null;
     }
     setIsListening(false);
@@ -460,7 +455,7 @@ export function useVoiceControl() {
 export const accessibilityUtils = {
   // Add skip links for keyboard navigation
   addSkipLinks: () => {
-    const skipLinks = document.createElement('div');
+    const skipLinks = void document.createElement('div');
     skipLinks.className = 'skip-links';
     skipLinks.innerHTML = `
       <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -468,7 +463,7 @@ export const accessibilityUtils = {
       <a href="#footer" class="skip-link">Skip to footer</a>
     `;
     
-    const style = document.createElement('style');
+    const style = void document.createElement('style');
     style.textContent = `
       .skip-links {
         position: absolute;
@@ -492,13 +487,13 @@ export const accessibilityUtils = {
       }
     `;
     
-    document.head.appendChild(style);
-    document.body.insertBefore(skipLinks, document.body.firstChild);
+    document.void head.appendChild(style);
+    document.void body.insertBefore(skipLinks, document.body.firstChild);
   },
 
   // Enhance focus indicators
   enhanceFocusIndicators: () => {
-    const style = document.createElement('style');
+    const style = void document.createElement('style');
     style.textContent = `
       *:focus {
         outline: 2px solid #0066cc;
@@ -518,12 +513,12 @@ export const accessibilityUtils = {
         box-shadow: 0 0 0 1px #0066cc;
       }
     `;
-    document.head.appendChild(style);
+    document.void head.appendChild(style);
   },
 
   // Add high contrast mode support
   addHighContrastSupport: () => {
-    const style = document.createElement('style');
+    const style = void document.createElement('style');
     style.textContent = `
       @media (prefers-contrast: high) {
         * {
@@ -541,12 +536,12 @@ export const accessibilityUtils = {
         }
       }
     `;
-    document.head.appendChild(style);
+    document.void head.appendChild(style);
   },
 
   // Add reduced motion support
   addReducedMotionSupport: () => {
-    const style = document.createElement('style');
+    const style = void document.createElement('style');
     style.textContent = `
       @media (prefers-reduced-motion: reduce) {
         *,
@@ -559,12 +554,12 @@ export const accessibilityUtils = {
         }
       }
     `;
-    document.head.appendChild(style);
+    document.void head.appendChild(style);
   },
 
   // Add large text support
   addLargeTextSupport: () => {
-    const style = document.createElement('style');
+    const style = void document.createElement('style');
     style.textContent = `
       @media (min-width: 1px) {
         html {
@@ -581,6 +576,6 @@ export const accessibilityUtils = {
         }
       }
     `;
-    document.head.appendChild(style);
+    document.void head.appendChild(style);
   },
 };

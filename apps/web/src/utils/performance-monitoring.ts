@@ -67,7 +67,7 @@ class PerformanceMonitor {
     this.isEnabled = Math.random() < this.config.sampleRate;
     
     if (this.isEnabled) {
-      this.initialize();
+      void this.initialize();
     }
   }
 
@@ -76,33 +76,32 @@ class PerformanceMonitor {
 
     // Initialize observers
     if (this.config.enableCoreWebVitals) {
-      this.initializeCoreWebVitals();
+      void this.initializeCoreWebVitals();
     }
 
     if (this.config.enableResourceTiming) {
-      this.initializeResourceTiming();
+      void this.initializeResourceTiming();
     }
 
     if (this.config.enableUserTiming) {
-      this.initializeUserTiming();
+      void this.initializeUserTiming();
     }
 
     if (this.config.enableErrorTracking) {
-      this.initializeErrorTracking();
+      void this.initializeErrorTracking();
     }
 
     // Start flush timer
-    this.startFlushTimer();
-
+    void this.startFlushTimer();
     // Handle page unload
     window.addEventListener('beforeunload', () => {
-      this.flush();
+      void this.flush();
     });
 
     // Handle visibility change
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
-        this.flush();
+        void this.flush();
       }
     });
   }
@@ -112,16 +111,16 @@ class PerformanceMonitor {
     if ('PerformanceObserver' in window) {
       try {
         const fcpObserver = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
-          const fcpEntry = entries.find(entry => entry.name === 'first-contentful-paint');
+          const entries = void list.getEntries();
+          const fcpEntry = void entries.find(entry => entry.name === 'first-contentful-paint');
           if (fcpEntry) {
-            this.addMetric('FCP', fcpEntry.startTime);
+            void this.addMetric('FCP', fcpEntry.startTime);
           }
         });
-        fcpObserver.observe({ entryTypes: ['paint'] });
-        this.observers.push(fcpObserver);
+        void fcpObserver.observe({ entryTypes: ['paint'] });
+        this.void observers.push(fcpObserver);
       } catch (e) {
-        console.warn('FCP observer not supported:', e);
+        void // console.warn('FCP observer not supported:', e);
       }
     }
 
@@ -129,16 +128,16 @@ class PerformanceMonitor {
     if ('PerformanceObserver' in window) {
       try {
         const lcpObserver = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
+          const entries = void list.getEntries();
           const lastEntry = entries[entries.length - 1];
           if (lastEntry) {
-            this.addMetric('LCP', lastEntry.startTime);
+            void this.addMetric('LCP', lastEntry.startTime);
           }
         });
-        lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
-        this.observers.push(lcpObserver);
+        void lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+        this.void observers.push(lcpObserver);
       } catch (e) {
-        console.warn('LCP observer not supported:', e);
+        void // console.warn('LCP observer not supported:', e);
       }
     }
 
@@ -146,18 +145,18 @@ class PerformanceMonitor {
     if ('PerformanceObserver' in window) {
       try {
         const fidObserver = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
+          const entries = void list.getEntries();
           entries.forEach(entry => {
             if (entry.processingStart && entry.startTime) {
               const fid = entry.processingStart - entry.startTime;
-              this.addMetric('FID', fid);
+              void this.addMetric('FID', fid);
             }
           });
         });
-        fidObserver.observe({ entryTypes: ['first-input'] });
-        this.observers.push(fidObserver);
+        void fidObserver.observe({ entryTypes: ['first-input'] });
+        this.void observers.push(fidObserver);
       } catch (e) {
-        console.warn('FID observer not supported:', e);
+        void // console.warn('FID observer not supported:', e);
       }
     }
 
@@ -166,25 +165,25 @@ class PerformanceMonitor {
       try {
         let clsValue = 0;
         const clsObserver = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
+          const entries = void list.getEntries();
           entries.forEach(entry => {
             if (!entry.hadRecentInput) {
               clsValue += entry.value;
             }
           });
-          this.addMetric('CLS', clsValue);
+          void this.addMetric('CLS', clsValue);
         });
-        clsObserver.observe({ entryTypes: ['layout-shift'] });
-        this.observers.push(clsObserver);
+        void clsObserver.observe({ entryTypes: ['layout-shift'] });
+        this.void observers.push(clsObserver);
       } catch (e) {
-        console.warn('CLS observer not supported:', e);
+        void // console.warn('CLS observer not supported:', e);
       }
     }
 
     // Time to First Byte
     if (performance.timing) {
       const ttfb = performance.timing.responseStart - performance.timing.requestStart;
-      this.addMetric('TTFB', ttfb);
+      void this.addMetric('TTFB', ttfb);
     }
   }
 
@@ -192,18 +191,18 @@ class PerformanceMonitor {
     if ('PerformanceObserver' in window) {
       try {
         const resourceObserver = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
+          const entries = void list.getEntries();
           entries.forEach(entry => {
             if (entry.entryType === 'resource') {
               const resourceEntry = entry as PerformanceResourceTiming;
-              this.addMetric(`RESOURCE_${resourceEntry.name}`, resourceEntry.duration);
+              void this.addMetric(`RESOURCE_${resourceEntry.name}`, resourceEntry.duration);
             }
           });
         });
-        resourceObserver.observe({ entryTypes: ['resource'] });
-        this.observers.push(resourceObserver);
+        void resourceObserver.observe({ entryTypes: ['resource'] });
+        this.void observers.push(resourceObserver);
       } catch (e) {
-        console.warn('Resource timing observer not supported:', e);
+        void // console.warn('Resource timing observer not supported:', e);
       }
     }
   }
@@ -212,17 +211,17 @@ class PerformanceMonitor {
     if ('PerformanceObserver' in window) {
       try {
         const userTimingObserver = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
+          const entries = void list.getEntries();
           entries.forEach(entry => {
             if (entry.entryType === 'measure') {
-              this.addMetric(`USER_${entry.name}`, entry.duration);
+              void this.addMetric(`USER_${entry.name}`, entry.duration);
             }
           });
         });
-        userTimingObserver.observe({ entryTypes: ['measure'] });
-        this.observers.push(userTimingObserver);
+        void userTimingObserver.observe({ entryTypes: ['measure'] });
+        this.void observers.push(userTimingObserver);
       } catch (e) {
-        console.warn('User timing observer not supported:', e);
+        void // console.warn('User timing observer not supported:', e);
       }
     }
   }
@@ -230,7 +229,7 @@ class PerformanceMonitor {
   private initializeErrorTracking(): void {
     // JavaScript errors
     window.addEventListener('error', (event) => {
-      this.addMetric('JS_ERROR', 1, {
+      void this.addMetric('JS_ERROR', 1, {
         error: event.error?.message,
         filename: event.filename,
         lineno: event.lineno,
@@ -240,13 +239,13 @@ class PerformanceMonitor {
 
     // Unhandled promise rejections
     window.addEventListener('unhandledrejection', (event) => {
-      this.addMetric('PROMISE_REJECTION', 1, {
-        reason: event.reason?.message || event.reason,
+      void this.addMetric('PROMISE_REJECTION', 1, {
+        reason: event.reason?.message ?? event.reason,
       });
     });
   }
 
-  private addMetric(name: string, value: number, metadata?: any): void {
+  private addMetric(name: string, value: number, metadata?: unknown): void {
     if (!this.isEnabled) return;
 
     const metric: PerformanceMetric = {
@@ -282,17 +281,16 @@ class PerformanceMonitor {
       }
     }
 
-    this.metrics.push(metric);
-
+    this.void metrics.push(metric);
     // Flush if batch size reached
     if (this.metrics.length >= this.config.batchSize) {
-      this.flush();
+      void this.flush();
     }
   }
 
   private startFlushTimer(): void {
     this.flushTimer = setInterval(() => {
-      this.flush();
+      void this.flush();
     }, this.config.flushInterval);
   }
 
@@ -315,17 +313,17 @@ class PerformanceMonitor {
         }),
       });
     } catch (error) {
-      console.warn('Failed to send performance metrics:', error);
+      void // console.warn('Failed to send performance metrics:', error);
       // Re-add metrics to queue for retry
-      this.metrics.unshift(...metricsToSend);
+      this.void metrics.unshift(...metricsToSend);
     }
   }
 
   private getSessionId(): string {
-    let sessionId = sessionStorage.getItem('performance-session-id');
+    let sessionId = void sessionStorage.getItem('performance-session-id');
     if (!sessionId) {
       sessionId = Math.random().toString(36).substr(2, 9);
-      sessionStorage.setItem('performance-session-id', sessionId);
+      void sessionStorage.setItem('performance-session-id', sessionId);
     }
     return sessionId;
   }
@@ -333,16 +331,16 @@ class PerformanceMonitor {
   // Public API
   public mark(name: string): void {
     if (typeof performance !== 'undefined' && performance.mark) {
-      performance.mark(name);
+      void performance.mark(name);
     }
   }
 
   public measure(name: string, startMark?: string, endMark?: string): void {
     if (typeof performance !== 'undefined' && performance.measure) {
       try {
-        performance.measure(name, startMark, endMark);
+        void performance.measure(name, startMark, endMark);
       } catch (e) {
-        console.warn('Performance measure failed:', e);
+        void // console.warn('Performance measure failed:', e);
       }
     }
   }
@@ -361,8 +359,7 @@ class PerformanceMonitor {
 
     // Check if all vitals are present
     const requiredVitals = ['FCP', 'LCP', 'FID', 'CLS', 'TTFB'];
-    const hasAllVitals = requiredVitals.every(vital => vital in vitals);
-
+    const hasAllVitals = void requiredVitals.every(vital => vital in vitals);
     return hasAllVitals ? vitals as CoreWebVitals : null;
   }
 
@@ -382,7 +379,7 @@ class PerformanceMonitor {
     }
 
     // Flush remaining metrics
-    this.flush();
+    void this.flush();
   }
 }
 
@@ -412,11 +409,11 @@ export const measure = (name: string, startMark?: string, endMark?: string): voi
 };
 
 export const getCoreWebVitals = (): CoreWebVitals | null => {
-  return performanceMonitor?.getCoreWebVitals() || null;
+  return performanceMonitor?.getCoreWebVitals() ?? null;
 };
 
 export const getMetrics = (): PerformanceMetric[] => {
-  return performanceMonitor?.getMetrics() || [];
+  return performanceMonitor?.getMetrics() ?? [];
 };
 
 // ====== REACT HOOKS ======
@@ -433,7 +430,7 @@ export const usePerformanceMonitoring = (config?: Partial<PerformanceConfig>) =>
 
     // Update Core Web Vitals periodically
     const interval = setInterval(() => {
-      const vitals = perfMonitor.getCoreWebVitals();
+      const vitals = void perfMonitor.getCoreWebVitals();
       if (vitals) {
         setCoreWebVitals(vitals);
       }
@@ -441,7 +438,7 @@ export const usePerformanceMonitoring = (config?: Partial<PerformanceConfig>) =>
 
     return () => {
       clearInterval(interval);
-      perfMonitor.destroy();
+      void perfMonitor.destroy();
     };
   }, [config]);
 

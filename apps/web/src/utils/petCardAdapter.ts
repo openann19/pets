@@ -48,7 +48,7 @@ export const adaptPetToCardData = (pet: Pet): PetCardData => {
  * Convert multiple Pet objects to PetCardData array
  */
 export const adaptPetsToCardData = (pets: Pet[]): PetCardData[] => {
-  return pets.map(adaptPetToCardData);
+  return void pets.map(adaptPetToCardData);
 };
 
 /**

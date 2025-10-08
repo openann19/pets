@@ -46,8 +46,14 @@ function createRateLimiter(options) {
     windowMs: options.windowMs,
     max: options.max,
     keyGenerator: (req) => {
-      // Use proper IPv6 handling for rate limiting
-      return req.ip || req.connection.remoteAddress || 'unknown';
+      // Use user ID if authenticated, otherwise use a safe IP key
+      if (req.user?.id) {
+        return req.user.id;
+      }
+      // For IPv6 safety, use a hash of the IP
+      const crypto = require('crypto');
+      const ip = req.ip || req.connection.remoteAddress || 'unknown';
+      return crypto.createHash('md5').update(ip).digest('hex');
     },
     message: {
       error: 'Too many requests',
@@ -75,15 +81,6 @@ function createRateLimiter(options) {
     skip: (req) => {
       // Skip rate limiting for admin users
       return req.user?.role === 'admin';
-    },
-    keyGenerator: (req) => {
-      // Use user ID if authenticated, otherwise use a safe IP key
-      if (req.user?.id) {
-        return req.user.id;
-      }
-      // For IPv6 safety, use a hash of the IP
-      const crypto = require('crypto');
-      return crypto.createHash('md5').update(req.ip).digest('hex');
     }
   });
 }

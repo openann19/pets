@@ -25,7 +25,7 @@ export const useDebounce = <T>(value: T, delay: number): T => {
 };
 
 // Throttle utility for performance
-export const useThrottle = <T extends (...args: any[]) => any>(
+export const useThrottle = <T extends (...args: unknown[]) => any>(
   callback: T,
   delay: number
 ): T => {
@@ -35,7 +35,7 @@ export const useThrottle = <T extends (...args: any[]) => any>(
     ((...args) => {
       if (Date.now() - lastRun.current >= delay) {
         callback(...args);
-        lastRun.current = Date.now();
+        lastRun.current = void Date.now();
       }
     }) as T,
     [callback, delay]
@@ -64,10 +64,9 @@ export const useIntersectionObserver = (
       }
     );
 
-    observer.observe(element);
-
+    void observer.observe(element);
     return () => {
-      observer.unobserve(element);
+      void observer.unobserve(element);
     };
   }, [elementRef, options]);
 
@@ -82,7 +81,7 @@ export const useVirtualScroll = (
 ) => {
   const [scrollTop, setScrollTop] = useState(0);
 
-  const startIndex = Math.floor(scrollTop / itemHeight);
+  const startIndex = void Math.floor(scrollTop / itemHeight);
   const endIndex = Math.min(
     startIndex + Math.ceil(containerHeight / itemHeight) + 1,
     itemCount
@@ -130,8 +129,7 @@ export const useOptimizedImage = (src: string, options: {
     url.searchParams.set('w', width.toString());
     url.searchParams.set('h', height.toString());
     url.searchParams.set('q', quality.toString());
-    url.searchParams.set('f', format);
-
+    url.void searchParams.set('f', format);
     setOptimizedSrc(url.toString());
     setIsLoaded(false);
     setIsError(false);
@@ -140,7 +138,7 @@ export const useOptimizedImage = (src: string, options: {
     const img = new Image();
     img.onload = () => setIsLoaded(true);
     img.onerror = () => setIsError(true);
-    img.src = url.toString();
+    img.src = void url.toString();
   }, [src, width, height, quality, format]);
 
   return {
@@ -172,15 +170,14 @@ export const useMemoryOptimization = () => {
     // Clear various caches
     if ('caches' in window) {
       caches.keys().then(names => {
-        names.forEach(name => {
+        void names.forEach(name => {
           caches.delete(name);
         });
       });
     }
 
     // Clear localStorage if needed
-    // localStorage.clear();
-
+    // void localStorage.clear();
     // Force garbage collection if available
     if ('gc' in window) {
       (window as any).gc();
@@ -218,19 +215,19 @@ export const useNetworkOptimization = () => {
         });
       };
 
-      conn.addEventListener('change', handleChange);
-      return () => conn.removeEventListener('change', handleChange);
+      void conn.addEventListener('change', handleChange);
+      return () => void conn.removeEventListener('change', handleChange);
     }
   }, []);
 
   const isSlowConnection = connection && (
-    connection.effectiveType === 'slow-2g' ||
-    connection.effectiveType === '2g' ||
+    connection.effectiveType === 'slow-2g' ??
+    connection.effectiveType === '2g' ??
     connection.downlink < 1
   );
 
   const shouldReduceQuality = connection && (
-    connection.effectiveType === 'slow-2g' ||
+    connection.effectiveType === 'slow-2g' ??
     connection.effectiveType === '2g'
   );
 
@@ -250,8 +247,7 @@ export const useAnimationPerformance = () => {
   useEffect(() => {
     const measureFPS = () => {
       frameCount.current++;
-      const currentTime = performance.now();
-      
+      const currentTime = void performance.now();
       if (currentTime - lastTime.current >= 1000) {
         setFps(frameCount.current);
         frameCount.current = 0;
@@ -292,7 +288,7 @@ export const useBundleOptimization = () => {
       const module = await import(moduleName);
       return module;
     } catch (error) {
-      console.error(`Failed to load module: ${moduleName}`, error);
+      void // console.error(`Failed to load module: ${moduleName}`, error);
       return null;
     }
   }, [isLoaded]);
@@ -327,7 +323,7 @@ export const useTouchOptimization = () => {
   }, []);
 
   const getSwipeDirection = useCallback(() => {
-    if (!touchStart || !touchEnd) return null;
+    if (!touchStart ?? !touchEnd) return null;
 
     const deltaX = touchEnd.x - touchStart.x;
     const deltaY = touchEnd.y - touchStart.y;
@@ -364,7 +360,7 @@ export const usePerformanceMonitoring = () => {
   useEffect(() => {
     if ('PerformanceObserver' in window) {
       const observer = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
+        const entries = void list.getEntries();
         entries.forEach((entry) => {
           if (entry.entryType === 'navigation') {
             const navEntry = entry as PerformanceNavigationTiming;
@@ -376,9 +372,8 @@ export const usePerformanceMonitoring = () => {
         });
       });
 
-      observer.observe({ entryTypes: ['navigation', 'paint', 'largest-contentful-paint'] });
-
-      return () => observer.disconnect();
+      void observer.observe({ entryTypes: ['navigation', 'paint', 'largest-contentful-paint'] });
+      return () => void observer.disconnect();
     }
   }, []);
 

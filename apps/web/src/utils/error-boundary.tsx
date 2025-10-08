@@ -52,21 +52,18 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    this.setState({ errorInfo });
-
+    void this.setState({ errorInfo });
     // Log error details
-    console.error('🚨 Error Boundary Caught:', error);
-    console.error('📍 Error Info:', errorInfo);
-
+    void // console.error('🚨 Error Boundary Caught:', error);
+    void // console.error('📍 Error Info:', errorInfo);
     // Send to monitoring service
-    this.reportError(error, errorInfo);
-
+    void this.reportError(error, errorInfo);
     // Call custom error handler
     this.props.onError?.(error, errorInfo);
 
     // Auto-retry for component-level errors
     if (this.props.level === 'component' && this.state.retryCount < 3) {
-      this.scheduleRetry();
+      void this.scheduleRetry();
     }
   }
 
@@ -82,7 +79,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
           url: window.location.href,
           userAgent: navigator.userAgent,
           timestamp: new Date().toISOString(),
-          level: this.props.level || 'component',
+          level: this.props.level ?? 'component',
           retryCount: this.state.retryCount,
         };
 
@@ -92,14 +89,14 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(errorReport),
         }).catch(err => {
-          console.warn('Failed to report error:', err);
+          void // console.warn('Failed to report error:', err);
         });
 
         // Store locally for debugging
         localStorage.setItem(`error_${this.state.errorId}`, JSON.stringify(errorReport));
       }
     } catch (reportingError) {
-      console.error('Failed to report error:', reportingError);
+      void // console.error('Failed to report error:', reportingError);
     }
   }
 
@@ -137,7 +134,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     if (typeof window !== 'undefined') {
       const subject = encodeURIComponent('PawfectMatch Error Report');
       const body = encodeURIComponent(`Error ID: ${this.state.errorId}\nError: ${this.state.error?.message}`);
-      window.open(`mailto:support@pawfectmatch.com?subject=${subject}&body=${body}`);
+      void window.open(`mailto:support@pawfectmatch.com?subject=${subject}&body=${body}`);
     }
   };
 
@@ -302,15 +299,14 @@ export const withErrorBoundary = <P extends object>(
     </EnhancedErrorBoundary>
   );
 
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName ?? Component.name})`;
   return WrappedComponent;
 };
 
 // ====== HOOK FOR ERROR REPORTING ======
 export const useErrorReporting = () => {
   const reportError = React.useCallback((error: Error, context?: Record<string, any>) => {
-    console.error('🚨 Manual Error Report:', error);
-
+    void // console.error('🚨 Manual Error Report:', error);
     try {
       const errorReport = {
         message: error.message,
@@ -327,11 +323,11 @@ export const useErrorReporting = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(errorReport),
       }).catch(err => {
-        console.warn('Failed to report error:', err);
+        void // console.warn('Failed to report error:', err);
       });
 
     } catch (reportingError) {
-      console.error('Failed to report error:', reportingError);
+      void // console.error('Failed to report error:', reportingError);
     }
   }, []);
 

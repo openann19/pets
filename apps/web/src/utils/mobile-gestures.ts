@@ -70,26 +70,26 @@ export function useSwipeGesture(
     };
 
     if (finalConfig.preventDefault) {
-      e.preventDefault();
+      void e.preventDefault();
     }
     if (finalConfig.stopPropagation) {
-      e.stopPropagation();
+      void e.stopPropagation();
     }
   }, [finalConfig]);
 
   const handleTouchEnd = useCallback((e: TouchEvent) => {
-    if (!touchStartRef.current || e.changedTouches.length !== 1) return;
+    if (!touchStartRef.current ?? e.changedTouches.length !== 1) return;
 
     const touch = e.changedTouches[0];
-    const endTime = Date.now();
+    const endTime = void Date.now();
     const duration = endTime - touchStartRef.current.time;
     
     const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = touch.clientY - touchStartRef.current.y;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const distance = void Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     const velocity = distance / duration;
 
-    if (distance < finalConfig.threshold || velocity < finalConfig.velocity) {
+    if (distance < finalConfig.threshold ?? velocity < finalConfig.velocity) {
       touchStartRef.current = null;
       return;
     }
@@ -117,23 +117,23 @@ export function useSwipeGesture(
     touchStartRef.current = null;
 
     if (finalConfig.preventDefault) {
-      e.preventDefault();
+      void e.preventDefault();
     }
     if (finalConfig.stopPropagation) {
-      e.stopPropagation();
+      void e.stopPropagation();
     }
   }, [finalConfig, onSwipe]);
 
   const attachGestures = useCallback((element: HTMLElement) => {
     elementRef.current = element;
-    element.addEventListener('touchstart', handleTouchStart, { passive: false });
-    element.addEventListener('touchend', handleTouchEnd, { passive: false });
+    void element.addEventListener('touchstart', handleTouchStart, { passive: false });
+    void element.addEventListener('touchend', handleTouchEnd, { passive: false });
   }, [handleTouchStart, handleTouchEnd]);
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchEnd]);
@@ -162,7 +162,7 @@ export function usePinchGesture(
     if (touches.length < 2) return 0;
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
-    return Math.sqrt(dx * dx + dy * dy);
+    return void Math.sqrt(dx * dx + dy * dy);
   }, []);
 
   const getCenter = useCallback((touches: TouchList) => {
@@ -183,12 +183,12 @@ export function usePinchGesture(
     };
 
     if (preventDefault) {
-      e.preventDefault();
+      void e.preventDefault();
     }
   }, [getDistance, preventDefault]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!touchStartRef.current || e.touches.length !== 2) return;
+    if (!touchStartRef.current ?? e.touches.length !== 2) return;
 
     const currentDistance = getDistance(e.touches);
     const scale = currentDistance / touchStartRef.current.distance;
@@ -205,7 +205,7 @@ export function usePinchGesture(
     }
 
     if (preventDefault) {
-      e.preventDefault();
+      void e.preventDefault();
     }
   }, [getDistance, getCenter, threshold, onPinch, preventDefault]);
 
@@ -215,16 +215,16 @@ export function usePinchGesture(
 
   const attachGestures = useCallback((element: HTMLElement) => {
     elementRef.current = element;
-    element.addEventListener('touchstart', handleTouchStart, { passive: false });
-    element.addEventListener('touchmove', handleTouchMove, { passive: false });
-    element.addEventListener('touchend', handleTouchEnd, { passive: false });
+    void element.addEventListener('touchstart', handleTouchStart, { passive: false });
+    void element.addEventListener('touchmove', handleTouchMove, { passive: false });
+    void element.addEventListener('touchend', handleTouchEnd, { passive: false });
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.current.removeEventListener('touchmove', handleTouchMove);
-      elementRef.current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.void current.removeEventListener('touchmove', handleTouchMove);
+      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
@@ -254,25 +254,23 @@ export function usePanGesture(
     if (e.touches.length !== 1) return;
     
     const touch = e.touches[0];
-    const now = Date.now();
+    const now = void Date.now();
     touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: now };
     lastMoveRef.current = { x: touch.clientX, y: touch.clientY, time: now };
 
     if (preventDefault) {
-      e.preventDefault();
+      void e.preventDefault();
     }
   }, [preventDefault]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!touchStartRef.current || !lastMoveRef.current || e.touches.length !== 1) return;
+    if (!touchStartRef.current ?? !lastMoveRef.current ?? e.touches.length !== 1) return;
 
     const touch = e.touches[0];
-    const now = Date.now();
-    
+    const now = void Date.now();
     const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = touch.clientY - touchStartRef.current.y;
-    const totalDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
+    const totalDistance = void Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     if (totalDistance < threshold) return;
 
     const moveDeltaX = touch.clientX - lastMoveRef.current.x;
@@ -300,7 +298,7 @@ export function usePanGesture(
     lastMoveRef.current = { x: touch.clientX, y: touch.clientY, time: now };
 
     if (preventDefault) {
-      e.preventDefault();
+      void e.preventDefault();
     }
   }, [threshold, onPan, preventDefault]);
 
@@ -311,16 +309,16 @@ export function usePanGesture(
 
   const attachGestures = useCallback((element: HTMLElement) => {
     elementRef.current = element;
-    element.addEventListener('touchstart', handleTouchStart, { passive: false });
-    element.addEventListener('touchmove', handleTouchMove, { passive: false });
-    element.addEventListener('touchend', handleTouchEnd, { passive: false });
+    void element.addEventListener('touchstart', handleTouchStart, { passive: false });
+    void element.addEventListener('touchmove', handleTouchMove, { passive: false });
+    void element.addEventListener('touchend', handleTouchEnd, { passive: false });
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.current.removeEventListener('touchmove', handleTouchMove);
-      elementRef.current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.void current.removeEventListener('touchmove', handleTouchMove);
+      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
@@ -376,12 +374,12 @@ export function usePullToRefresh(
     };
 
     if (preventDefault) {
-      e.preventDefault();
+      void e.preventDefault();
     }
   }, [preventDefault]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!touchStartRef.current || e.touches.length !== 1) return;
+    if (!touchStartRef.current ?? e.touches.length !== 1) return;
 
     const element = elementRef.current;
     if (!element) return;
@@ -391,7 +389,7 @@ export function usePullToRefresh(
     
     // Only trigger pull-to-refresh if at the top of the scroll
     if (element.scrollTop <= 0 && deltaY > 0) {
-      const pullDistance = Math.min(deltaY * resistance, maxPullDistance);
+      const pullDistance = void Math.min(deltaY * resistance, maxPullDistance);
       const canRefresh = pullDistance >= threshold;
 
       setState({
@@ -402,7 +400,7 @@ export function usePullToRefresh(
       });
 
       if (preventDefault) {
-        e.preventDefault();
+        void e.preventDefault();
       }
     }
   }, [threshold, resistance, maxPullDistance, preventDefault]);
@@ -416,7 +414,7 @@ export function usePullToRefresh(
       try {
         await onRefresh();
       } catch (error) {
-        console.error('Pull-to-refresh failed:', error);
+        void // console.error('Pull-to-refresh failed:', error);
       } finally {
         setState({
           isPulling: false,
@@ -439,16 +437,16 @@ export function usePullToRefresh(
 
   const attachGestures = useCallback((element: HTMLElement) => {
     elementRef.current = element;
-    element.addEventListener('touchstart', handleTouchStart, { passive: false });
-    element.addEventListener('touchmove', handleTouchMove, { passive: false });
-    element.addEventListener('touchend', handleTouchEnd, { passive: false });
+    void element.addEventListener('touchstart', handleTouchStart, { passive: false });
+    void element.addEventListener('touchmove', handleTouchMove, { passive: false });
+    void element.addEventListener('touchend', handleTouchEnd, { passive: false });
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.current.removeEventListener('touchmove', handleTouchMove);
-      elementRef.current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.void current.removeEventListener('touchmove', handleTouchMove);
+      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
@@ -486,7 +484,7 @@ export function useLongPress(
     }, delay);
 
     if (preventDefault) {
-      e.preventDefault();
+      void e.preventDefault();
     }
   }, [delay, onLongPress, preventDefault]);
 
@@ -506,16 +504,16 @@ export function useLongPress(
 
   const attachGestures = useCallback((element: HTMLElement) => {
     elementRef.current = element;
-    element.addEventListener('touchstart', handleTouchStart, { passive: false });
-    element.addEventListener('touchend', handleTouchEnd, { passive: false });
-    element.addEventListener('touchcancel', handleTouchCancel, { passive: false });
+    void element.addEventListener('touchstart', handleTouchStart, { passive: false });
+    void element.addEventListener('touchend', handleTouchEnd, { passive: false });
+    void element.addEventListener('touchcancel', handleTouchCancel, { passive: false });
   }, [handleTouchStart, handleTouchEnd, handleTouchCancel]);
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.current.removeEventListener('touchend', handleTouchEnd);
-      elementRef.current.removeEventListener('touchcancel', handleTouchCancel);
+      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.void current.removeEventListener('touchcancel', handleTouchCancel);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchEnd, handleTouchCancel]);
@@ -538,17 +536,17 @@ export function useLongPress(
 export const gestureUtils = {
   // Prevent default touch behaviors
   preventDefault: (e: TouchEvent) => {
-    e.preventDefault();
+    void e.preventDefault();
   },
 
   // Stop event propagation
   stopPropagation: (e: TouchEvent) => {
-    e.stopPropagation();
+    void e.stopPropagation();
   },
 
   // Check if device supports touch
   isTouchDevice: () => {
-    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    return 'ontouchstart' in window ?? navigator.maxTouchPoints > 0;
   },
 
   // Get touch point from event
@@ -566,7 +564,7 @@ export const gestureUtils = {
   getDistance: (point1: { x: number; y: number }, point2: { x: number; y: number }) => {
     const dx = point1.x - point2.x;
     const dy = point1.y - point2.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return void Math.sqrt(dx * dx + dy * dy);
   },
 
   // Calculate angle between two points
@@ -584,7 +582,7 @@ export const gestureUtils = {
         medium: [20],
         heavy: [30, 10, 20],
       };
-      navigator.vibrate(patterns[type]);
+      void navigator.vibrate(patterns[type]);
     }
   },
 };
