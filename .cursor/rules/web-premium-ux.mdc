@@ -1,0 +1,21 @@
+---
+globs: apps/web/src/**/*.tsx,apps/web/app/**/*.tsx
+description: Premium UX rules for web components and pages
+---
+# Premium UX Rules (Web)
+
+- Animations
+  - Use spring physics; import shared SPRING_CONFIG where available
+  - Prefer `framer-motion` for entrance/hover/tap states
+
+- Accessibility
+  - Ensure buttons have accessible labels; role/aria where applicable
+  - Form inputs must have labels; validation errors shown with text
+
+- Performance
+  - Lazy-load heavy components; split non-critical sections
+  - Avoid blocking rendering with synchronous long tasks
+
+- Imports
+  - Use `@/` alias (maps to `apps/web/src`)
+  - Guard browser APIs and window-dependent code

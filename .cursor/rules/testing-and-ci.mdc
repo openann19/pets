@@ -1,0 +1,12 @@
+---
+globs: *.ts,*.tsx,*.js
+description: Testing and CI rules for web/server/packages
+---
+# Testing & CI Rules
+
+- Use `node scripts/run-tests.js` to run all package tests locally
+- Web route smoke test: `node apps/web/test-all-pages.js` (auto-detects 3000-3004)
+- Server tests use Jest with in-memory Mongo; disable rate limits in `NODE_ENV=test`
+- Prefer testing hooks/components with Testing Library; avoid enzyme
+- Snapshots sparingly; prefer assertions on text and roles
+- For flaky network code, mock with MSW/axios-mock-adapter where available

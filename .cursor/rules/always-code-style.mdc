@@ -1,0 +1,14 @@
+---
+alwaysApply: true
+---
+# Code Style and Safety
+
+- Use explicit, descriptive names for variables, functions, and components
+- Favor early returns; keep nesting shallow
+- Avoid `any` and unsafe casts; prefer typed helpers
+- Do not catch errors without handling/logging; use central logger where available
+- Client components must start with `'use client'`
+- Use `@/` alias for web imports; do not use long relative paths
+- Guard browser APIs with `typeof window !== 'undefined'`
+- Keep imports ordered: react, third-party, internal
+- Do not introduce global state outside designated stores/hooks
