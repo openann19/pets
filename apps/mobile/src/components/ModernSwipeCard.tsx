@@ -31,6 +31,7 @@ import Animated, {
 
 import { useSwipeGesture, useEntranceAnimation } from '../hooks/useUnifiedAnimations';
 import { Theme } from '../theme/unified-theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -76,6 +77,7 @@ const ModernSwipeCard: React.FC<SwipeCardProps> = React.memo(({
   disabled = false,
   style,
 }) => {
+  const { colors } = useTheme();
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isAccessibilityEnabled, setIsAccessibilityEnabled] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);

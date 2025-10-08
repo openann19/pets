@@ -1,16 +1,81 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import dynamic from 'next/dynamic';
+import LoadingSpinner from '../../../src/components/UI/LoadingSpinner';
+
+// Dynamic imports for heavy components
+const SwipeCardV2 = dynamic(() => import('../../../src/components/Pet/SwipeCardV2'), {
+  loading: () => <div className="w-80 h-96 bg-gray-200 animate-pulse rounded-2xl" />,
+  ssr: false
+});
+
+const MatchModal = dynamic(() => import('../../../src/components/Pet/MatchModal'), {
+  loading: () => null,
+  ssr: false
+});
+
+const PremiumButton = dynamic(() => import('../../../src/components/UI/PremiumButton'), {
+  loading: () => <div className="w-16 h-16 bg-gray-200 animate-pulse rounded-full" />,
+  ssr: false
+});
+
+// Lazy load heavy icons
+const HeartIcon = dynamic(() => import('@heroicons/react/24/solid').then(mod => ({ default: mod.HeartIcon })), {
+  loading: () => <div className="w-6 h-6 bg-gray-200 animate-pulse rounded" />,
+  ssr: false
+});
+
+const XMarkIcon = dynamic(() => import('@heroicons/react/24/solid').then(mod => ({ default: mod.XMarkIcon })), {
+  loading: () => <div className="w-6 h-6 bg-gray-200 animate-pulse rounded" />,
+  ssr: false
+});
+
+const StarIcon = dynamic(() => import('@heroicons/react/24/solid').then(mod => ({ default: mod.StarIcon })), {
+  loading: () => <div className="w-8 h-8 bg-gray-200 animate-pulse rounded" />,
+  ssr: false
+});
+
+const SparklesIcon = dynamic(() => import('@heroicons/react/24/solid').then(mod => ({ default: mod.SparklesIcon })), {
+  loading: () => <div className="w-10 h-10 bg-gray-200 animate-pulse rounded" />,
+  ssr: false
+});
+
+const ArrowPathIcon = dynamic(() => import('@heroicons/react/24/solid').then(mod => ({ default: mod.ArrowPathIcon })), {
+  loading: () => <div className="w-5 h-5 bg-gray-200 animate-pulse rounded" />,
+  ssr: false
+});
+
+// Import hooks and motion components normally (they're lightweight)
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSwipeData } from '../../../src/hooks/api-hooks';
-import SwipeCard from '../../../src/components/Pet/SwipeCard';
-import MatchModal from '../../../src/components/Pet/MatchModal';
-import { HeartIcon, XMarkIcon, StarIcon, SparklesIcon, ArrowPathIcon } from '@heroicons/react/24/solid';
-import LoadingSpinner from '../../../src/components/UI/LoadingSpinner';
-import PremiumButton from '../../../src/components/UI/PremiumButton';
-import PremiumCard from '../../../src/components/UI/PremiumCard';
+import type { PetCardData } from '../../../src/components/Pet/SwipeCardV2';
 
-export default function SwipePage() {
+// Map API Pet -> SwipeCardV2 data shape
+function normalizeSize(s: any): PetCardData['size'] {
+  const v = String(s || 'medium').toLowerCase();
+  if (['tiny', 'small', 'medium', 'large', 'extra-large'].includes(v)) return v as PetCardData['size'];
+  if (v === 'xl' || v === 'xlarge' || v === 'extra_large') return 'extra-large';
+  return 'medium';
+}
+
+function toCardData(pet: any): PetCardData {
+  return {
+    id: pet.id,
+    name: pet.name,
+    breed: pet.breed || 'Mixed',
+    age: typeof pet.age === 'number' ? pet.age : 0,
+    size: normalizeSize(pet.size),
+    distanceKm: pet.owner?.location ? 5 : 0,
+    bio: pet.description || (pet as any).bio || '',
+    photos: Array.isArray(pet.photos) ? pet.photos.map((ph: any) => ph?.url).filter(Boolean) : [],
+    compatibility: (pet as any).compatibilityScore,
+    gender: (pet as any).gender,
+    species: (pet as any).species,
+  };
+}
+
+function SwipePageContent() {
   const { pets, currentPet, swipe, isLoading, lastMatch, clearMatch, isPremium, refetch } = useSwipeData();
   const [showMatchModal, setShowMatchModal] = useState(false);
 
@@ -116,7 +181,12 @@ export default function SwipePage() {
               exit={{ scale: 0.9, opacity: 0, rotateY: -10 }}
               transition={{ duration: 0.4, type: "spring" }}
             >
-              <SwipeCard pet={currentPet} onSwipe={onSwipe} />
+              {currentPet && (
+                <SwipeCardV2
+                  pet={toCardData(currentPet)}
+                  onSwipe={(action) => onSwipe(action)}
+                />
+              )}
             </motion.div>
           </AnimatePresence>
 
@@ -193,5 +263,21 @@ export default function SwipePage() {
         />
       )}
     </div>
+  );
+}
+
+// Export with Suspense boundary for better loading experience
+export default function SwipePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" variant="holographic" />
+          <p className="mt-6 text-lg text-gray-600 font-semibold">Loading swipe interface...</p>
+        </div>
+      </div>
+    }>
+      <SwipePageContent />
+    </Suspense>
   );
 }

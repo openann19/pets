@@ -38,6 +38,20 @@
     --spring-timing: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
+  /* Dark mode class-based support */
+  .dark {
+    --neutral-0: 18, 18, 18;
+    --neutral-50: 30, 30, 30;
+    --neutral-100: 38, 38, 38;
+    --neutral-500: 115, 115, 115;
+    --neutral-800: 229, 229, 229;
+    --neutral-900: 245, 245, 245;
+    
+    /* Dark glass morphism */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+  }
+
   @media (prefers-color-scheme: dark) {
     :root {
       /* Dark mode adjustments */
@@ -178,6 +192,18 @@ body.vibrant::before {
   }
 
   /* Glass morphism utilities */
+  .glass-morphism {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .glass-morphism-dark {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
   .glass-light {
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(12px) saturate(140%);
@@ -242,4 +268,39 @@ body.vibrant::before {
 
   .premium-glow {
     box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5); /* Glow for PremiumButton */
+  }
+
+  /* Focus styles for accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-neutral-800;
+  }
+
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .glass-light {
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid rgba(0, 0, 0, 0.8);
+    }
+    
+    .glass-dark {
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+    }
   }

@@ -1,0 +1,42 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # PawfectMatch API
+  - job_name: 'pawfectmatch-api'
+    static_configs:
+      - targets: ['api:5001']
+    metrics_path: '/api/ai/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Node.js Application Metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['api:5001']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # MongoDB Metrics
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongo:27017']
+    scrape_interval: 30s
+
+  # Redis Metrics
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 30s
+
+  # Nginx Metrics
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:80']
+    metrics_path: '/nginx_status'
+    scrape_interval: 30s

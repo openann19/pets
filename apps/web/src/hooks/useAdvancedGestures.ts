@@ -138,6 +138,9 @@ export const useAdvancedGestures = (
   // ====== EVENT HANDLERS ======
 
   const handleTouchStart = useCallback((event: TouchEvent) => {
+    // Guard against SSR
+    if (typeof window === 'undefined') return;
+    
     if (finalConfig.preventDefault) {
       event.preventDefault();
     }
@@ -202,6 +205,9 @@ export const useAdvancedGestures = (
   }, [finalConfig, callbacks]);
 
   const handleTouchMove = useCallback((event: TouchEvent) => {
+    // Guard against SSR
+    if (typeof window === 'undefined') return;
+    
     if (finalConfig.preventDefault) {
       event.preventDefault();
     }
@@ -308,6 +314,9 @@ export const useAdvancedGestures = (
   }, [finalConfig, callbacks]);
 
   const handleTouchEnd = useCallback((event: TouchEvent) => {
+    // Guard against SSR
+    if (typeof window === 'undefined') return;
+    
     if (finalConfig.preventDefault) {
       event.preventDefault();
     }
@@ -428,15 +437,61 @@ export const useAdvancedGestures = (
   // ====== CLEANUP ======
 
   useEffect(() => {
+    // Add event listeners to window for global gesture handling
+    const addEventListeners = () => {
+      if (typeof window !== 'undefined') {
+        window.addEventListener('touchstart', handleTouchStart, { passive: false });
+        window.addEventListener('touchmove', handleTouchMove, { passive: false });
+        window.addEventListener('touchend', handleTouchEnd, { passive: false });
+        window.addEventListener('pointermove', handleTouchMove, { passive: false });
+      }
+    };
+
+    // Remove event listeners from window
+    const removeEventListeners = () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('touchstart', handleTouchStart);
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
+        window.removeEventListener('pointermove', handleTouchMove);
+      }
+    };
+
+    // Add listeners
+    addEventListeners();
+
+    // Cleanup function
     return () => {
+      // Remove event listeners
+      removeEventListeners();
+      
+      // Clear timeouts
       if (longPressTimeout.current) {
         clearTimeout(longPressTimeout.current);
       }
       if (doubleTapTimeout.current) {
         clearTimeout(doubleTapTimeout.current);
       }
+      
+      // Reset gesture state
+      gestureState.current = {
+        startPosition: { x: 0, y: 0 },
+        currentPosition: { x: 0, y: 0 },
+        startTime: 0,
+        lastTapTime: 0,
+        tapCount: 0,
+        isLongPress: false,
+        isPinching: false,
+        isRotating: false,
+        isPanning: false,
+        initialDistance: 0,
+        initialAngle: 0,
+        lastScale: 1,
+        lastRotation: 0,
+        touches: [],
+      };
     };
-  }, []);
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   // ====== RETURN GESTURE HANDLERS ======
 

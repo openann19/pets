@@ -1,6 +1,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { 
   ArrowLeftIcon, 
   InformationCircleIcon, 
@@ -41,7 +42,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-r from-pink-400 to-purple-500 flex items-center justify-center text-white font-semibold">
             {(otherUser as any).avatar ? (
-              <img src={(otherUser as any).avatar} alt={(otherUser as any).firstName} className="w-full h-full object-cover" />
+              <Image src={(otherUser as any).avatar} alt={(otherUser as any).firstName} className="w-full h-full object-cover" width={40} height={40} />
             ) : (
               <span>{(otherUser as any).firstName?.[0] || 'U'}</span>
             )}

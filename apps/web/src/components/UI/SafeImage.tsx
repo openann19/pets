@@ -6,16 +6,24 @@
  * - Broken URLs
  * - Loading states
  * - Fallback placeholders
+ * - Progressive loading with blur placeholders
+ * - Dark mode support
  */
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
+import { getBlurData, getPetPhotoBlur } from '@/lib/getBlur';
 
 interface SafeImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
   src: string | undefined | null;
   alt: string;
   fallbackType?: 'pet' | 'user' | 'generic';
   showLoadingSpinner?: boolean;
+  enableBlurPlaceholder?: boolean;
+  blurDataURL?: string;
+  priority?: boolean;
+  sizes?: string;
 }
 
 // SVG Data URLs for instant placeholder rendering (no 404 errors!)
@@ -30,12 +38,17 @@ export default function SafeImage({
   alt,
   fallbackType = 'pet',
   showLoadingSpinner = false,
+  enableBlurPlaceholder = true,
+  blurDataURL,
+  priority = false,
+  sizes,
   className = '',
   ...props
 }: SafeImageProps) {
   const [imageSrc, setImageSrc] = useState<string>(src || FALLBACK_IMAGES[fallbackType]);
   const [isLoading, setIsLoading] = useState(!!src);
   const [hasError, setHasError] = useState(false);
+  const [blurPlaceholder, setBlurPlaceholder] = useState<string | undefined>(blurDataURL);
 
   useEffect(() => {
     // Reset state when src changes
@@ -43,12 +56,28 @@ export default function SafeImage({
       setImageSrc(src);
       setIsLoading(true);
       setHasError(false);
+      
+      // Generate blur placeholder if enabled and not provided
+      if (enableBlurPlaceholder && !blurDataURL && src) {
+        const generateBlur = async () => {
+          try {
+            const blur = fallbackType === 'pet' 
+              ? await getPetPhotoBlur(src)
+              : await getBlurData(src);
+            setBlurPlaceholder(blur);
+          } catch (error) {
+            console.warn('Failed to generate blur placeholder:', error);
+          }
+        };
+        generateBlur();
+      }
     } else {
       setImageSrc(FALLBACK_IMAGES[fallbackType]);
       setIsLoading(false);
       setHasError(false);
+      setBlurPlaceholder(undefined);
     }
-  }, [src, fallbackType]);
+  }, [src, fallbackType, enableBlurPlaceholder, blurDataURL]);
 
   const handleError = () => {
     console.warn(`[SafeImage] Failed to load image: ${src}`);
@@ -69,18 +98,22 @@ export default function SafeImage({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 flex items-center justify-center bg-gray-100/50 backdrop-blur-sm rounded-lg z-10"
+          className="absolute inset-0 flex items-center justify-center bg-neutral-100/50 dark:bg-neutral-800/50 backdrop-blur-sm rounded-lg z-10"
         >
-          <div className="w-8 h-8 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
         </motion.div>
       )}
       
-      <img
+      <Image
         {...props}
         src={imageSrc}
         alt={alt}
         onError={handleError}
         onLoad={handleLoad}
+        priority={priority}
+        sizes={sizes}
+        placeholder={blurPlaceholder ? 'blur' : 'empty'}
+        blurDataURL={blurPlaceholder}
         className={`${className} ${isLoading && !hasError ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
       />
     </div>

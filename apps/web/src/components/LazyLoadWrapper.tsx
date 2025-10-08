@@ -2,238 +2,172 @@
 
 import React, { Suspense, lazy, ComponentType } from 'react';
 import { motion } from 'framer-motion';
-import { useLazyLoad } from '@/utils/mobile-performance';
+import PremiumSkeleton from './UI/PremiumSkeleton';
+import { ComponentType as CommonComponentType } from '@/types/common';
 
-interface LazyLoadWrapperProps {
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
-  className?: string;
-  threshold?: number;
-  rootMargin?: string;
-  triggerOnce?: boolean;
+// Loading component with premium styling
+const LoadingComponent = ({ className = '' }: { className?: string }) => (
+  <div className={`flex items-center justify-center p-8 ${className}`}>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="text-center"
+    >
+      <div className="w-12 h-12 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
+    </motion.div>
+  </div>
+);
+
+// Skeleton loading component
+const SkeletonLoading = ({ className = '' }: { className?: string }) => (
+  <div className={className}>
+    <PremiumSkeleton variant="rectangular" height={200} className="mb-4" />
+    <PremiumSkeleton variant="text" width="80%" className="mb-2" />
+    <PremiumSkeleton variant="text" width="60%" />
+  </div>
+);
+
+// Error boundary for lazy components
+class LazyErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Lazy component failed to load:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="p-8 text-center">
+          <p className="text-red-500 mb-4">Failed to load component</p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
-/**
- * LazyLoadWrapper - Optimizes performance by loading content only when visible
- */
-export function LazyLoadWrapper({
-  children,
-  fallback,
-  className = '',
-  threshold = 0.1,
-  rootMargin = '50px',
-  triggerOnce = true,
-}: LazyLoadWrapperProps) {
-  const { isVisible, elementRef } = useLazyLoad({
-    threshold,
-    rootMargin,
-  });
-
-  const defaultFallback = (
-    <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg ${className}`}>
-      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
-      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
-    </div>
-  );
-
-  return (
-    <div ref={elementRef as React.RefObject<HTMLDivElement>} className={className}>
-      {isVisible ? (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-        >
-          {children}
-        </motion.div>
-      ) : (
-        fallback || defaultFallback
-      )}
-    </div>
-  );
-}
-
-/**
- * LazyComponent - Higher-order component for lazy loading React components
- */
-export function createLazyComponent<T extends ComponentType<any>>(
-  importFn: () => Promise<{ default: T }>,
-  fallback?: React.ReactNode
+// Lazy load wrapper with error boundary and loading states
+export function LazyLoadWrapper<T extends ComponentType<Record<string, unknown>>>(
+  importFunc: () => Promise<{ default: T }>,
+  options: {
+    loading?: 'spinner' | 'skeleton' | 'custom';
+    customLoading?: React.ComponentType;
+    fallback?: React.ComponentType;
+    className?: string;
+  } = {}
 ) {
-  const LazyComponent = lazy(importFn);
+  const { loading = 'spinner', customLoading, fallback, className = '' } = options;
 
-  return function LazyComponentWrapper(props: React.ComponentProps<T>) {
-    return (
-      <Suspense fallback={fallback || <LazyLoadWrapper><div /></LazyLoadWrapper>}>
-        <LazyComponent {...props} />
+  const LazyComponent = lazy(importFunc);
+
+  const LoadingComponent = () => {
+    switch (loading) {
+      case 'skeleton':
+        return <SkeletonLoading className={className} />;
+      case 'custom':
+        return customLoading ? React.createElement(customLoading) : <SkeletonLoading className={className} />;
+      default:
+        return <LoadingComponent className={className} />;
+    }
+  };
+
+  return React.forwardRef<any, React.ComponentProps<T>>((props, ref) => (
+    <LazyErrorBoundary fallback={fallback ? React.createElement(fallback) : undefined}>
+      <Suspense fallback={<LoadingComponent />}>
+        <LazyComponent {...props} ref={ref} />
       </Suspense>
-    );
+    </LazyErrorBoundary>
+  ));
+}
+
+// Predefined lazy components for common use cases
+export const LazySwipeCard = LazyLoadWrapper(
+  () => import('@/components/Pet/SwipeCard'),
+  { loading: 'skeleton', className: 'w-full max-w-sm mx-auto' }
+);
+
+export const LazyMatchModal = LazyLoadWrapper(
+  () => import('@/components/Pet/MatchModal'),
+  { loading: 'spinner' }
+);
+
+export const LazyChatInterface = LazyLoadWrapper(
+  () => import('@/components/Chat/ChatInterface'),
+  { loading: 'skeleton', className: 'h-96' }
+);
+
+export const LazyMapComponent = LazyLoadWrapper(
+  () => import('@/components/Map/MapComponent'),
+  { loading: 'skeleton', className: 'h-64' }
+);
+
+export const LazyVideoCall = LazyLoadWrapper(
+  () => import('@/components/VideoCall/VideoCallComponent'),
+  { loading: 'spinner' }
+);
+
+export const LazyAnalytics = LazyLoadWrapper(
+  () => import('@/components/Analytics/AnalyticsDashboard'),
+  { loading: 'skeleton', className: 'h-96' }
+);
+
+// Heavy components that should be lazy loaded
+export const LazyThreeJSBackground = LazyLoadWrapper(
+  () => import('@/components/Background/ThreeJSBackground'),
+  { loading: 'spinner' }
+);
+
+export const LazyLottieAnimation = LazyLoadWrapper(
+  () => import('@/components/Animation/LottieAnimation'),
+  { loading: 'spinner' }
+);
+
+// Utility function to preload components
+export function preloadComponent(importFunc: () => Promise<any>) {
+  return () => {
+    importFunc();
   };
 }
 
-/**
- * LazyImage - Optimized image component with lazy loading
- */
-interface LazyImageProps {
-  src: string;
-  alt: string;
-  className?: string;
-  width?: number;
-  height?: number;
-  sizes?: string;
-  priority?: boolean;
-  onLoad?: () => void;
-  onError?: () => void;
+// Hook for managing component loading states
+export function useLazyLoading() {
+  const [loadingStates, setLoadingStates] = React.useState<Record<string, boolean>>({});
+
+  const setLoading = (componentName: string, loading: boolean) => {
+    setLoadingStates(prev => ({
+      ...prev,
+      [componentName]: loading
+    }));
+  };
+
+  const isComponentLoading = (componentName: string) => {
+    return loadingStates[componentName] || false;
+  };
+
+  return {
+    setLoading,
+    isComponentLoading,
+    loadingStates
+  };
 }
 
-export function LazyImage({
-  src,
-  alt,
-  className = '',
-  width,
-  height,
-  sizes,
-  priority = false,
-  onLoad,
-  onError,
-}: LazyImageProps) {
-  const { isVisible, elementRef } = useLazyLoad({
-    threshold: priority ? 0 : 0.1,
-    rootMargin: priority ? '0px' : '50px',
-  });
-
-  return (
-    <div ref={elementRef as React.RefObject<HTMLDivElement>} className={className}>
-      {isVisible && (
-        <motion.img
-          src={src}
-          alt={alt}
-          width={width}
-          height={height}
-          sizes={sizes}
-          onLoad={onLoad}
-          onError={onError}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="w-full h-full object-cover"
-          loading={priority ? 'eager' : 'lazy'}
-        />
-      )}
-    </div>
-  );
-}
-
-/**
- * LazySection - For lazy loading entire page sections
- */
-interface LazySectionProps {
-  children: React.ReactNode;
-  className?: string;
-  fallback?: React.ReactNode;
-  minHeight?: string;
-}
-
-export function LazySection({
-  children,
-  className = '',
-  fallback,
-  minHeight = '200px',
-}: LazySectionProps) {
-  const { isVisible, elementRef } = useLazyLoad({
-    threshold: 0.1,
-    rootMargin: '100px',
-  });
-
-  const defaultFallback = (
-    <div 
-      className={`animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg ${className}`}
-      style={{ minHeight }}
-    >
-      <div className="p-6">
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-        <div className="space-y-3">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div 
-      ref={elementRef as React.RefObject<HTMLDivElement>}
-      className={className}
-      style={{ minHeight: isVisible ? 'auto' : minHeight }}
-    >
-      {isVisible ? (
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-        >
-          {children}
-        </motion.div>
-      ) : (
-        fallback || defaultFallback
-      )}
-    </div>
-  );
-}
-
-/**
- * LazyList - For lazy loading lists with virtualization
- */
-interface LazyListProps<T> {
-  items: T[];
-  renderItem: (item: T, index: number) => React.ReactNode;
-  className?: string;
-  itemHeight?: number;
-  containerHeight?: number;
-  overscan?: number;
-}
-
-export function LazyList<T>({
-  items,
-  renderItem,
-  className = '',
-  itemHeight = 100,
-  containerHeight = 400,
-  overscan = 5,
-}: LazyListProps<T>) {
-  const [visibleRange, setVisibleRange] = React.useState({ start: 0, end: Math.min(overscan, items.length) });
-
-  const handleScroll = React.useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const scrollTop = e.currentTarget.scrollTop;
-    const start = Math.floor(scrollTop / itemHeight);
-    const end = Math.min(start + Math.ceil(containerHeight / itemHeight) + overscan, items.length);
-    
-    setVisibleRange({ start: Math.max(0, start - overscan), end });
-  }, [itemHeight, containerHeight, overscan, items.length]);
-
-  const visibleItems = items.slice(visibleRange.start, visibleRange.end);
-  const totalHeight = items.length * itemHeight;
-  const offsetY = visibleRange.start * itemHeight;
-
-  return (
-    <div 
-      className={`overflow-auto ${className}`}
-      style={{ height: containerHeight }}
-      onScroll={handleScroll}
-    >
-      <div style={{ height: totalHeight, position: 'relative' }}>
-        <div style={{ transform: `translateY(${offsetY}px)` }}>
-          {visibleItems.map((item, index) => (
-            <div
-              key={visibleRange.start + index}
-              style={{ height: itemHeight }}
-            >
-              {renderItem(item, visibleRange.start + index)}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+export default LazyLoadWrapper;

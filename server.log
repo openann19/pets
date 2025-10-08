@@ -1,0 +1,32 @@
+[dotenv@17.2.2] injecting env (18) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+(node:2072) [MONGOOSE] Warning: Duplicate schema index on {"email":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2072) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:2072) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+❌ Database connection failed: connect ECONNREFUSED 127.0.0.1:27017
+⚠️ Falling back to in-memory MongoDB
+Downloading MongoDB "7.0.14": 0% (0mb / 80.8mb)
+Downloading MongoDB "7.0.14": 26.5% (21.4mb / 80.8mb)
+Downloading MongoDB "7.0.14": 53% (42.8mb / 80.8mb)
+Downloading MongoDB "7.0.14": 79.5% (64.2mb / 80.8mb)
+Downloading MongoDB "7.0.14": 100% (80.8mb / 80.8mb)
+Downloading MongoDB "7.0.14": 100% (0mb / 0mb)
+(node:2072) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:2072) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+🚀 In-memory MongoDB started: 127.0.0.1
+🌟 PawfectMatch Premium Server running on port 5000
+🌐 Environment: production
+🔗 Client URL: http://localhost:3000
+::1 - - [27/Sep/2025:01:46:27 +0000] "GET /api/health HTTP/1.1" 200 103 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:46:33 +0000] "GET /api/health HTTP/1.1" 200 104 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:47:05 +0000] "GET /api/health HTTP/1.1" 200 104 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:47:05 +0000] "GET /api/health HTTP/1.1" 200 104 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:47:05 +0000] "POST /api/auth/login HTTP/1.1" 401 49 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:47:05 +0000] "POST /api/ai/generate-bio HTTP/1.1" 401 43 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:47:24 +0000] "POST /api/ai/generate-bio HTTP/1.1" 401 51 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:47:30 +0000] "POST /api/auth/login HTTP/1.1" 401 49 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:47:37 +0000] "GET /api/health HTTP/1.1" 200 104 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:52:49 +0000] "GET /api/health HTTP/1.1" 200 104 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:53:24 +0000] "GET /api/health HTTP/1.1" 200 104 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:54:38 +0000] "GET /api/health HTTP/1.1" 200 104 "-" "curl/8.5.0"
+::1 - - [27/Sep/2025:01:56:42 +0000] "GET /api/health HTTP/1.1" 200 104 "-" "curl/8.5.0"

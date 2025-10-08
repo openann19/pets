@@ -1,410 +1,422 @@
-# 🚀 Production Deployment Guide - PawfectMatch
+# 🚀 Production Deployment Guide
 
-## Quick Start (5 Steps to Production)
+## Overview
 
-### Step 1: Prepare Environment Variables
+This guide provides comprehensive instructions for deploying PawfectMatch Premium with DeepSeek AI integration to production environments.
 
+## 🏗️ Architecture
+
+### Production Stack
+- **Backend API**: Node.js 18 with Express.js
+- **Database**: MongoDB 7.0 with authentication
+- **Cache**: Redis 7.2 with persistence
+- **Reverse Proxy**: Nginx with SSL termination
+- **Monitoring**: Prometheus + Grafana
+- **Containerization**: Docker + Docker Compose
+- **AI Integration**: DeepSeek API with fallback systems
+
+### Service Dependencies
+```
+Nginx → API → MongoDB
+       ↓
+      Redis
+       ↓
+   DeepSeek API
+```
+
+## 🔧 Prerequisites
+
+### System Requirements
+- **CPU**: 2+ cores
+- **RAM**: 4GB+ (8GB recommended)
+- **Storage**: 20GB+ SSD
+- **Network**: Stable internet connection
+- **OS**: Linux (Ubuntu 20.04+ recommended)
+
+### Software Requirements
+- Docker 20.10+
+- Docker Compose 2.0+
+- OpenSSL (for secret generation)
+- curl (for health checks)
+- jq (for JSON processing)
+
+## 🚀 Quick Deployment
+
+### 1. Clone and Setup
 ```bash
-# Navigate to server directory
+git clone https://github.com/yourusername/pawfectmatch-premium.git
+cd pawfectmatch-premium
+```
+
+### 2. Configure Environment
+```bash
+# Copy production template
+cp server/.env.production.template server/.env.production
+
+# Edit with your values
+nano server/.env.production
+```
+
+### 3. Deploy
+```bash
+# Make deployment script executable
+chmod +x deploy-production.sh
+
+# Run deployment
+./deploy-production.sh
+```
+
+## ⚙️ Configuration
+
+### Required Environment Variables
+
+#### Core Configuration
+```bash
+# Server
+NODE_ENV=production
+PORT=5001
+CLIENT_URL=https://your-domain.com
+
+# Database
+MONGODB_URI=mongodb://username:password@mongo:27017/pawfectmatch
+
+# JWT Secrets (Generate with: openssl rand -base64 64)
+JWT_SECRET=your-64-character-secret
+JWT_REFRESH_SECRET=your-64-character-refresh-secret
+```
+
+#### DeepSeek AI Configuration
+```bash
+# DeepSeek API (REQUIRED)
+DEEPSEEK_API_KEY=sk-your-deepseek-api-key
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+
+# AI Cache Configuration
+AI_CACHE_TTL=3600000
+AI_MAX_CACHE_SIZE=1000
+```
+
+#### Infrastructure
+```bash
+# Redis
+REDIS_URL=redis://redis:6379
+REDIS_PASSWORD=your-redis-password
+
+# Monitoring
+SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+GRAFANA_PASSWORD=your-grafana-password
+```
+
+### Optional Configuration
+```bash
+# AI Service (leave unset to use DeepSeek directly)
+AI_SERVICE_URL=https://your-ai-service.com
+
+# Cloudinary (Image Upload)
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+# Stripe (Payments)
+STRIPE_SECRET_KEY=sk_live_your-stripe-key
+STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret
+
+# Email
+EMAIL_HOST=smtp.your-provider.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@domain.com
+EMAIL_PASS=your-email-password
+```
+
+## 🔒 Security Configuration
+
+### SSL/TLS Setup
+1. **Obtain SSL Certificate**
+   ```bash
+   # Using Let's Encrypt (recommended)
+   certbot certonly --standalone -d your-domain.com
+   ```
+
+2. **Configure Nginx SSL**
+   ```nginx
+   server {
+       listen 443 ssl http2;
+       server_name your-domain.com;
+       
+       ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+       ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+       
+       # SSL configuration
+       ssl_protocols TLSv1.2 TLSv1.3;
+       ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
+       ssl_prefer_server_ciphers off;
+   }
+   ```
+
+### Firewall Configuration
+```bash
+# UFW (Ubuntu)
+sudo ufw allow 22/tcp    # SSH
+sudo ufw allow 80/tcp    # HTTP
+sudo ufw allow 443/tcp   # HTTPS
+sudo ufw enable
+```
+
+### Database Security
+```bash
+# MongoDB Authentication
+use admin
+db.createUser({
+  user: "admin",
+  pwd: "secure-password",
+  roles: ["root"]
+})
+```
+
+## 📊 Monitoring Setup
+
+### Prometheus Configuration
+```yaml
+# monitoring/prometheus.yml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'pawfectmatch-api'
+    static_configs:
+      - targets: ['api:5001']
+    metrics_path: '/api/ai/metrics'
+```
+
+### Grafana Dashboards
+- **API Metrics**: Request rates, response times, error rates
+- **DeepSeek Integration**: API calls, fallback usage, costs
+- **System Metrics**: CPU, memory, disk usage
+- **Database Metrics**: Connection counts, query performance
+
+### Alerting Rules
+```yaml
+# Example Prometheus alerting rules
+groups:
+  - name: pawfectmatch
+    rules:
+      - alert: HighErrorRate
+        expr: rate(ai_requests_failed[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High error rate detected
+```
+
+## 🧪 Testing
+
+### Production Readiness Tests
+```bash
+# Run comprehensive tests
 cd server
+npm test -- tests/production/production-ready.test.js
 
-# Copy template
-cp env.production.template .env.production
-
-# Generate strong JWT secrets
-node -e "console.log('JWT_SECRET=' + require('crypto').randomBytes(64).toString('hex'))"
-node -e "console.log('JWT_REFRESH_SECRET=' + require('crypto').randomBytes(64).toString('hex'))"
-
-# Edit .env.production with your favorite editor
-nano .env.production
+# Load testing
+npm test -- tests/production/production-ready.test.js --grep "Load Tests"
 ```
 
-**Required values to update in `.env.production`:**
-- `MONGODB_URI` - Your MongoDB Atlas connection string
-- `JWT_SECRET` - Generated secret from above
-- `JWT_REFRESH_SECRET` - Different generated secret from above
-- `CLIENT_URL` - Your production frontend URL (https://...)
-- `ALLOWED_ORIGINS` - Comma-separated list of allowed domains
-- `CLOUDINARY_*` - Your Cloudinary credentials
-- `STRIPE_*` - Your Stripe live keys
-
----
-
-### Step 2: Run Production Readiness Check
-
+### Health Checks
 ```bash
-# From project root
-NODE_ENV=production node scripts/production-check.js
+# Basic health check
+curl http://localhost:5001/api/ai/health
+
+# Detailed health check
+curl http://localhost:5001/api/ai/health/detailed
+
+# Metrics (admin only)
+curl -H "Authorization: Bearer admin-token" \
+  http://localhost:5001/api/ai/metrics
 ```
 
-This will verify:
-- ✅ All required environment variables are set
-- ✅ JWT secrets are strong (32+ characters)
-- ✅ Admin routes are protected
-- ✅ User model has role field
-- ✅ All files are in place
+## 🔄 Deployment Process
 
-**Expected output:**
-```
-🎉 All checks passed! Your application is production-ready.
-```
+### 1. Pre-deployment Checklist
+- [ ] Environment variables configured
+- [ ] SSL certificates obtained
+- [ ] Database backups created
+- [ ] DNS records updated
+- [ ] Firewall rules configured
+- [ ] Monitoring alerts configured
 
----
-
-### Step 3: Initialize Database
-
+### 2. Deployment Steps
 ```bash
-# Create indexes for optimal performance
-node scripts/create-indexes.js
+# 1. Stop existing services
+docker-compose -f docker-compose.production.yml down
 
-# Run migrations to add user roles
-node scripts/migrations/001-add-user-roles.js
+# 2. Pull latest code
+git pull origin main
 
-# Create admin user
-node scripts/create-admin-user.js admin@yourcompany.com StrongPassword123!
+# 3. Build new images
+docker-compose -f docker-compose.production.yml build
+
+# 4. Start services
+docker-compose -f docker-compose.production.yml up -d
+
+# 5. Wait for health checks
+./deploy-production.sh
 ```
 
-**What this does:**
-- Creates 20+ database indexes for fast queries
-- Adds role field to existing users
-- Creates your first admin account
-
----
-
-### Step 4: Test Locally in Production Mode
-
+### 3. Post-deployment Verification
 ```bash
-# Start server in production mode
-cd server
-NODE_ENV=production node server.js
+# Check service status
+docker-compose -f docker-compose.production.yml ps
+
+# Verify health
+curl http://localhost:5001/api/ai/health/detailed
+
+# Check logs
+docker-compose -f docker-compose.production.yml logs -f api
 ```
 
-**Verify:**
-```bash
-# 1. Health check
-curl http://localhost:5001/health
+## 📈 Performance Optimization
 
-# 2. Login as admin
-curl -X POST http://localhost:5001/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@yourcompany.com","password":"StrongPassword123!"}'
+### Caching Strategy
+- **Response Cache**: 1-hour TTL for AI responses
+- **Redis Cache**: Distributed rate limiting
+- **CDN**: Static asset caching (if applicable)
 
-# 3. Test admin endpoint (use token from step 2)
-curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:5001/api/admin/metrics
-```
-
----
-
-### Step 5: Deploy to Production
-
-#### Option A: Docker Deployment
-
-```bash
-# Build image
-docker build -t pawfectmatch-backend:latest ./server
-
-# Run container
-docker run -d \
-  --name pawfectmatch-backend \
-  -p 5001:5001 \
-  --env-file ./server/.env.production \
-  pawfectmatch-backend:latest
-```
-
-#### Option B: PM2 Deployment
-
-```bash
-# Install PM2 globally
-npm install -g pm2
-
-# Start with PM2
-cd server
-pm2 start server.js --name pawfectmatch --env production
-
-# Save PM2 configuration
-pm2 save
-
-# Setup auto-restart on server reboot
-pm2 startup
-```
-
-#### Option C: Manual Deployment
-
-```bash
-cd server
-NODE_ENV=production node server.js
-```
-
----
-
-## 🔒 Security Checklist
-
-Before going live, verify:
-
-- [ ] JWT secrets are strong (64+ characters, randomly generated)
-- [ ] MongoDB URI uses production database (not localhost)
-- [ ] CLIENT_URL uses HTTPS
-- [ ] Admin user password is strong
-- [ ] Cloudinary credentials are for production account
-- [ ] Stripe keys are LIVE keys (sk_live_*)
-- [ ] CORS only allows your production domains
-- [ ] Environment variables are not committed to git
-
----
-
-## 📊 Performance Optimization
-
-### Verify Indexes Are Active
-
+### Database Optimization
 ```javascript
-// In MongoDB shell or Compass
-db.pets.find({ species: 'dog', intent: 'adoption', isActive: true }).explain('executionStats')
-
-// Should show:
-// - "stage": "IXSCAN" (using index)
-// - Low execution time (<50ms)
+// MongoDB indexes
+db.pets.createIndex({ "location": "2dsphere" })
+db.users.createIndex({ "email": 1 }, { unique: true })
+db.matches.createIndex({ "users": 1, "createdAt": -1 })
 ```
 
-### Monitor Performance
+### API Optimization
+- **Connection Pooling**: MongoDB and Redis
+- **Request Compression**: Gzip compression
+- **Rate Limiting**: Prevent abuse
+- **Caching**: Reduce API calls
 
+## 🚨 Troubleshooting
+
+### Common Issues
+
+#### 1. DeepSeek API Errors
 ```bash
-# Check metrics (requires admin token)
-curl -H "Authorization: Bearer ADMIN_TOKEN" http://your-api.com/api/admin/metrics
+# Check API key
+curl -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
+  https://api.deepseek.com/v1/models
 
-# Check system info
-curl -H "Authorization: Bearer ADMIN_TOKEN" http://your-api.com/api/admin/system/info
+# Check health status
+curl http://localhost:5001/api/ai/health/detailed | jq '.deepseek_api'
 ```
 
----
-
-## 🔥 Rate Limiting in Production
-
-**Authentication endpoints:** 5 requests per 15 minutes  
-**API endpoints:** 100 requests per 15 minutes  
-
-If users exceed limits, they receive:
-```json
-{
-  "success": false,
-  "message": "Too many requests, please try again later.",
-  "retryAfter": 900
-}
-```
-
----
-
-## 🛡️ Admin Access
-
-### Admin Routes Protected
-
-All `/api/admin/*` routes now require:
-1. Valid JWT token
-2. User role = 'admin'
-
-### Create Additional Admins
-
-```bash
-# Method 1: Using script
-node scripts/create-admin-user.js newadmin@company.com SecurePass123!
-
-# Method 2: Promote existing user
-# In MongoDB:
-db.users.updateOne(
-  { email: "user@example.com" },
-  { $set: { role: "admin" } }
-)
-```
-
----
-
-## 🔄 Maintenance Scripts
-
-### Create Database Indexes
-```bash
-node scripts/create-indexes.js          # Create
-node scripts/create-indexes.js list     # List all
-node scripts/create-indexes.js drop     # Drop all (caution!)
-```
-
-### User Migrations
-```bash
-node scripts/migrations/001-add-user-roles.js      # Add roles
-node scripts/migrations/001-add-user-roles.js down # Rollback
-```
-
-### Admin Management
-```bash
-node scripts/create-admin-user.js <email> <password>
-```
-
-### Production Check
-```bash
-NODE_ENV=production node scripts/production-check.js
-```
-
----
-
-## 📈 Monitoring
-
-### Health Check Endpoint
-
-```bash
-GET /health
-```
-
-Returns:
-```json
-{
-  "status": "healthy",
-  "checks": {
-    "mongodb": "healthy",
-    "redis": "healthy",
-    "cloudinary": "healthy",
-    "aiService": "healthy"
-  },
-  "timestamp": "2025-10-03T..."
-}
-```
-
-### Metrics (Admin Only)
-
-```bash
-GET /api/admin/metrics
-Authorization: Bearer <admin-token>
-```
-
-### Cache Management (Admin Only)
-
-```bash
-# View cache stats
-GET /api/admin/cache/stats
-
-# Clear all cache
-POST /api/admin/cache/clear
-
-# Clear specific pattern
-POST /api/admin/cache/invalidate
-{ "pattern": "pets:*" }
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Server Won't Start
-
-**Check environment validation:**
-```bash
-# Run in debug mode
-DEBUG=* NODE_ENV=production node server/server.js
-```
-
-Common issues:
-- Missing environment variables
-- Weak JWT secrets
-- MongoDB connection failure
-
-### Database Connection Issues
-
+#### 2. Database Connection Issues
 ```bash
 # Test MongoDB connection
-mongosh "YOUR_MONGODB_URI"
+docker-compose -f docker-compose.production.yml exec mongo \
+  mongosh --eval "db.adminCommand('ping')"
 
-# Check server can connect
-node -e "const mongoose = require('mongoose'); mongoose.connect(process.env.MONGODB_URI).then(() => console.log('✅ Connected')).catch(err => console.error('❌', err))"
+# Check connection string
+echo $MONGODB_URI
 ```
 
-### Admin Routes Return 401/403
-
-- 401 Unauthorized = No/invalid token
-- 403 Forbidden = User is not admin
-
+#### 3. High Memory Usage
 ```bash
-# Check user role in database
-mongosh
-use pawfectmatch
-db.users.findOne({ email: "admin@example.com" }, { email: 1, role: 1 })
+# Check memory usage
+docker stats
+
+# Restart API service
+docker-compose -f docker-compose.production.yml restart api
 ```
 
-### Rate Limiting Too Strict
-
-Edit `server/src/config/production.js`:
-```javascript
-rateLimiting: {
-  api: {
-    max: 200  // Increase from 100
-  }
-}
-```
-
----
-
-## 🔄 Rollback Plan
-
-If you need to rollback:
-
+#### 4. Rate Limiting Issues
 ```bash
-# 1. Stop the server
-pm2 stop pawfectmatch
+# Check rate limit status
+curl -H "Authorization: Bearer token" \
+  http://localhost:5001/api/ai/rate-limit-status
 
-# 2. Restore previous code version
-git checkout previous-version
-
-# 3. Rollback migrations (if needed)
-node scripts/migrations/001-add-user-roles.js down
-
-# 4. Restart
-pm2 start pawfectmatch
+# Clear rate limits (admin only)
+curl -X POST -H "Authorization: Bearer admin-token" \
+  http://localhost:5001/api/ai/rate-limits/reset
 ```
 
----
-
-## 📞 Support & Documentation
-
-- **Implementation Summary:** `PRODUCTION_READINESS_IMPLEMENTED.md`
-- **Full Plan:** `PRODUCTION_READINESS_PLAN.bg.md`
-- **Environment Template:** `server/env.production.template`
-
----
-
-## ✅ Pre-Launch Checklist
-
-Use this before going live:
-
+### Log Analysis
 ```bash
-# Run automated check
-NODE_ENV=production node scripts/production-check.js
+# View API logs
+docker-compose -f docker-compose.production.yml logs -f api
+
+# Search for errors
+docker-compose -f docker-compose.production.yml logs api | grep ERROR
+
+# Monitor real-time logs
+docker-compose -f docker-compose.production.yml logs -f --tail=100 api
 ```
 
-**Manual verification:**
-- [ ] Environment variables configured
-- [ ] Database indexes created
-- [ ] Admin user created
-- [ ] Health endpoint responds
-- [ ] Admin routes protected
-- [ ] Rate limiting active
-- [ ] Logs are writable
-- [ ] MongoDB backup configured
-- [ ] SSL/HTTPS configured
-- [ ] Domain DNS configured
+## 🔄 Maintenance
+
+### Regular Tasks
+- **Daily**: Check health status and error rates
+- **Weekly**: Review metrics and performance
+- **Monthly**: Update dependencies and security patches
+- **Quarterly**: Review and optimize costs
+
+### Backup Strategy
+```bash
+# MongoDB backup
+docker-compose -f docker-compose.production.yml exec mongo \
+  mongodump --out /backup/$(date +%Y%m%d)
+
+# Redis backup
+docker-compose -f docker-compose.production.yml exec redis \
+  redis-cli BGSAVE
+```
+
+### Updates and Patches
+```bash
+# Update application
+git pull origin main
+docker-compose -f docker-compose.production.yml build
+docker-compose -f docker-compose.production.yml up -d
+
+# Update system packages
+sudo apt update && sudo apt upgrade -y
+```
+
+## 📞 Support
+
+### Monitoring Dashboards
+- **Grafana**: http://localhost:3000
+- **Prometheus**: http://localhost:9090
+- **API Health**: http://localhost:5001/api/ai/health/detailed
+
+### Emergency Contacts
+- **System Admin**: admin@your-domain.com
+- **DevOps Team**: devops@your-domain.com
+- **DeepSeek Support**: support@deepseek.com
+
+### Escalation Procedures
+1. **Level 1**: Check health endpoints and logs
+2. **Level 2**: Restart services and check configuration
+3. **Level 3**: Contact system administrator
+4. **Level 4**: Contact DeepSeek support for API issues
 
 ---
 
-## 🎉 You're Ready!
+## 🎉 Success Metrics
 
-Your PawfectMatch backend is now **production-ready** with:
+### Deployment Success Criteria
+- ✅ All services healthy and responding
+- ✅ DeepSeek API integration working
+- ✅ Database connections stable
+- ✅ Monitoring and alerting active
+- ✅ SSL certificates valid
+- ✅ Performance benchmarks met
+- ✅ Security checks passed
 
-✅ Enterprise-grade security  
-✅ Optimized database performance  
-✅ Comprehensive error handling  
-✅ Admin access control  
-✅ Rate limiting protection  
-✅ Environment validation  
+### Performance Targets
+- **Response Time**: < 2 seconds for AI endpoints
+- **Uptime**: > 99.9%
+- **Error Rate**: < 1%
+- **Cache Hit Rate**: > 80%
+- **API Success Rate**: > 95%
 
-**Deploy with confidence!** 🚀
-
----
-
-*Last updated: October 3, 2025*  
-*Version: 1.0.0*
-
+**🚀 Your PawfectMatch Premium production deployment is ready!**

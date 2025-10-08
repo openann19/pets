@@ -1,0 +1,23 @@
+Wide test-suite + critical fixes = high confidence
+Unit / integration / E2E / a11y / perf tests catch > 95 % of regressions.
+Security headers, rate-limit, CSP, dependency audit close common holes.
+But there’s never a 100 % guarantee
+Unknown paths, third-party outages, race-conditions, device quirks, 0-day CVEs, user behaviour outside test data—all can surface after launch.
+“Bug-free” is impossible for any non-trivial app.
+What you do get
+✔ CI gate that blocks merges when tests, lint or audits fail.
+✔ Monitoring & alerting to see real-world errors fast.
+✔ Playbook to roll back if something slips through.
+✔ Legal / security compliance boxes ticked (GDPR, headers, OWASP top-10).
+Operational safety net
+Automatic daily dependency updates + Snyk/GH Dependabot.
+Error tracking (Sentry) with alert threshold.
+Health-check & readiness probes for zero-downtime deploys.
+Canary deployment or staging smoke-tests before prod promotion.
+Bottom line
+“All tests green” greatly lowers the chance of runtime issues, but does not equal a contractual guarantee.
+Combine:
+Comprehensive automated tests
+Continuous monitoring
+Fast rollback strategy
+Regular security updates

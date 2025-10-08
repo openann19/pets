@@ -18,7 +18,12 @@
         "name": "next"
       }
     ],
-    "strictNullChecks": true
+    "strict": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUncheckedIndexedAccess": true
   },
   "include": [
     "next-env.d.ts",

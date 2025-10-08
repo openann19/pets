@@ -357,28 +357,44 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   }, [currentPhotoIndex]);
-
   return (
     <Animated.View
       style={[
         styles.card,
+        disabled && styles.cardDisabled,
         {
           transform: [
             { translateX: pan.x },
             { translateY: pan.y },
-            { rotate },
-            { scale },
+            { rotate: rotate },
+            { scale: scale },
           ],
           opacity,
         },
-        disabled && styles.cardDisabled,
-        style,
       ]}
-      {...(!disabled ? panResponder.panHandlers : {})}
+      {...panResponder.panHandlers}
       accessible={true}
       accessibilityRole="button"
-      accessibilityLabel={`Pet profile for ${pet.name}, ${pet.age} years old ${pet.breed}`}
-      accessibilityHint="Swipe right to like, left to pass, or up for super like"
+      accessibilityLabel={`${pet.name}, ${pet.age} year old ${pet.breed}, ${pet.distance}km away, ${pet.compatibility}% compatibility match`}
+      accessibilityHint="Swipe right to like, left to pass, or up for super like. Double tap to view more details."
+      accessibilityActions={[
+        { name: 'like', label: 'Like this pet' },
+        { name: 'pass', label: 'Pass on this pet' },
+        { name: 'superlike', label: 'Super like this pet' },
+      ]}
+      onAccessibilityAction={(event) => {
+        switch (event.nativeEvent.actionName) {
+          case 'like':
+            animateSwipeRight();
+            break;
+          case 'pass':
+            animateSwipeLeft();
+            break;
+          case 'superlike':
+            animateSwipeUp();
+            break;
+        }
+      }}
     >
       {/* Photo Section */}
       <View style={styles.photoContainer}>
@@ -405,19 +421,43 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
 
         {/* Photo Navigation Areas */}
         <View style={styles.photoNavigation}>
-          <View style={styles.photoNavLeft} onTouchEnd={prevPhoto} />
-          <View style={styles.photoNavRight} onTouchEnd={nextPhoto} />
+          <View 
+            style={styles.photoNavLeft} 
+            onTouchEnd={prevPhoto}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Previous photo"
+            accessibilityHint="Tap to view previous photo"
+          />
+          <View 
+            style={styles.photoNavRight} 
+            onTouchEnd={nextPhoto}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Next photo"
+            accessibilityHint="Tap to view next photo"
+          />
         </View>
 
         {/* Verification Badge */}
         {pet.isVerified && (
-          <View style={styles.verifiedBadge}>
+          <View 
+            style={styles.verifiedBadge}
+            accessible={true}
+            accessibilityLabel="Verified pet profile"
+            accessibilityRole="image"
+          >
             <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
           </View>
         )}
 
         {/* Distance Badge */}
-        <View style={styles.distanceBadge}>
+        <View 
+          style={styles.distanceBadge}
+          accessible={true}
+          accessibilityLabel={`${pet.distance} kilometers away`}
+          accessibilityRole="text"
+        >
           <Text style={styles.distanceText}>{pet.distance}km away</Text>
         </View>
 

@@ -1,0 +1,116 @@
+---
+alwaysApply: true
+---
+SwipeCard – Rapid Redesign Playbook
+Fixes spacing, alignment, button overlap & overall polish.
+
+1 · Visual Reference (Target)
+┌──────────────────────────────┐
+│         PET PHOTO            │  4 : 5 aspect
+│ (rounded-xl, object-cover)   │
+│                              │
+│── gradient overlay bottom 30%│
+└──────────────────────────────┘
+│  Buddy · Golden Retriever  ♂  │  **16 px padding**
+│  3 yrs · Large · 5 km away │  **14 px text / 20 px line**
+│  “Super friendly and loves  │
+│   the water!”               │
+│                              │
+│  ★ Compatibility 85 %        │
+└──────────────────────────────┘
+        ⇦   ♡   ➜                **Action row**  
+      pass  like  super-like     (64 px icons, 24 px gap)
+Everything aligns to a 8 px grid, content max-width = 360 px mobile, 420 px desktop.
+
+2 · Component Anatomy & Tailwind Classes
+Zone	Element	Key Classes
+Card shell	<article>	relative rounded-2xl overflow-hidden shadow-lg bg-white dark:bg-neutral-900
+Photo	<Image> 4:5	w-full aspect-[4/5] object-cover
+Gradient overlay	<div>	absolute inset-x-0 bottom-0 h-[30%] bg-gradient-to-t from-black/60 to-transparent
+Info section	<section>	p-4 space-y-1 text-neutral-900 dark:text-neutral-50
+Heading	Name + breed	flex items-center gap-1 font-semibold text-lg
+Meta row	age,size,distance	text-sm text-neutral-500 dark:text-neutral-400
+Bio	2-line clamp	line-clamp-2 text-sm
+Compatibility badge	<span>	inline-flex items-center gap-1 rounded-full bg-emerald-600/10 text-emerald-700 px-2 py-0.5 text-xs font-medium
+Action buttons wrapper	<div>	flex justify-center gap-7 py-3
+Action button	<motion.button>	rounded-full p-4 shadow-md bg-white dark:bg-neutral-800 hover:scale-105 active:scale-95 transition
+3 · Spacing & Sizing Rules
+Base unit = 8 px
+Card padding: 2 units (16 px)
+Gap between buttons: 3 units (24 px)
+Text
+Name line: font-semibold / 1.2
+Meta + bio: text-sm + leading-5
+Buttons
+Icon 24×24 inside 64×64 circle
+Colours:
+pass ⇦ neutral-400
+like ♡ rose-500 → rose-600 on hover
+super-like ➜ sky-500 → sky-600 on hover
+Safe-Area Insets
+On iOS devices, add bottom padding pb-safe class (env(safe-area-inset-bottom)).
+4 · Motion & Feedback
+tsx
+<motion.button
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.9 }}
+  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+/>
+Haptics: navigator.vibrate?.(8) on like / super-like (mobile).
+Sound (optional): play subtle “pop” mp3 on action.
+5 · Responsive Behaviour
+Breakpoint	Max card width	Button size
+≤ sm (640)	100 % – 32 px side padding	56 px
+md (768)	360 px	64 px
+lg (1024)	420 px	72 px
+Use mx-auto and Tailwind container utilities.
+
+6 · Implementation Steps
+Create new component SwipeCardV2.tsx → keep V1 until stable.
+Refactor old props to data-object shape:
+ts
+type PetCardData = {
+  id: string
+  name: string
+  breed: string
+  age: number
+  size: 'tiny'|'small'|'medium'|'large'
+  distanceKm: number
+  bio: string
+  photos: string[]
+  compatibility?: number
+}
+Migrate CSS – remove inline styles; rely on Tailwind.
+Replace action handlers with prop callbacks:
+tsx
+onSwipe('like'|'pass'|'superlike', pet.id)
+Update pages (/swipe etc.) to import SwipeCardV2.
+7 · Quick Visual Regression Test
+ts
+import { render } from '@testing-library/react'
+import { SwipeCardV2 } from '../SwipeCardV2'
+import { toMatchImageSnapshot } from 'jest-image-snapshot'
+
+expect.extend({ toMatchImageSnapshot })
+
+it('renders consistent layout', async () => {
+  const { container } = render(<SwipeCardV2 pet={mockPet}/>)
+
+  const png = await html2canvas(container).then(c => c.toDataURL())
+  expect(Buffer.from(png.split(',')[1], 'base64')).toMatchImageSnapshot()
+})
+8 · Common Pitfalls
+Aspect-ratio – always object-cover; otherwise photo stretches.
+Button overlap – ensure wrapper outside relative photo div.
+Bio length – use line-clamp-2 (@tailwindcss/line-clamp plugin).
+Dark-mode text – test contrast on both themes (WCAG AA).
+RTL languages – confirm padding & icon direction via dir="rtl" toggle.
+9 · Timebox
+Task	Est
+Build component skeleton + Tailwind classes	45 min
+Hook up props & actions	30 min
+Add framer-motion & haptics	20 min
+Integrate blur-image + skeleton	20 min
+Responsive tweaks	20 min
+Visual + RTL test	15 min
+Total	~2.5 h

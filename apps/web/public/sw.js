@@ -1,360 +1,324 @@
-// PawfectMatch Service Worker
-// Version: 1.0.0
+// PawfectMatch Premium Service Worker
+// Enhanced PWA functionality with offline support and caching
 
-const CACHE_NAME = 'pawfectmatch-v1';
-const urlsToCache = [
+const CACHE_NAME = 'pawfectmatch-v1.0.0';
+const STATIC_CACHE_NAME = 'pawfectmatch-static-v1.0.0';
+const DYNAMIC_CACHE_NAME = 'pawfectmatch-dynamic-v1.0.0';
+const API_CACHE_NAME = 'pawfectmatch-api-v1.0.0';
+
+// Files to cache immediately
+const STATIC_FILES = [
   '/',
-  '/offline.html',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
-  '/favicon.ico'
+  '/manifest.json',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/offline.html'
 ];
 
-// Install event - cache essential files
+// API endpoints to cache
+const API_ENDPOINTS = [
+  '/api/auth/me',
+  '/api/pets/discover',
+  '/api/matches'
+];
+
+// Install event - cache static files
 self.addEventListener('install', (event) => {
-  console.log('[ServiceWorker] Install');
+  console.log('[SW] Installing service worker...');
   
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    caches.open(STATIC_CACHE_NAME)
       .then((cache) => {
-        console.log('[ServiceWorker] Caching app shell');
-        return cache.addAll(urlsToCache);
+        console.log('[SW] Caching static files');
+        return cache.addAll(STATIC_FILES);
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log('[SW] Static files cached successfully');
+        return self.skipWaiting();
+      })
+      .catch((error) => {
+        console.error('[SW] Failed to cache static files:', error);
+      })
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[ServiceWorker] Activate');
+  console.log('[SW] Activating service worker...');
   
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('[ServiceWorker] Removing old cache:', cacheName);
-            return caches.delete(cacheName);
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== STATIC_CACHE_NAME && 
+                cacheName !== DYNAMIC_CACHE_NAME && 
+                cacheName !== API_CACHE_NAME) {
+              console.log('[SW] Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+      .then(() => {
+        console.log('[SW] Service worker activated');
+        return self.clients.claim();
+      })
+  );
+});
+
+// Fetch event - handle network requests
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // Handle API requests
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(handleApiRequest(request));
+    return;
+  }
+
+  // Handle static assets
+  if (isStaticAsset(request.url)) {
+    event.respondWith(handleStaticAsset(request));
+    return;
+  }
+
+  // Handle navigation requests
+  if (request.mode === 'navigate') {
+    event.respondWith(handleNavigation(request));
+    return;
+  }
+
+  // Handle other requests with network-first strategy
+  event.respondWith(handleNetworkFirst(request));
+});
+
+// Handle API requests with cache-first strategy
+async function handleApiRequest(request) {
+  try {
+    const cache = await caches.open(API_CACHE_NAME);
+    const cachedResponse = await cache.match(request);
+
+    if (cachedResponse) {
+      // Return cached response and update in background
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            cache.put(request, response.clone());
           }
         })
-      );
-    }).then(() => self.clients.claim())
-  );
-});
-
-// Fetch event - serve from cache when offline
-self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
-  
-  // Skip API requests (let them go to network)
-  if (event.request.url.includes('/api/')) return;
-  
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        
-        // Clone the request
-        const fetchRequest = event.request.clone();
-        
-        return fetch(fetchRequest).then((response) => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          
-          // Clone the response
-          const responseToCache = response.clone();
-          
-          // Cache successful responses
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-          
-          return response;
+        .catch(() => {
+          // Ignore background update errors
         });
-      })
-      .catch(() => {
-        // Return offline page for navigation requests
-        if (event.request.mode === 'navigate') {
-          return caches.match('/offline.html');
-        }
-      })
-  );
+      
+      return cachedResponse;
+    }
+
+    // Fetch from network
+    const response = await fetch(request);
+    
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('[SW] API request failed:', error);
+    
+    // Return cached response if available
+    const cache = await caches.open(API_CACHE_NAME);
+    const cachedResponse = await cache.match(request);
+    
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    // Return offline response
+    return new Response(
+      JSON.stringify({ 
+        error: 'Offline', 
+        message: 'This request is not available offline' 
+      }),
+      {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  }
+}
+
+// Handle static assets with cache-first strategy
+async function handleStaticAsset(request) {
+  try {
+    const cache = await caches.open(STATIC_CACHE_NAME);
+    const cachedResponse = await cache.match(request);
+
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    const response = await fetch(request);
+    
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('[SW] Static asset request failed:', error);
+    
+    // Return offline page for HTML requests
+    if (request.headers.get('accept')?.includes('text/html')) {
+      const cache = await caches.open(STATIC_CACHE_NAME);
+      return cache.match('/offline.html') || new Response('Offline', { status: 503 });
+    }
+    
+    return new Response('Asset not available offline', { status: 503 });
+  }
+}
+
+// Handle navigation requests
+async function handleNavigation(request) {
+  try {
+    const response = await fetch(request);
+    return response;
+  } catch (error) {
+    console.error('[SW] Navigation request failed:', error);
+    
+    // Return cached page or offline page
+    const cache = await caches.open(DYNAMIC_CACHE_NAME);
+    const cachedResponse = await cache.match(request);
+    
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
+    // Return offline page
+    const staticCache = await caches.open(STATIC_CACHE_NAME);
+    return staticCache.match('/offline.html') || new Response('Offline', { status: 503 });
+  }
+}
+
+// Handle other requests with network-first strategy
+async function handleNetworkFirst(request) {
+  try {
+    const response = await fetch(request);
+    
+    if (response.ok) {
+      const cache = await caches.open(DYNAMIC_CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('[SW] Network-first request failed:', error);
+    
+    const cache = await caches.open(DYNAMIC_CACHE_NAME);
+    const cachedResponse = await cache.match(request);
+    
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
+    return new Response('Resource not available offline', { status: 503 });
+  }
+}
+
+// Check if URL is a static asset
+function isStaticAsset(url) {
+  const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.woff', '.woff2', '.ttf', '.eot'];
+  return staticExtensions.some(ext => url.includes(ext));
+}
+
+// Background sync for offline actions
+self.addEventListener('sync', (event) => {
+  console.log('[SW] Background sync triggered:', event.tag);
+  
+  if (event.tag === 'background-sync') {
+    event.waitUntil(doBackgroundSync());
+  }
 });
 
-// Push notification event
-self.addEventListener('push', (event) => {
-  console.log('[ServiceWorker] Push received');
-  
-  let data = {
-    title: 'PawfectMatch',
-    body: 'You have a new notification',
-    icon: '/icon-192x192.png',
-    badge: '/badge-72x72.png',
-    tag: 'notification',
-    requireInteraction: false,
-    data: {
-      url: '/',
-      timestamp: new Date().toISOString()
-    }
-  };
-  
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (e) {
-      console.error('[ServiceWorker] Error parsing push data:', e);
-    }
+async function doBackgroundSync() {
+  try {
+    // Sync offline actions when connection is restored
+    console.log('[SW] Performing background sync...');
+    
+    // You can implement specific sync logic here
+    // For example, sync offline messages, likes, etc.
+    
+  } catch (error) {
+    console.error('[SW] Background sync failed:', error);
   }
+}
+
+// Push notifications
+self.addEventListener('push', (event) => {
+  console.log('[SW] Push notification received');
   
   const options = {
-    body: data.body || data.message,
-    icon: data.icon || '/icon-192x192.png',
-    badge: data.badge || '/badge-72x72.png',
-    tag: data.tag || 'notification',
-    requireInteraction: data.requireInteraction || false,
-    data: data.data || { url: '/' },
-    actions: data.actions || [],
-    image: data.image,
-    vibrate: data.vibrate || [200, 100, 200],
-    sound: data.sound || '/notification.mp3',
-    silent: data.silent || false,
-    renotify: data.renotify || false,
-    timestamp: data.timestamp || Date.now()
+    body: event.data ? event.data.text() : 'New notification from PawfectMatch',
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/badge-72x72.png',
+    vibrate: [100, 50, 100],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: 1
+    },
+    actions: [
+      {
+        action: 'explore',
+        title: 'View',
+        icon: '/icons/checkmark.png'
+      },
+      {
+        action: 'close',
+        title: 'Close',
+        icon: '/icons/xmark.png'
+      }
+    ]
   };
-  
+
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification('PawfectMatch', options)
   );
 });
 
-// Notification click event
+// Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
-  console.log('[ServiceWorker] Notification clicked');
+  console.log('[SW] Notification click received');
   
   event.notification.close();
-  
-  const urlToOpen = event.notification.data?.url || '/';
-  
-  event.waitUntil(
-    clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    }).then((windowClients) => {
-      // Check if there's already a window/tab open
-      for (let client of windowClients) {
-        if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      // Open new window if not found
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
-  );
-});
 
-// Notification close event
-self.addEventListener('notificationclose', (event) => {
-  console.log('[ServiceWorker] Notification closed', event.notification.tag);
-  
-  // Track notification dismissal
-  if (event.notification.data?.trackingId) {
-    fetch('/api/notifications/dismissed', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        notificationId: event.notification.data.trackingId,
-        timestamp: new Date().toISOString()
-      })
-    }).catch(err => console.error('[ServiceWorker] Error tracking dismissal:', err));
+  if (event.action === 'explore') {
+    event.waitUntil(
+      clients.openWindow('/')
+    );
   }
 });
 
-// Background sync event (for offline message sending)
-self.addEventListener('sync', (event) => {
-  console.log('[ServiceWorker] Background sync:', event.tag);
-  
-  if (event.tag === 'send-messages') {
-    event.waitUntil(sendQueuedMessages());
-  }
-});
-
-// Function to send queued messages when back online
-async function sendQueuedMessages() {
-  try {
-    // Get queued messages from IndexedDB
-    const db = await openDB();
-    const tx = db.transaction('outbox', 'readwrite');
-    const store = tx.objectStore('outbox');
-    const messages = await store.getAll();
-    
-    for (const message of messages) {
-      try {
-        const response = await fetch('/api/chat/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${message.token}`
-          },
-          body: JSON.stringify(message.data)
-        });
-        
-        if (response.ok) {
-          // Remove from outbox on success
-          await store.delete(message.id);
-          
-          // Notify the client
-          const allClients = await clients.matchAll();
-          allClients.forEach(client => {
-            client.postMessage({
-              type: 'message-sent',
-              messageId: message.id
-            });
-          });
-        }
-      } catch (error) {
-        console.error('[ServiceWorker] Error sending queued message:', error);
-      }
-    }
-  } catch (error) {
-    console.error('[ServiceWorker] Error in sendQueuedMessages:', error);
-  }
-}
-
-// Helper function to open IndexedDB
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('PawfectMatchDB', 1);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      
-      if (!db.objectStoreNames.contains('outbox')) {
-        db.createObjectStore('outbox', { keyPath: 'id' });
-      }
-    };
-  });
-}
-
-// Message event - communicate with clients
+// Handle messages from main thread
 self.addEventListener('message', (event) => {
-  console.log('[ServiceWorker] Message received:', event.data);
+  console.log('[SW] Message received:', event.data);
   
-  if (event.data.type === 'skip-waiting') {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
   
-  if (event.data.type === 'queue-message') {
-    // Queue message for background sync
-    queueMessage(event.data.message);
-  }
-  
-  if (event.data.type === 'check-updates') {
-    checkForUpdates();
-  }
-});
-
-// Queue message for offline sending
-async function queueMessage(message) {
-  try {
-    const db = await openDB();
-    const tx = db.transaction('outbox', 'readwrite');
-    const store = tx.objectStore('outbox');
-    
-    await store.add({
-      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      data: message,
-      timestamp: new Date().toISOString(),
-      token: message.token // Store auth token with message
-    });
-    
-    // Register background sync
-    await self.registration.sync.register('send-messages');
-    
-    console.log('[ServiceWorker] Message queued for sync');
-  } catch (error) {
-    console.error('[ServiceWorker] Error queueing message:', error);
-  }
-}
-
-// Check for app updates
-async function checkForUpdates() {
-  try {
-    const response = await fetch('/api/version');
-    const data = await response.json();
-    
-    if (data.version !== CACHE_NAME) {
-      // New version available
-      const allClients = await clients.matchAll();
-      allClients.forEach(client => {
-        client.postMessage({
-          type: 'update-available',
-          version: data.version
-        });
-      });
-    }
-  } catch (error) {
-    console.error('[ServiceWorker] Error checking for updates:', error);
-  }
-}
-
-// Periodic background sync (Chrome only)
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'check-notifications') {
-    event.waitUntil(checkNewNotifications());
+  if (event.data && event.data.type === 'CACHE_URLS') {
+    event.waitUntil(
+      caches.open(DYNAMIC_CACHE_NAME)
+        .then((cache) => {
+          return cache.addAll(event.data.urls);
+        })
+    );
   }
 });
 
-// Check for new notifications periodically
-async function checkNewNotifications() {
-  try {
-    // Get stored auth token
-    const cache = await caches.open(CACHE_NAME);
-    const tokenResponse = await cache.match('auth-token');
-    
-    if (!tokenResponse) return;
-    
-    const token = await tokenResponse.text();
-    
-    const response = await fetch('/api/notifications/unread', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    if (response.ok) {
-      const notifications = await response.json();
-      
-      if (notifications.length > 0) {
-        // Show notification for unread messages
-        const options = {
-          body: `You have ${notifications.length} unread notifications`,
-          icon: '/icon-192x192.png',
-          badge: '/badge-72x72.png',
-          tag: 'unread-summary',
-          data: {
-            url: '/notifications'
-          }
-        };
-        
-        await self.registration.showNotification('PawfectMatch', options);
-      }
-    }
-  } catch (error) {
-    console.error('[ServiceWorker] Error checking notifications:', error);
-  }
-}
-
-console.log('[ServiceWorker] Loaded successfully');
+console.log('[SW] Service worker loaded successfully');

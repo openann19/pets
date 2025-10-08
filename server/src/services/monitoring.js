@@ -406,10 +406,9 @@ healthCheckService.registerCheck('database', async () => {
 
 healthCheckService.registerCheck('redis', async () => {
   // Check Redis connection
-  const redis = require('redis');
-  const client = redis.createClient();
+  const Redis = require('ioredis');
+  const client = new Redis();
   try {
-    await client.connect();
     await client.ping();
     await client.quit();
     return { status: 'connected' };

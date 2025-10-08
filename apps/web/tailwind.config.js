@@ -1,12 +1,60 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class', // Enable class-based dark mode
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx}",
     "./src/components/**/*.{js,ts,jsx,tsx}",
     "./src/app/**/*.{js,ts,jsx,tsx}",
     "./app/**/*.{js,ts,jsx,tsx}",
+    "./src/hooks/**/*.{js,ts,jsx,tsx}",
+    "./src/lib/**/*.{js,ts,jsx,tsx}",
+    "./src/services/**/*.{js,ts,jsx,tsx}",
+    "./src/utils/**/*.{js,ts,jsx,tsx}",
+    "./src/design-system/**/*.{js,ts,jsx,tsx}",
+    "./src/providers/**/*.{js,ts,jsx,tsx}",
     "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
   ],
+  // Enable purge for production builds
+  purge: {
+    enabled: process.env.NODE_ENV === 'production',
+    content: [
+      "./src/**/*.{js,ts,jsx,tsx}",
+      "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
+    ],
+    options: {
+      safelist: [
+        // Keep dynamic classes that might be generated
+        /^bg-gradient-/,
+        /^from-/,
+        /^to-/,
+        /^shadow-/,
+        /^text-/,
+        /^border-/,
+        /^ring-/,
+        /^animate-/,
+        /^hover:/,
+        /^focus:/,
+        /^active:/,
+        /^group-hover:/,
+        /^group-focus:/,
+        /^dark:/,
+        // Keep glass morphism classes
+        'glass-morphism',
+        'glass-morphism-dark',
+        // Keep premium utility classes
+        'premium-gradient',
+        'mesh-gradient',
+        'smooth-gradient',
+        'shadow-sleek',
+        'border-sleek',
+        // Keep UHD optimization classes
+        'uhd-high-dpi',
+        'uhd-gpu-accelerated',
+        'uhd-crisp-text',
+        'uhd-smooth-animation',
+      ],
+    },
+  },
   theme: {
     extend: {
       // Enhanced color system from unified design system
@@ -190,6 +238,7 @@ module.exports = {
     },
   },
   plugins: [
+    require('@tailwindcss/line-clamp'),
     // Custom utilities for premium effects
     function({ addUtilities }) {
       const newUtilities = {

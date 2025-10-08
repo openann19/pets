@@ -98,6 +98,13 @@ export default function RootLayout({
         role="document"
         suppressHydrationWarning
       >
+        {/* Skip to content for keyboard and screen readers */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[1100] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-md focus:shadow-lg"
+        >
+          Skip to content
+        </a>
         <Providers>
           <SafeAreaProvider>
             <BackgroundProvider>
@@ -106,7 +113,7 @@ export default function RootLayout({
               <div className="fixed top-4 right-4 z-[1000]">
                 <ThemeToggle />
               </div>
-              <main role="main">
+              <main id="main-content" role="main">
                 <ErrorBoundary>
                   {children}
                 </ErrorBoundary>

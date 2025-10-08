@@ -1,0 +1,12 @@
+
+> @pawfectmatch/web@0.1.0 start
+> next start
+
+sh: 1: next: not found
+npm error Lifecycle script `start` failed with error:
+npm error code 127
+npm error path /home/ben/Downloads/pawfectmatch-premium/apps/web
+npm error workspace @pawfectmatch/web@0.1.0
+npm error location /home/ben/Downloads/pawfectmatch-premium/apps/web
+npm error command failed
+npm error command sh -c next start

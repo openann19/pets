@@ -79,12 +79,14 @@ export default function AIBioScreen({ navigation }: AIBioScreenProps) {
 
     setIsGenerating(true);
     try {
-      const bioData = await api.generateBio({
-        petId: user?._id || 'temp-id',
-        species: 'dog', // TODO: Get from form
-        breed: petBreed.trim(),
+      const bioData = await api.ai.generateBio({
+        petName: petName.trim(),
+        keywords: petPersonality.trim().split(',').map(p => p.trim()),
+        tone: 'playful',
+        length: 'medium',
+        petType: 'dog',
         age: parseInt(petAge.trim()) || 1,
-        personality: petPersonality.trim().split(',').map(p => p.trim()),
+        breed: petBreed.trim(),
       });
 
       const newBio: GeneratedBio = {

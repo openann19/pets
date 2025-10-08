@@ -23,7 +23,9 @@ class MapSocketServer {
     this.activePins = new Map(); // Store active pet locations
     this.userSessions = new Map(); // Track connected users
     this.setupSocketHandlers();
-    this.startLocationSimulation();
+    if (process.env.NODE_ENV !== 'test') {
+      this.startLocationSimulation();
+    }
   }
 
   setupSocketHandlers() {
@@ -195,8 +197,11 @@ class MapSocketServer {
   }
 
   startLocationSimulation() {
+    // Skip in test environment
+    if (process.env.NODE_ENV === 'test') return;
+    
     // Simulate pet activities for demo purposes
-    setInterval(() => {
+    const locationInterval = setInterval(() => {
       if (this.userSessions.size === 0) return;
 
       const activities = ['walking', 'playing', 'grooming', 'vet', 'park', 'other'];
@@ -251,11 +256,25 @@ class MapSocketServer {
 
     }, 8000); // Every 8 seconds
 
+    // Store interval for cleanup
+    this.intervals = this.intervals || [];
+    this.intervals.push(locationInterval);
+
     // Send heatmap data every 30 seconds
-    setInterval(() => {
+    const heatmapInterval = setInterval(() => {
       const heatmapData = this.generateHeatmapData();
       this.io.emit('heatmap:update', heatmapData);
     }, 30000);
+    
+    this.intervals.push(heatmapInterval);
+  }
+
+  // Cleanup method for tests
+  stopAllIntervals() {
+    if (this.intervals) {
+      this.intervals.forEach(interval => clearInterval(interval));
+      this.intervals = [];
+    }
   }
 
   generateHeatmapData() {

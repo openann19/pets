@@ -176,8 +176,8 @@ describe('Comprehensive Test Suite', () => {
     test('PhotoAnalyzer handles file upload', () => {
       render(<PhotoAnalyzer />);
       
-      expect(screen.getByText(/AI Photo Analyzer/i)).toBeInTheDocument();
-      expect(screen.getByText(/Drop photos here/i)).toBeInTheDocument();
+      expect(screen.getByText(/AI Photo Analysis/i)).toBeInTheDocument();
+      expect(screen.getByText(/Drag & drop a photo/i)).toBeInTheDocument();
     });
 
     test('CompatibilityAnalyzer displays without target pet', () => {

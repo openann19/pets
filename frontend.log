@@ -1,0 +1,34 @@
+
+> pawfectmatch-web@0.1.0 dev
+> next dev
+
+ ⚠ Invalid next.config.js options detected: 
+ ⚠     Unrecognized key(s) in object: 'swcMinify'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /home/ben/datapartition_backup/Downloads/package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * /home/ben/datapartition_backup/Downloads/pawfectmatch-premium/apps/web/package-lock.json
+   * /home/ben/datapartition_backup/Downloads/pawfectmatch-premium/pnpm-lock.yaml
+
+   ▲ Next.js 15.5.4
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.5:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ✓ optimizeCss
+     · serverActions
+     · optimizePackageImports
+
+ ✓ Starting...
+ ✓ Ready in 1167ms
+ ✓ Compiled /middleware in 152ms (114 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 3.1s (1261 modules)
+Image with src "https://images.unsplash.com/photo-1552053831-71594a27632d?w=1200&auto=format&fit=crop" is using quality "95" which is not configured in images.qualities. This config will be required starting in Next.js 16.
+Read more: https://nextjs.org/docs/messages/next-image-unconfigured-qualities
+ GET / 200 in 3455ms
+ ✓ Compiled in 190ms (563 modules)
+[?25h

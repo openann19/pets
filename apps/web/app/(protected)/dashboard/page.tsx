@@ -18,6 +18,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
 
 import PremiumButton from '../../../src/components/UI/PremiumButton';
@@ -29,6 +30,10 @@ import {
 } from '../../../src/constants/animations';
 import { useDashboardData, useWebSocket } from '../../../src/hooks/api-hooks';
 import { useAuthStore } from '../../../src/lib/auth-store';
+import StoriesRow, { useStoryRings } from '../../../src/components/Stories/StoryRing';
+import StoriesCarousel, { useStories } from '../../../src/components/Stories/StoriesCarousel';
+import StoryComposer, { useStoryComposer } from '../../../src/components/Stories/StoryComposer';
+import HomeFeed, { useHomeFeed } from '../../../src/components/Feed/HomeFeed';
 
 
 export default function DashboardPage() {
@@ -37,8 +42,28 @@ export default function DashboardPage() {
   const [timeOfDay, setTimeOfDay] = useState('');
   const [isOnline, setIsOnline] = useState(true);
   
+  // Stories functionality
+  const { storyRings, addStoryRing, markStoriesAsSeen } = useStoryRings();
+  const { 
+    stories, 
+    currentStoryIndex, 
+    isOpen: isStoriesOpen, 
+    openStories, 
+    closeStories, 
+    setCurrentStoryIndex 
+  } = useStories();
+  const { 
+    isOpen: isComposerOpen, 
+    openComposer, 
+    closeComposer, 
+    publishStory 
+  } = useStoryComposer();
+  
+  // Feed functionality
+  const { posts, loadMorePosts, refreshFeed } = useHomeFeed();
+  
   // Setup WebSocket connection
-  useWebSocket(authUser?.id);
+  useWebSocket((authUser as any)?.id || '');
 
   // Enhanced time-based greeting
   useEffect(() => {
@@ -63,7 +88,7 @@ export default function DashboardPage() {
   const enhancedStats = [
     { 
       label: 'My Pets', 
-      value: pets?.length?.toString() || '0', 
+      value: Array.isArray(pets) ? pets.length.toString() : '0', 
       icon: BoltIcon, 
       variant: 'glass' as const,
       description: 'Active profiles',
@@ -72,7 +97,7 @@ export default function DashboardPage() {
     },
     { 
       label: 'Active Matches', 
-      value: matches?.length?.toString() || '0', 
+      value: Array.isArray(matches) ? matches.length.toString() : '0', 
       icon: HeartIcon, 
       variant: 'gradient' as const,
       description: 'Mutual connections',
@@ -81,7 +106,7 @@ export default function DashboardPage() {
     },
     { 
       label: 'Messages', 
-      value: matches?.reduce((acc: number, match: any) => acc + (match.unreadCount || 0), 0)?.toString() || '0', 
+      value: Array.isArray(matches) ? matches.reduce((acc: number, match: any) => acc + (match.unreadCount || 0), 0).toString() : '0', 
       icon: FireIcon, 
       variant: 'neon' as const,
       description: 'Unread chats',
@@ -248,6 +273,47 @@ export default function DashboardPage() {
               </PremiumCard>
             </motion.div>
           )}
+        </motion.div>
+
+        {/* Stories Section */}
+        <motion.div
+          initial="initial"
+          animate="animate"
+          variants={PREMIUM_VARIANTS.fadeInUp}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold gradient-text">Pet Stories</h2>
+            <button
+              onClick={openComposer}
+              className="flex items-center space-x-2 px-4 py-2 bg-primary-500 text-white rounded-full hover:bg-primary-600 transition-colors"
+            >
+              <CameraIcon className="w-5 h-5" />
+              <span>Create Story</span>
+            </button>
+          </div>
+          
+          <div className="flex space-x-4 overflow-x-auto pb-4 mb-6">
+            {storyRings.map((story) => (
+              <div key={story.petId} className="flex-shrink-0">
+                <div className="relative w-16 h-16">
+                  <div className="w-full h-full rounded-full overflow-hidden border-2 border-primary-500">
+                    <Image
+                      src={story.petAvatar}
+                      alt={story.petName}
+                      width={64}
+                      height={64}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {story.hasUnseenStories && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary-500 rounded-full border-2 border-white" />
+                  )}
+                </div>
+                <p className="text-xs text-center mt-2 truncate w-16">{story.petName}</p>
+              </div>
+            ))}
+          </div>
         </motion.div>
 
         {/* Enhanced Stats Grid */}
@@ -467,6 +533,46 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
+        {/* Feed Section */}
+        <motion.div
+          initial="initial"
+          animate="animate"
+          variants={PREMIUM_VARIANTS.fadeInUp}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold gradient-text">Pet Feed</h2>
+            <button
+              onClick={refreshFeed}
+              className="px-4 py-2 bg-white/80 backdrop-blur-sm text-neutral-700 rounded-full hover:bg-white transition-colors"
+            >
+              Refresh
+            </button>
+          </div>
+          
+          <HomeFeed
+            posts={posts}
+            onLoadMore={loadMorePosts}
+            onLike={(postId) => {
+              // Handle like
+              console.log('Liked post:', postId);
+            }}
+            onComment={(postId, comment) => {
+              // Handle comment
+              console.log('Commented on post:', postId, comment);
+            }}
+            onShare={(postId) => {
+              // Handle share
+              console.log('Shared post:', postId);
+            }}
+            onBookmark={(postId) => {
+              // Handle bookmark
+              console.log('Bookmarked post:', postId);
+            }}
+            className="max-w-2xl mx-auto"
+          />
+        </motion.div>
+
         {/* Content Grid */}
         <div className="grid lg:grid-cols-3 gap-8 mb-8">
           {/* Recent Activity */}
@@ -547,6 +653,46 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Story Components */}
+      <AnimatePresence>
+        {isStoriesOpen && (
+          <StoriesCarousel
+            stories={stories}
+            currentStoryIndex={currentStoryIndex}
+            onClose={closeStories}
+            onStoryChange={setCurrentStoryIndex}
+            onReply={(storyId, message) => {
+              console.log('Reply to story:', storyId, message);
+            }}
+            onReaction={(storyId, reaction) => {
+              console.log('Reaction to story:', storyId, reaction);
+            }}
+            onShare={(storyId) => {
+              console.log('Share story:', storyId);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isComposerOpen && (
+          <StoryComposer
+            isOpen={isComposerOpen}
+            onClose={closeComposer}
+            onPublish={async (storyData) => {
+              try {
+                await publishStory(storyData);
+                console.log('Story published:', storyData);
+              } catch (error) {
+                console.error('Failed to publish story:', error);
+              }
+            }}
+            petId={pets?.[0]?.id || 'default-pet'}
+            petName={pets?.[0]?.name || 'Your Pet'}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,31 +1,25 @@
 'use client';
 
-import React, { createContext, useContext, useEffect } from 'react';
-import { 
-  useMobileAccessibility, 
-  useKeyboardNavigation, 
-  useScreenReaderAnnouncements, 
-  useVoiceControl,
-  accessibilityUtils 
-} from '@/utils/mobile-accessibility';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface AccessibilityContextType {
-  isScreenReaderActive: boolean;
-  isKeyboardNavigationActive: boolean;
-  isVoiceControlActive: boolean;
-  isHighContrastMode: boolean;
-  isReducedMotionMode: boolean;
-  isLargeTextMode: boolean;
-  announce: (message: string, priority?: 'polite' | 'assertive') => void;
-  announcePageChange: (pageTitle: string) => void;
-  announceError: (errorMessage: string) => void;
-  announceSuccess: (successMessage: string) => void;
-  announceLoading: (loadingMessage: string) => void;
-  isListening: boolean;
-  transcript: string;
-  startListening: () => void;
-  stopListening: () => void;
-  clearTranscript: () => void;
+interface AccessibilityState {
+  reducedMotion: boolean;
+  highContrast: boolean;
+  fontSize: 'small' | 'medium' | 'large' | 'xlarge';
+  screenReader: boolean;
+  keyboardNavigation: boolean;
+  focusVisible: boolean;
+}
+
+interface AccessibilityContextType extends AccessibilityState {
+  setReducedMotion: (reduced: boolean) => void;
+  setHighContrast: (high: boolean) => void;
+  setFontSize: (size: AccessibilityState['fontSize']) => void;
+  setScreenReader: (enabled: boolean) => void;
+  setKeyboardNavigation: (enabled: boolean) => void;
+  announceToScreenReader: (message: string, priority?: 'polite' | 'assertive') => void;
+  skipToContent: () => void;
 }
 
 const AccessibilityContext = createContext<AccessibilityContextType | null>(null);
@@ -40,269 +34,303 @@ export function useAccessibility() {
 
 interface AccessibilityProviderProps {
   children: React.ReactNode;
-  enableScreenReader?: boolean;
-  enableKeyboardNavigation?: boolean;
-  enableVoiceControl?: boolean;
-  enableHighContrast?: boolean;
-  enableReducedMotion?: boolean;
-  enableLargeText?: boolean;
 }
 
-export function AccessibilityProvider({ 
-  children, 
-  enableScreenReader = true,
-  enableKeyboardNavigation = true,
-  enableVoiceControl = true,
-  enableHighContrast = true,
-  enableReducedMotion = true,
-  enableLargeText = true,
-}: AccessibilityProviderProps) {
-  const { state } = useMobileAccessibility({
-    enableScreenReader,
-    enableKeyboardNavigation,
-    enableVoiceControl,
-    enableHighContrast,
-    enableReducedMotion,
-    enableLargeText,
+export function AccessibilityProvider({ children }: AccessibilityProviderProps) {
+  const [state, setState] = useState<AccessibilityState>({
+    reducedMotion: false,
+    highContrast: false,
+    fontSize: 'medium',
+    screenReader: false,
+    keyboardNavigation: false,
+    focusVisible: false,
   });
 
-  useKeyboardNavigation();
-  const screenReader = useScreenReaderAnnouncements();
-  const voiceControl = useVoiceControl();
-
-  // Initialize accessibility enhancements
+  // Initialize accessibility preferences from system and localStorage
   useEffect(() => {
-    // Add skip links
-    accessibilityUtils.addSkipLinks();
+    // Check system preferences
+    const mediaQueryReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mediaQueryHighContrast = window.matchMedia('(prefers-contrast: high)');
     
-    // Enhance focus indicators
-    accessibilityUtils.enhanceFocusIndicators();
+    // Check localStorage for user preferences
+    const savedReducedMotion = localStorage.getItem('accessibility-reduced-motion') === 'true';
+    const savedHighContrast = localStorage.getItem('accessibility-high-contrast') === 'true';
+    const savedFontSize = localStorage.getItem('accessibility-font-size') as AccessibilityState['fontSize'] || 'medium';
+    const savedScreenReader = localStorage.getItem('accessibility-screen-reader') === 'true';
+    const savedKeyboardNavigation = localStorage.getItem('accessibility-keyboard-navigation') === 'true';
+
+    setState({
+      reducedMotion: savedReducedMotion || mediaQueryReducedMotion.matches,
+      highContrast: savedHighContrast || mediaQueryHighContrast.matches,
+      fontSize: savedFontSize,
+      screenReader: savedScreenReader,
+      keyboardNavigation: savedKeyboardNavigation,
+      focusVisible: false,
+    });
+
+    // Listen for system preference changes
+    const handleReducedMotionChange = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem('accessibility-reduced-motion')) {
+        setState(prev => ({ ...prev, reducedMotion: e.matches }));
+      }
+    };
+
+    const handleHighContrastChange = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem('accessibility-high-contrast')) {
+        setState(prev => ({ ...prev, highContrast: e.matches }));
+      }
+    };
+
+    mediaQueryReducedMotion.addEventListener('change', handleReducedMotionChange);
+    mediaQueryHighContrast.addEventListener('change', handleHighContrastChange);
+
+    return () => {
+      mediaQueryReducedMotion.removeEventListener('change', handleReducedMotionChange);
+      mediaQueryHighContrast.removeEventListener('change', handleHighContrastChange);
+    };
+  }, []);
+
+  // Detect keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        setState(prev => ({ ...prev, keyboardNavigation: true, focusVisible: true }));
+      }
+    };
+
+    const handleMouseDown = () => {
+      setState(prev => ({ ...prev, keyboardNavigation: false }));
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleMouseDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, []);
+
+  // Apply CSS custom properties based on accessibility state
+  useEffect(() => {
+    const root = document.documentElement;
     
-    // Add high contrast support
-    if (enableHighContrast) {
-      accessibilityUtils.addHighContrastSupport();
+    // Font size
+    const fontSizeMap = {
+      small: '14px',
+      medium: '16px',
+      large: '18px',
+      xlarge: '20px',
+    };
+    root.style.setProperty('--accessibility-font-size', fontSizeMap[state.fontSize]);
+    
+    // High contrast
+    if (state.highContrast) {
+      root.classList.add('high-contrast');
+    } else {
+      root.classList.remove('high-contrast');
     }
     
-    // Add reduced motion support
-    if (enableReducedMotion) {
-      accessibilityUtils.addReducedMotionSupport();
+    // Reduced motion
+    if (state.reducedMotion) {
+      root.classList.add('reduced-motion');
+    } else {
+      root.classList.remove('reduced-motion');
     }
     
-    // Add large text support
-    if (enableLargeText) {
-      accessibilityUtils.addLargeTextSupport();
+    // Focus visible
+    if (state.focusVisible) {
+      root.classList.add('focus-visible');
+    } else {
+      root.classList.remove('focus-visible');
     }
-  }, [enableHighContrast, enableReducedMotion, enableLargeText]);
+  }, [state]);
+
+  const setReducedMotion = useCallback((reduced: boolean) => {
+    setState(prev => ({ ...prev, reducedMotion: reduced }));
+    localStorage.setItem('accessibility-reduced-motion', reduced.toString());
+  }, []);
+
+  const setHighContrast = useCallback((high: boolean) => {
+    setState(prev => ({ ...prev, highContrast: high }));
+    localStorage.setItem('accessibility-high-contrast', high.toString());
+  }, []);
+
+  const setFontSize = useCallback((size: AccessibilityState['fontSize']) => {
+    setState(prev => ({ ...prev, fontSize: size }));
+    localStorage.setItem('accessibility-font-size', size);
+  }, []);
+
+  const setScreenReader = useCallback((enabled: boolean) => {
+    setState(prev => ({ ...prev, screenReader: enabled }));
+    localStorage.setItem('accessibility-screen-reader', enabled.toString());
+  }, []);
+
+  const setKeyboardNavigation = useCallback((enabled: boolean) => {
+    setState(prev => ({ ...prev, keyboardNavigation: enabled }));
+    localStorage.setItem('accessibility-keyboard-navigation', enabled.toString());
+  }, []);
+
+  const announceToScreenReader = useCallback((message: string, priority: 'polite' | 'assertive' = 'polite') => {
+    const announcement = document.createElement('div');
+    announcement.setAttribute('aria-live', priority);
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.className = 'sr-only';
+    announcement.textContent = message;
+    
+    document.body.appendChild(announcement);
+    
+    // Remove after announcement
+    setTimeout(() => {
+      document.body.removeChild(announcement);
+    }, 1000);
+  }, []);
+
+  const skipToContent = useCallback(() => {
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      mainContent.focus();
+      mainContent.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, []);
 
   const contextValue: AccessibilityContextType = {
-    isScreenReaderActive: state.isScreenReaderActive,
-    isKeyboardNavigationActive: state.isKeyboardNavigationActive,
-    isVoiceControlActive: state.isVoiceControlActive,
-    isHighContrastMode: state.isHighContrastMode,
-    isReducedMotionMode: state.isReducedMotionMode,
-    isLargeTextMode: state.isLargeTextMode,
-    announce: screenReader.announce,
-    announcePageChange: screenReader.announcePageChange,
-    announceError: screenReader.announceError,
-    announceSuccess: screenReader.announceSuccess,
-    announceLoading: screenReader.announceLoading,
-    isListening: voiceControl.isListening,
-    transcript: voiceControl.transcript,
-    startListening: voiceControl.startListening,
-    stopListening: voiceControl.stopListening,
-    clearTranscript: voiceControl.clearTranscript,
+    ...state,
+    setReducedMotion,
+    setHighContrast,
+    setFontSize,
+    setScreenReader,
+    setKeyboardNavigation,
+    announceToScreenReader,
+    skipToContent,
   };
 
   return (
     <AccessibilityContext.Provider value={contextValue}>
       {children}
+      <ScreenReaderAnnouncements />
+      <SkipToContentButton />
     </AccessibilityContext.Provider>
   );
 }
 
-/**
- * Accessibility Status Indicator Component
- */
-export function AccessibilityStatusIndicator() {
-  const {
-    isScreenReaderActive,
-    isKeyboardNavigationActive,
-    isVoiceControlActive,
-    isHighContrastMode,
-    isReducedMotionMode,
-    isLargeTextMode,
-  } = useAccessibility();
-
-  const activeFeatures = [
-    isScreenReaderActive && 'Screen Reader',
-    isKeyboardNavigationActive && 'Keyboard Navigation',
-    isVoiceControlActive && 'Voice Control',
-    isHighContrastMode && 'High Contrast',
-    isReducedMotionMode && 'Reduced Motion',
-    isLargeTextMode && 'Large Text',
-  ].filter(Boolean);
-
-  if (activeFeatures.length === 0) return null;
-
+// Screen reader announcements component
+function ScreenReaderAnnouncements() {
+  const { screenReader } = useAccessibility();
+  
+  if (!screenReader) return null;
+  
   return (
-    <div className="fixed bottom-4 left-4 z-50 bg-black/80 text-white px-3 py-2 rounded-lg text-xs">
-      <div className="flex items-center space-x-2">
-        <span className="text-green-400">♿</span>
-        <span>Accessibility: {activeFeatures.join(', ')}</span>
-      </div>
-    </div>
+    <div
+      id="screen-reader-announcements"
+      aria-live="polite"
+      aria-atomic="true"
+      className="sr-only"
+    />
   );
 }
 
-/**
- * Voice Control Interface Component
- */
-export function VoiceControlInterface() {
-  const {
-    isListening,
-    transcript,
-    startListening,
-    stopListening,
-    clearTranscript,
-  } = useAccessibility();
-
+// Skip to content button
+function SkipToContentButton() {
+  const { skipToContent } = useAccessibility();
+  
   return (
-    <div className="fixed bottom-4 right-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 max-w-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-            Voice Control
-          </h3>
-          <button
-            onClick={isListening ? stopListening : startListening}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-              isListening 
-                ? 'bg-red-500 hover:bg-red-600 text-white' 
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
-            aria-label={isListening ? 'Stop listening' : 'Start listening'}
-          >
-            {isListening ? '⏹' : '🎤'}
-          </button>
-        </div>
-        
-        {isListening && (
-          <div className="mb-3">
-            <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-              <span>Listening...</span>
-            </div>
-          </div>
-        )}
-        
-        {transcript && (
-          <div className="mb-3">
-            <p className="text-sm text-gray-900 dark:text-white mb-2">
-              <strong>Transcript:</strong>
-            </p>
-            <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 p-2 rounded">
-              {transcript}
-            </p>
-            <button
-              onClick={clearTranscript}
-              className="mt-2 text-xs text-blue-500 hover:text-blue-600"
-            >
-              Clear
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Keyboard Navigation Helper Component
- */
-export function KeyboardNavigationHelper() {
-  const { isKeyboardNavigationActive } = useAccessibility();
-
-  if (!isKeyboardNavigationActive) return null;
-
-  return (
-    <div className="fixed top-4 left-4 z-50 bg-blue-500 text-white px-3 py-2 rounded-lg text-xs">
-      <div className="flex items-center space-x-2">
-        <span>⌨️</span>
-        <span>Use arrow keys to navigate</span>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Accessibility Settings Panel Component
- */
-export function AccessibilitySettingsPanel() {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const {
-    isHighContrastMode,
-    isReducedMotionMode,
-    isLargeTextMode,
-  } = useAccessibility();
-
-  return (
-    <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed top-4 right-4 z-50 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-colors"
-        aria-label="Open accessibility settings"
+    <AnimatePresence>
+      <motion.button
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        onClick={skipToContent}
+        className="skip-to-content"
+        aria-label="Skip to main content"
       >
-        ♿
-      </button>
-
-      {isOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Accessibility Settings
-              </h2>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                aria-label="Close settings"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-900 dark:text-white">High Contrast Mode</span>
-                <span className={`text-sm ${isHighContrastMode ? 'text-green-500' : 'text-gray-500'}`}>
-                  {isHighContrastMode ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-900 dark:text-white">Reduced Motion</span>
-                <span className={`text-sm ${isReducedMotionMode ? 'text-green-500' : 'text-gray-500'}`}>
-                  {isReducedMotionMode ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-900 dark:text-white">Large Text</span>
-                <span className={`text-sm ${isLargeTextMode ? 'text-green-500' : 'text-gray-500'}`}>
-                  {isLargeTextMode ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                These settings are automatically detected from your system preferences.
-                To change them, please update your device or browser settings.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+        Skip to main content
+      </motion.button>
+    </AnimatePresence>
   );
 }
+
+// Accessibility settings panel
+export function AccessibilitySettings() {
+  const {
+    reducedMotion,
+    highContrast,
+    fontSize,
+    screenReader,
+    keyboardNavigation,
+    setReducedMotion,
+    setHighContrast,
+    setFontSize,
+    setScreenReader,
+    setKeyboardNavigation,
+  } = useAccessibility();
+
+  return (
+    <div className="accessibility-settings bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+      <h2 className="text-xl font-bold mb-4">Accessibility Settings</h2>
+      
+      <div className="space-y-4">
+        {/* Reduced Motion */}
+        <label className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            checked={reducedMotion}
+            onChange={(e) => setReducedMotion(e.target.checked)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span>Reduce motion and animations</span>
+        </label>
+
+        {/* High Contrast */}
+        <label className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            checked={highContrast}
+            onChange={(e) => setHighContrast(e.target.checked)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span>High contrast mode</span>
+        </label>
+
+        {/* Font Size */}
+        <div>
+          <label className="block text-sm font-medium mb-2">Font Size</label>
+          <select
+            value={fontSize}
+            onChange={(e) => setFontSize(e.target.value as AccessibilityState['fontSize'])}
+            className="w-full rounded border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+            <option value="xlarge">Extra Large</option>
+          </select>
+        </div>
+
+        {/* Screen Reader */}
+        <label className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            checked={screenReader}
+            onChange={(e) => setScreenReader(e.target.checked)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span>Screen reader announcements</span>
+        </label>
+
+        {/* Keyboard Navigation */}
+        <label className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            checked={keyboardNavigation}
+            onChange={(e) => setKeyboardNavigation(e.target.checked)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span>Enhanced keyboard navigation</span>
+        </label>
+      </div>
+    </div>
+  );
+}
+
+export default AccessibilityProvider;

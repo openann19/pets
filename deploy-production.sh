@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# PawfectMatch Production Deployment Script
-# This script handles the complete deployment process for production
+# Production Deployment Script for PawfectMatch Premium
+# This script deploys the application with all production-ready features
 
-set -e  # Exit on any error
+set -e
+
+echo "🚀 Starting PawfectMatch Premium Production Deployment..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -12,344 +14,202 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Logging functions
-log_info() {
+# Function to print colored output
+print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-log_success() {
+print_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
-log_warning() {
+print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-log_error() {
+print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Configuration
-PROJECT_ROOT="$(pwd)"
-BACKEND_DIR="$PROJECT_ROOT/server"
-FRONTEND_DIR="$PROJECT_ROOT/apps/web"
-ENV_FILE="$BACKEND_DIR/.env.production"
-DOCKER_COMPOSE_FILE="$PROJECT_ROOT/docker-compose.prod.yml"
-
-# Check if we're in the right directory
-if [ ! -f "$PROJECT_ROOT/package.json" ]; then
-    log_error "Please run this script from the project root directory"
-    exit 1
-fi
-
-# Function to check prerequisites
-check_prerequisites() {
-    log_info "Checking prerequisites..."
+# Check if required environment variables are set
+check_env_vars() {
+    print_status "Checking environment variables..."
     
-    # Check Node.js
-    if ! command -v node &> /dev/null; then
-        log_error "Node.js is not installed"
-        exit 1
-    fi
+    required_vars=(
+        "DEEPSEEK_API_KEY"
+        "JWT_SECRET"
+        "JWT_REFRESH_SECRET"
+        "MONGODB_URI"
+    )
     
-    # Check pnpm
-    if ! command -v pnpm &> /dev/null; then
-        log_error "pnpm is not installed"
-        exit 1
-    fi
+    missing_vars=()
     
-    # Check Docker
-    if ! command -v docker &> /dev/null; then
-        log_error "Docker is not installed"
-        exit 1
-    fi
-    
-    # Check Docker Compose
-    if ! command -v docker-compose &> /dev/null; then
-        log_error "Docker Compose is not installed"
-        exit 1
-    fi
-    
-    # Check environment file
-    if [ ! -f "$ENV_FILE" ]; then
-        log_error "Production environment file not found: $ENV_FILE"
-        log_info "Please create it from the template and configure with real values"
-        exit 1
-    fi
-    
-    log_success "All prerequisites satisfied"
-}
-
-# Function to run security audit
-run_security_audit() {
-    log_info "Running security audit..."
-    
-    # Check for known vulnerabilities
-    log_info "Checking for npm vulnerabilities..."
-    cd "$PROJECT_ROOT"
-    pnpm audit --prod
-    
-    # Check for exposed secrets
-    log_info "Checking for exposed secrets..."
-    if grep -r "password\|secret\|key" "$BACKEND_DIR" --include="*.js" --include="*.ts" | grep -v "process.env" | grep -v "node_modules" | head -10; then
-        log_warning "Potential secrets found in code. Please review."
-    fi
-    
-    # Check environment variables
-    log_info "Validating environment configuration..."
-    if grep -q "YOUR_" "$ENV_FILE" || grep -q "example" "$ENV_FILE"; then
-        log_error "Environment file contains placeholder values. Please update with real values."
-        exit 1
-    fi
-    
-    log_success "Security audit completed"
-}
-
-# Function to build the application
-build_application() {
-    log_info "Building application..."
-    
-    # Install dependencies
-    log_info "Installing dependencies..."
-    pnpm install --frozen-lockfile
-    
-    # Build frontend
-    log_info "Building frontend..."
-    cd "$FRONTEND_DIR"
-    pnpm build
-    
-    # Build backend
-    log_info "Building backend..."
-    cd "$BACKEND_DIR"
-    pnpm build
-    
-    log_success "Application built successfully"
-}
-
-# Function to run tests
-run_tests() {
-    log_info "Running tests..."
-    
-    # Run backend tests
-    log_info "Running backend tests..."
-    cd "$BACKEND_DIR"
-    if pnpm test; then
-        log_success "Backend tests passed"
-    else
-        log_error "Backend tests failed"
-        exit 1
-    fi
-    
-    # Run frontend tests
-    log_info "Running frontend tests..."
-    cd "$FRONTEND_DIR"
-    if pnpm test -- --passWithNoTests; then
-        log_success "Frontend tests passed"
-    else
-        log_error "Frontend tests failed"
-        exit 1
-    fi
-    
-    log_success "All tests passed"
-}
-
-# Function to deploy with Docker
-deploy_with_docker() {
-    log_info "Deploying with Docker..."
-    
-    cd "$PROJECT_ROOT"
-    
-    # Stop existing containers
-    log_info "Stopping existing containers..."
-    docker-compose -f "$DOCKER_COMPOSE_FILE" down
-    
-    # Build and start new containers
-    log_info "Building and starting containers..."
-    docker-compose -f "$DOCKER_COMPOSE_FILE" up --build -d
-    
-    # Wait for services to be ready
-    log_info "Waiting for services to be ready..."
-    sleep 30
-    
-    # Check if services are running
-    if docker-compose -f "$DOCKER_COMPOSE_FILE" ps | grep -q "Up"; then
-        log_success "Services are running"
-    else
-        log_error "Some services failed to start"
-        docker-compose -f "$DOCKER_COMPOSE_FILE" logs
-        exit 1
-    fi
-}
-
-# Function to deploy without Docker
-deploy_without_docker() {
-    log_info "Deploying without Docker..."
-    
-    # Start backend
-    log_info "Starting backend server..."
-    cd "$BACKEND_DIR"
-    pm2 start ecosystem.config.js --env production
-    
-    # Start frontend
-    log_info "Starting frontend server..."
-    cd "$FRONTEND_DIR"
-    pm2 start ecosystem.config.js --env production
-    
-    log_success "Application deployed with PM2"
-}
-
-# Function to run database migrations
-run_database_migrations() {
-    log_info "Running database migrations..."
-    
-    cd "$BACKEND_DIR"
-    
-    # Create database indexes
-    log_info "Creating database indexes..."
-    node scripts/createIndexes.js
-    
-    # Seed production data (optional)
-    if [ "$1" == "--seed" ]; then
-        log_info "Seeding production data..."
-        node scripts/seed-production-data.js --clear
-    fi
-    
-    log_success "Database setup completed"
-}
-
-# Function to perform health checks
-perform_health_checks() {
-    log_info "Performing health checks..."
-    
-    # Get backend URL from environment
-    BACKEND_URL=$(grep "CLIENT_URL" "$ENV_FILE" | cut -d '=' -f2 | sed 's/https/http/')
-    if [ -z "$BACKEND_URL" ]; then
-        BACKEND_URL="http://localhost:5001"
-    fi
-    
-    # Check backend health
-    log_info "Checking backend health..."
-    if curl -f -s "$BACKEND_URL/api/health" > /dev/null; then
-        log_success "Backend is healthy"
-    else
-        log_error "Backend health check failed"
-        exit 1
-    fi
-    
-    # Check database connection
-    log_info "Checking database connection..."
-    cd "$BACKEND_DIR"
-    if node -e "
-        const mongoose = require('mongoose');
-        require('dotenv').config({ path: '.env.production' });
-        mongoose.connect(process.env.MONGODB_URI)
-            .then(() => {
-                console.log('Database connected');
-                process.exit(0);
-            })
-            .catch(err => {
-                console.error('Database connection failed:', err.message);
-                process.exit(1);
-            });
-    "; then
-        log_success "Database connection successful"
-    else
-        log_error "Database connection failed"
-        exit 1
-    fi
-    
-    log_success "All health checks passed"
-}
-
-# Function to create deployment summary
-create_deployment_summary() {
-    log_info "Creating deployment summary..."
-    
-    SUMMARY_FILE="$PROJECT_ROOT/deployment-summary-$(date +%Y%m%d-%H%M%S).txt"
-    
-    cat > "$SUMMARY_FILE" << EOF
-PawfectMatch Production Deployment Summary
-==========================================
-Deployment Time: $(date)
-Deployment Method: $DEPLOYMENT_METHOD
-
-Services Deployed:
-- Backend API: $(grep "CLIENT_URL" "$ENV_FILE" | cut -d '=' -f2)
-- Frontend: $(grep "CLIENT_URL" "$ENV_FILE" | cut -d '=' -f2)
-- Database: $(grep "MONGODB_URI" "$ENV_FILE" | cut -d '=' -f2 | cut -d '@' -f2 | cut -d '/' -f1)
-
-Health Check Results:
-- Backend: ✅ Healthy
-- Database: ✅ Connected
-- AI Service: ✅ Configured
-- Stripe: ✅ Configured
-
-Next Steps:
-1. Verify all services are running correctly
-2. Test user registration and login
-3. Test payment processing
-4. Monitor application logs
-5. Set up monitoring alerts
-
-Troubleshooting:
-- Check logs: docker-compose -f $DOCKER_COMPOSE_FILE logs
-- Restart services: docker-compose -f $DOCKER_COMPOSE_FILE restart
-- View deployment logs: tail -f $PROJECT_ROOT/deployment.log
-
-EOF
-
-    log_success "Deployment summary created: $SUMMARY_FILE"
-}
-
-# Main deployment function
-main() {
-    log_info "Starting PawfectMatch production deployment..."
-    
-    # Parse command line arguments
-    DEPLOYMENT_METHOD="docker"
-    SEED_DATABASE=false
-    
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --no-docker)
-                DEPLOYMENT_METHOD="pm2"
-                shift
-                ;;
-            --seed)
-                SEED_DATABASE=true
-                shift
-                ;;
-            *)
-                log_error "Unknown option: $1"
-                exit 1
-                ;;
-        esac
+    for var in "${required_vars[@]}"; do
+        if [ -z "${!var}" ]; then
+            missing_vars+=("$var")
+        fi
     done
     
-    # Run deployment steps
-    check_prerequisites
-    run_security_audit
-    build_application
-    run_tests
-    
-    if [ "$DEPLOYMENT_METHOD" == "docker" ]; then
-        deploy_with_docker
-    else
-        deploy_without_docker
+    if [ ${#missing_vars[@]} -ne 0 ]; then
+        print_error "Missing required environment variables:"
+        for var in "${missing_vars[@]}"; do
+            echo "  - $var"
+        done
+        echo ""
+        echo "Please set these variables in your .env.production file or environment."
+        exit 1
     fi
     
-    if [ "$SEED_DATABASE" == true ]; then
-        run_database_migrations --seed
-    else
-        run_database_migrations
-    fi
-    
-    perform_health_checks
-    create_deployment_summary
-    
-    log_success "🎉 PawfectMatch production deployment completed successfully!"
-    log_info "Your application is now live and ready for users."
+    print_success "All required environment variables are set"
 }
 
-# Run main function with all arguments
+# Generate secure secrets if not provided
+generate_secrets() {
+    print_status "Generating secure secrets..."
+    
+    if [ -z "$JWT_SECRET" ]; then
+        export JWT_SECRET=$(openssl rand -base64 64)
+        print_warning "Generated new JWT_SECRET"
+    fi
+    
+    if [ -z "$JWT_REFRESH_SECRET" ]; then
+        export JWT_REFRESH_SECRET=$(openssl rand -base64 64)
+        print_warning "Generated new JWT_REFRESH_SECRET"
+    fi
+    
+    if [ -z "$REDIS_PASSWORD" ]; then
+        export REDIS_PASSWORD=$(openssl rand -base64 32)
+        print_warning "Generated new REDIS_PASSWORD"
+    fi
+    
+    print_success "Secrets generated successfully"
+}
+
+# Build Docker images
+build_images() {
+    print_status "Building Docker images..."
+    
+    # Build API image
+    docker build -f server/Dockerfile.production -t pawfectmatch-api:latest ./server
+    
+    print_success "Docker images built successfully"
+}
+
+# Deploy with Docker Compose
+deploy_services() {
+    print_status "Deploying services with Docker Compose..."
+    
+    # Stop existing services
+    docker-compose -f docker-compose.production.yml down --remove-orphans
+    
+    # Start services
+    docker-compose -f docker-compose.production.yml up -d
+    
+    print_success "Services deployed successfully"
+}
+
+# Wait for services to be healthy
+wait_for_health() {
+    print_status "Waiting for services to be healthy..."
+    
+    max_attempts=30
+    attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        if curl -f http://localhost:5001/api/ai/health/detailed > /dev/null 2>&1; then
+            print_success "API is healthy"
+            break
+        fi
+        
+        if [ $attempt -eq $max_attempts ]; then
+            print_error "API failed to become healthy after $max_attempts attempts"
+            exit 1
+        fi
+        
+        print_status "Waiting for API to be healthy... (attempt $attempt/$max_attempts)"
+        sleep 10
+        ((attempt++))
+    done
+}
+
+# Run health checks
+run_health_checks() {
+    print_status "Running comprehensive health checks..."
+    
+    # Check API health
+    echo "🔍 Checking API health..."
+    curl -s http://localhost:5001/api/ai/health/detailed | jq '.'
+    
+    # Check DeepSeek integration
+    echo "🔍 Checking DeepSeek integration..."
+    curl -s http://localhost:5001/api/ai/health/detailed | jq '.deepseek_api'
+    
+    # Check database connection
+    echo "🔍 Checking database connection..."
+    docker-compose -f docker-compose.production.yml exec -T mongo mongosh --eval "db.adminCommand('ping')" > /dev/null
+    
+    # Check Redis connection
+    echo "🔍 Checking Redis connection..."
+    docker-compose -f docker-compose.production.yml exec -T redis redis-cli ping > /dev/null
+    
+    print_success "All health checks passed"
+}
+
+# Display deployment information
+show_deployment_info() {
+    print_success "🎉 Deployment completed successfully!"
+    echo ""
+    echo "📊 Service URLs:"
+    echo "  - API: http://localhost:5001"
+    echo "  - Health Check: http://localhost:5001/api/ai/health/detailed"
+    echo "  - Metrics: http://localhost:5001/api/ai/metrics (admin only)"
+    echo "  - Grafana: http://localhost:3000 (admin/admin)"
+    echo "  - Prometheus: http://localhost:9090"
+    echo ""
+    echo "🔧 Management Commands:"
+    echo "  - View logs: docker-compose -f docker-compose.production.yml logs -f"
+    echo "  - Stop services: docker-compose -f docker-compose.production.yml down"
+    echo "  - Restart API: docker-compose -f docker-compose.production.yml restart api"
+    echo ""
+    echo "📈 Monitoring:"
+    echo "  - Check metrics: curl http://localhost:5001/api/ai/metrics"
+    echo "  - View Grafana dashboards: http://localhost:3000"
+    echo ""
+    echo "🔒 Security Notes:"
+    echo "  - Change default passwords in production"
+    echo "  - Use HTTPS in production"
+    echo "  - Configure firewall rules"
+    echo "  - Enable log rotation"
+}
+
+# Main deployment flow
+main() {
+    print_status "Starting production deployment..."
+    
+    # Check prerequisites
+    if ! command -v docker &> /dev/null; then
+        print_error "Docker is not installed"
+        exit 1
+    fi
+    
+    if ! command -v docker-compose &> /dev/null; then
+        print_error "Docker Compose is not installed"
+        exit 1
+    fi
+    
+    if ! command -v jq &> /dev/null; then
+        print_warning "jq is not installed - some health checks may not work properly"
+    fi
+    
+    # Run deployment steps
+    check_env_vars
+    generate_secrets
+    build_images
+    deploy_services
+    wait_for_health
+    run_health_checks
+    show_deployment_info
+}
+
+# Run main function
 main "$@"

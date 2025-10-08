@@ -1,0 +1,6 @@
+
+> server@1.0.0 test /home/ben/Downloads/pawfectmatch-premium/server
+> echo "Error: no test specified" && exit 1
+
+Error: no test specified
+[41m[30m ELIFECYCLE [39m[49m [31mTest failed. See above for more details.[39m

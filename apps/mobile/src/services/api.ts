@@ -6,6 +6,7 @@ import {
   type Message, 
   type PetFilters
 } from '@pawfectmatch/core';
+import { API_BASE_URL, API_TIMEOUT } from '../config/environment';
 
 // Local type definition for adoption application
 interface AdoptionApplication {
@@ -339,7 +340,112 @@ export const matchesAPI = {
 };
 
 // Export the main API service instance
-export const api = matchesAPI;
+// AI Service API
+export const aiAPI = {
+  // Generate AI bio for pet
+  generateBio: async (data: {
+    petName: string;
+    keywords: string[];
+    tone?: 'playful' | 'professional' | 'casual' | 'romantic' | 'funny';
+    length?: 'short' | 'medium' | 'long';
+    petType?: string;
+    age?: number;
+    breed?: string;
+  }): Promise<{
+    bio: string;
+    keywords: string[];
+    sentiment: { score: number; label: string };
+    matchScore: number;
+  }> => {
+    const response = await apiClient.post('/ai/generate-bio', data);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to generate bio');
+  },
+
+  // Analyze pet photos
+  analyzePhotos: async (photos: string[]): Promise<{
+    breed_analysis: {
+      primary_breed: string;
+      confidence: number;
+      secondary_breeds?: Array<{ breed: string; confidence: number }>;
+    };
+    health_assessment: {
+      age_estimate: number;
+      health_score: number;
+      recommendations: string[];
+    };
+    photo_quality: {
+      overall_score: number;
+      lighting_score: number;
+      composition_score: number;
+      clarity_score: number;
+    };
+    matchability_score: number;
+    ai_insights: string[];
+  }> => {
+    const response = await apiClient.post('/ai/analyze-photos', { photos });
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to analyze photos');
+  },
+
+  // Enhanced compatibility analysis
+  analyzeCompatibility: async (data: {
+    pet1Id: string;
+    pet2Id: string;
+  }): Promise<{
+    compatibility_score: number;
+    ai_analysis: string;
+    breakdown: {
+      personality_compatibility: number;
+      lifestyle_compatibility: number;
+      activity_compatibility: number;
+      social_compatibility: number;
+      environment_compatibility: number;
+    };
+    recommendations: {
+      meeting_suggestions: string[];
+      activity_recommendations: string[];
+      supervision_requirements: string[];
+      success_probability: number;
+    };
+  }> => {
+    const response = await apiClient.post('/ai/enhanced-compatibility', data);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to analyze compatibility');
+  },
+
+  // Legacy compatibility (simpler version)
+  getCompatibility: async (data: {
+    pet1Id: string;
+    pet2Id: string;
+  }): Promise<{
+    score: number;
+    analysis: string;
+    factors: {
+      age_compatibility: boolean;
+      size_compatibility: boolean;
+      breed_compatibility: boolean;
+      personality_match: boolean;
+    };
+  }> => {
+    const response = await apiClient.post('/ai/compatibility', data);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to get compatibility');
+  },
+};
+
+export const api = {
+  ...matchesAPI,
+  ai: aiAPI,
+};
 
 // Export adoption API (alias for now, can be extended later)
 export const adoptionAPI = matchesAPI;

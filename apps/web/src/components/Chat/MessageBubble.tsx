@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { CheckIcon } from '@heroicons/react/24/outline';
 import { CheckIcon as CheckSolidIcon } from '@heroicons/react/24/solid';
 import { Message, User } from '../../types';
@@ -47,7 +48,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       {showAvatar && !isOwnMessage && (
         <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-400 to-purple-500 flex items-center justify-center text-white text-sm font-semibold overflow-hidden flex-shrink-0">
           {senderAvatar ? (
-            <img src={senderAvatar} alt={senderName} className="w-full h-full object-cover" />
+            <Image src={senderAvatar} alt={senderName} className="w-full h-full object-cover" width={32} height={32} />
           ) : (
             <span>{sender.firstName[0]}</span>
           )}
@@ -79,9 +80,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             <div className="space-y-2">
               {msg.attachments.map((attachment: any, index: number) => (
                 <div key={index} className="rounded-lg overflow-hidden">
-                  <img
+                  <Image
                     src={attachment.url}
                     alt={(attachment as any).fileName || 'Image'}
+                    width={200}
+                    height={200}
                     className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                     onClick={() => {
                       // Could open image in modal

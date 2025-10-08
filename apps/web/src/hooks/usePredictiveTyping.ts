@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
 interface PredictiveTypingConfig {
   contextWindow: number;
   predictionDepth: number;
   confidenceThreshold: number;
+  debounceMs?: number; // Add debounce configuration
 }
 
 interface PredictionResult {
@@ -37,6 +38,11 @@ export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
 
   const [isLearning, setIsLearning] = useState(false);
   const [predictionCache, setPredictionCache] = useState<Map<string, PredictionResult[]>>(new Map());
+  
+  // Debounce refs for API protection
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastPredictionRef = useRef<string>('');
+  const debounceMs = config.debounceMs || 300; // Default 300ms debounce
 
   // Build language model from training data
   const buildLanguageModel = useCallback((trainingTexts: string[]) => {
@@ -137,8 +143,8 @@ export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
     return (languageModel.vocabulary.get(token) || 0) / languageModel.totalTokens;
   }, [languageModel]);
 
-  // Predict next words based on context
-  const predictNextWords = useCallback((contextText: string, maxPredictions: number = 5): PredictionResult[] => {
+  // Internal prediction function (not debounced)
+  const predictNextWordsInternal = useCallback((contextText: string, maxPredictions: number = 5): PredictionResult[] => {
     const cacheKey = `${contextText}-${maxPredictions}`;
     const cached = predictionCache.get(cacheKey);
 
@@ -199,6 +205,29 @@ export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
 
     return predictions;
   }, [tokenize, getTokenProbability, languageModel, predictionCache, config.contextWindow]);
+
+  // Debounced prediction function to prevent API spam
+  const predictNextWords = useCallback((contextText: string, maxPredictions: number = 5): Promise<PredictionResult[]> => {
+    return new Promise((resolve) => {
+      // Clear existing timeout
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+
+      // Check if this is the same prediction as last time
+      if (lastPredictionRef.current === contextText) {
+        resolve(predictNextWordsInternal(contextText, maxPredictions));
+        return;
+      }
+
+      // Set new timeout for debounced prediction
+      debounceTimeoutRef.current = setTimeout(() => {
+        lastPredictionRef.current = contextText;
+        const predictions = predictNextWordsInternal(contextText, maxPredictions);
+        resolve(predictions);
+      }, debounceMs);
+    });
+  }, [predictNextWordsInternal, debounceMs]);
 
   // Advanced prediction with beam search
   const predictNextSequence = useCallback((contextText: string, sequenceLength: number = 3): PredictionResult[] => {

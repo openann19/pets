@@ -263,6 +263,8 @@ app.use('/api/breeds', cacheMiddleware(600), breedRoutes); // Cache breeds for 1
 app.use('/api/admin', authenticateToken, adminRoutes); // Admin endpoints (add admin-only middleware in production)
 app.use('/api/weather', weatherRoutes); // Weather API with auth handled per route
 app.use('/api/video', videoRoutes); // Video calling API with auth handled per route
+app.use('/api/stories', require('./src/routes/stories')); // Stories API with auth handled per route
+app.use('/api/feed', require('./src/routes/feed')); // Feed API with auth handled per route
 
 // General upload route for chat images
 const { uploadToCloudinary } = require('./src/services/cloudinaryService');
@@ -354,6 +356,13 @@ try {
 try {
   const MapSocketServer = require('./src/sockets/mapSocket');
   const mapSocketServer = new MapSocketServer(httpServer);
+
+// Expose stop function for tests
+module.exports.stopSimulations = () => {
+  if (mapSocketServer.stopLocationSimulation) {
+    mapSocketServer.stopLocationSimulation();
+  }
+};
   console.log('🗺️ Map socket server initialized');
   
   // Make map service available globally
@@ -378,8 +387,10 @@ app.use((req, res) => {
   });
 });
 
-// Start server function
-const startServer = async () => {
+// Start server function with proper port handling
+const DEFAULT_PORT = 5001;
+
+const startServer = async (port = DEFAULT_PORT) => {
   // Connect to MongoDB with improved connection handling
   await databaseConnection.connect();
   
@@ -388,21 +399,74 @@ const startServer = async () => {
     logger.warn('Redis initialization skipped:', err.message);
   });
   
-  const PORT = process.env.PORT || 5001;
+  const PORT = process.env.PORT || port;
 
-  httpServer
-    .listen(PORT, () => {
-      logger.info(`🌟 PawfectMatch Premium Server running on port ${PORT}`);
-      logger.info(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`🚀 Server ready to accept connections`);
-      logger.info(`📊 Database: ${databaseConnection.getConnectionStatus().name}`);
-    })
-    .on('error', (err) => {
-      logger.error('Server failed to start:', err);
-      process.exit(1);
+  try {
+    await new Promise((resolve, reject) => {
+      httpServer
+        .listen(PORT, () => {
+          logger.info(`🌟 PawfectMatch Premium Server running on port ${PORT}`);
+          logger.info(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+          logger.info(`🚀 Server ready to accept connections`);
+          logger.info(`📊 Database: ${databaseConnection.getConnectionStatus().name}`);
+          resolve();
+        })
+        .on('error', (err) => {
+          if (err.code === 'EADDRINUSE') {
+            logger.warn(`⚠️  Port ${PORT} in use`);
+            // Don't retry automatically - exit and let user fix it
+            process.exit(1);
+          }
+          reject(err);
+        });
     });
-  };
+  } catch (error) {
+    logger.error('Server failed to start:', error);
+    process.exit(1);
+  }
+};
   
+  // Graceful shutdown handling
+  process.on('SIGTERM', async () => {
+    logger.info('👋 SIGTERM received, shutting down gracefully');
+    
+    // Close server
+    httpServer.close(() => {
+      logger.info('✅ HTTP server closed');
+    });
+    
+    // Close MongoDB
+    await databaseConnection.disconnect();
+    logger.info('✅ MongoDB connection closed');
+    
+    // Close Redis
+    await closeRedis().catch(err => {
+      logger.warn('Redis close error:', err.message);
+    });
+    
+    process.exit(0);
+  });
+
+  process.on('SIGINT', async () => {
+    logger.info('👋 SIGINT received, shutting down gracefully');
+    
+    // Close server
+    httpServer.close(() => {
+      logger.info('✅ HTTP server closed');
+    });
+    
+    // Close MongoDB
+    await databaseConnection.disconnect();
+    logger.info('✅ MongoDB connection closed');
+    
+    // Close Redis
+    await closeRedis().catch(err => {
+      logger.warn('Redis close error:', err.message);
+    });
+    
+    process.exit(0);
+  });
+
   // Only start the server if not in test environment
   if (process.env.NODE_ENV !== 'test') {
     startServer().catch(err => {

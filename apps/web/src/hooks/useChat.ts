@@ -131,7 +131,7 @@ export const useChat = (matchId: string, currentUser: User): UseChatReturn => {
     });
   }, [socket, isConnected, matchId, currentUser._id]);
 
-  // Socket event listeners
+  // Socket event listeners with proper cleanup
   useEffect(() => {
     if (!socket || !isConnected) return;
 
@@ -189,7 +189,7 @@ export const useChat = (matchId: string, currentUser: User): UseChatReturn => {
           if (data.messageIds.includes(msg._id || '')) {
             return {
               ...msg,
-              readBy: [...msg.readBy, { user: data.userId, readAt: new Date().toISOString() }]
+              readBy: [...(msg.readBy || []), { user: data.userId, readAt: new Date().toISOString() }]
             };
           }
           return msg;
@@ -197,18 +197,21 @@ export const useChat = (matchId: string, currentUser: User): UseChatReturn => {
       }
     };
 
+    // Add event listeners
     socket.on('new_message', handleNewMessage);
     socket.on('user_typing', handleTyping);
     socket.on('message_read', handleMessageRead);
 
+    // Cleanup function
     return () => {
+      // Remove event listeners
       socket.off('new_message', handleNewMessage);
       socket.off('user_typing', handleTyping);
       socket.off('message_read', handleMessageRead);
       
       // Clear all typing timeouts
       Object.values(typingTimeoutRef.current).forEach(timeout => {
-        clearTimeout(timeout);
+        if (timeout) clearTimeout(timeout);
       });
       typingTimeoutRef.current = {};
     };

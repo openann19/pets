@@ -1,13 +1,13 @@
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import mongoose from 'mongoose';
-import request from 'supertest';
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+const request = require('supertest');
 
-import { app, httpServer } from '../server.js';
-import User from '../src/models/User.js';
+const { app, httpServer } = require('../server');
+const User = require('../src/models/User');
 
-let authToken: string;
-let userId: string;
-let mongoServer: MongoMemoryServer;
+let authToken;
+let userId;
+let mongoServer;
 
 // Helper function to create and authenticate a user
 async function createAndAuthenticateUser() {

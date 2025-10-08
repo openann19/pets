@@ -1,0 +1,40 @@
+nohup: ignoring input
+
+> server@1.0.0 start
+> node server.js
+
+[dotenv@17.2.2] injecting env (33) from .env -- tip: 📡 version env with Radar: https://dotenvx.com/radar
+🔍 Validating environment variables...
+✅ Environment variables validated successfully
+
+📋 Configuration:
+  • Node Environment: development
+  • Port: 5000
+  • Client URL: http://localhost:3000
+  • MongoDB: ✓ Configured
+  • JWT Secret: ✓ Set
+  • Redis: ✓ Configured
+  • Stripe: ✓ Configured
+
+⚠️  Some Sentry integrations unavailable: ProfilingIntegration is not a constructor
+Invalid Sentry Dsn: https://your-sentry-dsn@sentry.io/project-id
+✅ Sentry error tracking initialized
+   Environment: development
+   Sample Rate: 100%
+✅ WebRTC signaling service initialized
+🗺️ Map socket server initialized
+(node:148074) [MONGOOSE] Warning: Duplicate schema index on {"email":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:148074) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:148074) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+01:46:53 [[32minfo[39m] 🚀 MongoDB Connected: localhost {"service":"pawfectmatch-api"}
+01:46:53 [[32minfo[39m] 🌟 PawfectMatch Premium Server running on port 5000 {"service":"pawfectmatch-api"}
+01:46:53 [[32minfo[39m] 🌐 Environment: development {"service":"pawfectmatch-api"}
+01:46:53 [[32minfo[39m] 🔗 Client URL: http://localhost:3000 {"service":"pawfectmatch-api"}
+::1 - - [29/Sep/2025:22:46:54 +0000] "POST /api/auth/register HTTP/1.1" 400 65 "-" "curl/8.5.0"
+::1 - - [29/Sep/2025:22:47:04 +0000] "POST /api/auth/register HTTP/1.1" 400 65 "-" "curl/8.5.0"
+Email service not configured. Skipping email send.
+::1 - - [29/Sep/2025:22:47:16 +0000] "POST /api/auth/register HTTP/1.1" 201 1437 "-" "curl/8.5.0"
+Email service not configured. Skipping email send.
+::1 - - [29/Sep/2025:22:47:21 +0000] "POST /api/auth/register HTTP/1.1" 201 1434 "-" "curl/8.5.0"
+::1 - - [29/Sep/2025:22:47:26 +0000] "POST /api/auth/login HTTP/1.1" 200 1379 "-" "curl/8.5.0"

@@ -39,6 +39,9 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   const managerRef = useRef<WebSocketManager | null>(null);
   const listenersRef = useRef<Map<string, Function>>(new Map());
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 5;
+  const baseReconnectDelay = 1000; // 1 second
 
   // Initialize WebSocket manager
   useEffect(() => {
@@ -47,7 +50,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     }
   }, [enableLogging]);
 
-  // Connect to WebSocket
+  // Connect to WebSocket with exponential backoff
   const connect = useCallback(async () => {
     if (!user?.id || !accessToken) {
       console.warn('[useWebSocket] Cannot connect: missing user or token');
@@ -56,6 +59,17 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     if (!managerRef.current) {
       console.error('[useWebSocket] WebSocket manager not initialized');
+      return;
+    }
+
+    // Check if we've exceeded max reconnect attempts
+    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+      console.error('[useWebSocket] Max reconnect attempts exceeded');
+      setState(prev => ({ 
+        ...prev, 
+        connecting: false, 
+        error: new Error('Max reconnect attempts exceeded') 
+      }));
       return;
     }
 
@@ -69,16 +83,38 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         error: null,
         socket
       });
+      
+      // Reset reconnect attempts on successful connection
+      reconnectAttemptsRef.current = 0;
+      onConnect?.();
     } catch (error) {
+      const currentAttempts = reconnectAttemptsRef.current + 1;
+      reconnectAttemptsRef.current = currentAttempts;
+      
       setState({
         connected: false,
         connecting: false,
         error: error as Error,
         socket: null
       });
+      
       onError?.(error);
+      
+      // Schedule reconnection with exponential backoff + jitter
+      if (currentAttempts < maxReconnectAttempts) {
+        const jitter = Math.random() * 1000; // 0-1s jitter
+        const delay = baseReconnectDelay * Math.pow(2, currentAttempts - 1) + jitter;
+        
+        console.warn(`[useWebSocket] Connection failed, retrying in ${Math.round(delay)}ms (attempt ${currentAttempts}/${maxReconnectAttempts})`);
+        
+        setTimeout(() => {
+          if (isAuthenticated && user?.id && accessToken) {
+            connect();
+          }
+        }, delay);
+      }
     }
-  }, [user?.id, accessToken, onError]);
+  }, [user?.id, accessToken, onError, onConnect, isAuthenticated, maxReconnectAttempts, baseReconnectDelay]);
 
   // Disconnect from WebSocket
   const disconnect = useCallback(() => {

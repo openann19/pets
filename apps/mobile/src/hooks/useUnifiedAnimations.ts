@@ -27,8 +27,6 @@ import {
   Extrapolate,
 } from 'react-native-reanimated';
 
-import { Theme } from '../theme/unified-theme';
-
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // === ACCESSIBILITY AWARE ANIMATION CONFIG ===
@@ -39,24 +37,54 @@ AccessibilityInfo.isReduceMotionEnabled().then((isEnabled) => {
   prefersReducedMotion = isEnabled;
 });
 
+// === SPRING CONFIGURATIONS ===
+const SPRING_CONFIGS = {
+  standard: {
+    damping: 20,
+    stiffness: 400,
+    mass: 0.8,
+  },
+  gentle: {
+    damping: 25,
+    stiffness: 300,
+    mass: 1,
+  },
+  snappy: {
+    damping: 15,
+    stiffness: 500,
+    mass: 0.6,
+  },
+  bouncy: {
+    damping: 10,
+    stiffness: 600,
+    mass: 0.5,
+  },
+};
+
+const TIMING_CONFIGS = {
+  fast: 150,
+  standard: 300,
+  slow: 500,
+};
+
 // === 1. SPRING ANIMATION HOOK ===
 export const useSpringAnimation = (
   initialValue = 0,
-  config: keyof typeof Theme.motion.springs = 'standard'
+  config: keyof typeof SPRING_CONFIGS = 'standard'
 ) => {
   const animatedValue = useSharedValue(initialValue);
 
   const animate = useCallback(
-    (toValue: number, customConfig?: Partial<typeof Theme.motion.springs.standard>) => {
+    (toValue: number, customConfig?: Partial<typeof SPRING_CONFIGS.standard>) => {
       const springConfig = {
-        ...Theme.motion.springs[config],
+        ...SPRING_CONFIGS[config],
         ...customConfig,
       };
 
       // Respect reduced motion preference
       if (prefersReducedMotion) {
         animatedValue.value = withTiming(toValue, {
-          duration: Theme.motion.timings.standard,
+          duration: TIMING_CONFIGS.standard,
         });
       } else {
         animatedValue.value = withSpring(toValue, springConfig);
@@ -66,7 +94,7 @@ export const useSpringAnimation = (
   );
 
   const reset = useCallback(() => {
-    animatedValue.value = withSpring(initialValue, Theme.motion.springs[config]);
+    animatedValue.value = withSpring(initialValue, SPRING_CONFIGS[config]);
   }, [animatedValue, initialValue, config]);
 
   return {
@@ -80,7 +108,7 @@ export const useSpringAnimation = (
 export const useEntranceAnimation = (
   type: 'fadeInUp' | 'scaleIn' | 'slideInLeft' | 'slideInRight' | 'fadeIn' = 'fadeInUp',
   delay = 0,
-  config: keyof typeof Theme.motion.springs = 'standard'
+  config: keyof typeof SPRING_CONFIGS = 'standard'
 ) => {
   const opacity = useSharedValue(0);
   const translateX = useSharedValue(0);
@@ -88,10 +116,10 @@ export const useEntranceAnimation = (
   const scale = useSharedValue(1);
 
   const start = useCallback(() => {
-    const springConfig = Theme.motion.springs[config];
+    const springConfig = SPRING_CONFIGS[config];
 
     if (prefersReducedMotion) {
-      opacity.value = withTiming(1, { duration: Theme.motion.timings.standard });
+      opacity.value = withTiming(1, { duration: TIMING_CONFIGS.standard });
       return;
     }
 
@@ -145,55 +173,92 @@ export const useEntranceAnimation = (
   };
 };
 
-// === 3. STAGGERED LIST ANIMATION HOOK ===
-export const useStaggeredAnimation = (
-  itemCount: number,
-  delay = 100,
-  config: keyof typeof Theme.motion.springs = 'gentle'
+// === 3. SWIPE GESTURE HOOK ===
+export const useSwipeGesture = (
+  onSwipeLeft?: () => void,
+  onSwipeRight?: () => void,
+  onSwipeUp?: () => void,
+  threshold = 120
 ) => {
-  const animatedValues = Array.from({ length: itemCount }, () => ({
-    opacity: useSharedValue(0),
-    translateY: useSharedValue(30),
-  }));
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(1);
 
-  const start = useCallback(() => {
-    const springConfig = Theme.motion.springs[config];
-
-    animatedValues.forEach((item, index) => {
-      const itemDelay = index * delay;
-
-      if (prefersReducedMotion) {
-        item.opacity.value = withTiming(1, { duration: Theme.motion.timings.standard });
-        item.translateY.value = withTiming(0, { duration: Theme.motion.timings.standard });
-      } else {
-        item.opacity.value = withDelay(itemDelay, withSpring(1, springConfig));
-        item.translateY.value = withDelay(itemDelay, withSpring(0, springConfig));
-      }
-    });
-  }, [animatedValues, delay, config]);
-
-  const getAnimatedStyle = useCallback(
-    (index: number) => {
-      const item = animatedValues[index];
-      if (!item) return {};
-
-      return useAnimatedStyle(() => ({
-        opacity: item.opacity.value,
-        transform: [{ translateY: item.translateY.value }],
-      }));
+  const gestureHandler = useAnimatedGestureHandler<PanGestureHandlerGestureEvent>({
+    onStart: () => {
+      // Optional: Add haptic feedback on start
     },
-    [animatedValues]
-  );
+    onActive: (event) => {
+      translateX.value = event.translationX;
+      translateY.value = event.translationY;
+    },
+    onEnd: (event) => {
+      const { translationX, translationY, velocityX, velocityY } = event;
+      const absX = Math.abs(translationX);
+      const absY = Math.abs(translationY);
+
+      // Determine swipe direction
+      if (absX > threshold && absX > absY) {
+        // Horizontal swipe
+        if (translationX > 0) {
+          // Swipe right
+          translateX.value = withTiming(SCREEN_WIDTH + 100, {
+            duration: TIMING_CONFIGS.standard,
+          });
+          opacity.value = withTiming(0, { duration: TIMING_CONFIGS.standard });
+          if (onSwipeRight) runOnJS(onSwipeRight)();
+        } else {
+          // Swipe left
+          translateX.value = withTiming(-SCREEN_WIDTH - 100, {
+            duration: TIMING_CONFIGS.standard,
+          });
+          opacity.value = withTiming(0, { duration: TIMING_CONFIGS.standard });
+          if (onSwipeLeft) runOnJS(onSwipeLeft)();
+        }
+      } else if (absY > threshold && translationY < 0) {
+        // Swipe up
+        translateY.value = withTiming(-SCREEN_HEIGHT - 100, {
+          duration: TIMING_CONFIGS.standard,
+        });
+        opacity.value = withTiming(0, { duration: TIMING_CONFIGS.standard });
+        if (onSwipeUp) runOnJS(onSwipeUp)();
+      } else {
+        // Return to center
+        translateX.value = withSpring(0, SPRING_CONFIGS.standard);
+        translateY.value = withSpring(0, SPRING_CONFIGS.standard);
+      }
+    },
+  });
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const rotation = interpolate(
+      translateX.value,
+      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+      [-10, 0, 10],
+      Extrapolate.CLAMP
+    );
+
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { rotate: `${rotation}deg` },
+      ] as const,
+      opacity: opacity.value,
+    };
+  });
 
   return {
-    start,
-    getAnimatedStyle,
+    gestureHandler,
+    animatedStyle,
+    translateX,
+    translateY,
   };
 };
 
 // === 4. PRESS ANIMATION HOOK ===
 export const usePressAnimation = (
-  config: keyof typeof Theme.motion.springs = 'snappy'
+  config: keyof typeof SPRING_CONFIGS = 'snappy'
 ) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -201,15 +266,15 @@ export const usePressAnimation = (
   const handlePressIn = useCallback(() => {
     if (prefersReducedMotion) return;
 
-    scale.value = withSpring(0.96, Theme.motion.springs[config]);
-    opacity.value = withSpring(0.8, Theme.motion.springs[config]);
+    scale.value = withSpring(0.96, SPRING_CONFIGS[config]);
+    opacity.value = withSpring(0.8, SPRING_CONFIGS[config]);
   }, [scale, opacity, config]);
 
   const handlePressOut = useCallback(() => {
     if (prefersReducedMotion) return;
 
-    scale.value = withSpring(1, Theme.motion.springs[config]);
-    opacity.value = withSpring(1, Theme.motion.springs[config]);
+    scale.value = withSpring(1, SPRING_CONFIGS[config]);
+    opacity.value = withSpring(1, SPRING_CONFIGS[config]);
   }, [scale, opacity, config]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -226,7 +291,7 @@ export const usePressAnimation = (
 
 // === 5. GLOW ANIMATION HOOK ===
 export const useGlowAnimation = (
-  color: string = Theme.colors.primary[500],
+  color: string = '#ec4899',
   intensity = 1,
   duration = 2000
 ) => {
@@ -293,17 +358,17 @@ export const useMagneticEffect = (
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
       if (distance < maxDistance) {
-        translateX.value = withSpring(deltaX * sensitivity, Theme.motion.springs.gentle);
-        translateY.value = withSpring(deltaY * sensitivity, Theme.motion.springs.gentle);
+        translateX.value = withSpring(deltaX * sensitivity, SPRING_CONFIGS.gentle);
+        translateY.value = withSpring(deltaY * sensitivity, SPRING_CONFIGS.gentle);
       } else {
         const angle = Math.atan2(deltaY, deltaX);
         translateX.value = withSpring(
           Math.cos(angle) * maxDistance * sensitivity,
-          Theme.motion.springs.gentle
+          SPRING_CONFIGS.gentle
         );
         translateY.value = withSpring(
           Math.sin(angle) * maxDistance * sensitivity,
-          Theme.motion.springs.gentle
+          SPRING_CONFIGS.gentle
         );
       }
     },
@@ -313,8 +378,8 @@ export const useMagneticEffect = (
   const handleTouchEnd = useCallback(() => {
     if (prefersReducedMotion) return;
 
-    translateX.value = withSpring(0, Theme.motion.springs.gentle);
-    translateY.value = withSpring(0, Theme.motion.springs.gentle);
+    translateX.value = withSpring(0, SPRING_CONFIGS.gentle);
+    translateY.value = withSpring(0, SPRING_CONFIGS.gentle);
   }, [translateX, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -331,196 +396,14 @@ export const useMagneticEffect = (
   };
 };
 
-// === 7. SWIPE GESTURE HOOK ===
-export const useSwipeGesture = (
-  onSwipeLeft?: () => void,
-  onSwipeRight?: () => void,
-  onSwipeUp?: () => void,
-  threshold = 120
-) => {
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  const opacity = useSharedValue(1);
-
-  const gestureHandler = useAnimatedGestureHandler<PanGestureHandlerGestureEvent>({
-    onStart: () => {
-      // Optional: Add haptic feedback on start
-    },
-    onActive: (event) => {
-      translateX.value = event.translationX;
-      translateY.value = event.translationY;
-    },
-    onEnd: (event) => {
-      const { translationX, translationY, velocityX, velocityY } = event;
-      const absX = Math.abs(translationX);
-      const absY = Math.abs(translationY);
-
-      // Determine swipe direction
-      if (absX > threshold && absX > absY) {
-        // Horizontal swipe
-        if (translationX > 0) {
-          // Swipe right
-          translateX.value = withTiming(SCREEN_WIDTH + 100, {
-            duration: Theme.motion.timings.standard,
-          });
-          opacity.value = withTiming(0, { duration: Theme.motion.timings.standard });
-          if (onSwipeRight) runOnJS(onSwipeRight)();
-        } else {
-          // Swipe left
-          translateX.value = withTiming(-SCREEN_WIDTH - 100, {
-            duration: Theme.motion.timings.standard,
-          });
-          opacity.value = withTiming(0, { duration: Theme.motion.timings.standard });
-          if (onSwipeLeft) runOnJS(onSwipeLeft)();
-        }
-      } else if (absY > threshold && translationY < 0) {
-        // Swipe up
-        translateY.value = withTiming(-SCREEN_HEIGHT - 100, {
-          duration: Theme.motion.timings.standard,
-        });
-        opacity.value = withTiming(0, { duration: Theme.motion.timings.standard });
-        if (onSwipeUp) runOnJS(onSwipeUp)();
-      } else {
-        // Return to center
-        translateX.value = withSpring(0, Theme.motion.springs.standard);
-        translateY.value = withSpring(0, Theme.motion.springs.standard);
-      }
-    },
-  });
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const rotation = interpolate(
-      translateX.value,
-      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
-      [-10, 0, 10],
-      Extrapolate.CLAMP
-    );
-
-    return {
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { rotate: `${rotation}deg` },
-      ] as const,
-      opacity: opacity.value,
-    };
-  });
-
-  return {
-    gestureHandler,
-    animatedStyle,
-    translateX,
-    translateY,
-  };
-};
-
-// === 8. RIPPLE EFFECT HOOK ===
-export const useRippleEffect = () => {
-  const scale = useSharedValue(0);
-  const opacity = useSharedValue(0);
-
-  const startRipple = useCallback(() => {
-    if (prefersReducedMotion) return;
-
-    scale.value = 0;
-    opacity.value = 0.6;
-
-    scale.value = withTiming(2, { duration: Theme.motion.timings.standard });
-    opacity.value = withTiming(0, { duration: Theme.motion.timings.standard });
-  }, [scale, opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  return {
-    startRipple,
-    animatedStyle,
-  };
-};
-
-// === 9. SHIMMER EFFECT HOOK ===
-export const useShimmerEffect = (duration = 2000) => {
-  const translateX = useSharedValue(-100);
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-
-    const animate = () => {
-      translateX.value = withSequence(
-        withTiming(100, { duration: duration / 2 }),
-        withDelay(500, withTiming(-100, { duration: 0 }))
-      );
-    };
-
-    const interval = setInterval(animate, duration);
-    animate(); // Start immediately
-
-    return () => clearInterval(interval);
-  }, [translateX, duration]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }));
-
-  return {
-    animatedStyle,
-  };
-};
-
-// === 10. SCROLL TRIGGERED ANIMATION HOOK ===
-export const useScrollAnimation = (
-  triggerPoint = 0.8,
-  config: keyof typeof Theme.motion.springs = 'gentle'
-) => {
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(30);
-  const [isVisible, setIsVisible] = useState(false);
-
-  const checkVisibility = useCallback(
-    (scrollY: number, elementY: number, elementHeight: number) => {
-      const windowHeight = SCREEN_HEIGHT;
-      const triggerY = elementY + elementHeight * triggerPoint;
-
-      if (scrollY + windowHeight > triggerY && !isVisible) {
-        setIsVisible(true);
-        if (!prefersReducedMotion) {
-          opacity.value = withSpring(1, Theme.motion.springs[config]);
-          translateY.value = withSpring(0, Theme.motion.springs[config]);
-        } else {
-          opacity.value = withTiming(1, { duration: Theme.motion.timings.standard });
-          translateY.value = withTiming(0, { duration: Theme.motion.timings.standard });
-        }
-      }
-    },
-    [opacity, translateY, triggerPoint, config, isVisible]
-  );
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  return {
-    isVisible,
-    checkVisibility,
-    animatedStyle,
-  };
-};
-
 // === EXPORT ALL HOOKS ===
 export const UnifiedAnimations = {
   useSpringAnimation,
   useEntranceAnimation,
-  useStaggeredAnimation,
+  useSwipeGesture,
   usePressAnimation,
   useGlowAnimation,
   useMagneticEffect,
-  useSwipeGesture,
-  useRippleEffect,
-  useShimmerEffect,
-  useScrollAnimation,
 };
 
 export default UnifiedAnimations;

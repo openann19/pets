@@ -21,43 +21,70 @@ interface AuthState {
   clearTokens: () => void;
 }
 
-// Token storage utilities - single source of truth
+// Secure token storage utilities - prioritize HTTP-only cookies
 const tokenStorage = {
   setAccessToken: (token: string) => {
     if (typeof window !== 'undefined') {
+      // Set secure HTTP-only cookie (preferred)
+      document.cookie = `accessToken=${token}; Max-Age=${15 * 60}; Path=/; SameSite=Strict; Secure=${location.protocol === 'https:'}`;
+      
+      // Fallback to localStorage for client-side access (less secure)
       localStorage.setItem('accessToken', token);
-      // Set cookie for SSR/middleware
-      document.cookie = `accessToken=${token}; Max-Age=${24 * 60 * 60}; Path=/; SameSite=Lax`;
     }
   },
   
   setRefreshToken: (token: string) => {
     if (typeof window !== 'undefined') {
+      // Set secure HTTP-only cookie (preferred)
+      document.cookie = `refreshToken=${token}; Max-Age=${7 * 24 * 60 * 60}; Path=/; SameSite=Strict; Secure=${location.protocol === 'https:'}`;
+      
+      // Fallback to localStorage for client-side access (less secure)
       localStorage.setItem('refreshToken', token);
-      document.cookie = `refreshToken=${token}; Max-Age=${7 * 24 * 60 * 60}; Path=/; SameSite=Lax`;
     }
   },
   
   getAccessToken: (): string | null => {
     if (typeof window === 'undefined') return null;
+    
+    // Try to get from cookie first (more secure)
+    const cookieValue = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('accessToken='))
+      ?.split('=')[1];
+    
+    if (cookieValue) return cookieValue;
+    
+    // Fallback to localStorage
     return localStorage.getItem('accessToken');
   },
   
   getRefreshToken: (): string | null => {
     if (typeof window === 'undefined') return null;
+    
+    // Try to get from cookie first (more secure)
+    const cookieValue = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('refreshToken='))
+      ?.split('=')[1];
+    
+    if (cookieValue) return cookieValue;
+    
+    // Fallback to localStorage
     return localStorage.getItem('refreshToken');
   },
   
   clearAll: () => {
     if (typeof window === 'undefined') return;
     
+    // Clear localStorage
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     
-    // Clear cookies
-    document.cookie = 'accessToken=; Max-Age=0; Path=/; SameSite=Lax';
-    document.cookie = 'refreshToken=; Max-Age=0; Path=/; SameSite=Lax';
-    document.cookie = 'auth-token=; Max-Age=0; Path=/; SameSite=Lax';
+    // Clear cookies with secure flags
+    const secureFlag = location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `accessToken=; Max-Age=0; Path=/; SameSite=Strict${secureFlag}`;
+    document.cookie = `refreshToken=; Max-Age=0; Path=/; SameSite=Strict${secureFlag}`;
+    document.cookie = `auth-token=; Max-Age=0; Path=/; SameSite=Lax`;
   }
 };
 

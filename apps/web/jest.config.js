@@ -37,7 +37,7 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   testPathIgnorePatterns: ['/node_modules/', '/.next/', '<rootDir>/tests/playwright/'],
   transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$|@testing-library|@emotion))',
+    'node_modules/(?!(.*\\.mjs$|@testing-library|@emotion|@plaiceholder|sharp))',
   ],
   globals: {
     'ts-jest': {

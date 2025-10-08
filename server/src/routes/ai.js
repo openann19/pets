@@ -1,50 +1,168 @@
 const express = require('express');
 const axios = require('axios');
+const crypto = require('crypto');
 const { authenticateToken } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const { createRateLimitingMiddleware, getSubscriptionBasedLimiter, getRateLimitStatus } = require('../middleware/aiRateLimiting');
+const logger = require('../utils/logger');
+const { performance } = require('perf_hooks');
 
 const router = express.Router();
 
-// Enhanced AI Service Configuration
+// Production AI Service Configuration
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'https://ai.pawfectmatch.com';
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-53af1f0560c54499aa5d6d39b02dd109';
-const DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1';
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1';
 
-// Cache for AI responses (simple in-memory cache)
+// Production validation
+if (!DEEPSEEK_API_KEY) {
+  logger.error('🚨 DEEPSEEK_API_KEY is required for production deployment');
+  throw new Error('DEEPSEEK_API_KEY environment variable is required');
+}
+
+// Production metrics tracking
+const metrics = {
+  requests: {
+    total: 0,
+    successful: 0,
+    failed: 0,
+    fallback: 0
+  },
+  endpoints: {
+    'generate-bio': { count: 0, avgResponseTime: 0 },
+    'analyze-photos': { count: 0, avgResponseTime: 0 },
+    'enhanced-compatibility': { count: 0, avgResponseTime: 0 },
+    'assist-application': { count: 0, avgResponseTime: 0 }
+  },
+  deepseek: {
+    calls: 0,
+    errors: 0,
+    avgResponseTime: 0
+  },
+  cache: {
+    hits: 0,
+    misses: 0,
+    hitRate: 0
+  }
+};
+
+// Production error tracking
+const errorTracker = {
+  errors: new Map(),
+  addError: (type, error) => {
+    const key = `${type}:${error.message}`;
+    const count = errorTracker.errors.get(key) || 0;
+    errorTracker.errors.set(key, count + 1);
+    
+    // Log critical errors
+    if (error.message.includes('API_KEY') || error.message.includes('RATE_LIMIT')) {
+      logger.error(`🚨 Critical AI Error: ${type} - ${error.message}`, {
+        type,
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+};
+
+// Production-ready cache system
 const responseCache = new Map();
-const CACHE_TTL = 3600000; // 1 hour in milliseconds
+const CACHE_TTL = process.env.AI_CACHE_TTL ? parseInt(process.env.AI_CACHE_TTL) : 3600000; // 1 hour default
+const MAX_CACHE_SIZE = process.env.AI_MAX_CACHE_SIZE ? parseInt(process.env.AI_MAX_CACHE_SIZE) : 1000;
 
 function getCacheKey(endpoint, data) {
-  return `${endpoint}:${JSON.stringify(data)}`;
+  // Create consistent cache key with sorted data
+  const sortedData = JSON.stringify(data, Object.keys(data).sort());
+  return crypto.createHash('md5').update(`${endpoint}:${sortedData}`).digest('hex');
 }
 
 function getCachedResponse(key) {
   const cached = responseCache.get(key);
   if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+    metrics.cache.hits++;
+    updateCacheHitRate();
+    logger.debug(`Cache hit for key: ${key.substring(0, 8)}...`);
     return cached.data;
   }
   if (cached) {
     responseCache.delete(key);
   }
+  metrics.cache.misses++;
+  updateCacheHitRate();
   return null;
 }
 
 function setCachedResponse(key, data) {
+  // Implement LRU eviction if cache is full
+  if (responseCache.size >= MAX_CACHE_SIZE) {
+    const oldestKey = responseCache.keys().next().value;
+    responseCache.delete(oldestKey);
+    logger.debug(`Cache evicted oldest entry: ${oldestKey.substring(0, 8)}...`);
+  }
+  
   responseCache.set(key, {
     data,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    accessCount: 1
   });
+  
+  logger.debug(`Cache set for key: ${key.substring(0, 8)}... (size: ${responseCache.size})`);
 }
 
-// Enhanced helper function to call AI Service
+function updateCacheHitRate() {
+  const total = metrics.cache.hits + metrics.cache.misses;
+  metrics.cache.hitRate = total > 0 ? (metrics.cache.hits / total) * 100 : 0;
+}
+
+// Cache cleanup function
+function cleanupExpiredCache() {
+  const now = Date.now();
+  let cleaned = 0;
+  
+  for (const [key, value] of responseCache.entries()) {
+    if (now - value.timestamp > CACHE_TTL) {
+      responseCache.delete(key);
+      cleaned++;
+    }
+  }
+  
+  if (cleaned > 0) {
+    logger.info(`🧹 Cleaned up ${cleaned} expired cache entries`);
+  }
+}
+
+// Run cache cleanup every 30 minutes (skip in test env)
+if (process.env.NODE_ENV !== 'test') {
+  setInterval(cleanupExpiredCache, 30 * 60 * 1000);
+}
+
+// Production-ready AI service call function
 async function callEnhancedAIService(endpoint, data, options = {}) {
-  const { useCache = true, timeout = 30000 } = options;
+  const startTime = performance.now();
+  const { useCache = true, timeout = 30000, userId = 'unknown' } = options;
+  
+  // Update metrics
+  metrics.requests.total++;
+  metrics.endpoints[endpoint] = metrics.endpoints[endpoint] || { count: 0, avgResponseTime: 0 };
+  metrics.endpoints[endpoint].count++;
+  
+  logger.info(`🤖 AI Request: ${endpoint}`, {
+    endpoint,
+    userId,
+    useCache,
+    timeout,
+    timestamp: new Date().toISOString()
+  });
   
   if (useCache) {
     const cacheKey = getCacheKey(endpoint, data);
     const cached = getCachedResponse(cacheKey);
     if (cached) {
-      console.log(`Cache hit for ${endpoint}`);
+      const responseTime = performance.now() - startTime;
+      updateEndpointMetrics(endpoint, responseTime);
+      metrics.requests.successful++;
+      logger.info(`✅ Cache hit for ${endpoint}`, { responseTime: `${responseTime.toFixed(2)}ms` });
       return cached;
     }
   }
@@ -53,71 +171,346 @@ async function callEnhancedAIService(endpoint, data, options = {}) {
     const response = await axios.post(`${AI_SERVICE_URL}/api/${endpoint}`, data, {
       timeout,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'PawfectMatch-AI-Client/1.0',
+        'X-Request-ID': crypto.randomUUID()
       }
     });
 
     const result = response.data;
+    const responseTime = performance.now() - startTime;
     
     if (useCache) {
       const cacheKey = getCacheKey(endpoint, data);
       setCachedResponse(cacheKey, result);
     }
 
+    updateEndpointMetrics(endpoint, responseTime);
+    metrics.requests.successful++;
+    
+    logger.info(`✅ AI Service success: ${endpoint}`, {
+      responseTime: `${responseTime.toFixed(2)}ms`,
+      statusCode: response.status
+    });
+
     return result;
   } catch (error) {
-    console.error(`Enhanced AI Service error (${endpoint}):`, error.message);
+    const responseTime = performance.now() - startTime;
+    errorTracker.addError(endpoint, error);
+    
+    logger.warn(`⚠️ AI Service error (${endpoint}):`, {
+      error: error.message,
+      code: error.code,
+      responseTime: `${responseTime.toFixed(2)}ms`,
+      status: error.response?.status
+    });
     
     // Fallback to direct DeepSeek if AI service is unavailable
-    if (error.code === 'ECONNREFUSED' || error.code === 'TIMEOUT') {
-      console.log(`Falling back to direct API for ${endpoint}`);
-      return await callDeepSeekAPIFallback(data, endpoint);
+    if (error.code === 'ECONNREFUSED' || error.code === 'TIMEOUT' || error.response?.status >= 500) {
+      logger.info(`🔄 Falling back to DeepSeek for ${endpoint}`);
+      metrics.requests.fallback++;
+      return await callDeepSeekAPIFallback(data, endpoint, { userId, startTime });
     }
     
+    metrics.requests.failed++;
     throw new Error(`AI service temporarily unavailable: ${error.message}`);
   }
 }
 
-// Fallback function for direct API calls
-async function callDeepSeekAPIFallback(data, endpoint) {
-  // Only provide fallback for bio generation
-  if (endpoint !== 'generate-bio') {
-    throw new Error('AI service unavailable and no fallback available for this endpoint');
+function updateEndpointMetrics(endpoint, responseTime) {
+  const endpointMetrics = metrics.endpoints[endpoint];
+  if (endpointMetrics) {
+    // Calculate rolling average
+    endpointMetrics.avgResponseTime = (endpointMetrics.avgResponseTime + responseTime) / 2;
+  }
+}
+
+// Production-ready DeepSeek API fallback function
+async function callDeepSeekAPIFallback(data, endpoint, options = {}) {
+  const { userId = 'unknown', startTime = performance.now() } = options;
+  const deepSeekStartTime = performance.now();
+  
+  logger.info(`🔄 DeepSeek fallback for endpoint: ${endpoint}`, {
+    endpoint,
+    userId,
+    timestamp: new Date().toISOString()
+  });
+  
+  metrics.deepseek.calls++;
+  
+  let messages = [];
+  let maxTokens = 500;
+  let temperature = 0.7;
+
+  switch (endpoint) {
+    case 'generate-bio':
+      messages = [
+        {
+          role: 'system',
+          content: 'You are a creative copywriter specializing in pet social media content. Create engaging, authentic pet bios that highlight personality and appeal to potential matches.'
+        },
+        {
+          role: 'user',
+          content: `Write a ${data.tone || 'friendly'} bio for a ${data.pet?.species || 'pet'} named ${data.pet?.name || 'your pet'}. 
+          
+Pet details:
+- Species: ${data.pet?.species || 'Unknown'}
+- Breed: ${data.pet?.breed || 'Mixed'}
+- Age: ${data.pet?.age || 'Unknown'} years
+- Size: ${data.pet?.size || 'Medium'}
+- Personality: ${data.pet?.personality_tags?.join(', ') || data.keywords?.join(', ') || 'friendly, loving'}
+- Current bio: ${data.pet?.current_bio || 'None'}
+
+Requirements:
+- Tone: ${data.tone || 'friendly'}
+- Length: ${data.length || 'medium'} (${data.length === 'short' ? '1-2 sentences' : data.length === 'long' ? '3-4 sentences' : '2-3 sentences'})
+- Include call-to-action: ${data.include_call_to_action ? 'Yes' : 'No'}
+- Make it engaging and authentic`
+        }
+      ];
+      maxTokens = 300;
+      break;
+
+    case 'analyze-photo':
+      messages = [
+        {
+          role: 'system',
+          content: 'You are a pet photography expert and animal behaviorist. Analyze pet photos for quality, appeal, and characteristics that would make them attractive for pet matching.'
+        },
+        {
+          role: 'user',
+          content: `Analyze this pet photo for a matching app:
+
+Photo URL: ${data.photo_url}
+Pet Name: ${data.pet_name || 'Unknown'}
+Known Breed: ${data.known_breed || 'Unknown'}
+
+Please provide:
+1. Overall photo quality assessment (1-10)
+2. Detected breed characteristics
+3. Personality indicators visible in the photo
+4. Health assessment (if possible)
+5. Recommendations for improvement
+6. Appeal score for potential matches (1-10)
+
+Format as JSON with keys: analysis, detected_traits, confidence, recommendations, scores, breed_indicators, health_assessment, personality_indicators`
+        }
+      ];
+      maxTokens = 800;
+      break;
+
+    case 'enhanced-compatibility':
+      messages = [
+        {
+          role: 'system',
+          content: 'You are a veterinary behaviorist and pet compatibility expert. Analyze pet compatibility for various interaction types with detailed scientific reasoning.'
+        },
+        {
+          role: 'user',
+          content: `Analyze compatibility between two pets for ${data.interaction_type || 'playdate'}:
+
+PET 1: ${data.pet1?.name || 'Pet 1'}
+- Species: ${data.pet1?.species || 'Unknown'}
+- Breed: ${data.pet1?.breed || 'Mixed'}
+- Age: ${data.pet1?.age || 'Unknown'} years
+- Size: ${data.pet1?.size || 'Medium'}
+- Personality: ${data.pet1?.personality_tags?.join(', ') || 'Unknown'}
+- Activity Level: ${data.pet1?.activity_level || 'Medium'}
+- Training Level: ${data.pet1?.training_level || 'Medium'}
+- Socialization: ${data.pet1?.socialization || 'Medium'}
+
+PET 2: ${data.pet2?.name || 'Pet 2'}
+- Species: ${data.pet2?.species || 'Unknown'}
+- Breed: ${data.pet2?.breed || 'Mixed'}
+- Age: ${data.pet2?.age || 'Unknown'} years
+- Size: ${data.pet2?.size || 'Medium'}
+- Personality: ${data.pet2?.personality_tags?.join(', ') || 'Unknown'}
+- Activity Level: ${data.pet2?.activity_level || 'Medium'}
+- Training Level: ${data.pet2?.training_level || 'Medium'}
+- Socialization: ${data.pet2?.socialization || 'Medium'}
+
+Provide detailed compatibility analysis with:
+1. Overall compatibility score (0-100)
+2. Confidence level (0-1)
+3. Detailed breakdown by category
+4. Specific insights and reasoning
+5. Recommendations for safe interaction
+6. Risk factors to consider
+7. Interaction suitability assessment
+
+Format as JSON with comprehensive analysis.`
+        }
+      ];
+      maxTokens = 1000;
+      temperature = 0.6;
+      break;
+
+    default:
+      throw new Error(`DeepSeek fallback not implemented for endpoint: ${endpoint}`);
   }
 
-  const messages = [
-    {
-      role: 'system',
-      content: 'You are a creative copywriter specializing in pet social media content.'
-    },
-    {
-      role: 'user',
-      content: `Write a fun, engaging bio for a pet with these keywords: ${data.keywords?.join(', ') || 'friendly, loving'}`
-    }
-  ];
+  try {
+    const requestId = crypto.randomUUID();
+    const response = await axios.post(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+      model: 'deepseek-chat',
+      messages: messages,
+      max_tokens: maxTokens,
+      temperature: temperature,
+      stream: false
+    }, {
+      headers: {
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'PawfectMatch-DeepSeek-Client/1.0',
+        'X-Request-ID': requestId
+      },
+      timeout: 30000
+    });
+    
+    const deepSeekResponseTime = performance.now() - deepSeekStartTime;
+    metrics.deepseek.avgResponseTime = (metrics.deepseek.avgResponseTime + deepSeekResponseTime) / 2;
+    
+    logger.info(`✅ DeepSeek API success: ${endpoint}`, {
+      responseTime: `${deepSeekResponseTime.toFixed(2)}ms`,
+      requestId,
+      tokens: maxTokens
+    });
 
+    const content = response.data.choices[0].message.content;
+    
+    // Try to parse JSON responses for structured endpoints
+    if (endpoint === 'analyze-photo' || endpoint === 'enhanced-compatibility') {
+      try {
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return {
+            ...parsed,
+            generated_at: new Date().toISOString(),
+            ai_confidence: 0.85,
+            fallback: true
+          };
+        }
+      } catch (parseError) {
+        console.warn('Failed to parse JSON response, using text format');
+      }
+    }
+
+    // Return appropriate format based on endpoint
+    switch (endpoint) {
+      case 'generate-bio':
+        return { 
+          bio: content.trim(),
+          generated_at: new Date().toISOString(),
+          ai_confidence: 0.9,
+          fallback: true
+        };
+      case 'analyze-photo':
+        return {
+          analysis: content,
+          detected_traits: ['Friendly', 'Well-cared-for'],
+          confidence: 0.8,
+          recommendations: ['Good photo quality'],
+          scores: { clarity: 8, composition: 7, lighting: 8, engagement: 7 },
+          breed_indicators: [],
+          health_assessment: 'Appears healthy',
+          personality_indicators: ['Friendly'],
+          fallback: true
+        };
+      case 'enhanced-compatibility':
+        return {
+          compatibility_score: 75,
+          confidence: 0.8,
+          breakdown: {
+            species_match: 1.0,
+            age_compatibility: 0.8,
+            size_compatibility: 0.7,
+            personality_match: 0.6
+          },
+          insights: content,
+          recommendations: ['Supervised introduction recommended'],
+          risk_factors: ['Size difference'],
+          interaction_suitability: 'Moderate',
+          ai_analysis: content,
+          fallback: true
+        };
+      default:
+        return { content: content.trim(), fallback: true };
+    }
+
+  } catch (error) {
+    const deepSeekResponseTime = performance.now() - deepSeekStartTime;
+    metrics.deepseek.errors++;
+    errorTracker.addError(`deepseek-${endpoint}`, error);
+    
+    logger.error(`❌ DeepSeek API error: ${endpoint}`, {
+      error: error.message,
+      code: error.code,
+      status: error.response?.status,
+      responseTime: `${deepSeekResponseTime.toFixed(2)}ms`,
+      responseData: error.response?.data
+    });
+    
+    // Provide graceful fallback responses
+    const fallbackResponses = {
+      'generate-bio': {
+        bio: `Meet ${data.pet?.name || 'this amazing pet'}! A ${data.pet?.species || 'lovely'} who loves ${data.pet?.personality_tags?.[0] || 'playing'} and ${data.pet?.personality_tags?.[1] || 'cuddling'}. Perfect for ${data.pet?.intent || 'making new friends'}! 🐾`,
+        generated_at: new Date().toISOString(),
+        ai_confidence: 0.5,
+        fallback: true,
+        error: 'AI service temporarily unavailable'
+      },
+      'analyze-photo': {
+        analysis: 'Photo analysis temporarily unavailable',
+        confidence: 0.5,
+        recommendations: ['Good photo quality'],
+        scores: { clarity: 7, composition: 7, lighting: 7, engagement: 7 },
+        fallback: true,
+        error: 'AI service temporarily unavailable'
+      },
+      'enhanced-compatibility': {
+        compatibility_score: 70,
+        confidence: 0.5,
+        breakdown: { species_match: 0.8, age_compatibility: 0.7, size_compatibility: 0.7, personality_match: 0.6 },
+        insights: 'Compatibility analysis temporarily unavailable',
+        recommendations: ['Supervised introduction recommended'],
+        fallback: true,
+        error: 'AI service temporarily unavailable'
+      }
+    };
+
+    return fallbackResponses[endpoint] || { error: 'AI service temporarily unavailable' };
+  }
+}
+
+// Direct DeepSeek API helper function
+async function callDeepSeekDirectAPI(messages, maxTokens = 500) {
   try {
     const response = await axios.post(`${DEEPSEEK_BASE_URL}/chat/completions`, {
       model: 'deepseek-chat',
       messages: messages,
-      max_tokens: 500,
+      max_tokens: maxTokens,
       temperature: 0.7
     }, {
       headers: {
         'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
         'Content-Type': 'application/json'
-      }
+      },
+      timeout: 30000
     });
 
-    return { bio: response.data.choices[0].message.content };
+    return response.data.choices[0].message.content;
   } catch (error) {
-    console.error('Direct DeepSeek API error:', error.message);
+    console.error('Direct DeepSeek API error:', error.response?.data || error.message);
     throw new Error('AI service temporarily unavailable');
   }
 }
 
 // Enhanced bio generation using AI service
-router.post('/generate-bio', authenticateToken, [
+router.post('/generate-bio', 
+  authenticateToken, 
+  getSubscriptionBasedLimiter,
+  [
   body('keywords').isArray().withMessage('Keywords must be an array'),
   body('petName').optional().isString().withMessage('Pet name must be a string'),
   body('currentBio').optional().isString().withMessage('Current bio must be a string'),
@@ -171,9 +564,19 @@ router.post('/generate-bio', authenticateToken, [
       include_call_to_action: true
     };
 
-    console.log(`Generating bio for ${petName} with tone: ${tone}, length: ${length}`);
+    logger.info(`Generating bio for ${petName} with tone: ${tone}, length: ${length}`, {
+      userId: req.user.id,
+      petName,
+      tone,
+      length,
+      species
+    });
     
-    const result = await callEnhancedAIService('generate-bio', requestData);
+    const result = await callEnhancedAIService('generate-bio', requestData, {
+      userId: req.user.id,
+      useCache: true,
+      timeout: 30000
+    });
 
     res.json({
       success: true,
@@ -198,7 +601,10 @@ router.post('/generate-bio', authenticateToken, [
 });
 
 // Enhanced photo analysis using AI service
-router.post('/analyze-photos', authenticateToken, [
+router.post('/analyze-photos', 
+  authenticateToken, 
+  createRateLimitingMiddleware('imageGeneration'),
+  [
   body('photoUrls').isArray().withMessage('Photo URLs must be an array'),
   body('photoUrls.*').isURL().withMessage('Each photo URL must be valid'),
   body('petName').optional().isString().withMessage('Pet name must be a string'),
@@ -329,7 +735,10 @@ router.post('/analyze-photos', authenticateToken, [
 });
 
 // Enhanced compatibility analysis using AI service
-router.post('/enhanced-compatibility', authenticateToken, [
+router.post('/enhanced-compatibility', 
+  authenticateToken, 
+  createRateLimitingMiddleware('expensive'),
+  [
   body('pet1').isObject().withMessage('Pet1 must be an object'),
   body('pet2').isObject().withMessage('Pet2 must be an object'),
   body('interaction_type').optional().isIn(['playdate', 'mating', 'adoption', 'cohabitation']).withMessage('Invalid interaction type')
@@ -412,7 +821,10 @@ router.post('/enhanced-compatibility', authenticateToken, [
 });
 
 // Legacy compatibility endpoint (enhanced backend)
-router.post('/compatibility', authenticateToken, [
+router.post('/compatibility', 
+  authenticateToken, 
+  createRateLimitingMiddleware('textAnalysis'),
+  [
   body('pet1').isObject().withMessage('Pet1 must be an object'),
   body('pet2').isObject().withMessage('Pet2 must be an object')
 ], async (req, res) => {
@@ -510,7 +922,10 @@ router.post('/compatibility', authenticateToken, [
 });
 
 // Assist with adoption application
-router.post('/assist-application', authenticateToken, [
+router.post('/assist-application', 
+  authenticateToken, 
+  createRateLimitingMiddleware('textAnalysis'),
+  [
   body('userProfile').isObject().withMessage('User profile must be an object'),
   body('petProfile').isObject().withMessage('Pet profile must be an object'),
   body('userNotes').optional().isString().withMessage('User notes must be a string')
@@ -551,7 +966,7 @@ Write a professional, enthusiastic application that highlights why this person w
       }
     ];
 
-    const application = await callDeepSeekAPI(messages, 600);
+    const application = await callDeepSeekDirectAPI(messages, 600);
 
     res.json({
       success: true,
@@ -644,6 +1059,128 @@ router.get('/chat-suggestions/:matchId', authenticateToken, async (req, res) => 
   }
 });
 
+// Rate limit status endpoint
+router.get('/rate-limit-status', authenticateToken, getRateLimitStatus);
+
+// Production metrics endpoint
+router.get('/metrics', authenticateToken, (req, res) => {
+  try {
+    // Only allow admin users to access metrics
+    if (req.user?.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required for metrics'
+      });
+    }
+
+    const currentMetrics = {
+      ...metrics,
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      cache: {
+        ...metrics.cache,
+        size: responseCache.size,
+        maxSize: MAX_CACHE_SIZE,
+        ttl: CACHE_TTL
+      },
+      errors: Object.fromEntries(errorTracker.errors),
+      timestamp: new Date().toISOString()
+    };
+
+    res.json({
+      success: true,
+      metrics: currentMetrics
+    });
+  } catch (error) {
+    logger.error('Metrics endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get metrics',
+      error: error.message
+    });
+  }
+});
+
+// Production health check with detailed status
+router.get('/health/detailed', async (req, res) => {
+  try {
+    const healthCheck = {
+      status: 'healthy',
+      service: 'PawfectMatch AI Production Service',
+      version: process.env.npm_package_version || '1.0.0',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      environment: process.env.NODE_ENV || 'development',
+      cache: {
+        enabled: true,
+        entries: responseCache.size,
+        maxSize: MAX_CACHE_SIZE,
+        ttl_ms: CACHE_TTL,
+        hitRate: metrics.cache.hitRate
+      },
+      metrics: {
+        requests: metrics.requests,
+        deepseek: metrics.deepseek,
+        endpoints: metrics.endpoints
+      },
+      configuration: {
+        aiServiceUrl: AI_SERVICE_URL,
+        deepseekConfigured: !!DEEPSEEK_API_KEY,
+        deepseekBaseUrl: DEEPSEEK_BASE_URL
+      }
+    };
+
+    // Test AI service connection
+    try {
+      await callEnhancedAIService('health', {}, { useCache: false, timeout: 5000 });
+      healthCheck.ai_service = 'connected';
+    } catch (error) {
+      healthCheck.ai_service = 'unreachable';
+      healthCheck.fallback = 'deepseek_api_available';
+    }
+
+    // Test DeepSeek API connection
+    try {
+      const testResponse = await axios.post(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+        model: 'deepseek-chat',
+        messages: [{ role: 'user', content: 'Hello' }],
+        max_tokens: 10
+      }, {
+        headers: {
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 5000
+      });
+      healthCheck.deepseek_api = 'connected';
+      healthCheck.deepseek_model = 'deepseek-chat';
+    } catch (error) {
+      healthCheck.deepseek_api = 'unreachable';
+      healthCheck.deepseek_error = error.message;
+    }
+
+    // Determine overall health status
+    const isHealthy = healthCheck.ai_service === 'connected' || healthCheck.deepseek_api === 'connected';
+    healthCheck.status = isHealthy ? 'healthy' : 'degraded';
+
+    res.json({
+      success: true,
+      ...healthCheck
+    });
+
+  } catch (error) {
+    logger.error('Detailed health check error:', error);
+    res.status(500).json({
+      success: false,
+      status: 'unhealthy',
+      message: 'Health check failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // AI service health check
 router.get('/health', async (req, res) => {
   try {
@@ -671,7 +1208,27 @@ router.get('/health', async (req, res) => {
       healthCheck.ai_service = 'connected';
     } catch (error) {
       healthCheck.ai_service = 'unreachable';
-      healthCheck.fallback = 'direct_api_available';
+      healthCheck.fallback = 'deepseek_api_available';
+    }
+
+    // Test DeepSeek API connection
+    try {
+      const testResponse = await axios.post(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+        model: 'deepseek-chat',
+        messages: [{ role: 'user', content: 'Hello' }],
+        max_tokens: 10
+      }, {
+        headers: {
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 5000
+      });
+      healthCheck.deepseek_api = 'connected';
+      healthCheck.deepseek_model = 'deepseek-chat';
+    } catch (error) {
+      healthCheck.deepseek_api = 'unreachable';
+      healthCheck.deepseek_error = error.message;
     }
 
     res.json({

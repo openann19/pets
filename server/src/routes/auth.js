@@ -1,140 +1,331 @@
+/**
+ * Enhanced Auth Routes with Social Login Support
+ * Handles Google, Apple, and other OAuth providers
+ */
+
 const express = require('express');
-const { body } = require('express-validator');
-const rateLimit = require('express-rate-limit');
-const { validate } = require('../middleware/validation');
-const { authenticateToken, refreshAccessToken } = require('../middleware/auth');
-const {
-  register,
-  login,
-  logout,
-  getMe,
-  verifyEmail,
-  forgotPassword,
-  resetPassword
-} = require('../controllers/authController');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
+const { logger } = require('../utils/logger');
+const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
 
 // Rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
-  message: 'Too many authentication attempts, please try again later',
+  max: 10, // limit each IP to 10 requests per windowMs
+  message: 'Too many authentication attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.NODE_ENV === 'test' // Skip in test environment
 });
 
-const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 requests per hour
-  message: 'Too many password reset attempts, please try again later'
+// Social login rate limiting (more lenient)
+const socialLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 20 requests per windowMs
+  message: 'Too many social login attempts, please try again later.',
 });
 
-// Validation rules
-const registerValidation = [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('firstName').trim().isLength({ min: 1 }).withMessage('First name is required'),
-  body('lastName').trim().isLength({ min: 1 }).withMessage('Last name is required'),
-  body('dateOfBirth').isISO8601().withMessage('Valid date of birth is required'),
-  body('phone').optional().isMobilePhone().withMessage('Valid phone number required')
-];
-
-const loginValidation = [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
-  body('password').notEmpty().withMessage('Password is required')
-];
-
-const emailValidation = [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required')
-];
-
-const passwordValidation = [
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
-];
-
-// Routes with rate limiting
-router.post('/register', authLimiter, registerValidation, validate, register);
-router.post('/login', authLimiter, loginValidation, validate, login);
-router.post('/logout', authenticateToken, logout);
-router.get('/me', authenticateToken, getMe);
-
-// In refreshToken route
-router.post('/refresh-token', async (req, res) => {
+/**
+ * Social Login Endpoint
+ * Handles Google, Apple, and other OAuth providers
+ */
+router.post('/social-login', socialLimiter, [
+  body('provider').isIn(['google', 'apple', 'facebook', 'twitter']).withMessage('Invalid provider'),
+  body('providerId').notEmpty().withMessage('Provider ID is required'),
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('name').notEmpty().withMessage('Name is required'),
+], async (req, res) => {
   try {
-    const { refreshToken } = req.body;
-
-    if (!refreshToken) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Refresh token required'
+        message: 'Validation failed',
+        errors: errors.array()
       });
     }
 
-    // Verify refresh token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findById(decoded.userId).select('+refreshTokens');
+    const { provider, providerId, email, name, image, socialAccessToken } = req.body;
 
-    if (!user || !user.refreshTokens.includes(refreshToken)) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid refresh token'
+    logger.info('Social login attempt', { provider, email });
+
+    // Check if user exists with this email
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // User exists, check if they have this social provider linked
+      const existingProvider = user.socialProviders?.find(p => p.provider === provider);
+      
+      if (existingProvider) {
+        // Update provider info
+        existingProvider.providerId = providerId;
+        existingProvider.accessToken = socialAccessToken;
+        existingProvider.lastLogin = new Date();
+      } else {
+        // Add new provider
+        if (!user.socialProviders) user.socialProviders = [];
+        user.socialProviders.push({
+          provider,
+          providerId,
+          accessToken: socialAccessToken,
+          lastLogin: new Date()
+        });
+      }
+
+      user.lastActive = new Date();
+      await user.save();
+    } else {
+      // Create new user
+      const nameParts = name.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      user = new User({
+        email,
+        firstName,
+        lastName,
+        profilePicture: image,
+        isEmailVerified: true, // Social logins are pre-verified
+        socialProviders: [{
+          provider,
+          providerId,
+          accessToken: socialAccessToken,
+          lastLogin: new Date()
+        }],
+        lastActive: new Date(),
+        onboardingCompleted: false, // Will need to complete pet profile setup
       });
+
+      await user.save();
+      logger.info('New user created via social login', { userId: user._id, provider });
     }
 
-    // Generate new tokens
-    const newAccessToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
-    const newRefreshToken = jwt.sign({ userId: user._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    // Generate JWT tokens
+    const accessToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
-    // Rotate: Remove old refresh token
-    user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
-    user.refreshTokens.push(newRefreshToken);
-    await user.save();
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Return user data (excluding sensitive info)
+    const userResponse = {
+      _id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      profilePicture: user.profilePicture,
+      isEmailVerified: user.isEmailVerified,
+      premium: user.premium,
+      onboardingCompleted: user.onboardingCompleted,
+      createdAt: user.createdAt,
+      lastActive: user.lastActive,
+    };
 
     res.json({
       success: true,
+      message: 'Social login successful',
       data: {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken
+        user: userResponse,
+        accessToken: socialAccessToken,
+        refreshToken,
+        isNewUser: !user.onboardingCompleted
       }
     });
 
   } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid or expired refresh token'
-      });
-    }
-
+    logger.error('Social login error', error);
     res.status(500).json({
       success: false,
-      message: 'Server error during token refresh'
+      message: 'Social login failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
 
-router.post('/verify-email', verifyEmail);
+/**
+ * Link Social Provider to Existing Account
+ */
+router.post('/link-social', authLimiter, [
+  body('provider').isIn(['google', 'apple', 'facebook', 'twitter']).withMessage('Invalid provider'),
+  body('providerId').notEmpty().withMessage('Provider ID is required'),
+  body('socialAccessToken').notEmpty().withMessage('Social access token is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
 
-// For forgot-password, disable rate limiting in test env
-const rateLimitForgot = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'test' ? 1000 : 3, // Unlimited in test
-  message: 'Too many forgot password requests, please try again later.'
+    const { provider, providerId, socialAccessToken } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if provider is already linked
+    const existingProvider = user.socialProviders?.find(p => p.provider === provider);
+    if (existingProvider) {
+      return res.status(400).json({
+        success: false,
+        message: `${provider} account is already linked`
+      });
+    }
+
+    // Add new provider
+    if (!user.socialProviders) user.socialProviders = [];
+    user.socialProviders.push({
+      provider,
+      providerId,
+      accessToken: socialAccessToken,
+      linkedAt: new Date()
+    });
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `${provider} account linked successfully`,
+      data: {
+        linkedProviders: user.socialProviders.map(p => p.provider)
+      }
+    });
+
+  } catch (error) {
+    logger.error('Link social provider error', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to link social provider',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
 });
 
-router.post('/forgot-password', rateLimitForgot, emailValidation, validate, forgotPassword);
+/**
+ * Unlink Social Provider
+ */
+router.delete('/unlink-social/:provider', authLimiter, async (req, res) => {
+  try {
+    const { provider } = req.params;
+    const userId = req.user?.id;
 
-// Similar for reset-password
-const rateLimitReset = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: process.env.NODE_ENV === 'test' ? 1000 : 5,
-  message: 'Too many password reset attempts, please try again later.'
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if user has password (can't unlink if it's the only auth method)
+    const hasPassword = user.password;
+    const socialProviders = user.socialProviders || [];
+    
+    if (!hasPassword && socialProviders.length <= 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot unlink the only authentication method. Please set a password first.'
+      });
+    }
+
+    // Remove provider
+    user.socialProviders = socialProviders.filter(p => p.provider !== provider);
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `${provider} account unlinked successfully`,
+      data: {
+        linkedProviders: user.socialProviders.map(p => p.provider)
+      }
+    });
+
+  } catch (error) {
+    logger.error('Unlink social provider error', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to unlink social provider',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
 });
 
-router.post('/reset-password', rateLimitReset, passwordValidation, validate, resetPassword);
+/**
+ * Get Linked Social Providers
+ */
+router.get('/social-providers', async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    const user = await User.findById(userId).select('socialProviders');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const linkedProviders = (user.socialProviders || []).map(p => ({
+      provider: p.provider,
+      linkedAt: p.linkedAt,
+      lastLogin: p.lastLogin
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        linkedProviders,
+        hasPassword: !!user.password
+      }
+    });
+
+  } catch (error) {
+    logger.error('Get social providers error', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get social providers',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
 
 module.exports = router;

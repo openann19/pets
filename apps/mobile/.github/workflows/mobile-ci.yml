@@ -1,0 +1,341 @@
+name: Mobile CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/core/**'
+      - 'packages/ui/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/core/**'
+      - 'packages/ui/**'
+
+jobs:
+  # Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd apps/mobile
+        npm ci
+        
+    - name: Run unit tests
+      run: |
+        cd apps/mobile
+        npm run test:unit
+        
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: apps/mobile/coverage/lcov.info
+        flags: mobile-unit-tests
+
+  # E2E Tests - iOS
+  e2e-tests-ios:
+    name: E2E Tests (iOS)
+    runs-on: macos-latest
+    needs: unit-tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Install dependencies
+      run: |
+        cd apps/mobile
+        npm ci
+        
+    - name: Install CocoaPods
+      run: |
+        cd apps/mobile/ios
+        pod install
+        
+    - name: Build iOS app
+      run: |
+        cd apps/mobile
+        npx detox build --configuration ios.sim.release
+        
+    - name: Run E2E tests
+      run: |
+        cd apps/mobile
+        npx detox test --configuration ios.sim.release --take-screenshots failing
+        
+    - name: Upload E2E artifacts
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: e2e-ios-artifacts
+        path: |
+          apps/mobile/artifacts/
+          apps/mobile/e2e/screenshots/
+
+  # E2E Tests - Android
+  e2e-tests-android:
+    name: E2E Tests (Android)
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+      
+    - name: Install dependencies
+      run: |
+        cd apps/mobile
+        npm ci
+        
+    - name: Build Android app
+      run: |
+        cd apps/mobile
+        npx detox build --configuration android.emu.release
+        
+    - name: Start Android emulator
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 30
+        target: default
+        arch: x86_64
+        profile: Nexus 6
+        script: echo "Emulator started"
+        
+    - name: Run E2E tests
+      run: |
+        cd apps/mobile
+        npx detox test --configuration android.emu.release --take-screenshots failing
+        
+    - name: Upload E2E artifacts
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: e2e-android-artifacts
+        path: |
+          apps/mobile/artifacts/
+          apps/mobile/e2e/screenshots/
+
+  # Linting and Type Checking
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd apps/mobile
+        npm ci
+        
+    - name: Run ESLint
+      run: |
+        cd apps/mobile
+        npm run lint
+        
+    - name: Run TypeScript check
+      run: |
+        cd apps/mobile
+        npm run type-check
+
+  # Build Tests
+  build-tests:
+    name: Build Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [ios, android]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd apps/mobile
+        npm ci
+        
+    - name: Build iOS (macOS only)
+      if: matrix.platform == 'ios' && runner.os == 'macOS'
+      run: |
+        cd apps/mobile
+        npx expo run:ios --configuration Release
+        
+    - name: Build Android
+      if: matrix.platform == 'android'
+      run: |
+        cd apps/mobile
+        npx expo run:android --variant release
+
+  # Security Audit
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd apps/mobile
+        npm ci
+        
+    - name: Run security audit
+      run: |
+        cd apps/mobile
+        npm audit --audit-level=moderate
+        
+    - name: Check for vulnerabilities
+      run: |
+        cd apps/mobile
+        npm audit --audit-level=high --json > audit-results.json || true
+        
+    - name: Upload audit results
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-audit-results
+        path: apps/mobile/audit-results.json
+
+  # Performance Tests
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [unit-tests, lint-and-typecheck]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd apps/mobile
+        npm ci
+        
+    - name: Run performance tests
+      run: |
+        cd apps/mobile
+        npm run test:performance
+        
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-test-results
+        path: apps/mobile/performance-results/
+
+  # AI Features Tests
+  ai-features-tests:
+    name: AI Features Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd apps/mobile
+        npm ci
+        
+    - name: Run AI features tests
+      run: |
+        cd apps/mobile
+        npm run test:ai-features
+        
+    - name: Upload AI test results
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: ai-features-test-results
+        path: apps/mobile/ai-test-results/
+
+  # Summary
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, e2e-tests-ios, e2e-tests-android, lint-and-typecheck, build-tests, security-audit]
+    if: always()
+    
+    steps:
+    - name: CI Summary
+      run: |
+        echo "## Mobile CI/CD Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Unit Tests | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| E2E Tests (iOS) | ${{ needs.e2e-tests-ios.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| E2E Tests (Android) | ${{ needs.e2e-tests-android.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Lint & Type Check | ${{ needs.lint-and-typecheck.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build Tests | ${{ needs.build-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Security Audit | ${{ needs.security-audit.result }} |" >> $GITHUB_STEP_SUMMARY

@@ -37,6 +37,11 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import SwipeScreen from './src/screens/SwipeScreen';
 
+// AI Screens
+import AIBioScreen from './src/screens/AIBioScreen';
+import AIPhotoAnalyzerScreen from './src/screens/AIPhotoAnalyzerScreen';
+import AICompatibilityScreen from './src/screens/AICompatibilityScreen';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Create a React Query client
@@ -73,6 +78,9 @@ type RootStackParamList = {
   CreatePet: undefined;
   MyPets: undefined;
   Settings: undefined;
+  AIBio: undefined;
+  AIPhotoAnalyzer: undefined;
+  AICompatibility: { pet1Id?: string; pet2Id?: string } | undefined;
 };
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -212,6 +220,21 @@ function RootNavigator() {
       <RootStack.Screen
         name="Settings"
         component={SettingsScreen}
+        options={{ headerShown: false }}
+      />
+      <RootStack.Screen
+        name="AIBio"
+        component={AIBioScreen}
+        options={{ headerShown: false }}
+      />
+      <RootStack.Screen
+        name="AIPhotoAnalyzer"
+        component={AIPhotoAnalyzerScreen}
+        options={{ headerShown: false }}
+      />
+      <RootStack.Screen
+        name="AICompatibility"
+        component={AICompatibilityScreen}
         options={{ headerShown: false }}
       />
     </RootStack.Navigator>

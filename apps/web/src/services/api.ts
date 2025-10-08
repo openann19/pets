@@ -17,7 +17,23 @@ import {
   BehaviorAnalysisData 
 } from '../types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+// Centralized API configuration
+const getApiBaseUrl = (): string => {
+  // Check environment variable first
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // Fallback to localhost with correct port
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.hostname}:5001/api`;
+  }
+  
+  // SSR fallback
+  return 'http://localhost:5001/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Dev-time sanity check for port configuration
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
@@ -26,7 +42,9 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     if (url.port && url.port !== '5001') {
       console.warn('[API] Warning: NEXT_PUBLIC_API_URL is not using port 5001:', API_BASE_URL);
     }
-  } catch {}
+  } catch (error) {
+    console.warn('[API] Invalid API_BASE_URL:', API_BASE_URL, error);
+  }
 }
 
 // Logger utility
@@ -208,7 +226,7 @@ class ApiService {
     endpoint: string,
     options: RequestOptions = {},
     retryCount = 0
-  ): Promise<T> {
+  ): Promise<{ success: boolean; data: T; error?: string }> {
     // Sync tokens from store before making request
     this.syncTokensFromStore();
     
@@ -255,11 +273,27 @@ class ApiService {
           // Clear tokens and let caller/middleware handle navigation
           this.clearToken();
         }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `API Error: ${response.statusText}`);
+        
+        let errorMessage = `API Error: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // If JSON parsing fails, use default message
+        }
+        
+        return {
+          success: false,
+          data: null as any,
+          error: errorMessage
+        };
       }
 
-      return await response.json();
+      const data = await response.json();
+      return {
+        success: true,
+        data: data.data || data
+      };
     } catch (error: unknown) {
       if (retryCount < this.retryAttempts) {
         logger.warn(`Retrying request to ${endpoint} (attempt ${retryCount + 1})`);
@@ -268,7 +302,11 @@ class ApiService {
       }
       
       logger.error('API request failed:', error);
-      throw error;
+      return {
+        success: false,
+        data: null as any,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
     }
   }
 
