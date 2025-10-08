@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 interface AccessibilityState {
   reducedMotion: boolean;

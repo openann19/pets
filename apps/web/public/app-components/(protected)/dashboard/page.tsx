@@ -1,9 +1,5 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { useAuthStore } from '../../src/lib/auth-store';
 import {
   HeartIcon,
   ChatBubbleLeftRightIcon,
@@ -15,6 +11,12 @@ import {
   FireIcon,
   StarIcon,
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import React from 'react';
+
+import { useAuthStore } from '../../src/lib/auth-store';
+
 
 export default function DashboardPage() {
   const { user } = useAuthStore();

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+
 import Router from './Router';
 
 // Simple entry point that renders the Router

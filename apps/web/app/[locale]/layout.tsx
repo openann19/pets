@@ -1,5 +1,5 @@
-import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getMessages } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
 import { IntlProvider } from './intl-provider';

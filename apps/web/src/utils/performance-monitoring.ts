@@ -56,9 +56,9 @@ const DEFAULT_CONFIG: PerformanceConfig = {
 };
 
 class PerformanceMonitor {
-  private config: PerformanceConfig;
+  private readonly config: PerformanceConfig;
   private metrics: PerformanceMetric[] = [];
-  private isEnabled: boolean = false;
+  private readonly isEnabled = false;
   private flushTimer: NodeJS.Timeout | null = null;
   private observers: PerformanceObserver[] = [];
 
@@ -134,10 +134,10 @@ class PerformanceMonitor {
             void this.addMetric('LCP', lastEntry.startTime);
           }
         });
-        void lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
-        this.void observers.push(lcpObserver);
+        lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+        this.observers.push(lcpObserver);
       } catch (e) {
-        void // console.warn('LCP observer not supported:', e);
+        // console.warn('LCP observer not supported:', e);
       }
     }
 
@@ -154,9 +154,9 @@ class PerformanceMonitor {
           });
         });
         void fidObserver.observe({ entryTypes: ['first-input'] });
-        this.void observers.push(fidObserver);
+        this.currentobservers.push(fidObserver);
       } catch (e) {
-        void // console.warn('FID observer not supported:', e);
+        // console.warn('FID observer not supported:', e);
       }
     }
 
@@ -174,9 +174,9 @@ class PerformanceMonitor {
           void this.addMetric('CLS', clsValue);
         });
         void clsObserver.observe({ entryTypes: ['layout-shift'] });
-        this.void observers.push(clsObserver);
+        this.currentobservers.push(clsObserver);
       } catch (e) {
-        void // console.warn('CLS observer not supported:', e);
+        // console.warn('CLS observer not supported:', e);
       }
     }
 
@@ -200,9 +200,9 @@ class PerformanceMonitor {
           });
         });
         void resourceObserver.observe({ entryTypes: ['resource'] });
-        this.void observers.push(resourceObserver);
+        this.currentobservers.push(resourceObserver);
       } catch (e) {
-        void // console.warn('Resource timing observer not supported:', e);
+        // console.warn('Resource timing observer not supported:', e);
       }
     }
   }
@@ -219,9 +219,9 @@ class PerformanceMonitor {
           });
         });
         void userTimingObserver.observe({ entryTypes: ['measure'] });
-        this.void observers.push(userTimingObserver);
+        this.currentobservers.push(userTimingObserver);
       } catch (e) {
-        void // console.warn('User timing observer not supported:', e);
+        // console.warn('User timing observer not supported:', e);
       }
     }
   }
@@ -259,7 +259,7 @@ class PerformanceMonitor {
 
     // Add connection info if available
     if ('connection' in navigator) {
-      const connection = (navigator as any).connection;
+      const {connection} = (navigator as any);
       if (connection) {
         metric.connection = {
           effectiveType: connection.effectiveType,
@@ -271,7 +271,7 @@ class PerformanceMonitor {
 
     // Add memory info if available
     if (this.config.enableMemoryMonitoring && 'memory' in performance) {
-      const memory = (performance as any).memory;
+      const {memory} = (performance as any);
       if (memory) {
         metric.memory = {
           usedJSHeapSize: memory.usedJSHeapSize,
@@ -281,7 +281,7 @@ class PerformanceMonitor {
       }
     }
 
-    this.void metrics.push(metric);
+    this.currentmetrics.push(metric);
     // Flush if batch size reached
     if (this.metrics.length >= this.config.batchSize) {
       void this.flush();
@@ -313,9 +313,9 @@ class PerformanceMonitor {
         }),
       });
     } catch (error) {
-      void // console.warn('Failed to send performance metrics:', error);
+      // console.warn('Failed to send performance metrics:', error);
       // Re-add metrics to queue for retry
-      this.void metrics.unshift(...metricsToSend);
+      this.currentmetrics.unshift(...metricsToSend);
     }
   }
 
@@ -340,7 +340,7 @@ class PerformanceMonitor {
       try {
         void performance.measure(name, startMark, endMark);
       } catch (e) {
-        void // console.warn('Performance measure failed:', e);
+        // console.warn('Performance measure failed:', e);
       }
     }
   }
@@ -513,6 +513,3 @@ export const measureSync = <T>(name: string, fn: () => T): T => {
   }
 };
 
-// ====== EXPORT DEFAULT ======
-
-export default PerformanceMonitor;

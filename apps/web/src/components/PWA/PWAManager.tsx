@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
 import { InstallPrompt, usePWAInstall } from './InstallPrompt'
 import { SplashScreen } from './SplashScreen'
 
@@ -120,7 +121,7 @@ function UpdateBanner({ onUpdate, onDismiss }: UpdateBannerProps) {
     <div className="fixed top-0 left-0 right-0 z-50 bg-blue-600 text-white p-4 shadow-lg">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
           <span className="font-medium">New version available</span>
           <span className="text-blue-200 text-sm">Update to get the latest features</span>
         </div>
@@ -148,7 +149,7 @@ function OfflineIndicator() {
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-orange-600 text-white p-3 shadow-lg">
       <div className="max-w-4xl mx-auto flex items-center justify-center gap-2">
-        <div className="w-2 h-2 bg-white rounded-full"></div>
+        <div className="w-2 h-2 bg-white rounded-full" />
         <span className="font-medium">You're offline</span>
         <span className="text-orange-200 text-sm">Some features may be limited</span>
       </div>
@@ -231,10 +232,10 @@ export const PWAUtils = {
   getPlatform: () => {
     const userAgent = navigator.userAgent.toLowerCase()
     if (/iphone|ipad|ipod/.test(userAgent)) return 'ios'
-    if (/android/.test(userAgent)) return 'android'
-    if (/windows/.test(userAgent)) return 'windows'
-    if (/mac/.test(userAgent)) return 'mac'
-    if (/linux/.test(userAgent)) return 'linux'
+    if (userAgent.includes('android')) return 'android'
+    if (userAgent.includes('windows')) return 'windows'
+    if (userAgent.includes('mac')) return 'mac'
+    if (userAgent.includes('linux')) return 'linux'
     return 'unknown'
   },
 

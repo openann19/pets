@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 
 export interface ApiClientResponse<T = any> {
   success: boolean;
@@ -8,7 +9,7 @@ export interface ApiClientResponse<T = any> {
 }
 
 class ApiClient {
-  private client: AxiosInstance;
+  private readonly client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
@@ -19,11 +20,16 @@ class ApiClient {
       },
     });
 
-    this.setupInterceptors();
+    // Only setup interceptors if not in test environment
+    if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
+      this.setupInterceptors();
+    }
   }
 
   private setupInterceptors() {
     // Request interceptor to add auth token
+    if (!this.client?.interceptors) return;
+    
     this.client.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('accessToken');

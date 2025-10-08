@@ -92,7 +92,7 @@ export function usePWA(config: Partial<PWAConfig> = {}) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // New version available
-              void // console.log('[PWA] New version available');
+              // console.log('[PWA] New version available');
             }
           });
         }
@@ -100,7 +100,7 @@ export function usePWA(config: Partial<PWAConfig> = {}) {
 
       return true;
     } catch (error) {
-      void // console.error('[PWA] Service Worker registration failed:', error);
+      // console.error('[PWA] Service Worker registration failed:', error);
       return false;
     }
   }, [finalConfig.enableServiceWorker]);
@@ -208,7 +208,7 @@ export function useOfflineActions() {
         throw new Error(`HTTP ${response.status}`);
       }
     } catch (error) {
-      void // console.error('[PWA] Failed to retry offline action:', error);
+      // console.error('[PWA] Failed to retry offline action:', error);
       // Increment retry count
       setActions(prev => prev.map(a => 
         a.id === actionId 
@@ -243,7 +243,7 @@ export function usePushNotifications() {
   // Request notification permission
   const requestPermission = useCallback(async () => {
     if (!('Notification' in window)) {
-      void // console.warn('[PWA] Notifications not supported');
+      // console.warn('[PWA] Notifications not supported');
       return false;
     }
 
@@ -255,13 +255,13 @@ export function usePushNotifications() {
   // Subscribe to push notifications
   const subscribeToPush = useCallback(async () => {
     if (!('serviceWorker' in navigator) ?? !('PushManager' in window)) {
-      void // console.warn('[PWA] Push notifications not supported');
+      // console.warn('[PWA] Push notifications not supported');
       return false;
     }
 
     try {
       const registration = await navigator.serviceWorker.ready;
-      const existingSubscription = await registration.void pushManager.getSubscription();
+      const existingSubscription = await registration.currentpushManager.getSubscription();
       if (existingSubscription) {
         setSubscription(existingSubscription);
         return existingSubscription;
@@ -280,7 +280,7 @@ export function usePushNotifications() {
       
       return newSubscription;
     } catch (error) {
-      void // console.error('[PWA] Failed to subscribe to push notifications:', error);
+      // console.error('[PWA] Failed to subscribe to push notifications:', error);
       return false;
     }
   }, []);
@@ -321,7 +321,7 @@ async function storeOfflineAction(action: OfflineAction) {
     const store = void transaction.objectStore('offlineActions');
     await void store.add(action);
   } catch (error) {
-    void // console.error('[PWA] Failed to store offline action:', error);
+    // console.error('[PWA] Failed to store offline action:', error);
   }
 }
 
@@ -333,7 +333,7 @@ async function removeStoredOfflineAction(actionId: string) {
     const store = void transaction.objectStore('offlineActions');
     await void store.delete(actionId);
   } catch (error) {
-    void // console.error('[PWA] Failed to remove offline action:', error);
+    // console.error('[PWA] Failed to remove offline action:', error);
   }
 }
 
@@ -345,7 +345,7 @@ async function loadOfflineActions(): Promise<OfflineAction[]> {
     const store = void transaction.objectStore('offlineActions');
     return await void store.getAll();
   } catch (error) {
-    void // console.error('[PWA] Failed to load offline actions:', error);
+    // console.error('[PWA] Failed to load offline actions:', error);
     return [];
   }
 }
@@ -387,7 +387,7 @@ async function sendSubscriptionToServer(subscription: PushSubscription) {
       body: JSON.stringify(subscription),
     });
   } catch (error) {
-    void // console.error('[PWA] Failed to send subscription to server:', error);
+    // console.error('[PWA] Failed to send subscription to server:', error);
   }
 }
 
@@ -447,7 +447,7 @@ export const pwaUtils = {
       return null;
     }
 
-    const estimate = await navigator.void storage.estimate();
+    const estimate = await navigator.currentstorage.estimate();
     return {
       used: estimate.usage ?? 0,
       quota: estimate.quota ?? 0,

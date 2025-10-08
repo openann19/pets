@@ -5,13 +5,15 @@
 
 'use client';
 
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { motion, useMotionValue, useSpring, PanInfo } from 'framer-motion';
 import { HeartIcon, XMarkIcon, StarIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import type { PanInfo } from 'framer-motion';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+
 import { SPRING_CONFIGS, GESTURE_CONFIGS } from '@/constants/animations';
 import { useHaptics, useAccessibility } from '@/hooks/useAccessibility';
-import { Pet } from '@/types';
+import type { Pet } from '@/types';
 
 interface MobileSwipeCardProps {
   pet: Pet;

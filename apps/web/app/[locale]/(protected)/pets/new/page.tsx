@@ -1,8 +1,5 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import {
   ArrowLeftIcon,
   PhotoIcon,
@@ -13,13 +10,16 @@ import {
   PlusIcon,
   HeartIcon
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useState, useCallback } from 'react';
 
 import PremiumLayout from '@/components/Layout/PremiumLayout';
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
 import PremiumInput from '@/components/UI/PremiumInput';
-import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import { PREMIUM_VARIANTS, STAGGER_CONFIG } from '@/constants/animations';
 import { useCreatePet } from '@/hooks/api-hooks';
 
@@ -29,11 +29,30 @@ interface PhotoData {
   isPrimary: boolean;
 }
 
+interface PetFormData {
+  name: string;
+  species: string;
+  breed: string;
+  age: string;
+  gender: string;
+  size: string;
+  description: string;
+  personalityTags: string[];
+  intent: string;
+  healthInfo: {
+    vaccinated: boolean;
+    neutered: boolean;
+    microchipped: boolean;
+    specialNeeds?: boolean;
+  };
+  [key: string]: any; // Allow index signature for dynamic access
+}
+
 export default function CreatePetPage() {
   const router = useRouter();
   const createPet = useCreatePet();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PetFormData>({
     name: '',
     species: '',
     breed: '',
@@ -45,7 +64,7 @@ export default function CreatePetPage() {
     intent: '',
     healthInfo: {
       vaccinated: false,
-      spayedNeutered: false,
+      neutered: false,
       microchipped: false,
       specialNeeds: false
     }
@@ -81,9 +100,9 @@ export default function CreatePetPage() {
       const [parent, child] = field.split('.');
       setFormData(prev => ({
         ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev] as any,
-          [child]: value
+        [parent as string]: {
+          ...(prev[parent as keyof typeof prev] as any),
+          [child as string]: value
         }
       }));
     } else {
@@ -97,7 +116,7 @@ export default function CreatePetPage() {
   };
 
   const handlePhotoUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
+    const {files} = event.target;
     if (!files) return;
 
     const maxPhotos = 10;
@@ -136,7 +155,7 @@ export default function CreatePetPage() {
     setPhotos(prev => {
       const newPhotos = prev.filter((_, i) => i !== index);
       // If we removed the primary photo, make the first remaining photo primary
-      if (prev[index].isPrimary && newPhotos.length > 0) {
+      if (prev[index]?.isPrimary && newPhotos.length > 0) {
         newPhotos[0].isPrimary = true;
       }
       return newPhotos;
@@ -289,7 +308,7 @@ export default function CreatePetPage() {
                     onChange={(value) => handleInputChange('name', value)}
                     placeholder="Enter your pet's name"
                     required
-                    error={errors.name}
+                    error={errors.name || undefined}
                   />
 
                   <div className="space-y-2">

@@ -5,9 +5,6 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import LoadingSpinner from '../UI/LoadingSpinner';
 import {
   VideoCameraIcon,
   VideoCameraSlashIcon,
@@ -16,7 +13,13 @@ import {
   XMarkIcon,
   ArrowsPointingOutIcon,
 } from '@heroicons/react/24/solid';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+
 import { useVideoCall } from '../../hooks/premium-hooks';
+import LoadingSpinner from '../UI/LoadingSpinner';
+
+
 
 interface VideoCallRoomProps {
   roomId: string;

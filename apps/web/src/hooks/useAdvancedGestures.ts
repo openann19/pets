@@ -623,12 +623,4 @@ export const usePanGestures = (callbacks: {
   );
 };
 
-// ====== EXPORT ALL HOOKS ======
-
-export {
-  useAdvancedGestures as default,
-  useSwipeGestures,
-  usePinchGestures,
-  useRotateGestures,
-  usePanGestures,
-};
+export default useAdvancedGestures;

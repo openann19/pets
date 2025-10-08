@@ -1,5 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
 
 interface LoadingSpinnerProps {
   size?: 'small' | 'medium' | 'large';
@@ -28,7 +28,7 @@ export default function LoadingSpinner({ size = 'medium', color = '#3B82F6', cla
       transition={{
         duration: 1.5,
         repeat: Infinity,
-        delay: delay,
+        delay,
         ease: "easeInOut"
       }}
       style={{

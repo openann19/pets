@@ -3,7 +3,7 @@
  * Implements comprehensive security measures for the web application
  */
 
-import { SecurityEventDetails } from '@/types/common';
+import type { SecurityEventDetails } from '@/types/common';
 
 // Content Security Policy configuration
 export const CSP_CONFIG = {
@@ -83,7 +83,7 @@ export const SECURITY_HEADERS = {
 // CSRF token management
 class CSRFManager {
   private token: string | null = null;
-  private tokenExpiry: number = 0;
+  private tokenExpiry = 0;
 
   generateToken(): string {
     const array = new Uint8Array(32);
@@ -180,11 +180,11 @@ export class InputSanitizer {
 
 // Rate limiting utilities
 export class RateLimiter {
-  private requests: Map<string, number[]> = new Map();
+  private readonly requests: Map<string, number[]> = new Map();
   private readonly maxRequests: number;
   private readonly windowMs: number;
 
-  constructor(maxRequests: number = 100, windowMs: number = 60000) {
+  constructor(maxRequests = 100, windowMs = 60000) {
     this.maxRequests = maxRequests;
     this.windowMs = windowMs;
   }
@@ -266,7 +266,7 @@ export class SecureCookie {
     return null;
   }
 
-  static delete(name: string, path: string = '/'): void {
+  static delete(name: string, path = '/'): void {
     document.cookie = `${name}=; Max-Age=0; Path=${path}; SameSite=lax`;
   }
 }

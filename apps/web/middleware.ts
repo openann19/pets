@@ -1,6 +1,6 @@
-import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
 
 import { isAuthDisabled } from './src/config/dev';
 import { locales } from './src/i18n';

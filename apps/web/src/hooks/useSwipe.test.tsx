@@ -1,7 +1,9 @@
 import { renderHook, act } from '@testing-library/react';
-import { useSwipe } from './useSwipe';
+
 import { petsAPI } from '../services/api';
-import { Pet } from '../types';
+import type { Pet } from '../types';
+
+import { useSwipe } from './useSwipe';
 
 // Mock the petsAPI
 jest.mock('../services/api', () => ({

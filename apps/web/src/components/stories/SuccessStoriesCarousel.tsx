@@ -5,8 +5,6 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { 
   HeartIcon,
   StarIcon,
@@ -17,8 +15,11 @@ import {
   UserIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline'
-import { useSuccessStories, SuccessStory } from '@/services/success-stories'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect } from 'react'
+
 import { InteractiveButton } from '@/components/ui/Interactive'
+import { useSuccessStories, SuccessStory } from '@/services/success-stories'
 
 interface SuccessStoriesCarouselProps {
   className?: string
@@ -73,7 +74,7 @@ export function SuccessStoriesCarousel({
     return (
       <div className={`bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-8 ${className}`}>
         <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500" />
           <span className="ml-3 text-gray-600">Loading success stories...</span>
         </div>
       </div>
@@ -320,8 +321,8 @@ export function CompactSuccessStories({
     return (
       <div className={`bg-white rounded-lg p-4 shadow-sm ${className}`}>
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+          <div className="h-3 bg-gray-200 rounded w-1/2" />
         </div>
       </div>
     )

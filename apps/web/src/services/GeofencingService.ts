@@ -33,10 +33,10 @@ interface GeofenceNotification {
 }
 
 class GeofencingService {
-  private zones: Map<string, GeofenceZone> = new Map();
+  private readonly zones: Map<string, GeofenceZone> = new Map();
   private watchId: number | null = null;
   private lastLocation: { lat: number; lng: number } | null = null;
-  private callbacks: Map<string, Function> = new Map();
+  private readonly callbacks: Map<string, Function> = new Map();
   private notificationQueue: GeofenceNotification[] = [];
   private isTracking = false;
 
@@ -367,7 +367,7 @@ class GeofencingService {
   private async showBrowserNotification(notification: GeofenceNotification): Promise<void> {
     if (!('Notification' in window)) return;
 
-    let permission = Notification.permission;
+    let {permission} = Notification;
     
     if (permission === 'default') {
       permission = await Notification.requestPermission();

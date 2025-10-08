@@ -5,8 +5,6 @@
 
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { 
   ShareIcon,
   HeartIcon,
@@ -16,6 +14,9 @@ import {
   SparklesIcon,
   ArrowRightIcon
 } from '@heroicons/react/24/outline'
+import { motion } from 'framer-motion'
+import { useState } from 'react'
+
 import { InteractiveButton } from '@/components/ui/Interactive'
 import { useSocialShare } from '@/hooks/useSocialShare'
 

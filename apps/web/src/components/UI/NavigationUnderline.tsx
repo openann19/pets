@@ -5,9 +5,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface NavigationItem {
   id: string;

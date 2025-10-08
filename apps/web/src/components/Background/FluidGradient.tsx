@@ -253,7 +253,7 @@ export default function FluidGradient() {
         if (history.length < 2) return { x: 0, y: 0 };
         
         const recent = history.slice(-3); // Last 3 points
-        let totalVelocity = { x: 0, y: 0 };
+        const totalVelocity = { x: 0, y: 0 };
         let totalTime = 0;
         
         for (let i = 1; i < recent.length; i++) {

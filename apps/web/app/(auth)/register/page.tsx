@@ -1,12 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   UserIcon, 
   EnvelopeIcon, 
@@ -16,6 +9,14 @@ import {
   ShieldCheckIcon,
   HeartIcon
 } from '@heroicons/react/24/outline';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
 import { useAuth } from '../../../src/components/providers/AuthProvider';
 import PremiumButton from '../../../src/components/UI/PremiumButton';
 
@@ -138,7 +139,7 @@ export default function RegisterPage() {
         {/* Main Form Card */}
         <motion.form 
           className="space-y-6" 
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={(e) => void handleSubmit(onSubmit)(e)}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -146,7 +147,7 @@ export default function RegisterPage() {
         >
           <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-2xl space-y-5 border border-white/20">
             <AnimatePresence>
-              {authError && (
+              {authError !== null && authError.length > 0 && (
                 <motion.div 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -348,7 +349,7 @@ export default function RegisterPage() {
               size="lg"
               disabled={isLoading || authLoading}
               loading={isLoading || authLoading}
-              onClick={handleSubmit(onSubmit)}
+              onClick={() => void handleSubmit(onSubmit)()}
               className="w-full shadow-xl hover:shadow-2xl"
             >
               <span className="flex items-center justify-center gap-2">

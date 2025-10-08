@@ -1,8 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
 import {
   PlusIcon,
   PencilIcon,
@@ -14,11 +11,14 @@ import {
   CheckIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import React, { useState } from 'react';
 
 import PremiumLayout from '@/components/Layout/PremiumLayout';
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
-import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import SafeImage from '@/components/UI/SafeImage';
 import { PREMIUM_VARIANTS, STAGGER_CONFIG } from '@/constants/animations';
 import { useUserPets, useDeletePet } from '@/hooks/api-hooks';
@@ -191,14 +191,10 @@ export default function MyPetsPage() {
                   <div className="relative h-48 bg-gradient-to-br from-purple-100 to-pink-100">
                     {pet.photos && pet.photos.length > 0 ? (
                       <SafeImage
-                        src={pet.photos.find(p => p.isPrimary)?.url || pet.photos[0].url}
+                        src={pet.photos.find(p => p.isPrimary)?.url || pet.photos[0]?.url}
                         alt={`${pet.name} - ${pet.breed}`}
                         className="w-full h-full object-cover"
-                        fallback={
-                          <div className="w-full h-full flex items-center justify-center text-4xl">
-                            {getSpeciesEmoji(pet.species)}
-                          </div>
-                        }
+                        fallbackType="pet"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-4xl">

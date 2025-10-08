@@ -144,7 +144,7 @@ export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
   }, [languageModel]);
 
   // Internal prediction function (not debounced)
-  const predictNextWordsInternal = useCallback((contextText: string, maxPredictions: number = 5): PredictionResult[] => {
+  const predictNextWordsInternal = useCallback((contextText: string, maxPredictions = 5): PredictionResult[] => {
     const cacheKey = `${contextText}-${maxPredictions}`;
     const cached = predictionCache.get(cacheKey);
 
@@ -191,7 +191,7 @@ export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
           text: token,
           confidence,
           probability,
-          context: context,
+          context,
           metadata: {
             tokens: [token],
             logProbability: Math.log(probability),
@@ -207,7 +207,7 @@ export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
   }, [tokenize, getTokenProbability, languageModel, predictionCache, config.contextWindow]);
 
   // Debounced prediction function to prevent API spam
-  const predictNextWords = useCallback((contextText: string, maxPredictions: number = 5): Promise<PredictionResult[]> => {
+  const predictNextWords = useCallback((contextText: string, maxPredictions = 5): Promise<PredictionResult[]> => {
     return new Promise((resolve) => {
       // Clear existing timeout
       if (debounceTimeoutRef.current) {
@@ -230,7 +230,7 @@ export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
   }, [predictNextWordsInternal, debounceMs]);
 
   // Advanced prediction with beam search
-  const predictNextSequence = useCallback((contextText: string, sequenceLength: number = 3): PredictionResult[] => {
+  const predictNextSequence = useCallback((contextText: string, sequenceLength = 3): PredictionResult[] => {
     const tokens = tokenize(contextText);
     const context = tokens.slice(-2);
 

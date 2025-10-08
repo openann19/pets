@@ -1,7 +1,5 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   HeartIcon,
   SparklesIcon,
@@ -16,9 +14,14 @@ import {
   InformationCircleIcon,
   ArrowTrendingUpIcon
 } from '@heroicons/react/24/outline';
-import { useAuthStore } from '@/lib/auth-store';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+
+
 import { aiAPI } from '../../services/api';
 import { logger } from '../../services/logger';
+
+import { useAuthStore } from '@/lib/auth-store';
 
 interface CompatibilityScore {
   overall: number;

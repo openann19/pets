@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-import { EnhancedLoading } from './EnhancedLoadingSystem';
+import { CardSkeleton, TextSkeleton, ListSkeleton } from './LoadingSkeleton';
 import LoadingSpinner from './LoadingSpinner';
 import PremiumSkeleton from './PremiumSkeleton';
 
@@ -119,16 +119,27 @@ export const UniversalLoading: React.FC<UniversalLoadingProps> = ({
     return <>{fallback}</>;
   }
 
+  // Render appropriate loading component based on skeleton type
+  const renderSkeleton = () => {
+    switch (loadingState.skeletonType) {
+      case 'card':
+        return <CardSkeleton count={1} />;
+      case 'text':
+        return <TextSkeleton lines={3} />;
+      case 'list':
+        return <ListSkeleton items={5} />;
+      default:
+        return <LoadingSpinner size="lg" />;
+    }
+  };
+
   return (
-    <EnhancedLoading
-      isLoading={true}
-      type={loadingState.type}
-      skeletonType={loadingState.skeletonType}
-      message={loadingState.message}
-      className={className}
-    >
-      {children}
-    </EnhancedLoading>
+    <div className={`relative ${className}`}>
+      {loadingState.message && (
+        <div className="text-center text-gray-600 mb-4">{loadingState.message}</div>
+      )}
+      {renderSkeleton()}
+    </div>
   );
 };
 
@@ -378,19 +389,4 @@ export const LoadingBadge: React.FC<{
   );
 };
 
-// ====== EXPORT ALL COMPONENTS ======
-
-export {
-  LoadingProvider as default,
-  useLoadingStates,
-  UniversalLoading,
-  ProgressLoading,
-  useAPILoading,
-  usePageLoading,
-  useFormLoading,
-  APILoadingWrapper,
-  PageLoadingWrapper,
-  FormLoadingWrapper,
-  LoadingIndicator,
-  LoadingBadge,
-};
+export default LoadingProvider;

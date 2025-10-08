@@ -425,19 +425,3 @@ export const createStyle = (variant: keyof typeof VARIANTS.button, size: keyof t
   };
 };
 
-// ====== EXPORT UNIFIED THEME ======
-export const THEME = {
-  colors: COLORS,
-  typography: TYPOGRAPHY,
-  spacing: SPACING,
-  radius: RADIUS,
-  shadows: SHADOWS,
-  gradients: GRADIENTS,
-  transitions: TRANSITIONS,
-  zIndex: ZINDEX,
-  variants: VARIANTS,
-  sizes: SIZES,
-  createStyle,
-} as const;
-
-export default THEME;

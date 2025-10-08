@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { breedsAPI, Breed, BreedSuggestionRequest } from '../services/breeds';
+
+import type { Breed, BreedSuggestionRequest } from '../services/breeds';
+import { breedsAPI } from '../services/breeds';
 
 interface UltraFilterState {
   species: string[];

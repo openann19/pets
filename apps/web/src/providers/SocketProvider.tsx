@@ -1,9 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useRef, useCallback, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useAuthStore } from '@/lib/auth-store';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
+
 import { logger } from '../services/logger';
+
+import { useAuthStore } from '@/lib/auth-store';
 
 interface SocketContextType {
   socket: Socket | null;

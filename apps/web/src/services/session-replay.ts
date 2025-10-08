@@ -4,7 +4,9 @@
  */
 
 import { logger } from './logger'
-import { OpenReplayConfig, CustomEvent, UserEvent } from '@/types/common'
+
+import type { CustomEvent} from '@/types/common';
+import { OpenReplayConfig, UserEvent } from '@/types/common'
 
 interface SessionReplayConfig {
   projectKey: string
@@ -28,7 +30,7 @@ interface SessionReplayConfig {
 }
 
 class SessionReplayService {
-  private config: SessionReplayConfig
+  private readonly config: SessionReplayConfig
   private isInitialized = false
   private sessionId: string | null = null
 
@@ -73,8 +75,8 @@ class SessionReplayService {
       await this.loadOpenReplayScript()
       
       // Initialize OpenReplay
-      if (typeof window !== 'undefined' && window.OpenReplay) {
-        const OpenReplay = window.OpenReplay
+      if (window?.OpenReplay) {
+        const {OpenReplay} = window
         
         this.sessionId = OpenReplay.start({
           projectKey: this.config.projectKey,
@@ -137,11 +139,11 @@ class SessionReplayService {
    * Setup event listeners for custom events
    */
   private setupEventListeners(): void {
-    if (typeof window === 'undefined' || !window.OpenReplay) {
+    if (!window?.OpenReplay) {
       return
     }
 
-    const OpenReplay = window.OpenReplay
+    const {OpenReplay} = window
 
     // Track user authentication
     window.addEventListener('user-login', (event: CustomEvent) => {
@@ -194,11 +196,11 @@ class SessionReplayService {
    * Set user information
    */
   setUser(userId: string, email?: string, name?: string): void {
-    if (!this.isInitialized || typeof window === 'undefined' || !window.OpenReplay) {
+    if (!this.isInitialized || !window?.OpenReplay) {
       return
     }
 
-    const OpenReplay = window.OpenReplay
+    const {OpenReplay} = window
     OpenReplay.setUserID(userId)
     
     if (email || name) {
@@ -214,11 +216,11 @@ class SessionReplayService {
    * Clear user information
    */
   clearUser(): void {
-    if (!this.isInitialized || typeof window === 'undefined' || !window.OpenReplay) {
+    if (!this.isInitialized || !window?.OpenReplay) {
       return
     }
 
-    const OpenReplay = window.OpenReplay
+    const {OpenReplay} = window
     OpenReplay.setUserID(null)
     OpenReplay.setMetadata('user', null)
   }
@@ -227,11 +229,11 @@ class SessionReplayService {
    * Add custom event
    */
   addEvent(name: string, data?: Record<string, unknown>): void {
-    if (!this.isInitialized || typeof window === 'undefined' || !window.OpenReplay) {
+    if (!this.isInitialized || !window?.OpenReplay) {
       return
     }
 
-    const OpenReplay = window.OpenReplay
+    const {OpenReplay} = window
     OpenReplay.addEvent(name, data)
   }
 
@@ -250,7 +252,7 @@ class SessionReplayService {
       return
     }
 
-    const OpenReplay = (window as any).OpenReplay
+    const {OpenReplay} = (window as any)
     OpenReplay.addIssue(issue)
   }
 
@@ -258,11 +260,11 @@ class SessionReplayService {
    * Set metadata
    */
   setMetadata(key: string, value: unknown): void {
-    if (!this.isInitialized || typeof window === 'undefined' || !window.OpenReplay) {
+    if (!this.isInitialized || !window?.OpenReplay) {
       return
     }
 
-    const OpenReplay = window.OpenReplay
+    const {OpenReplay} = window
     OpenReplay.setMetadata(key, value)
   }
 
@@ -284,11 +286,11 @@ class SessionReplayService {
    * Stop session recording
    */
   stop(): void {
-    if (!this.isInitialized || typeof window === 'undefined' || !window.OpenReplay) {
+    if (!this.isInitialized || !window?.OpenReplay) {
       return
     }
 
-    const OpenReplay = window.OpenReplay
+    const {OpenReplay} = window
     OpenReplay.stop()
     this.isInitialized = false
     this.sessionId = null

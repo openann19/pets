@@ -44,15 +44,15 @@ class NotificationService {
   private serviceWorker: ServiceWorkerRegistration | null = null;
   private pushSubscription: PushSubscription | null = null;
   private fcmToken: string | null = null;
-  private apnsToken: string | null = null;
-  private analytics: NotificationAnalytics = {
+  private readonly apnsToken: string | null = null;
+  private readonly analytics: NotificationAnalytics = {
     sent: 0,
     delivered: 0,
     clicked: 0,
     dismissed: 0,
     failed: 0
   };
-  private messageQueue: PushNotification[] = [];
+  private readonly messageQueue: PushNotification[] = [];
   private isOnline = true;
 
   constructor() {

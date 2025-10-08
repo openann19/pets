@@ -3,8 +3,8 @@
  * Additional weather data providers for maximum redundancy
  */
 
-import { EnhancedWeatherData } from './WeatherService';
 import { logger } from './logger';
+import type { EnhancedWeatherData } from './WeatherService';
 
 export class WeatherProviders {
   /**
@@ -125,7 +125,7 @@ export class WeatherProviders {
    */
   private static mapTomorrowIOData(data: Record<string, unknown>): EnhancedWeatherData {
     const current = data.data.timelines[0].intervals[0];
-    const values = current.values;
+    const {values} = current;
     // Extract lat and lon from data (assuming they're stored somewhere in the response)
     const lat = 0; // Placeholder value
     const lon = 0; // Placeholder value
@@ -424,7 +424,7 @@ export class WeatherProviders {
 
   private static generatePetSafetyInfo(values: any): any {
     const temp = values.temperature;
-    const humidity = values.humidity;
+    const {humidity} = values;
     const uv = values.uvIndex;
     
     return {

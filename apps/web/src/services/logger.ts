@@ -21,8 +21,8 @@ interface LogEntry {
 
 class Logger {
   private logLevel: string;
-  private isDevelopment: boolean;
-  private sessionId: string;
+  private readonly isDevelopment: boolean;
+  private readonly sessionId: string;
 
   constructor() {
     this.logLevel = process.env.NODE_ENV === 'development' ? 'debug' : 'info';

@@ -1,5 +1,8 @@
-import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
-import { apiClient, ApiClientResponse } from './client';
+import type { UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import type { ApiClientResponse } from './client';
+import { apiClient } from './client';
 
 // Query hook factory
 export function useApiQuery<TData = unknown, TError = Error>(

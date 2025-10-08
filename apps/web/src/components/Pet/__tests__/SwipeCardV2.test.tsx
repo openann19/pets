@@ -3,9 +3,10 @@
  * Comprehensive tests for the new pixel-perfect swipe card component
  */
 
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { motion } from 'framer-motion';
+import React from 'react';
+
 import SwipeCardV2, { type PetCardData } from '../SwipeCardV2';
 
 // Mock framer-motion for testing

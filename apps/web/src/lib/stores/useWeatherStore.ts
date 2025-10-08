@@ -87,8 +87,8 @@ export const useWeatherStore = create<WeatherState>()(
     
     // Calculate and update time of day based on current time and sunrise/sunset
     calculateTimeOfDay: () => set((state) => {
-      const data = get().data;
-      if (!data || !data.sys) return state;
+      const {data} = get();
+      if (!data?.sys) return state;
       
       const now = new Date().getTime() / 1000; // Current time in seconds
       const sunrise = data.sys.sunrise || 0;

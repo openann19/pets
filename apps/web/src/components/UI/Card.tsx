@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
+
 import { THEME } from '@/theme/unified-design-system';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {

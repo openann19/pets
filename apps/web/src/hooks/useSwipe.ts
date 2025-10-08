@@ -1,8 +1,9 @@
 // @ts-nocheck
 import { useState, useCallback } from 'react';
+
 import { petsAPI } from '../services/api';
-import { Pet, SwipeResult } from '../types';
 import { logger } from '../services/logger';
+import type { Pet, SwipeResult } from '../types';
 
 interface UseSwipeReturn {
   pets: Pet[];

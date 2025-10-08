@@ -159,7 +159,7 @@ export function useOptimizedImage(src: string, options: {
     // Add mobile-specific optimizations
     if (isMobile) {
       // Use WebP if supported
-      const supportsWebP = document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0;
+      const supportsWebP = document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp');
       if (supportsWebP && !src.includes('.webp')) {
         // Convert to WebP format (this would need server-side support)
         setOptimizedSrc(src.replace(/\.(jpg|jpeg|png)$/i, '.webp'));
@@ -212,7 +212,7 @@ export function useMemoryOptimization() {
   useEffect(() => {
     const checkMemory = () => {
       if ('memory' in performance) {
-        const memory = (performance as any).memory;
+        const {memory} = (performance as any);
         const usedMB = memory.usedJSHeapSize / 1024 / 1024;
         const totalMB = memory.totalJSHeapSize / 1024 / 1024;
         const limitMB = memory.jsHeapSizeLimit / 1024 / 1024;

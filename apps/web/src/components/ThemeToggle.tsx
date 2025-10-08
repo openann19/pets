@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useThemeStore } from '../stores/theme';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/solid';
+import { useState, useEffect } from 'react';
+
+import { useThemeStore } from '../stores/theme';
 
 /**
  * A simple switch that toggles between the `glass` and `vibrant` display themes.

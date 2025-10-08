@@ -52,7 +52,7 @@ export const useMobileOptimization = () => {
   useEffect(() => {
     // Detect mobile device
     const checkMobile = () => {
-      const userAgent = navigator.userAgent;
+      const {userAgent} = navigator;
       const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
       const isMobileViewport = window.innerWidth <= 768;
       
@@ -101,7 +101,7 @@ export const useMobileOptimization = () => {
     window.addEventListener('resize', checkMobile);
     
     // Listen for connection changes
-    const connection = (navigator as any).connection;
+    const {connection} = (navigator as any);
     if (connection) {
       connection.addEventListener('change', checkConnection);
     }
@@ -304,7 +304,7 @@ export const useMemoryMonitor = () => {
   useEffect(() => {
     const updateMemoryInfo = () => {
       if ('memory' in performance) {
-        const memory = (performance as any).memory;
+        const {memory} = (performance as any);
         setMemoryInfo({
           usedJSHeapSize: memory.usedJSHeapSize,
           totalJSHeapSize: memory.totalJSHeapSize,

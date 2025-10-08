@@ -5,8 +5,6 @@
 
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { 
   ChartBarIcon, 
   HeartIcon, 
@@ -17,11 +15,14 @@ import {
   LightBulbIcon,
   CalendarIcon
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
+import PremiumButton from '@/components/UI/PremiumButton';
+import PremiumCard from '@/components/UI/PremiumCard';
 import { useUserAnalytics, useMatchAnalytics, usePremiumTier } from '@/hooks/premium-hooks';
 import { useAuthStore } from '@/lib/auth-store';
-import PremiumCard from '@/components/UI/PremiumCard';
-import PremiumButton from '@/components/UI/PremiumButton';
-import LoadingSpinner from '@/components/UI/LoadingSpinner';
 
 export default function AnalyticsPage() {
   const { user } = useAuthStore();

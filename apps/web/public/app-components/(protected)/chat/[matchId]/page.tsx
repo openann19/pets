@@ -1,8 +1,5 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useParams, useRouter } from 'next/navigation';
 import { 
   PaperAirplaneIcon,
   PhotoIcon,
@@ -16,11 +13,16 @@ import {
   HeartIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline';
-import { useAuthStore } from '../../src/lib/auth-store';
-import { chatAPI, api } from '../../../../src/services/api';
-import { useSocket } from '../../../../src/hooks/useSocket';
-import { logger } from '../../../../src/services/logger';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { useParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect, useRef } from 'react';
+
+import { useSocket } from '../../../../src/hooks/useSocket';
+import { chatAPI, api } from '../../../../src/services/api';
+import { logger } from '../../../../src/services/logger';
+import { useAuthStore } from '../../src/lib/auth-store';
+
 
 interface Message {
   id: string;
@@ -303,7 +305,7 @@ export default function ChatPage() {
                 className="w-10 h-10 rounded-full object-cover"
               />
               {match?.isOnline && (
-                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
               )}
             </div>
             
@@ -405,9 +407,9 @@ export default function ChatPage() {
             className="flex items-center text-gray-500 text-sm"
           >
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
             <span className="ml-2">{match.petName} is typing...</span>
           </motion.div>

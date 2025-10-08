@@ -4,7 +4,8 @@
  */
 
 import { DateTime } from 'luxon';
-import { 
+
+import type { 
   WeatherAlert, 
   HourlyForecast, 
   DailyForecast, 
@@ -71,7 +72,7 @@ interface Logger {
 }
 
 class ProductionLogger implements Logger {
-  private isDevelopment = process.env.NODE_ENV === 'development';
+  private readonly isDevelopment = process.env.NODE_ENV === 'development';
   
   info(message: string, meta?: any) {
     console.log(`[WeatherService] ${message}`, meta);
@@ -113,9 +114,9 @@ class OpenWeatherMapProvider implements WeatherProvider {
   priority = 1;
   rateLimit = { requests: 1000, window: 60000 }; // 1000 requests per minute
   
-  private apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || '';
-  private baseUrl = 'https://api.openweathermap.org/data/2.5';
-  private oneCallUrl = 'https://api.openweathermap.org/data/3.0/onecall';
+  private readonly apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || '';
+  private readonly baseUrl = 'https://api.openweathermap.org/data/2.5';
+  private readonly oneCallUrl = 'https://api.openweathermap.org/data/3.0/onecall';
   
   async fetch(lat: number, lon: number, units: 'metric' | 'imperial'): Promise<WeatherData | null> {
     if (!this.apiKey) return null;
@@ -160,8 +161,8 @@ class OpenWeatherMapProvider implements WeatherProvider {
   }
   
   private mapOneCallData(data: any, units: 'metric' | 'imperial'): WeatherData {
-    const current = data.current;
-    const timezone = data.timezone;
+    const {current} = data;
+    const {timezone} = data;
     const localTime = DateTime.fromSeconds(current.dt).setZone(timezone);
     
     return {
@@ -463,10 +464,10 @@ class OpenWeatherMapProvider implements WeatherProvider {
 // Enhanced Weather Service with all production features
 class EnhancedWeatherService {
   private providers: WeatherProvider[] = [];
-  private cache = new Map<string, CacheEntry>();
-  private rateLimits = new Map<string, RateLimitEntry>();
-  private logger = new ProductionLogger();
-  private cacheTimeout = 10 * 60 * 1000; // 10 minutes
+  private readonly cache = new Map<string, CacheEntry>();
+  private readonly rateLimits = new Map<string, RateLimitEntry>();
+  private readonly logger = new ProductionLogger();
+  private readonly cacheTimeout = 10 * 60 * 1000; // 10 minutes
   private backgroundRefreshInterval: NodeJS.Timeout | null = null;
   
   constructor() {

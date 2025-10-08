@@ -5,14 +5,15 @@
 
 'use client'
 
-import { useState } from 'react'
-import { signIn, getSession } from 'next-auth/react'
-import { motion } from 'framer-motion'
 import { 
   ArrowRightIcon, 
   ExclamationTriangleIcon,
   CheckCircleIcon 
 } from '@heroicons/react/24/outline'
+import { motion } from 'framer-motion'
+import { signIn, getSession } from 'next-auth/react'
+import { useState } from 'react'
+
 import { InteractiveButton } from '@/components/ui/Interactive'
 
 interface SocialLoginButtonsProps {

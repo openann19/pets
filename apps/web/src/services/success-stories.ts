@@ -39,9 +39,9 @@ export interface SuccessStoriesResponse {
 }
 
 class SuccessStoriesService {
-  private apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
-  private cmsApiUrl = process.env.NEXT_PUBLIC_CMS_API_URL
-  private cmsApiKey = process.env.CMS_API_KEY
+  private readonly apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
+  private readonly cmsApiUrl = process.env.NEXT_PUBLIC_CMS_API_URL
+  private readonly cmsApiKey = process.env.CMS_API_KEY
 
   /**
    * Get success stories from CMS or database
@@ -70,7 +70,7 @@ class SuccessStoriesService {
   /**
    * Get featured success stories
    */
-  async getFeaturedStories(limit: number = 5): Promise<SuccessStory[]> {
+  async getFeaturedStories(limit = 5): Promise<SuccessStory[]> {
     const response = await this.getSuccessStories({ limit, featured: true })
     return response.stories
   }
@@ -78,7 +78,7 @@ class SuccessStoriesService {
   /**
    * Get stories by tags
    */
-  async getStoriesByTags(tags: string[], limit: number = 10): Promise<SuccessStory[]> {
+  async getStoriesByTags(tags: string[], limit = 10): Promise<SuccessStory[]> {
     const response = await this.getSuccessStories({ limit, tags })
     return response.stories
   }
@@ -328,7 +328,7 @@ export function useSuccessStories() {
     }
   }
 
-  const fetchFeaturedStories = async (limit: number = 5) => {
+  const fetchFeaturedStories = async (limit = 5) => {
     setIsLoading(true)
     setError(null)
 

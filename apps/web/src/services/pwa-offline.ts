@@ -4,7 +4,8 @@
  */
 
 import { logger } from './logger'
-import { Pet, Message } from '@/types/common'
+
+import type { Pet, Message } from '@/types/common'
 
 interface OfflineAction {
   id: string
@@ -36,8 +37,8 @@ interface CachedMessage {
 }
 
 class PWAOfflineService {
-  private dbName = 'PawfectMatchOffline'
-  private dbVersion = 1
+  private readonly dbName = 'PawfectMatchOffline'
+  private readonly dbVersion = 1
   private db: IDBDatabase | null = null
   private isOnline = navigator.onLine
   private pendingActions: OfflineAction[] = []

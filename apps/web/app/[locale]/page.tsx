@@ -1,7 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import HoloLogo from '@/components/Brand/HoloLogo';

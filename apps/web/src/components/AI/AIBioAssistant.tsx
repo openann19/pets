@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { SPRING_CONFIG } from '../../constants/animations';
 import { SparklesIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
+
+import { SPRING_CONFIG } from '../../constants/animations';
 import PremiumButton from '../UI/PremiumButton';
 
 interface AIBioAssistantProps {

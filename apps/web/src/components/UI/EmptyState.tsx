@@ -4,8 +4,9 @@
  * A beautiful, consistent empty state pattern for all lists/grids in the app.
  */
 
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
+
 import PremiumButton from './PremiumButton';
 
 interface EmptyStateProps {

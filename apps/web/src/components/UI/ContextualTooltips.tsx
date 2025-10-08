@@ -144,7 +144,7 @@ const TooltipRenderer: React.FC = () => {
 
     const spacing = 8;
 
-    let position = preferredPosition;
+    const position = preferredPosition;
     let x = 0;
     let y = 0;
 
@@ -530,16 +530,4 @@ export const useContextualTooltips = () => {
   };
 };
 
-// ====== EXPORT ALL COMPONENTS ======
-
-export {
-  TooltipProvider as default,
-  useTooltips,
-  Tooltip,
-  HelpTooltip,
-  InfoTooltip,
-  WarningTooltip,
-  ErrorTooltip,
-  SuccessTooltip,
-  useContextualTooltips,
-};
+export default TooltipProvider;

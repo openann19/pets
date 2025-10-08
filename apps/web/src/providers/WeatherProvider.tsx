@@ -2,9 +2,11 @@
 
 // @ts-nocheck
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { enhancedWeatherService } from '../services/WeatherService';
-import { useAuthStore } from '@/lib/auth-store';
+
 import { logger } from '../services/logger';
+import { enhancedWeatherService } from '../services/WeatherService';
+
+import { useAuthStore } from '@/lib/auth-store';
 
 interface WeatherContextType {
   weather: any | null;
@@ -60,7 +62,7 @@ export const WeatherProvider: React.FC<{ children: React.ReactNode }> = ({ child
           logger.error('Geolocation error', error);
           // Fallback to user's profile location or default
           if (user && (user as any).location) {
-            const location = (user as any).location;
+            const {location} = (user as any);
             getWeatherForLocation(location.latitude, location.longitude);
           } else {
             // Default to San Francisco
@@ -71,7 +73,7 @@ export const WeatherProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } else {
       // Fallback for browsers without geolocation
       if (user && (user as any).location) {
-        const location = (user as any).location;
+        const {location} = (user as any);
         getWeatherForLocation(location.latitude, location.longitude);
       } else {
         getWeatherForLocation(37.7749, -122.4194);

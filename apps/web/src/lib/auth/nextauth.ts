@@ -3,12 +3,12 @@
  * Supports Google, Apple, and other OAuth providers
  */
 
-import { NextAuthOptions } from 'next-auth'
-import GoogleProvider from 'next-auth/providers/google'
-import AppleProvider from 'next-auth/providers/apple'
-import CredentialsProvider from 'next-auth/providers/credentials'
 import { MongoDBAdapter } from '@auth/mongodb-adapter'
 import { MongoClient } from 'mongodb'
+import type { NextAuthOptions } from 'next-auth'
+import AppleProvider from 'next-auth/providers/apple'
+import CredentialsProvider from 'next-auth/providers/credentials'
+import GoogleProvider from 'next-auth/providers/google'
 
 // MongoDB connection for NextAuth adapter
 const client = new MongoClient(process.env['MONGODB_URI'] || 'mongodb://127.0.0.1:27017/pawfectmatch')
@@ -94,9 +94,9 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       // Send properties to the client
-      session.user.id = token.id as string
-      session.accessToken = token.accessToken as string
-      session.provider = token.provider as string
+      session.user.id = token.id
+      session.accessToken = token.accessToken
+      session.provider = token.provider
       return session
     },
     async signIn({ user, account, profile }) {

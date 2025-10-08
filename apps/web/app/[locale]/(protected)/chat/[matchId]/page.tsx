@@ -12,8 +12,8 @@ import {
   VideoCameraIcon
 } from '@heroicons/react/24/outline';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useLocale } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import React, { useEffect, useRef, useState } from 'react';
 
 import MessageInput from '@/components/Chat/MessageInput';
@@ -191,7 +191,7 @@ export default function ChatPage() {
     }
   }, showEmojis || showMatchInfo);
   // Trap focus in side sheet while open
-  useFocusTrap(sideSheetRef, showMatchInfo);
+  const focusTrap = useFocusTrap({ enabled: showMatchInfo });
 
   // Persist and restore scroll position per match
   useEffect(() => {

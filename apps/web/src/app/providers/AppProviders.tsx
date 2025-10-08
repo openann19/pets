@@ -1,8 +1,9 @@
 'use client';
 
-import React, { Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import React, { Suspense } from 'react';
+
 import { AuthProvider } from '../../contexts/AuthContext';
 import { SocketProvider } from '../../contexts/SocketContext';
 

@@ -1,9 +1,10 @@
 // @ts-nocheck
 import { useState, useEffect, useCallback, useRef } from 'react';
+
 import { useSocket } from '../contexts/SocketContext';
 import { matchesAPI } from '../services/api';
-import { Message, Match, User } from '../types';
 import { logger } from '../services/logger';
+import type { Message, Match, User } from '../types';
 
 interface UseChatReturn {
   match: Match | null;

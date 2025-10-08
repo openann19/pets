@@ -1,7 +1,8 @@
 import { renderHook, act } from '@testing-library/react';
+
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
-import { User } from '../types';
+import type { User } from '../types';
 
 // Mock the API
 jest.mock('../services/api', () => ({

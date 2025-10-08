@@ -11,15 +11,15 @@ export function ResponsiveTest() {
       <div className="font-bold mb-2">📱 Responsive Test</div>
       <div className="space-y-1 text-xs">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+          <div className="w-3 h-3 bg-green-500 rounded-full" />
           <span>Mobile: 0-768px</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+          <div className="w-3 h-3 bg-yellow-500 rounded-full" />
           <span>Tablet: 768-1024px</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+          <div className="w-3 h-3 bg-blue-500 rounded-full" />
           <span>Desktop: 1024px+</span>
         </div>
       </div>
@@ -168,7 +168,7 @@ export function CardResponsiveTest() {
             key={item}
             className="bg-white dark:bg-gray-700 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600"
           >
-            <div className="h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg mb-3"></div>
+            <div className="h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg mb-3" />
             <h4 className="font-semibold text-sm sm:text-base">Card {item}</h4>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
               Responsive card that adapts to screen size

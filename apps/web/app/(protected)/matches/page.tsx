@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
 import { ChatBubbleLeftRightIcon, PhoneIcon, VideoCameraIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
+import React from 'react';
+
 import LoadingSpinner from '../../../src/components/UI/LoadingSpinner';
 import PremiumButton from '../../../src/components/UI/PremiumButton';
 import PremiumCard from '../../../src/components/UI/PremiumCard';

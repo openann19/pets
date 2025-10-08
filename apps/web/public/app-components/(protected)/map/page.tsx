@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { MapPinIcon, HeartIcon, ChatBubbleLeftRightIcon, AdjustmentsHorizontalIcon, BellIcon } from '@heroicons/react/24/outline';
 import { MapPinIcon as MapPinSolid, HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
-import MapView from '@/components/Map/MapView';
-import AIMapFeatures from '@/components/Map/AIMapFeatures';
 import { useAuthStore } from '@pawfectmatch/core/stores';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+
+import AIMapFeatures from '@/components/Map/AIMapFeatures';
+import MapView from '@/components/Map/MapView';
 import { geofencingService } from '@/services/GeofencingService';
 
 interface MapFilters {

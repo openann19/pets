@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { CameraIcon, SparklesIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 
 interface AnalysisResult {

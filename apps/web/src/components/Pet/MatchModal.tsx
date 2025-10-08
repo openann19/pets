@@ -1,8 +1,9 @@
-import React from 'react';
+import { XMarkIcon, ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { XMarkIcon, ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
-import { Pet, User } from '../../types';
+import React from 'react';
+
+import type { Pet, User } from '../../types';
 
 interface MatchModalProps {
   isOpen: boolean;
@@ -33,8 +34,8 @@ const MatchModal: React.FC<MatchModalProps> = ({
   };
 
   // Get primary photos
-  const currentPetPhoto = currentUserPet.photos.find(p => p.isPrimary)?.url || currentUserPet.photos[0]?.url;
-  const matchedPetPhoto = matchedPet.photos.find(p => p.isPrimary)?.url || matchedPet.photos[0]?.url;
+  const currentPetPhoto = currentUserPet?.photos?.find?.(p => p.isPrimary)?.url || currentUserPet?.photos?.[0]?.url || '';
+  const matchedPetPhoto = matchedPet?.photos?.find?.(p => p.isPrimary)?.url || matchedPet?.photos?.[0]?.url || '';
 
   return (
     <AnimatePresence>
@@ -125,7 +126,7 @@ const MatchModal: React.FC<MatchModalProps> = ({
                   transition={{ delay: 0.4 }}
                   className="text-pink-100 text-lg"
                 >
-                  {currentUserPet.name} and {matchedPet.name} liked each other
+                  {currentUserPet?.name || 'Your pet'} and {matchedPet?.name || 'Their pet'} liked each other
                 </motion.p>
               </div>
 
@@ -142,11 +143,11 @@ const MatchModal: React.FC<MatchModalProps> = ({
                     <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-pink-200 shadow-lg">
                       <img
                         src={currentPetPhoto || 'https://via.placeholder.com/96?text=🐾'}
-                        alt={currentUserPet.name}
+                        alt={currentUserPet?.name || 'Pet'}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className="mt-2 font-semibold text-gray-900">{currentUserPet.name}</p>
+                    <p className="mt-2 font-semibold text-gray-900">{currentUserPet?.name || 'Your pet'}</p>
                     <p className="text-sm text-gray-600">Your pet</p>
                   </motion.div>
 
@@ -170,11 +171,11 @@ const MatchModal: React.FC<MatchModalProps> = ({
                     <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-purple-200 shadow-lg">
                       <img
                         src={matchedPetPhoto || 'https://via.placeholder.com/96?text=🐾'}
-                        alt={matchedPet.name}
+                        alt={matchedPet?.name || 'Pet'}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <p className="mt-2 font-semibold text-gray-900">{matchedPet.name}</p>
+                    <p className="mt-2 font-semibold text-gray-900">{matchedPet?.name || 'Their pet'}</p>
                     <p className="text-sm text-gray-600">
                       {(matchedUser as any).firstName}'s pet
                     </p>

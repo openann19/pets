@@ -1,8 +1,4 @@
 'use client';
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image'; // Added for optimized image loading
-import { motion, Variants } from 'framer-motion'; // Enhanced with variants for reusable animations
 import {
   HeartIcon,
   ChatBubbleLeftRightIcon,
@@ -11,6 +7,11 @@ import {
   UserGroupIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
+import type { Variants } from 'framer-motion';
+import { motion } from 'framer-motion'; // Enhanced with variants for reusable animations
+import Image from 'next/image'; // Added for optimized image loading
+import Link from 'next/link';
+import React from 'react';
 
 // Define animation variants for consistency and perf (reusable across components)
 const fadeInUp: Variants = {

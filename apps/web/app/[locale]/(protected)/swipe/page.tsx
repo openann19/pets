@@ -1,16 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSwipeData } from '@/hooks/api-hooks';
-import SwipeCard from '@/components/Pet/SwipeCard';
-import MatchModal from '@/components/Pet/MatchModal';
 import { HeartIcon, XMarkIcon, StarIcon, SparklesIcon, ArrowPathIcon, AdjustmentsHorizontalIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+
+import PremiumLayout from '@/components/Layout/PremiumLayout';
+import MatchModal from '@/components/Pet/MatchModal';
+import SwipeCard from '@/components/Pet/SwipeCard';
+import { EnhancedButton, EnhancedCard, InteractionProvider } from '@/components/UI/AdvancedInteractionSystem';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
-import PremiumLayout from '@/components/Layout/PremiumLayout';
-import { EnhancedButton, EnhancedCard, InteractionProvider } from '@/components/UI/AdvancedInteractionSystem';
+import { useSwipeData } from '@/hooks/api-hooks';
 
 export default function SwipePage() {
   const { pets, currentPet, swipe, isLoading, lastMatch, clearMatch, isPremium, refetch } = useSwipeData();
@@ -433,9 +434,9 @@ export default function SwipePage() {
               clearMatch();
             }}
             matchId={lastMatch._id}
-            currentUserPet={(lastMatch as any).pets[0] as any}
-            matchedPet={(lastMatch as any).pets[1] as any}
-            matchedUser={(lastMatch as any).users[1] as any}
+            currentUserPet={(lastMatch as any).pets[0]}
+            matchedPet={(lastMatch as any).pets[1]}
+            matchedUser={(lastMatch as any).users[1]}
           />
         )}
         </div>

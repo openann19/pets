@@ -3,12 +3,13 @@
  * Tests that components render without errors
  */
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render } from '@testing-library/react'
 import { ThemeProvider } from 'next-themes'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { SkeletonCard } from '../components/ui/Skeleton'
-import { InteractiveButton } from '../components/ui/Interactive'
+
 import { ThemeSwitch } from '../components/ThemeSwitch'
+import { InteractiveButton } from '../components/ui/Interactive'
+import { SkeletonCard } from '../components/ui/Skeleton'
 
 // Mock next-themes
 jest.mock('next-themes', () => ({

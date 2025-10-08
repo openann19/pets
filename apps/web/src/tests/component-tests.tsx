@@ -3,9 +3,10 @@
  * React component and hook testing suite
  */
 
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import React from 'react';
+
 import { useAuth, useDashboardData, useSwipeData } from '../hooks/api-hooks';
 
 // Test wrapper with providers
@@ -91,7 +92,7 @@ const TestSwipeComponent: React.FC = () => {
 
 // Component test suite
 export class ComponentTestSuite {
-  private results: Array<{ name: string; status: 'PASS' | 'FAIL'; error?: string }> = [];
+  private readonly results: Array<{ name: string; status: 'PASS' | 'FAIL'; error?: string }> = [];
 
   async runAllTests(): Promise<void> {
     console.log('🧪 ULTRA COMPONENT TESTING');

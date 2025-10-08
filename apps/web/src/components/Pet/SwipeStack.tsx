@@ -1,8 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import SwipeCard from './SwipeCard';
+import React, { useState, useEffect, useRef } from 'react';
+
+import type { Pet} from '../../types';
+import { SwipeAction } from '../../types';
 import LoadingSpinner from '../UI/LoadingSpinner';
-import { Pet, SwipeAction } from '../../types';
+
+import SwipeCard from './SwipeCard';
+
 
 interface SwipeResult {
   isMatch: boolean;

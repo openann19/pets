@@ -5,8 +5,6 @@
 
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ChatBubbleLeftRightIcon,
   XMarkIcon,
@@ -18,8 +16,11 @@ import {
   LightBulbIcon,
   HeartIcon
 } from '@heroicons/react/24/outline'
-import { useAuthStore } from '@/lib/auth-store'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useRef, useEffect } from 'react'
+
 import { InteractiveButton } from '@/components/ui/Interactive'
+import { useAuthStore } from '@/lib/auth-store'
 
 interface FeedbackWidgetProps {
   className?: string

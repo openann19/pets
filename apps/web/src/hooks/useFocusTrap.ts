@@ -48,7 +48,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}) {
 
     const elements = Array.from(
       containerRef.current.querySelectorAll(focusableSelectors)
-    ) as HTMLElement[];
+    );
 
     // Filter out elements that are not visible or have negative tabindex
     return elements.filter(element => {
@@ -73,7 +73,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}) {
     if (focusableElements.length === 0) return;
 
     const elementToFocus = initialFocus || focusableElements[0];
-    elementToFocus?.focus();
+    (elementToFocus as HTMLElement)?.focus();
   }, [getFocusableElements, initialFocus]);
 
   // Set focus to the last focusable element
@@ -82,7 +82,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}) {
     if (focusableElements.length === 0) return;
 
     const lastElement = focusableElements[focusableElements.length - 1];
-    lastElement?.focus();
+    (lastElement as HTMLElement)?.focus();
   }, [getFocusableElements]);
 
   // Handle Tab key navigation
@@ -100,13 +100,13 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}) {
       // Shift + Tab: Move to previous element
       if (activeElement === firstElement) {
         event.preventDefault();
-        lastElement?.focus();
+        (lastElement as HTMLElement)?.focus();
       }
     } else {
       // Tab: Move to next element
       if (activeElement === lastElement) {
         event.preventDefault();
-        firstElement?.focus();
+        (firstElement as HTMLElement)?.focus();
       }
     }
   }, [getFocusableElements]);
@@ -160,7 +160,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}) {
 
     // Return focus to previously focused element
     if (returnFocus && previouslyFocusedElement.current) {
-      previouslyFocusedElement.current.focus();
+      (previouslyFocusedElement.current as HTMLElement).focus();
     }
 
     // Clear references
@@ -222,7 +222,7 @@ export function useFocusTrap(options: UseFocusTrapOptions = {}) {
 }
 
 // Hook for managing focus restoration
-export function useFocusRestoration(enabled: boolean = true) {
+export function useFocusRestoration(enabled = true) {
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
 
   const saveFocus = useCallback(() => {
@@ -233,7 +233,7 @@ export function useFocusRestoration(enabled: boolean = true) {
 
   const restoreFocus = useCallback(() => {
     if (enabled && previouslyFocusedElement.current) {
-      previouslyFocusedElement.current.focus();
+      (previouslyFocusedElement.current as HTMLElement).focus();
       previouslyFocusedElement.current = null;
     }
   }, [enabled]);
@@ -259,7 +259,7 @@ export function useFocusManagement(containerRef: React.RefObject<HTMLElement>) {
     ].join(', ');
 
     const firstFocusable = containerRef.current.querySelector(focusableSelectors) as HTMLElement;
-    firstFocusable?.focus();
+    (firstFocusable as HTMLElement)?.focus();
   }, [containerRef]);
 
   const focusLast = useCallback(() => {
@@ -276,10 +276,10 @@ export function useFocusManagement(containerRef: React.RefObject<HTMLElement>) {
 
     const focusableElements = Array.from(
       containerRef.current.querySelectorAll(focusableSelectors)
-    ) as HTMLElement[];
+    );
 
     const lastFocusable = focusableElements[focusableElements.length - 1];
-    lastFocusable?.focus();
+    (lastFocusable as HTMLElement)?.focus();
   }, [containerRef]);
 
   return {

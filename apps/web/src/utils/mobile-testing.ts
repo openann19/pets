@@ -326,8 +326,8 @@ async function testAccessibility(): Promise<AccessibilityTest[]> {
   const textElements = document.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6');
   textElements.forEach((element, index) => {
     const styles = window.getComputedStyle(element);
-    const color = styles.color;
-    const backgroundColor = styles.backgroundColor;
+    const {color} = styles;
+    const {backgroundColor} = styles;
     
     // This is a simplified test - in production, you'd use a proper contrast calculation
     const hasGoodContrast = color !== backgroundColor && 

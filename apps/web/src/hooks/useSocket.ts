@@ -4,9 +4,10 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createSocketService, getSocketService } from '@/services/socket';
+
 import { useAuth } from '@/components/providers/AuthProvider';
-import { SocketEventHandlers, SocketError, SocketMessageData, SocketMatchData, SocketUserStatusData, SocketNotificationData, SocketCallData, SocketTypingData, MessageAttachment } from '@/types';
+import { createSocketService, getSocketService } from '@/services/socket';
+import type { SocketEventHandlers, SocketError, SocketMessageData, SocketMatchData, SocketUserStatusData, SocketNotificationData, SocketCallData, SocketTypingData, MessageAttachment } from '@/types';
 
 interface UseSocketOptions {
   autoConnect?: boolean;

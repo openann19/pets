@@ -119,7 +119,7 @@ export function useMobileAnalytics(config: Partial<MobileAnalyticsConfig> = {}) 
 
     // Get memory info if available
     if ('memory' in performance) {
-      const memory = (performance as any).memory;
+      const {memory} = (performance as any);
       info.memoryInfo = {
         usedJSHeapSize: memory.usedJSHeapSize,
         totalJSHeapSize: memory.totalJSHeapSize,
@@ -143,7 +143,7 @@ export function useMobileAnalytics(config: Partial<MobileAnalyticsConfig> = {}) 
   // Get connection type
   const getConnectionType = useCallback(() => {
     if ('connection' in navigator) {
-      const connection = (navigator as any).connection;
+      const {connection} = (navigator as any);
       return connection.effectiveType ?? connection.type ?? 'unknown';
     }
     return 'unknown';
@@ -245,12 +245,12 @@ export function useMobileAnalytics(config: Partial<MobileAnalyticsConfig> = {}) 
       });
 
       if (finalConfig.debug) {
-        void // console.log('[Analytics] Events flushed:', events.length);
+        // console.log('[Analytics] Events flushed:', events.length);
       }
     } catch (error) {
-      void // console.error('[Analytics] Failed to flush events:', error);
+      // console.error('[Analytics] Failed to flush events:', error);
       // Re-queue events on failure
-      eventQueue.void current.unshift(...events);
+      eventQueue.current.unshift(...events);
     }
   }, [finalConfig]);
 
@@ -384,7 +384,7 @@ export function useMobileAnalytics(config: Partial<MobileAnalyticsConfig> = {}) 
 
     const trackMemory = () => {
       if ('memory' in performance) {
-        const memory = (performance as any).memory;
+        const {memory} = (performance as any);
         trackEvent('memory_usage', {
           usedJSHeapSize: memory.usedJSHeapSize,
           totalJSHeapSize: memory.totalJSHeapSize,
@@ -484,10 +484,10 @@ export function usePerformanceMonitoring() {
             break;
             
           case 'layout-shift':
-            if (!(entry as any).hadRecentInput) {
+            if (!(entry).hadRecentInput) {
               setMetrics(prev => ({
                 ...prev,
-                cumulativeLayoutShift: (prev?.cumulativeLayoutShift ?? 0) + (entry as any).value,
+                cumulativeLayoutShift: (prev?.cumulativeLayoutShift ?? 0) + (entry).value,
               } as PerformanceMetrics));
             }
             break;
@@ -498,7 +498,7 @@ export function usePerformanceMonitoring() {
     try {
       void observer.observe({ entryTypes: ['navigation', 'paint', 'largest-contentful-paint', 'first-input', 'layout-shift'] });
     } catch (error) {
-      void // console.warn('Performance Observer not fully supported:', error);
+      // console.warn('Performance Observer not fully supported:', error);
     }
 
     return () => void observer.disconnect();
@@ -551,7 +551,7 @@ export const analyticsUtils = {
   },
 
   // Format performance metric
-  formatMetric: (value: number, unit: string = 'ms') => {
+  formatMetric: (value: number, unit = 'ms') => {
     if (value < 1000) {
       return `${Math.round(value)}${unit}`;
     }

@@ -4,8 +4,8 @@
  * Beautiful skeleton loaders that match the shape of actual content
  */
 
-import React from 'react';
 import { motion } from 'framer-motion';
+import React from 'react';
 
 interface SkeletonProps {
   className?: string;

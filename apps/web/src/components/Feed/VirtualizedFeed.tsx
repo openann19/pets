@@ -5,10 +5,12 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
+import Image from 'next/image';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useInView } from 'react-intersection-observer';
+import type { ListChildComponentProps } from 'react-window';
+import { FixedSizeList as List } from 'react-window';
 
 interface VirtualizedFeedProps {
   items: any[];
@@ -125,7 +127,9 @@ export default function VirtualizedFeed({
 }
 
 // Optimized post item component for virtualization
-interface VirtualizedPostItemProps extends ListChildComponentProps {
+interface VirtualizedPostItemProps {
+  index: number;
+  style: React.CSSProperties;
   data: any[];
 }
 
@@ -234,7 +238,7 @@ function PostCard({ post }: { post: any }) {
 export function useVirtualizedFeed<T>(
   initialItems: T[],
   loadMoreFn: (page: number) => Promise<T[]>,
-  itemHeight: number = 600
+  itemHeight = 600
 ) {
   const [items, setItems] = useState<T[]>(initialItems);
   const [isLoading, setIsLoading] = useState(false);
@@ -286,4 +290,3 @@ import {
   ChatBubbleLeftRightIcon,
   ShareIcon
 } from '@heroicons/react/24/outline';
-import Image from 'next/image';

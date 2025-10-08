@@ -3,13 +3,14 @@
  * Complete API service for admin panel functionality
  */
 
-import { AdminStats, User, Pet, Match, SystemLog, NotificationRequest, SystemHealth, MemoryUsage, ApiResponse } from '@/types';
+import type { AdminStats, User, Pet, Match, SystemLog, NotificationRequest, ApiResponse } from '@/types';
+import { SystemHealth, MemoryUsage } from '@/types';
 
 
 // HTTP Client for Admin API
 class AdminHttpClient {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-  private token: string | null = null;
+  private readonly baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+  private readonly token: string | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -68,8 +69,8 @@ class AdminHttpClient {
 }
 
 class AdminApiService {
-  private http = new AdminHttpClient();
-  private baseUrl = '/admin';
+  private readonly http = new AdminHttpClient();
+  private readonly baseUrl = '/admin';
 
   /**
    * Get comprehensive platform statistics
@@ -252,14 +253,14 @@ class AdminApiService {
   /**
    * Restart system services
    */
-  async restartSystem(service: string = 'all'): Promise<void> {
+  async restartSystem(service = 'all'): Promise<void> {
     await this.http.post(`${this.baseUrl}/system/restart`, { service });
   }
 
   /**
    * Create database backup
    */
-  async createBackup(type: string = 'full'): Promise<{
+  async createBackup(type = 'full'): Promise<{
     backupId: string;
     estimatedTime: string;
   }> {

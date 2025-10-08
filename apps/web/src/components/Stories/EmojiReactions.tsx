@@ -5,8 +5,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 
 interface EmojiReactionsProps {
@@ -147,18 +148,18 @@ export default function EmojiReactions({
             initial={{ 
               scale: 0, 
               opacity: 0,
-              x: reaction.position.x + '%',
-              y: reaction.position.y + '%'
+              x: `${reaction.position.x  }%`,
+              y: `${reaction.position.y  }%`
             }}
             animate={{ 
               scale: [0, 1.2, 1],
               opacity: [0, 1, 1],
-              y: (reaction.position.y - 10) + '%'
+              y: `${reaction.position.y - 10  }%`
             }}
             exit={{ 
               scale: 0, 
               opacity: 0,
-              y: (reaction.position.y - 20) + '%'
+              y: `${reaction.position.y - 20  }%`
             }}
             transition={{
               duration: 0.6,
@@ -166,8 +167,8 @@ export default function EmojiReactions({
             }}
             className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
             style={{
-              left: reaction.position.x + '%',
-              top: reaction.position.y + '%'
+              left: `${reaction.position.x  }%`,
+              top: `${reaction.position.y  }%`
             }}
           >
             <div className="text-4xl select-none">

@@ -1,13 +1,15 @@
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
+
 import api from '../services/api';
-import { io, Socket } from 'socket.io-client';
 
 // WebSocket connection management
 class WebSocketManager {
   private socket: Socket | null = null;
   private userId: string | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 10;
-  private reconnectDelay = 1000;
+  private readonly maxReconnectAttempts = 10;
+  private readonly reconnectDelay = 1000;
   private isConnecting = false;
 
   connect(userId: string, token: string): Promise<Socket> {
@@ -36,7 +38,7 @@ class WebSocketManager {
 
       this.socket = io(socketUrl, {
         auth: {
-          token: token,
+          token,
         },
         transports: ['websocket', 'polling'],
         reconnection: true,
@@ -48,7 +50,7 @@ class WebSocketManager {
         rememberUpgrade: true,
       });
 
-      const socket = this.socket;
+      const {socket} = this;
 
       // Connection success handler
       socket.on('connect', () => {
@@ -169,7 +171,7 @@ class WebSocketManager {
   }
 
   // Send a message in a match
-  sendMessage(matchId: string, content: string, messageType: string = 'text', attachments: any[] = []): void {
+  sendMessage(matchId: string, content: string, messageType = 'text', attachments: any[] = []): void {
     if (this.socket?.connected) {
       console.log('[WebSocket] Sending message to match:', matchId);
       this.socket.emit('send_message', {
@@ -242,7 +244,7 @@ const apiClient = {
     webSocketManager.leaveMatch(matchId);
   },
 
-  sendChatMessage: (matchId: string, content: string, messageType: string = 'text', attachments: any[] = []): void => {
+  sendChatMessage: (matchId: string, content: string, messageType = 'text', attachments: any[] = []): void => {
     webSocketManager.sendMessage(matchId, content, messageType, attachments);
   },
 

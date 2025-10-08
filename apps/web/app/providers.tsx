@@ -1,13 +1,15 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode, useState } from 'react';
-import { AuthProvider } from '../src/components/providers/AuthProvider';
-import { EnhancedErrorBoundary } from '../src/utils/error-boundary';
+import type { ReactNode} from 'react';
+import { useState } from 'react';
+
 import { DevTools } from '../src/components/DevTools';
-import { ThemeProvider } from '../src/providers/ThemeProvider';
-import { CommandPalette } from '../src/providers/CommandPalette';
+import { AuthProvider } from '../src/components/providers/AuthProvider';
 import { PWAManager } from '../src/components/PWA/PWAManager';
+import { CommandPalette } from '../src/providers/CommandPalette';
+import { ThemeProvider } from '../src/providers/ThemeProvider';
+import { EnhancedErrorBoundary } from '../src/utils/error-boundary';
 
 // Create query client per request to avoid sharing state between users
 export function Providers({ children }: { children: ReactNode }) {

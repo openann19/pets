@@ -1,6 +1,8 @@
-import React, { useRef, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Message, User } from '../../types';
+import React, { useRef, useEffect } from 'react';
+
+import type { Message, User } from '../../types';
+
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 
@@ -69,7 +71,7 @@ const MessageList: React.FC<MessageListProps> = ({
           
           const showAvatar = index === 0 || 
             (typeof (messages[index - 1] as any)?.sender === 'object' && typeof msg.sender === 'object'
-              ? ((messages[index - 1] as any).sender as any)._id !== msg.sender._id
+              ? ((messages[index - 1] as any).sender)._id !== msg.sender._id
               : (typeof (messages[index - 1] as any)?.sender === 'string' && typeof msg.sender === 'string')
               ? (messages[index - 1] as any).sender !== msg.sender
               : true);

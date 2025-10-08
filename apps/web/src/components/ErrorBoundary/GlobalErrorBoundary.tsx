@@ -1,8 +1,9 @@
 'use client';
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { motion } from 'framer-motion';
 import { ExclamationTriangleIcon, ArrowPathIcon, HomeIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import type { ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -57,7 +58,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     this.props.onError?.(error, errorInfo);
   }
 
-  private logErrorToService = (error: Error, errorInfo: ErrorInfo) => {
+  private readonly logErrorToService = (error: Error, errorInfo: ErrorInfo) => {
     // Example implementation - replace with your error reporting service
     const errorData = {
       message: error.message,
@@ -81,7 +82,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     });
   };
 
-  private handleRetry = () => {
+  private readonly handleRetry = () => {
     this.setState({
       hasError: false,
       error: null,
@@ -90,11 +91,11 @@ export class GlobalErrorBoundary extends Component<Props, State> {
     });
   };
 
-  private handleGoHome = () => {
+  private readonly handleGoHome = () => {
     window.location.href = '/';
   };
 
-  private handleReload = () => {
+  private readonly handleReload = () => {
     window.location.reload();
   };
 

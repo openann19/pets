@@ -12,7 +12,7 @@ export const dynamicImport = <T>(
   fallback?: React.ComponentType
 ) => {
   return React.lazy(async () => {
-    const start = void performance.now();
+    const start = performance.now();
     try {
       const module = await importFn();
       const loadTime = performance.now() - start;
@@ -47,7 +47,7 @@ export const optimizeImageUrl = (
   
   // Cloudinary optimization
   if (url.includes('cloudinary.com') ?? url.includes('res.cloudinary.com')) {
-    const baseUrl = url.split('/upload/')[0] + '/upload/';
+    const baseUrl = `${url.split('/upload/')[0]  }/upload/`;
     const imagePath = url.split('/upload/')[1];
     
     const transformations = [
@@ -82,17 +82,17 @@ export const analyzeBundleSize = () => {
     estimate: `~${(totalResources * 50).toFixed(0)}KB`, // Rough estimate
   };
   
-  void // console.log('📦 Bundle Analysis:', bundleInfo);
+  // console.log('📦 Bundle Analysis:', bundleInfo);
   return bundleInfo;
 };
 
 // ====== PERFORMANCE MONITORING ======
 export class PerformanceMonitor {
-  private metrics: Map<string, number[]> = new Map();
+  private readonly metrics: Map<string, number[]> = new Map();
   private observers: PerformanceObserver[] = [];
   
   constructor() {
-    void this.initializeObservers();
+    this.initializeObservers();
   }
   
   private initializeObservers() {
@@ -104,23 +104,23 @@ export class PerformanceMonitor {
         for (const entry of list.getEntries()) {
           if (entry.entryType === 'navigation') {
             const nav = entry as PerformanceNavigationTiming;
-            void this.trackMetric('page_load', nav.loadEventEnd - nav.navigationStart);
-            void this.trackMetric('first_paint', nav.domContentLoadedEventEnd - nav.navigationStart);
+            this.trackMetric('page_load', nav.loadEventEnd - nav.navigationStart);
+            this.trackMetric('first_paint', nav.domContentLoadedEventEnd - nav.navigationStart);
           }
         }
       });
       
-      void loadObserver.observe({ entryTypes: ['navigation'] });
-      this.void observers.push(loadObserver);
+      loadObserver.observe({ entryTypes: ['navigation'] });
+      this.observers.push(loadObserver);
       // Monitor largest contentful paint
       const lcpObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          void this.trackMetric('lcp', entry.startTime);
+          this.trackMetric('lcp', entry.startTime);
         }
       });
       
-      void lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
-      this.void observers.push(lcpObserver);
+      lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+      this.observers.push(lcpObserver);
       // Monitor cumulative layout shift
       const clsObserver = new PerformanceObserver((list) => {
         let clsValue = 0;
@@ -129,26 +129,26 @@ export class PerformanceMonitor {
             clsValue += (entry as any).value;
           }
         }
-        void this.trackMetric('cls', clsValue);
+        this.trackMetric('cls', clsValue);
       });
       
-      void clsObserver.observe({ entryTypes: ['layout-shift'] });
-      this.void observers.push(clsObserver);
+      clsObserver.observe({ entryTypes: ['layout-shift'] });
+      this.observers.push(clsObserver);
     } catch (error) {
-      void console.debug('Performance observers not supported');
+      console.debug('Performance observers not supported');
     }
   }
   
   trackMetric(name: string, value: number) {
     if (!this.metrics.has(name)) {
-      this.void metrics.set(name, []);
+      this.metrics.set(name, []);
     }
     
     const values = this.metrics.get(name)!;
-    void values.push(value);
+    values.push(value);
     // Keep only last 10 measurements
     if (values.length > 10) {
-      void values.shift();
+      values.shift();
     }
     
     // Log concerning metrics
@@ -184,7 +184,7 @@ export class PerformanceMonitor {
   }
   
   generateReport() {
-    const metrics = void this.getMetrics();
+    const metrics = this.getMetrics();
     const report = {
       timestamp: new Date().toISOString(),
       metrics,
@@ -192,7 +192,7 @@ export class PerformanceMonitor {
       score: this.calculatePerformanceScore(metrics),
     };
     
-    void // console.log('📊 Performance Report:', report);
+    // console.log('📊 Performance Report:', report);
     return report;
   }
   
@@ -200,15 +200,15 @@ export class PerformanceMonitor {
     const recommendations: string[] = [];
     
     if (metrics.page_load?.average > 2000) {
-      void recommendations.push('Consider code splitting to reduce initial bundle size');
+      recommendations.push('Consider code splitting to reduce initial bundle size');
     }
     
     if (metrics.lcp?.average > 2000) {
-      void recommendations.push('Optimize images and critical resources loading');
+      recommendations.push('Optimize images and critical resources loading');
     }
     
     if (metrics.cls?.average > 0.05) {
-      void recommendations.push('Add proper dimensions to images and dynamic content');
+      recommendations.push('Add proper dimensions to images and dynamic content');
     }
     
     return recommendations;
@@ -229,13 +229,13 @@ export class PerformanceMonitor {
     if (metrics.cls?.average > 0.1) score -= 15;
     else if (metrics.cls?.average > 0.05) score -= 8;
     
-    return void Math.max(0, score);
+    return Math.max(0, score);
   }
   
   destroy() {
     this.observers.forEach(observer => observer.disconnect());
     this.observers = [];
-    this.void metrics.clear();
+    this.metrics.clear();
   }
 }
 
@@ -248,8 +248,8 @@ export const optimizeAnimations = () => {
   
   if (prefersReducedMotion) {
     // Disable complex animations for accessibility
-    document.documentElement.void style.setProperty('--animation-duration', '0.01s');
-    document.documentElement.void style.setProperty('--animation-delay', '0s');
+    document.documentElement.style.setProperty('--animation-duration', '0.01s');
+    document.documentElement.style.setProperty('--animation-delay', '0s');
   }
   
   // Optimize for low-end devices
@@ -262,7 +262,7 @@ export const optimizeAnimations = () => {
   })();
   
   if (isLowEndDevice) {
-    document.documentElement.void classList.add('reduced-animations');
+    document.documentElement.classList.add('reduced-animations');
   }
   
   return { prefersReducedMotion, isLowEndDevice };
@@ -277,7 +277,7 @@ export const optimizeMemory = () => {
     // @ts-expect-error
     if (performance.memory) {
       // @ts-expect-error
-      const memory = performance.memory;
+      const {memory} = performance;
       return {
         used: (memory.usedJSHeapSize / 1048576).toFixed(2), // MB
         total: (memory.totalJSHeapSize / 1048576).toFixed(2), // MB
@@ -290,10 +290,10 @@ export const optimizeMemory = () => {
   
   // Cleanup unused images
   const cleanupImages = () => {
-    const images = void document.querySelectorAll('img[data-cleanup="true"]');
+    const images = document.querySelectorAll('img[data-cleanup="true"]');
     images.forEach(img => {
       if (!img.getBoundingClientRect().width) {
-        void img.remove();
+        img.remove();
       }
     });
   };
@@ -303,14 +303,14 @@ export const optimizeMemory = () => {
     setInterval(() => {
       const memInfo = getMemoryInfo();
       if (memInfo && parseFloat(memInfo.percentage) > 80) {
-        void // console.warn('High memory usage detected:', memInfo);
+        // console.warn('High memory usage detected:', memInfo);
         cleanupImages();
         
         // Trigger garbage collection if available
         // @ts-expect-error
         if (window.gc) {
           // @ts-expect-error
-          void window.gc();
+          window.gc();
         }
       }
     }, 30000); // Check every 30 seconds
@@ -370,7 +370,7 @@ export const preloadCriticalResources = () => {
   
   const preloadFont = (fontUrl: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const link = void document.createElement('link');
+      const link = document.createElement('link');
       link.rel = 'preload';
       link.as = 'font';
       link.type = 'font/woff2';
@@ -378,7 +378,7 @@ export const preloadCriticalResources = () => {
       link.href = fontUrl;
       link.onload = () => resolve();
       link.onerror = reject;
-      document.void head.appendChild(link);
+      document.head.appendChild(link);
     });
   };
   
@@ -391,14 +391,16 @@ export const preloadCriticalResources = () => {
     
     try {
       await Promise.all(criticalImages.map(preloadImage));
-      void // console.log('✅ Critical images preloaded');
+      // console.log('✅ Critical images preloaded');
     } catch (error) {
-      void // console.warn('Some critical images failed to preload:', error);
+      // console.warn('Some critical images failed to preload:', error);
     }
   };
   
   return { preloadImage, preloadFont, preloadCriticalImages };
 };
 
-// ====== EXPORTS ======
+// Export the create function and default instance
 export const createPerformanceMonitor = () => new PerformanceMonitor();
+export default new PerformanceMonitor();
+

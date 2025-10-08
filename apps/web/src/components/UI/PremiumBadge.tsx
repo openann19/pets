@@ -151,9 +151,9 @@ export const StatusBadge = ({ status, ...props }: { status: 'online' | 'offline'
 
 export const PremiumTierBadge = ({ tier, ...props }: { tier: 'free' | 'basic' | 'premium' | 'vip' } & Omit<PremiumBadgeProps, 'children'>) => {
   const tierConfig = {
-    free: { variant: 'default' as const, children: 'Free' },
-    basic: { variant: 'info' as const, children: 'Basic' },
-    premium: { variant: 'premium' as const, children: 'Premium', glow: true },
+    free: { variant: 'default' as const, children: 'Free', glow: false, pulse: false },
+    basic: { variant: 'info' as const, children: 'Basic', glow: false, pulse: false },
+    premium: { variant: 'premium' as const, children: 'Premium', glow: true, pulse: false },
     vip: { variant: 'holographic' as const, children: 'VIP', glow: true, pulse: true },
   };
 

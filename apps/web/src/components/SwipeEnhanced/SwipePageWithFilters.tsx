@@ -1,7 +1,5 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   SparklesIcon,
   FunnelIcon,
@@ -13,15 +11,18 @@ import {
   ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+
+import { useAuthStore } from '../../lib/auth-store';
+import { petsAPI } from '../../services/api';
+import type { Pet, FilterState, SwipeParams, MatchData, ApiResponse } from '../../types';
 import UltraPremiumFilterPanel from '../Filter/UltraPremiumFilterPanel';
-import SwipeCard from '../Pet/SwipeCard';
+import PremiumLayout from '../Layout/PremiumLayout';
 import MatchModal from '../Pet/MatchModal';
+import SwipeCard from '../Pet/SwipeCard';
 import LoadingSpinner from '../UI/LoadingSpinner';
 import PremiumButton from '../UI/PremiumButton';
-import PremiumLayout from '../Layout/PremiumLayout';
-import { petsAPI } from '../../services/api';
-import { useAuthStore } from '../../lib/auth-store';
-import { Pet, FilterState, SwipeParams, MatchData, ApiResponse } from '../../types';
 
 
 export default function SwipePageWithFilters() {
@@ -126,7 +127,7 @@ export default function SwipePageWithFilters() {
       const response = await petsAPI.getSwipeablePets(params) as ApiResponse<{ pets: Pet[] }>;
       
       if (response.success && response.data?.pets) {
-        const fetchedPets = response.data.pets as Pet[];
+        const fetchedPets = response.data.pets;
         setPets(fetchedPets);
         setCurrentPetIndex(0);
         

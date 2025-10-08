@@ -1,4 +1,4 @@
-import { Match, User } from '../types';
+import type { Match, User } from '../types';
 
 /**
  * Determines the other user in a match (not the current user)

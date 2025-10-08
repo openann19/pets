@@ -1,7 +1,5 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { usePWA, useOfflineActions, usePushNotifications, pwaUtils } from '@/utils/pwa-utils';
 import { 
   CloudArrowUpIcon, 
   CloudArrowDownIcon, 
@@ -12,6 +10,9 @@ import {
   ArrowDownTrayIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+
+import { usePWA, useOfflineActions, usePushNotifications, pwaUtils } from '@/utils/pwa-utils';
 
 interface PWAContextType {
   isOnline: boolean;

@@ -3,10 +3,10 @@
  * Focus on core functionality without complex mocking
  */
 
-import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ThemeProvider } from 'next-themes'
+import React from 'react'
 
 // Mock next-themes
 jest.mock('next-themes', () => ({

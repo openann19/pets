@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
-import { BioGenerator } from '@/components/AI/BioGenerator';
-import { motion } from 'framer-motion';
 import { ArrowLeftIcon, SparklesIcon, BeakerIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
+import React from 'react';
+
+import { BioGenerator } from '@/components/AI/BioGenerator';
 import { SPRING_CONFIG, PREMIUM_VARIANTS } from '@/constants/animations';
 
 export default function AiBioPage() {

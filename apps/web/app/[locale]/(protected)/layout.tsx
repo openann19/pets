@@ -1,10 +1,11 @@
 'use client';
 
-import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import { isAuthDisabled } from '@/config/dev';
+import { useAuthStore } from '@/lib/auth-store';
 
 export default function ProtectedLayout({
   children,

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSwipe } from '../../../src/hooks/useSwipe';
-import SwipeCard from '../../../src/components/Pet/SwipeCard';
-import MatchModal from '../../../src/components/Pet/MatchModal';
 import { HeartIcon, XMarkIcon, StarIcon } from '@heroicons/react/24/solid';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+
+import MatchModal from '../../../src/components/Pet/MatchModal';
+import SwipeCard from '../../../src/components/Pet/SwipeCard';
 import LoadingSpinner from '../../../src/components/UI/LoadingSpinner';
+import { useSwipe } from '../../../src/hooks/useSwipe';
 
 export default function SwipePage() {
   const { pets, isLoading, error, loadPets, swipePet, refreshPets } = useSwipe();

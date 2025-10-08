@@ -1,19 +1,5 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  useSwipeGesture, 
-  usePullToRefresh, 
-  useLongPress, 
-  usePinchGesture,
-  usePanGesture,
-  gestureUtils,
-  SwipeGesture,
-  PullToRefreshState,
-  PinchGesture,
-  PanGesture
-} from '@/utils/mobile-gestures';
 import { 
   ArrowPathIcon, 
   HandRaisedIcon, 
@@ -21,6 +7,23 @@ import {
   ArrowsPointingOutIcon,
   ArrowsPointingInIcon
 } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useRef, useEffect, useState } from 'react';
+
+import type {
+  SwipeGesture,
+  PinchGesture} from '@/utils/mobile-gestures';
+import { 
+  useSwipeGesture, 
+  usePullToRefresh, 
+  useLongPress, 
+  usePinchGesture,
+  usePanGesture,
+  gestureUtils,
+  PullToRefreshState,
+  PanGesture
+} from '@/utils/mobile-gestures';
+
 
 /**
  * Pull-to-Refresh Component

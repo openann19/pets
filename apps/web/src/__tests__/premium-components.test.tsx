@@ -4,15 +4,15 @@
  */
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { axe, toHaveNoViolations } from 'jest-axe';
 import userEvent from '@testing-library/user-event';
+import { axe, toHaveNoViolations } from 'jest-axe';
 import React from 'react';
 
 // Component imports
+import MobileSwipeCard from '../components/UI/MobileSwipeCard';
 import PremiumButton from '../components/UI/PremiumButton';
 import PremiumCard from '../components/UI/PremiumCard';
 import PremiumInput from '../components/UI/PremiumInput';
-import MobileSwipeCard from '../components/UI/MobileSwipeCard';
 
 // Mock data
 const mockPet = {

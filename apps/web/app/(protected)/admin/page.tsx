@@ -5,8 +5,6 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   UsersIcon,
   HeartIcon,
@@ -14,7 +12,6 @@ import {
   CogIcon,
   ChartBarIcon,
   ShieldCheckIcon,
-  ExclamationTriangleIcon,
   CheckCircleIcon,
   XCircleIcon,
   EyeIcon,
@@ -22,7 +19,6 @@ import {
   TrashIcon,
   PlusIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
   ArrowPathIcon,
   CloudIcon,
   ServerIcon,
@@ -36,16 +32,16 @@ import {
   CpuChipIcon,
   WifiIcon,
   BoltIcon,
-  BeakerIcon,
-  EyeSlashIcon,
   LockClosedIcon,
-  LockOpenIcon,
   ArrowUpIcon,
   ArrowDownIcon,
 } from '@heroicons/react/24/outline';
-import PremiumCard from '@/components/UI/PremiumCard';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+
 import PremiumButton from '@/components/UI/PremiumButton';
-import { PREMIUM_VARIANTS, SPRING_CONFIGS, STAGGER_CONFIG } from '@/constants/animations';
+import PremiumCard from '@/components/UI/PremiumCard';
+import { PREMIUM_VARIANTS, SPRING_CONFIGS } from '@/constants/animations';
 
 interface AdminStats {
   totalUsers: number;
@@ -105,19 +101,19 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [pets, setPets] = useState<Pet[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [_pets, _setPets] = useState<Pet[]>([]);
+  const [_matches, _setMatches] = useState<Match[]>([]);
   const [systemMetrics, setSystemMetrics] = useState<SystemMetric[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
-  const [apiEndpoints, setApiEndpoints] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [apiEndpoints, setApiEndpoints] = useState<Array<{ endpoint: string; method: string; status: string; responseTime: number; path?: string; calls?: number; avgTime?: number; errors?: number }>>([]);
+  const [_logs, _setLogs] = useState<Array<{ timestamp: string; level: string; message: string; userId?: string }>>([]);
 
   // Mock data - replace with actual API calls
   useEffect(() => {
-    const loadAdminData = async () => {
+    const loadAdminData = () => {
       setIsLoading(true);
       
       // Simulate API calls
@@ -169,11 +165,11 @@ export default function AdminPanel() {
         ]);
 
         setApiEndpoints([
-          { method: 'GET', path: '/api/users', calls: 1250, avgTime: '45ms', errors: 2 },
-          { method: 'POST', path: '/api/pets', calls: 890, avgTime: '120ms', errors: 5 },
-          { method: 'GET', path: '/api/matches', calls: 2100, avgTime: '65ms', errors: 1 },
-          { method: 'POST', path: '/api/auth/login', calls: 3400, avgTime: '85ms', errors: 12 },
-          { method: 'GET', path: '/api/pets/discover', calls: 5600, avgTime: '95ms', errors: 8 }
+          { endpoint: '/api/users', method: 'GET', status: 'healthy', responseTime: 45, path: '/api/users', calls: 1250, avgTime: 45, errors: 2 },
+          { endpoint: '/api/pets', method: 'POST', status: 'healthy', responseTime: 120, path: '/api/pets', calls: 890, avgTime: 120, errors: 5 },
+          { endpoint: '/api/matches', method: 'GET', status: 'healthy', responseTime: 65, path: '/api/matches', calls: 2100, avgTime: 65, errors: 1 },
+          { endpoint: '/api/auth/login', method: 'POST', status: 'warning', responseTime: 85, path: '/api/auth/login', calls: 3400, avgTime: 85, errors: 12 },
+          { endpoint: '/api/pets/discover', method: 'GET', status: 'healthy', responseTime: 95, path: '/api/pets/discover', calls: 5600, avgTime: 95, errors: 8 }
         ]);
 
         setIsLoading(false);
@@ -194,13 +190,13 @@ export default function AdminPanel() {
     { id: 'settings', label: 'Settings', icon: ShieldCheckIcon },
   ];
 
-  const handleUserAction = (action: string, userId: string) => {
-    console.log(`${action} user ${userId}`);
+  const handleUserAction = (_action: string, _userId: string) => {
+    // TODO: Implement action for user
     // Implement actual API calls
   };
 
-  const handleSystemAction = (action: string) => {
-    console.log(`System action: ${action}`);
+  const handleSystemAction = (_action: string) => {
+    // TODO: Implement system action
     // Implement actual system actions
   };
 
@@ -265,12 +261,10 @@ export default function AdminPanel() {
             variants={PREMIUM_VARIANTS.card}
             whileHover={{ 
               scale: 1.02,
-              transition: SPRING_CONFIGS.gentle
-            }}
+              transition: SPRING_CONFIGS.gentle            }}
             whileTap={{ 
               scale: 0.98,
-              transition: SPRING_CONFIGS.snappy
-            }}
+              transition: SPRING_CONFIGS.snappy            }}
           >
             <PremiumCard variant="glass" className="p-6 relative overflow-hidden group">
               {/* Animated background gradient */}
@@ -301,7 +295,7 @@ export default function AdminPanel() {
                     className="text-3xl font-bold text-gray-900"
                     initial={{ scale: 0.8 }}
                     animate={{ scale: 1 }}
-                    transition={{ delay: index * 0.1, ...SPRING_CONFIGS.bouncy }}
+                    transition={{ delay: index * 0.1, ...(SPRING_CONFIGS.bouncy) }}
                   >
                     {stat.value.toLocaleString()}
                   </motion.p>
@@ -310,8 +304,7 @@ export default function AdminPanel() {
                     whileHover={{ 
                       scale: 1.1,
                       rotate: 5,
-                      transition: SPRING_CONFIGS.gentle
-                    }}
+                      transition: SPRING_CONFIGS.gentle                    }}
                   >
                     <stat.icon className={`w-10 h-10 text-${stat.color}-500 drop-shadow-lg`} />
                   </motion.div>
@@ -326,7 +319,7 @@ export default function AdminPanel() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, ...SPRING_CONFIGS.smooth }}
+        transition={{ delay: 0.4, ...(SPRING_CONFIGS.smooth) }}
       >
         <PremiumCard variant="gradient" className="p-6 relative overflow-hidden">
           {/* Animated background pattern */}
@@ -355,8 +348,7 @@ export default function AdminPanel() {
                   transition={{ delay: 0.5 + index * 0.1, ...SPRING_CONFIGS.gentle }}
                   whileHover={{ 
                     scale: 1.02,
-                    transition: SPRING_CONFIGS.gentle
-                  }}
+                    transition: SPRING_CONFIGS.gentle                  }}
                 >
                   <div className="flex-1">
                     <p className="text-sm text-white/80 font-medium">{metric.name}</p>
@@ -411,7 +403,7 @@ export default function AdminPanel() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, ...SPRING_CONFIGS.smooth }}
+        transition={{ delay: 0.6, ...(SPRING_CONFIGS.smooth) }}
       >
         <PremiumCard className="p-6 relative overflow-hidden">
           {/* Subtle background animation */}
@@ -482,12 +474,10 @@ export default function AdminPanel() {
                   variants={PREMIUM_VARIANTS.card}
                   whileHover={{ 
                     scale: 1.05,
-                    transition: SPRING_CONFIGS.gentle
-                  }}
+                    transition: SPRING_CONFIGS.gentle                  }}
                   whileTap={{ 
                     scale: 0.95,
-                    transition: SPRING_CONFIGS.snappy
-                  }}
+                    transition: SPRING_CONFIGS.snappy                  }}
                 >
                   <PremiumButton
                     variant={action.variant}
@@ -526,7 +516,7 @@ export default function AdminPanel() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ ...SPRING_CONFIGS.smooth }}
+        transition={{ ...(SPRING_CONFIGS.smooth) }}
       >
         <PremiumCard className="p-6 relative overflow-hidden">
           {/* Animated background */}
@@ -590,7 +580,7 @@ export default function AdminPanel() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, ...SPRING_CONFIGS.smooth }}
+        transition={{ delay: 0.2, ...(SPRING_CONFIGS.smooth) }}
       >
         <PremiumCard className="p-6 relative overflow-hidden">
           {/* Subtle background pattern */}
@@ -610,17 +600,16 @@ export default function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user, index) => (
+                  {users.map((user, _index) => (
                     <motion.tr 
                       key={user.id} 
                       className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-pink-50/50 transition-all duration-300 group"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1, ...SPRING_CONFIGS.gentle }}
+                      transition={{ delay: _index * 0.1, ...SPRING_CONFIGS.gentle }}
                       whileHover={{ 
                         scale: 1.01,
-                        transition: SPRING_CONFIGS.gentle
-                      }}
+                        transition: SPRING_CONFIGS.gentle                      }}
                     >
                       <td className="py-4 px-4">
                         <div className="flex items-center space-x-3">
@@ -629,8 +618,7 @@ export default function AdminPanel() {
                             whileHover={{ 
                               scale: 1.1,
                               rotate: 5,
-                              transition: SPRING_CONFIGS.gentle
-                            }}
+                              transition: SPRING_CONFIGS.gentle                            }}
                           >
                             {user.name.charAt(0).toUpperCase()}
                           </motion.div>
@@ -756,15 +744,15 @@ export default function AdminPanel() {
                     </span>
                   </td>
                   <td className="py-3 px-4 font-mono text-sm">{endpoint.path}</td>
-                  <td className="py-3 px-4">{endpoint.calls.toLocaleString()}</td>
-                  <td className="py-3 px-4">{endpoint.avgTime}</td>
+                  <td className="py-3 px-4">{endpoint.calls?.toLocaleString() ?? 'N/A'}</td>
+                  <td className="py-3 px-4">{endpoint.avgTime ? `${endpoint.avgTime}ms` : 'N/A'}</td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-1 text-xs rounded ${
                       endpoint.errors === 0 ? 'bg-green-100 text-green-800' :
-                      endpoint.errors < 5 ? 'bg-yellow-100 text-yellow-800' :
+                      endpoint.errors && endpoint.errors < 5 ? 'bg-yellow-100 text-yellow-800' :
                       'bg-red-100 text-red-800'
                     }`}>
-                      {endpoint.errors}
+                      {endpoint.errors ?? 0}
                     </span>
                   </td>
                   <td className="py-3 px-4">
@@ -920,7 +908,7 @@ export default function AdminPanel() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading admin panel...</p>
         </div>
       </div>
@@ -934,7 +922,7 @@ export default function AdminPanel() {
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ ...SPRING_CONFIGS.smooth }}
+          transition={{ ...(SPRING_CONFIGS.smooth) }}
           className="mb-8"
         >
           <PremiumCard variant="gradient" className="p-8 relative overflow-hidden">
@@ -1054,7 +1042,7 @@ export default function AdminPanel() {
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, ...SPRING_CONFIGS.smooth }}
+            transition={{ delay: 0.3, ...(SPRING_CONFIGS.smooth) }}
             className="w-64 flex-shrink-0"
           >
             <PremiumCard className="p-4 relative overflow-hidden">
@@ -1087,12 +1075,10 @@ export default function AdminPanel() {
                       transition={{ delay: 0.6 + index * 0.1, ...SPRING_CONFIGS.gentle }}
                       whileHover={{ 
                         scale: 1.02,
-                        transition: SPRING_CONFIGS.gentle
-                      }}
+                        transition: SPRING_CONFIGS.gentle                      }}
                       whileTap={{ 
                         scale: 0.98,
-                        transition: SPRING_CONFIGS.snappy
-                      }}
+                        transition: SPRING_CONFIGS.snappy                      }}
                     >
                       {/* Active indicator */}
                       {activeTab === tab.id && (

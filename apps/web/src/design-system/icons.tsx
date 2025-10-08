@@ -3,7 +3,31 @@
  * React components for Heroicons subset with consistent styling
  */
 
-import React from 'react';
+import {
+  HeartIcon as HeartOutline,
+  XMarkIcon as XOutline,
+  StarIcon as StarOutline,
+  SparklesIcon as SparklesOutline,
+  ArrowPathIcon as ArrowPathOutline,
+  UserIcon as UserOutline,
+  ChatBubbleLeftRightIcon as ChatOutline,
+  MapPinIcon as MapPinOutline,
+  CameraIcon as CameraOutline,
+  PhotoIcon as PhotoOutline,
+  VideoCameraIcon as VideoOutline,
+  PhoneIcon as PhoneOutline,
+  EnvelopeIcon as EnvelopeOutline,
+  BellIcon as BellOutline,
+  Cog6ToothIcon as CogOutline,
+  HomeIcon as HomeOutline,
+  MagnifyingGlassIcon as SearchOutline,
+  PlusIcon as PlusOutline,
+  MinusIcon as MinusOutline,
+  CheckIcon as CheckOutline,
+  ExclamationTriangleIcon as WarningOutline,
+  InformationCircleIcon as InfoOutline,
+  XCircleIcon as ErrorOutline,
+} from '@heroicons/react/24/outline';
 import {
   HeartIcon,
   XMarkIcon,
@@ -132,32 +156,8 @@ import {
   InformationCircleIcon as InfoOutlineIcon,
   XCircleIcon as ErrorOutlineIcon,
 } from '@heroicons/react/24/solid';
+import React from 'react';
 
-import {
-  HeartIcon as HeartOutline,
-  XMarkIcon as XOutline,
-  StarIcon as StarOutline,
-  SparklesIcon as SparklesOutline,
-  ArrowPathIcon as ArrowPathOutline,
-  UserIcon as UserOutline,
-  ChatBubbleLeftRightIcon as ChatOutline,
-  MapPinIcon as MapPinOutline,
-  CameraIcon as CameraOutline,
-  PhotoIcon as PhotoOutline,
-  VideoCameraIcon as VideoOutline,
-  PhoneIcon as PhoneOutline,
-  EnvelopeIcon as EnvelopeOutline,
-  BellIcon as BellOutline,
-  Cog6ToothIcon as CogOutline,
-  HomeIcon as HomeOutline,
-  MagnifyingGlassIcon as SearchOutline,
-  PlusIcon as PlusOutline,
-  MinusIcon as MinusOutline,
-  CheckIcon as CheckOutline,
-  ExclamationTriangleIcon as WarningOutline,
-  InformationCircleIcon as InfoOutline,
-  XCircleIcon as ErrorOutline,
-} from '@heroicons/react/24/outline';
 
 // Icon size variants
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';

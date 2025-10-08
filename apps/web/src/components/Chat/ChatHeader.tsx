@@ -1,7 +1,3 @@
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { 
   ArrowLeftIcon, 
   InformationCircleIcon, 
@@ -9,7 +5,12 @@ import {
   VideoCameraIcon,
   EllipsisVerticalIcon 
 } from '@heroicons/react/24/outline';
-import { User, Pet } from '../../types';
+import { motion } from 'framer-motion';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import React from 'react';
+
+import type { User, Pet } from '../../types';
 
 interface ChatHeaderProps {
   otherUser: User;

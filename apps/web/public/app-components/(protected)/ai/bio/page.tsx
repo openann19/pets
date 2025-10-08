@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
-import { BioGenerator } from '../../../../src/components/AI/BioGenerator';
-import { motion } from 'framer-motion';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
+import React from 'react';
+
+import { BioGenerator } from '../../../../src/components/AI/BioGenerator';
 
 export default function AiBioPage() {
   return (

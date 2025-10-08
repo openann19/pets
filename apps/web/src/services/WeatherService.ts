@@ -16,7 +16,7 @@
  * - Quantum-computed long-range predictions
  */
 
-import {
+import type {
   DataProviderInfo,
   GeoPolygon,
   PetBreed,
@@ -43,6 +43,7 @@ import {
   EnhancedDailyForecast,
   EnhancedAirQuality
 } from '../types/weather';
+
 import { WeatherProviders } from './weatherProviders';
 
 export interface EnhancedWeatherData {
@@ -388,21 +389,21 @@ class EnhancedWeatherService {
   };
 
   // Advanced Caching System
-  private cache = new Map<string, { data: EnhancedWeatherData; timestamp: number; etag: string }>();
-  private cacheTimeout = 5 * 60 * 1000; // 5 minutes for real-time data
-  private historicalCache = new Map<string, any>();
+  private readonly cache = new Map<string, { data: EnhancedWeatherData; timestamp: number; etag: string }>();
+  private readonly cacheTimeout = 5 * 60 * 1000; // 5 minutes for real-time data
+  private readonly historicalCache = new Map<string, any>();
   
   // WebSocket connections for real-time updates
-  private websockets = new Map<string, WebSocket>();
+  private readonly websockets = new Map<string, WebSocket>();
   
   // AI Model Integration
-  private aiModelEndpoint = process.env.NEXT_PUBLIC_AI_WEATHER_MODEL || '';
+  private readonly aiModelEndpoint = process.env.NEXT_PUBLIC_AI_WEATHER_MODEL || '';
   
   // Blockchain verification
-  private blockchainNetwork = process.env.NEXT_PUBLIC_BLOCKCHAIN_NETWORK || 'polygon';
+  private readonly blockchainNetwork = process.env.NEXT_PUBLIC_BLOCKCHAIN_NETWORK || 'polygon';
   
   // Performance monitoring
-  private metrics = {
+  private readonly metrics = {
     apiCalls: 0,
     cacheHits: 0,
     failovers: 0,
@@ -723,9 +724,9 @@ class EnhancedWeatherService {
   }
 
   private mapWeatherAPIData(data: any): EnhancedWeatherData {
-    const current = data.current;
-    const location = data.location;
-    const forecast = data.forecast;
+    const {current} = data;
+    const {location} = data;
+    const {forecast} = data;
     
     return {
       // Core Metrics
@@ -1618,8 +1619,8 @@ class EnhancedWeatherService {
     if (!air?.list?.[0]) return undefined;
     
     const data = air.list[0];
-    const aqi = data.main.aqi;
-    const components = data.components;
+    const {aqi} = data.main;
+    const {components} = data;
     
     return {
       aqi,

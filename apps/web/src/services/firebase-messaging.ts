@@ -5,6 +5,7 @@
 
 import { initializeApp, getApps } from 'firebase/app'
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging'
+
 import { logger } from './logger'
 
 // Firebase configuration
@@ -58,9 +59,9 @@ export interface NotificationPermission {
 
 class FirebaseMessagingService {
   private token: string | null = null
-  private isSupported: boolean = false
+  private isSupported = false
   private permission: NotificationPermission = 'default'
-  private messageHandlers: Array<(payload: any) => void> = []
+  private readonly messageHandlers: Array<(payload: any) => void> = []
 
   async initialize(): Promise<NotificationPermission> {
     try {
@@ -89,7 +90,7 @@ class FirebaseMessagingService {
         // Set up message listener
         this.setupMessageListener()
         
-        logger.info('[FCM] Initialized successfully', { token: this.token?.substring(0, 20) + '...' })
+        logger.info('[FCM] Initialized successfully', { token: `${this.token?.substring(0, 20)  }...` })
       }
 
       return {

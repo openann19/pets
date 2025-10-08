@@ -1,5 +1,5 @@
-import React from 'react';
 import { render } from '@testing-library/react';
+import React from 'react';
 
 // Mock all the complex dependencies
 jest.mock('../services/feedbackService', () => ({

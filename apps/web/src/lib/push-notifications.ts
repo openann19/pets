@@ -343,7 +343,7 @@ export class PushNotificationManager {
   // Service worker communication
 
   async sendMessageToServiceWorker(message: any): Promise<any> {
-    if (!this.registration || !this.registration.active) {
+    if (!this.registration?.active) {
       console.warn('[Push] No active service worker');
       return null;
     }

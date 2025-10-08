@@ -1,8 +1,10 @@
-import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
+import React from 'react';
+
 import '@testing-library/jest-dom';
+import type { Pet } from '../../types';
+
 import SwipeCard from './SwipeCard';
-import { Pet } from '../../types';
 
 const mockPet: Pet = {
   _id: 'pet1',

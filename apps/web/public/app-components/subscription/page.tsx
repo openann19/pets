@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
-import { SubscriptionManager } from '../../src/components/Premium/SubscriptionManager';
 import { motion } from 'framer-motion';
+import React from 'react';
+
+import { SubscriptionManager } from '../../src/components/Premium/SubscriptionManager';
 
 export default function SubscriptionPage() {
   return (

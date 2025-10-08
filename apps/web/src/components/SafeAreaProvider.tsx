@@ -1,7 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useDeviceDetection, useSafeAreaInsets, SafeAreaInsets } from '@/utils/safe-area';
+
+import type { SafeAreaInsets } from '@/utils/safe-area';
+import { useDeviceDetection, useSafeAreaInsets } from '@/utils/safe-area';
 
 interface SafeAreaContextType {
   insets: SafeAreaInsets;

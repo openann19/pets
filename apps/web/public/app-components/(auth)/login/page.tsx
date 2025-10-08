@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import { EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { motion } from 'framer-motion';
-import { EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+
 import { useAuth } from '../../../src/hooks/useAuth';
 
 const loginSchema = z.object({

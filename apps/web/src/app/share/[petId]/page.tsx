@@ -3,8 +3,9 @@
  * Generates OG cards for social sharing
  */
 
-import { Metadata } from 'next'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+
 import { PetShareView } from '@/components/social/PetShareView'
 
 interface SharePageProps {

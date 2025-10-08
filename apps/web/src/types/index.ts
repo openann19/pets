@@ -44,6 +44,7 @@ export interface PetOwner {
   firstName: string;
   lastName: string;
   avatar?: string;
+  location?: PetLocation;
   premium?: {
     isActive: boolean;
     tier?: 'basic' | 'premium' | 'ultra';
@@ -96,9 +97,11 @@ export interface Pet {
 // ===== User Types =====
 export interface User {
   _id: string;
+  id: string;  // Alias for _id for compatibility
   email: string;
   firstName: string;
   lastName: string;
+  name?: string;  // Full name for compatibility
   avatar?: string;
   dateOfBirth?: string;
   location?: PetLocation;
@@ -165,6 +168,7 @@ export interface Message {
   metadata?: MessageMetadata;
   attachments?: MessageAttachment[];
   read: boolean;
+  isEdited?: boolean;
   createdAt: string;
   updatedAt: string;
 }

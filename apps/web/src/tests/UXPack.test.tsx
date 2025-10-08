@@ -3,10 +3,18 @@
  * Tests all implemented features: dark mode, skeletons, micro-interactions, etc.
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { ThemeProvider } from 'next-themes'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { motion } from 'framer-motion'
+import { ThemeProvider } from 'next-themes'
+
+import { ThemeSwitch, ThemeSelector } from '../components/ThemeSwitch'
+import { 
+  Interactive, 
+  InteractiveButton, 
+  InteractiveCard 
+} from '../components/ui/Interactive'
+import SafeImage from '../components/UI/SafeImage'
 import { 
   SkeletonCard, 
   SkeletonMessage, 
@@ -14,13 +22,6 @@ import {
   SkeletonText,
   SkeletonGrid 
 } from '../components/ui/Skeleton'
-import { 
-  Interactive, 
-  InteractiveButton, 
-  InteractiveCard 
-} from '../components/ui/Interactive'
-import { ThemeSwitch, ThemeSelector } from '../components/ThemeSwitch'
-import SafeImage from '../components/UI/SafeImage'
 import { UXPackDemo } from '../components/UXPackDemo'
 
 // Mock next-themes

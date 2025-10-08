@@ -4,12 +4,13 @@
  * Universal hook for implementing click-outside-to-close pattern
  */
 
-import { useEffect, RefObject } from 'react';
+import type { RefObject } from 'react';
+import { useEffect } from 'react';
 
 export function useClickOutside<T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
   handler: (event: MouseEvent | TouchEvent) => void,
-  enabled: boolean = true
+  enabled = true
 ) {
   useEffect(() => {
     if (!enabled) return;

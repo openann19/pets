@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FunnelIcon, AdjustmentsHorizontalIcon, XMarkIcon, SparklesIcon,
   MagnifyingGlassIcon, HeartIcon, StarIcon, CheckCircleIcon,
   LightBulbIcon, ShieldCheckIcon, MapPinIcon, ClockIcon
 } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+
 import BreedSearchInput from './BreedSearchInput';
 
 interface UltraFilterState {

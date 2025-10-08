@@ -1,6 +1,7 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { axe, toHaveNoViolations } from 'jest-axe';
+import React from 'react';
+
 import { AccessibilityProvider, AccessibilitySettings } from '@/components/AccessibilityProvider';
 import { GlobalErrorBoundary } from '@/components/ErrorBoundary/GlobalErrorBoundary';
 
@@ -157,7 +158,7 @@ describe('Accessibility Tests', () => {
         </AccessibilityProvider>
       );
 
-      const fontSizeSelect = screen.getByLabelText(/font size/i) as HTMLSelectElement;
+      const fontSizeSelect = screen.getByLabelText(/font size/i);
       expect(fontSizeSelect.value).toBe('large');
     });
   });

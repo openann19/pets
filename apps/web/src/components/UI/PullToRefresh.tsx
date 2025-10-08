@@ -5,9 +5,9 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface PullToRefreshProps {
   onRefresh: () => Promise<void>;

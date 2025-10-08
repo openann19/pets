@@ -4,12 +4,14 @@
  */
 
 // @ts-nocheck
-import { useAuthStore } from '@/lib/auth-store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+
 import apiClient from '../lib/api-client';
 import type { Match, Message, Pet, SwipeAction, User } from '../types';
+
+import { useAuthStore } from '@/lib/auth-store';
 
 // ============= AUTHENTICATION HOOKS =============
 export function useAuth() {
@@ -399,7 +401,7 @@ export function useUpdateLocation() {
   });
 }
 
-export function useNearbyPets(radius: number = 10) {
+export function useNearbyPets(radius = 10) {
   return useQuery({
     queryKey: ['pets', 'nearby', radius],
     queryFn: async () => {

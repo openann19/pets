@@ -131,7 +131,7 @@ export const UHD_GRAPHICS_CONFIG = {
 } as const;
 
 // Helper functions for UHD graphics
-export const getOptimalImageSize = (containerWidth: number, containerHeight: number, dpr: number = 2) => {
+export const getOptimalImageSize = (containerWidth: number, containerHeight: number, dpr = 2) => {
   return {
     width: Math.ceil(containerWidth * dpr),
     height: Math.ceil(containerHeight * dpr),

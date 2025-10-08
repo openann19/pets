@@ -3,8 +3,7 @@
  * Production-ready with full type safety, error handling, and real-time features
  */
 
-import { 
-  ApiResponse, 
+import type { 
   User, 
   Pet, 
   UserRegistrationData, 
@@ -15,6 +14,9 @@ import {
   BioGenerationData, 
   CompatibilityOptions, 
   BehaviorAnalysisData 
+} from '../types';
+import { 
+  ApiResponse 
 } from '../types';
 
 // Centralized API configuration
@@ -60,9 +62,9 @@ interface RequestOptions extends RequestInit {
 class ApiService {
   private token: string | null = null;
   private refreshToken: string | null = null;
-  private cache: Map<string, { data: unknown; timestamp: number; ttl: number }> = new Map();
-  private retryAttempts = 3;
-  private retryDelay = 1000;
+  private readonly cache: Map<string, { data: unknown; timestamp: number; ttl: number }> = new Map();
+  private readonly retryAttempts = 3;
+  private readonly retryDelay = 1000;
 
   constructor() {
     this.initializeFromStorage();
@@ -86,7 +88,7 @@ class ApiService {
     return `${endpoint}_${JSON.stringify(options)}`;
   }
 
-  private setCache(key: string, data: unknown, ttl: number = 300000) { // 5 minutes default
+  private setCache(key: string, data: unknown, ttl = 300000) { // 5 minutes default
     this.cache.set(key, {
       data,
       timestamp: Date.now(),

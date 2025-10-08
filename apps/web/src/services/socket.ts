@@ -3,8 +3,11 @@
  * Handles chat, notifications, and live updates
  */
 
-import { io, Socket } from 'socket.io-client';
-import { MessageAttachment, SocketMessageData, SocketNotificationData, SocketUserStatusData, SocketCallData, SocketMatchData, SocketError, SocketTypingData } from '@/types';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
+
+import type { MessageAttachment, SocketNotificationData, SocketUserStatusData, SocketCallData, SocketMatchData, SocketError} from '@/types';
+import { SocketMessageData, SocketTypingData } from '@/types';
 
 interface SocketServiceConfig {
   url: string;
@@ -15,12 +18,12 @@ interface SocketServiceConfig {
 
 class SocketService {
   private socket: Socket | null = null;
-  private config: SocketServiceConfig;
+  private readonly config: SocketServiceConfig;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
+  private readonly maxReconnectAttempts = 5;
+  private readonly reconnectDelay = 1000;
   private isConnected = false;
-  private eventHandlers: Map<string, Function[]> = new Map();
+  private readonly eventHandlers: Map<string, Function[]> = new Map();
 
   constructor(config: SocketServiceConfig) {
     this.config = {

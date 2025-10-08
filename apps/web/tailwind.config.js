@@ -14,47 +14,38 @@ module.exports = {
     "./src/providers/**/*.{js,ts,jsx,tsx}",
     "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
   ],
-  // Enable purge for production builds
-  purge: {
-    enabled: process.env.NODE_ENV === 'production',
-    content: [
-      "./src/**/*.{js,ts,jsx,tsx}",
-      "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
-    ],
-    options: {
-      safelist: [
-        // Keep dynamic classes that might be generated
-        /^bg-gradient-/,
-        /^from-/,
-        /^to-/,
-        /^shadow-/,
-        /^text-/,
-        /^border-/,
-        /^ring-/,
-        /^animate-/,
-        /^hover:/,
-        /^focus:/,
-        /^active:/,
-        /^group-hover:/,
-        /^group-focus:/,
-        /^dark:/,
-        // Keep glass morphism classes
-        'glass-morphism',
-        'glass-morphism-dark',
-        // Keep premium utility classes
-        'premium-gradient',
-        'mesh-gradient',
-        'smooth-gradient',
-        'shadow-sleek',
-        'border-sleek',
-        // Keep UHD optimization classes
-        'uhd-high-dpi',
-        'uhd-gpu-accelerated',
-        'uhd-crisp-text',
-        'uhd-smooth-animation',
-      ],
-    },
-  },
+  // Safelist for dynamically generated classes
+  safelist: [
+    // Keep dynamic classes that might be generated
+    { pattern: /^bg-gradient-/ },
+    { pattern: /^from-/ },
+    { pattern: /^to-/ },
+    { pattern: /^shadow-/ },
+    { pattern: /^text-/ },
+    { pattern: /^border-/ },
+    { pattern: /^ring-/ },
+    { pattern: /^animate-/ },
+    { pattern: /^hover:/ },
+    { pattern: /^focus:/ },
+    { pattern: /^active:/ },
+    { pattern: /^group-hover:/ },
+    { pattern: /^group-focus:/ },
+    { pattern: /^dark:/ },
+    // Keep glass morphism classes
+    'glass-morphism',
+    'glass-morphism-dark',
+    // Keep premium utility classes
+    'premium-gradient',
+    'mesh-gradient',
+    'smooth-gradient',
+    'shadow-sleek',
+    'border-sleek',
+    // Keep UHD optimization classes
+    'uhd-high-dpi',
+    'uhd-gpu-accelerated',
+    'uhd-crisp-text',
+    'uhd-smooth-animation',
+  ],
   theme: {
     extend: {
       // Enhanced color system from unified design system

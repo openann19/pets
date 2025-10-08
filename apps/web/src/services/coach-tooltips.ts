@@ -4,6 +4,7 @@
  */
 
 import Shepherd from 'shepherd.js'
+
 import 'shepherd.js/dist/css/shepherd.css'
 import { logger } from './logger'
 
@@ -42,7 +43,7 @@ export interface TourConfig {
 }
 
 class CoachTooltipsService {
-  private tours: Map<string, Shepherd.Tour> = new Map()
+  private readonly tours: Map<string, Shepherd.Tour> = new Map()
   private currentTour: Shepherd.Tour | null = null
   private isInitialized = false
 

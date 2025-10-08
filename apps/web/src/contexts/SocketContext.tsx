@@ -1,8 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React, { createContext, useContext } from 'react';
+import type { Socket } from 'socket.io-client';
+
 import { useSocket } from '../hooks/useSocket';
-import { Socket } from 'socket.io-client';
 
 interface SocketContextType {
   socket: Socket | null;

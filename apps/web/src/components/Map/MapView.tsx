@@ -1,10 +1,13 @@
-import L, { DivIcon, LatLngExpression } from 'leaflet';
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
-import { Socket, io } from 'socket.io-client';
-// import { PulsePin } from '@pawfectmatch/core/types/realtime';
 import { ChatBubbleLeftRightIcon, HeartIcon, MapPinIcon } from '@heroicons/react/24/solid';
 import { motion } from 'framer-motion';
+import type { LatLngExpression } from 'leaflet';
+import L, { DivIcon } from 'leaflet';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import type { Socket} from 'socket.io-client';
+import { io } from 'socket.io-client';
+// import { PulsePin } from '@pawfectmatch/core/types/realtime';
+
 import 'leaflet/dist/leaflet.css';
 import LoadingSpinner from '../UI/LoadingSpinner';
 // import { SPRING_CONFIG } from '@pawfectmatch/core/constants/animations';
@@ -20,7 +23,7 @@ type PulsePin = {
   createdAt: string;
 };
 // Enhanced icon system with activity-based styling
-const createActivityIcon = (activity: string, isMatch: boolean = false) => {
+const createActivityIcon = (activity: string, isMatch = false) => {
   const activityIcons: Record<string, string> = {
     walking: '🚶',
     playing: '🎾',

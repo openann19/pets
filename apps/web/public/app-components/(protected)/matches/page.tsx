@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
 import { ChatBubbleLeftRightIcon, PhoneIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
+import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import React from 'react';
+
 import LoadingSpinner from '../../../src/components/UI/LoadingSpinner';
 
 export default function MatchesPage() {

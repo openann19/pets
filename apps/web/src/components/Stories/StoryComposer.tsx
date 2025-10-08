@@ -5,8 +5,6 @@
 
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   XMarkIcon, 
   CameraIcon, 
@@ -16,7 +14,9 @@ import {
   CheckIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import React, { useState, useRef, useCallback } from 'react';
 
 interface StoryComposerProps {
   isOpen: boolean;

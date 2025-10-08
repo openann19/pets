@@ -1,6 +1,8 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useEffect } from 'react';
+import type { ReactNode} from 'react';
+import { createContext, useContext, useEffect } from 'react';
+
 import { useAuthStore } from '@/lib/auth-store';
 
 interface AuthContextType {

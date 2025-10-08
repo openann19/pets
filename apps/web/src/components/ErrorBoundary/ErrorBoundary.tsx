@@ -1,7 +1,8 @@
 'use client';
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
+import type { ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -22,7 +23,7 @@ interface State {
  * Catches JavaScript errors anywhere in the child component tree
  */
 export class ErrorBoundary extends Component<Props, State> {
-  private retryTimeoutId: NodeJS.Timeout | null = null;
+  private readonly retryTimeoutId: NodeJS.Timeout | null = null;
 
   constructor(props: Props) {
     super(props);
@@ -71,7 +72,7 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   }
 
-  private reportError = async (error: Error, errorInfo: ErrorInfo) => {
+  private readonly reportError = async (error: Error, errorInfo: ErrorInfo) => {
     try {
       // Send to error reporting service (Sentry, LogRocket, etc.)
       const errorReport = {
@@ -98,7 +99,7 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   };
 
-  private handleRetry = () => {
+  private readonly handleRetry = () => {
     this.setState({
       hasError: false,
       error: null,
@@ -107,11 +108,11 @@ export class ErrorBoundary extends Component<Props, State> {
     });
   };
 
-  private handleReload = () => {
+  private readonly handleReload = () => {
     window.location.reload();
   };
 
-  private handleGoHome = () => {
+  private readonly handleGoHome = () => {
     window.location.href = '/';
   };
 
@@ -334,7 +335,7 @@ export class AsyncErrorBoundary extends Component<Props, State> {
     window.removeEventListener('unhandledrejection', this.handleUnhandledRejection);
   }
 
-  private handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+  private readonly handleUnhandledRejection = (event: PromiseRejectionEvent) => {
     const error = new Error(`Unhandled Promise Rejection: ${event.reason}`);
     this.setState({
       hasError: true,
