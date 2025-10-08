@@ -1,1 +1,9 @@
 node_modules
+
+# Next.js build output
+apps/web/.next/
+.next/
+
+# Build cache
+*.pack
+*.pack.old
