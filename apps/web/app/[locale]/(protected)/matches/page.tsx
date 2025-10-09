@@ -17,7 +17,10 @@ import { useMatches } from '@/hooks/api-hooks';
 
 export default function MatchesPage() {
   const router = useRouter();
-  const { data: matches, isLoading, error, refetch } = useMatches();
+  const { data: matchesData, isLoading, error, refetch } = useMatches();
+  
+  // Ensure matches is always an array
+  const matches = Array.isArray(matchesData) ? matchesData : [];
 
   // Window scroll position memory
   useEffect(() => {
@@ -114,7 +117,7 @@ export default function MatchesPage() {
                 </span>
               </h1>
               <p className="text-white/70 text-lg">
-                {matches && matches.length > 0 
+                {matches.length > 0 
                   ? `You have ${matches.length} perfect ${matches.length === 1 ? 'match' : 'matches'}!`
                   : 'Your matches will appear here'
                 }
@@ -122,7 +125,7 @@ export default function MatchesPage() {
             </div>
             
             {/* Quick Actions */}
-            {matches && matches.length > 0 && (
+            {matches.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -145,7 +148,7 @@ export default function MatchesPage() {
 
         {/* Matches Grid or Empty State */}
         <AnimatePresence mode="wait">
-          {matches && matches.length > 0 ? (
+          {matches.length > 0 ? (
             <motion.div
               key="matches-grid"
               initial={{ opacity: 0 }}

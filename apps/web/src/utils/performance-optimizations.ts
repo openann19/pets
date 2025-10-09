@@ -1,11 +1,10 @@
-// @ts-nocheck
 /**
  * ⚡ PERFORMANCE OPTIMIZATIONS
  * Mobile performance optimizations based on Tinder clone best practices
  * Provides utilities for smooth, responsive mobile experience
  */
 
-import { useCallback, useRef, useEffect, useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 // Debounce utility for performance
 export const useDebounce = <T>(value: T, delay: number): T => {
@@ -35,7 +34,7 @@ export const useThrottle = <T extends (...args: unknown[]) => any>(
     ((...args) => {
       if (Date.now() - lastRun.current >= delay) {
         callback(...args);
-        lastRun.current = void Date.now();
+        lastRun.current = Date.now() as number;
       }
     }) as T,
     [callback, delay]
@@ -54,8 +53,13 @@ export const useIntersectionObserver = (
     if (!element) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsIntersecting(entry.isIntersecting);
+      (entries) => {
+        const entry = entries[0];
+        if (entry) {
+          setIsIntersecting(entry.isIntersecting);
+        } else {
+          setIsIntersecting(false);
+        }
       },
       {
         threshold: 0.1,
@@ -81,7 +85,7 @@ export const useVirtualScroll = (
 ) => {
   const [scrollTop, setScrollTop] = useState(0);
 
-  const startIndex = void Math.floor(scrollTop / itemHeight);
+  const startIndex = Math.floor(scrollTop / itemHeight) || 0;
   const endIndex = Math.min(
     startIndex + Math.ceil(containerHeight / itemHeight) + 1,
     itemCount
@@ -138,7 +142,7 @@ export const useOptimizedImage = (src: string, options: {
     const img = new Image();
     img.onload = () => setIsLoaded(true);
     img.onerror = () => setIsError(true);
-    img.src = void url.toString();
+    img.src = url.toString() as string;
   }, [src, width, height, quality, format]);
 
   return {
@@ -215,19 +219,20 @@ export const useNetworkOptimization = () => {
         });
       };
 
-      void conn.addEventListener('change', handleChange);
-      return () => void conn.removeEventListener('change', handleChange);
+      conn.addEventListener('change', handleChange);
+      return () => conn.removeEventListener('change', handleChange);
     }
+    return undefined;
   }, []);
 
   const isSlowConnection = connection && (
-    connection.effectiveType === 'slow-2g' ??
-    connection.effectiveType === '2g' ??
+    connection.effectiveType === 'slow-2g' ||
+    connection.effectiveType === '2g' ||
     connection.downlink < 1
   );
 
   const shouldReduceQuality = connection && (
-    connection.effectiveType === 'slow-2g' ??
+    connection.effectiveType === 'slow-2g' ||
     connection.effectiveType === '2g'
   );
 
@@ -247,8 +252,8 @@ export const useAnimationPerformance = () => {
   useEffect(() => {
     const measureFPS = () => {
       frameCount.current++;
-      const currentTime = void performance.now();
-      if (currentTime - lastTime.current >= 1000) {
+      const currentTime = performance.now();
+      if (currentTime - (lastTime.current || 0) >= 1000) {
         setFps(frameCount.current);
         frameCount.current = 0;
         lastTime.current = currentTime;
@@ -285,10 +290,10 @@ export const useBundleOptimization = () => {
     if (!isLoaded) return null;
     
     try {
-      const module = await import(moduleName);
-      return module;
+      const imported = await import(moduleName);
+      return imported;
     } catch (error) {
-      void // console.error(`Failed to load module: ${moduleName}`, error);
+      console.error(`Failed to load module: ${moduleName}`, error);
       return null;
     }
   }, [isLoaded]);
@@ -306,24 +311,28 @@ export const useTouchOptimization = () => {
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
-    setTouchStart({
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now(),
-    });
+    if (touch) {
+      setTouchStart({
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
+      });
+    }
   }, []);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     const touch = e.changedTouches[0];
-    setTouchEnd({
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now(),
-    });
+    if (touch) {
+      setTouchEnd({
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
+      });
+    }
   }, []);
 
   const getSwipeDirection = useCallback(() => {
-    if (!touchStart ?? !touchEnd) return null;
+    if (!touchStart || !touchEnd) return null;
 
     const deltaX = touchEnd.x - touchStart.x;
     const deltaY = touchEnd.y - touchStart.y;
@@ -360,21 +369,24 @@ export const usePerformanceMonitoring = () => {
   useEffect(() => {
     if ('PerformanceObserver' in window) {
       const observer = new PerformanceObserver((list) => {
-        const entries = void list.getEntries();
-        entries.forEach((entry) => {
+        const entries = list.getEntries();
+        if (entries) {
+          entries.forEach((entry) => {
           if (entry.entryType === 'navigation') {
             const navEntry = entry as PerformanceNavigationTiming;
-            setMetrics(prev => ({
+            setMetrics(prev => prev ? ({
               ...prev,
               loadTime: navEntry.loadEventEnd - navEntry.loadEventStart,
-            }));
+            }) : null);
           }
-        });
+          });
+        }
       });
 
-      void observer.observe({ entryTypes: ['navigation', 'paint', 'largest-contentful-paint'] });
-      return () => void observer.disconnect();
+      observer.observe({ entryTypes: ['navigation', 'paint', 'largest-contentful-paint'] });
+      return () => observer.disconnect();
     }
+    return () => {}; // No cleanup needed if PerformanceObserver not available
   }, []);
 
   return metrics;

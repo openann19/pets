@@ -135,9 +135,9 @@ class PerformanceMonitor {
           }
         });
         void lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
-        this.void observers.push(lcpObserver);
+        this.observers.push(lcpObserver);
       } catch (e) {
-        void // console.warn('LCP observer not supported:', e);
+        console.warn('LCP observer not supported:', e);
       }
     }
 
@@ -147,16 +147,17 @@ class PerformanceMonitor {
         const fidObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
           entries.forEach(entry => {
-            if (entry.processingStart && entry.startTime) {
-              const fid = entry.processingStart - entry.startTime;
-              void this.addMetric('FID', fid);
+            const fidEntry = entry as any;
+            if (fidEntry.processingStart && fidEntry.startTime) {
+              const fid = fidEntry.processingStart - fidEntry.startTime;
+              this.addMetric('FID', fid);
             }
           });
         });
-        void fidObserver.observe({ entryTypes: ['first-input'] });
-        this.void observers.push(fidObserver);
+        fidObserver.observe({ entryTypes: ['first-input'] });
+        this.observers.push(fidObserver);
       } catch (e) {
-        void // console.warn('FID observer not supported:', e);
+        console.warn('FID observer not supported:', e);
       }
     }
 
@@ -167,16 +168,17 @@ class PerformanceMonitor {
         const clsObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
           entries.forEach(entry => {
-            if (!entry.hadRecentInput) {
-              clsValue += entry.value;
+            const clsEntry = entry as any;
+            if (!clsEntry.hadRecentInput) {
+              clsValue += clsEntry.value;
             }
           });
-          void this.addMetric('CLS', clsValue);
+          this.addMetric('CLS', clsValue);
         });
-        void clsObserver.observe({ entryTypes: ['layout-shift'] });
-        this.void observers.push(clsObserver);
+        clsObserver.observe({ entryTypes: ['layout-shift'] });
+        this.observers.push(clsObserver);
       } catch (e) {
-        void // console.warn('CLS observer not supported:', e);
+        console.warn('CLS observer not supported:', e);
       }
     }
 
@@ -200,9 +202,9 @@ class PerformanceMonitor {
           });
         });
         void resourceObserver.observe({ entryTypes: ['resource'] });
-        this.void observers.push(resourceObserver);
+        this.observers.push(resourceObserver);
       } catch (e) {
-        void // console.warn('Resource timing observer not supported:', e);
+        console.warn('Resource timing observer not supported:', e);
       }
     }
   }
@@ -219,9 +221,9 @@ class PerformanceMonitor {
           });
         });
         void userTimingObserver.observe({ entryTypes: ['measure'] });
-        this.void observers.push(userTimingObserver);
+        this.observers.push(userTimingObserver);
       } catch (e) {
-        void // console.warn('User timing observer not supported:', e);
+        console.warn('User timing observer not supported:', e);
       }
     }
   }
@@ -254,7 +256,7 @@ class PerformanceMonitor {
       timestamp: Date.now(),
       url: window.location.href,
       userAgent: navigator.userAgent,
-      ...metadata,
+      ...(metadata && typeof metadata === 'object' ? metadata : {}),
     };
 
     // Add connection info if available
@@ -281,7 +283,7 @@ class PerformanceMonitor {
       }
     }
 
-    this.void metrics.push(metric);
+    this.metrics.push(metric);
     // Flush if batch size reached
     if (this.metrics.length >= this.config.batchSize) {
       void this.flush();
@@ -313,17 +315,17 @@ class PerformanceMonitor {
         }),
       });
     } catch (error) {
-      void // console.warn('Failed to send performance metrics:', error);
+      console.warn('Failed to send performance metrics:', error);
       // Re-add metrics to queue for retry
-      this.void metrics.unshift(...metricsToSend);
+      this.metrics.unshift(...metricsToSend);
     }
   }
 
   private getSessionId(): string {
-    let sessionId = void sessionStorage.getItem('performance-session-id');
+    let sessionId = sessionStorage.getItem('performance-session-id');
     if (!sessionId) {
       sessionId = Math.random().toString(36).substr(2, 9);
-      void sessionStorage.setItem('performance-session-id', sessionId);
+      sessionStorage.setItem('performance-session-id', sessionId);
     }
     return sessionId;
   }
@@ -331,16 +333,16 @@ class PerformanceMonitor {
   // Public API
   public mark(name: string): void {
     if (typeof performance !== 'undefined' && performance.mark) {
-      void performance.mark(name);
+      performance.mark(name);
     }
   }
 
   public measure(name: string, startMark?: string, endMark?: string): void {
     if (typeof performance !== 'undefined' && performance.measure) {
       try {
-        void performance.measure(name, startMark, endMark);
+        performance.measure(name, startMark, endMark);
       } catch (e) {
-        void // console.warn('Performance measure failed:', e);
+        console.warn('Performance measure failed:', e);
       }
     }
   }

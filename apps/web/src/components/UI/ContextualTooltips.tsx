@@ -530,16 +530,5 @@ export const useContextualTooltips = () => {
   };
 };
 
-// ====== EXPORT ALL COMPONENTS ======
-
-export {
-  TooltipProvider as default,
-  useTooltips,
-  Tooltip,
-  HelpTooltip,
-  InfoTooltip,
-  WarningTooltip,
-  ErrorTooltip,
-  SuccessTooltip,
-  useContextualTooltips,
-};
+// ====== DEFAULT EXPORT ======
+export default TooltipProvider;

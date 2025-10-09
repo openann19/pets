@@ -191,7 +191,7 @@ export default function ChatPage() {
     }
   }, showEmojis || showMatchInfo);
   // Trap focus in side sheet while open
-  useFocusTrap(sideSheetRef, showMatchInfo);
+  useFocusTrap({ enabled: showMatchInfo });
 
   // Persist and restore scroll position per match
   useEffect(() => {

@@ -33,7 +33,7 @@ interface InteractionContextType {
 
 const InteractionContext = createContext<InteractionContextType | null>(null);
 
-export const useInteractionSystem = () => {
+const useInteractionSystem = () => {
   const context = useContext(InteractionContext);
   if (!context) {
     throw new Error('useInteractionSystem must be used within InteractionProvider');
@@ -47,7 +47,7 @@ interface InteractionProviderProps {
   children: React.ReactNode;
 }
 
-export const InteractionProvider: React.FC<InteractionProviderProps> = ({ children }) => {
+const InteractionProvider: React.FC<InteractionProviderProps> = ({ children }) => {
   const [states, setStates] = useState<Map<string, InteractionState>>(new Map());
 
   const updateState = useCallback((id: string, updates: Partial<InteractionState>) => {
@@ -121,7 +121,7 @@ interface EnhancedInteractiveProps {
   tabIndex?: number;
 }
 
-export const EnhancedInteractive: React.FC<EnhancedInteractiveProps> = ({
+const EnhancedInteractive: React.FC<EnhancedInteractiveProps> = ({
   id,
   children,
   className = '',
@@ -526,7 +526,7 @@ interface EnhancedButtonProps extends Omit<EnhancedInteractiveProps, 'variant'> 
   fullWidth?: boolean;
 }
 
-export const EnhancedButton: React.FC<EnhancedButtonProps> = ({
+const EnhancedButton: React.FC<EnhancedButtonProps> = ({
   variant = 'primary',
   icon,
   iconPosition = 'left',
@@ -587,7 +587,7 @@ interface EnhancedCardProps extends Omit<EnhancedInteractiveProps, 'variant'> {
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export const EnhancedCard: React.FC<EnhancedCardProps> = ({
+const EnhancedCard: React.FC<EnhancedCardProps> = ({
   variant = 'default',
   padding = 'md',
   className = '',

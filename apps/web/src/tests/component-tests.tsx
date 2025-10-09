@@ -59,7 +59,7 @@ const TestDashboardComponent: React.FC = () => {
       <div data-testid="loading">{isLoading ? 'Loading' : 'Ready'}</div>
       <div data-testid="user-name">{user?.name || 'No user'}</div>
       <div data-testid="pets-count">{pets?.length || 0}</div>
-      <div data-testid="matches-count">{matches?.length || 0}</div>
+      <div data-testid="matches-count">{Array.isArray(matches) ? matches.length : 0}</div>
     </div>
   );
 };

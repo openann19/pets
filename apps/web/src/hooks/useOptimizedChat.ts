@@ -139,7 +139,10 @@ export const useOptimizedChat = (
       // Process queued messages
       if (messageQueueRef.current.length > 0) {
         messageQueueRef.current.forEach(message => {
-          socket?.emit('send_message', { matchId, message });
+          const emit = socket?.emit;
+          if (emit) {
+            emit('send_message', { matchId, message });
+          }
         });
         messageQueueRef.current = [];
       }
@@ -178,7 +181,10 @@ export const useOptimizedChat = (
     // Send via socket with retry logic
     try {
       if (isConnected) {
-        socket.emit('send_message', { matchId, message: newMessage });
+        const emit = socket?.emit;
+        if (emit) {
+          emit('send_message', { matchId, message: newMessage });
+        }
       } else {
         // Queue message for when connection is restored
         messageQueueRef.current.push(newMessage);
@@ -195,7 +201,10 @@ export const useOptimizedChat = (
     if (!isTyping) {
       setIsTyping(true);
       if (socket && isConnected) {
-        socket.emit('typing', { matchId, userId, isTyping: true });
+        const emit = socket.emit;
+        if (emit) {
+          emit('typing', { matchId, userId, isTyping: true });
+        }
       }
     }
     
@@ -208,7 +217,10 @@ export const useOptimizedChat = (
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
       if (socket && isConnected) {
-        socket.emit('typing', { matchId, userId, isTyping: false });
+        const emit = socket.emit;
+        if (emit) {
+          emit('typing', { matchId, userId, isTyping: false });
+        }
       }
     }, typingTimeout);
   }, [socket, matchId, userId, isTyping, isConnected, typingTimeout]);
@@ -227,7 +239,7 @@ export const useOptimizedChat = (
       const formData = new FormData();
       formData.append('image', file);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/api/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
@@ -261,20 +273,26 @@ export const useOptimizedChat = (
 
   // Socket event listeners
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !socket.on || !socket.off) return;
 
-    socket.on('new_message', handleNewMessage);
-    socket.on('typing', handleTyping);
-    socket.on('connect', () => handleConnectionChange(true));
-    socket.on('disconnect', () => handleConnectionChange(false));
-    socket.on('connect_error', () => handleConnectionChange(false));
+    const onConnect = () => handleConnectionChange(true);
+    const onDisconnect = () => handleConnectionChange(false);
+    const onError = () => handleConnectionChange(false);
+    
+    // Use optional chaining to safely access methods
+    socket.on!('new_message', handleNewMessage);
+    socket.on!('typing', handleTyping);
+    socket.on!('connect', onConnect);
+    socket.on!('disconnect', onDisconnect);
+    socket.on!('connect_error', onError);
 
     return () => {
-      socket.off('new_message', handleNewMessage);
-      socket.off('typing', handleTyping);
-      socket.off('connect');
-      socket.off('disconnect');
-      socket.off('connect_error');
+      // Clean up with optional chaining
+      socket.off!('new_message', handleNewMessage);
+      socket.off!('typing', handleTyping);
+      socket.off!('connect', onConnect);
+      socket.off!('disconnect', onDisconnect);
+      socket.off!('connect_error', onError);
     };
   }, [socket, handleNewMessage, handleTyping, handleConnectionChange]);
 

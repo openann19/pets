@@ -1,5 +1,23 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { breedsAPI, Breed, BreedSuggestionRequest } from '../services/breeds';
+import { ApiResponse } from '../types';
+
+interface BreedSuggestionsResponse {
+  suggestions: Breed[];
+}
+
+interface BreedSearchResponse {
+  suggestions: Breed[];
+}
+
+interface DiscoverPetsResponse {
+  pets: any[];
+  recommendations: any[];
+  pagination: any;
+  analytics: any;
+  appliedFilters: number;
+  performanceMetrics?: any;
+}
 
 interface UltraFilterState {
   species: string[];
@@ -155,7 +173,7 @@ export const useUltraBreedFiltering = () => {
       const response = await breedsAPI.searchBreeds(query, { 
         species,
         limit: 10 
-      });
+      }) as ApiResponse<BreedSearchResponse>;
       
       if (response.data?.suggestions) {
         setBreedSuggestions(response.data.suggestions);
@@ -172,7 +190,7 @@ export const useUltraBreedFiltering = () => {
   const getPersonalizedSuggestions = useCallback(async (preferences: BreedSuggestionRequest) => {
     setIsLoadingSuggestions(true);
     try {
-      const response = await breedsAPI.getBreedSuggestions(preferences);
+      const response = await breedsAPI.getBreedSuggestions(preferences) as ApiResponse<BreedSuggestionsResponse>;
       
       if (response.data?.suggestions) {
         setBreedSuggestions(response.data.suggestions);
@@ -204,19 +222,19 @@ export const useUltraBreedFiltering = () => {
     setError(null);
 
     try {
-      const response = await breedsAPI.discoverPetsAdvanced(activeFilters);
+      const response = await breedsAPI.discoverPetsAdvanced(activeFilters) as ApiResponse<DiscoverPetsResponse>;
       
       if (response.success) {
         setResults({
-          pets: response.data.pets || [],
-          recommendations: response.data.recommendations || [],
-          pagination: response.data.pagination || {},
-          analytics: response.data.analytics || {},
-          appliedFilters: response.data.appliedFilters || 0,
-          performanceMetrics: response.data.performanceMetrics
+          pets: response.data?.pets || [],
+          recommendations: response.data?.recommendations || [],
+          pagination: response.data?.pagination || {},
+          analytics: response.data?.analytics || {},
+          appliedFilters: response.data?.appliedFilters || 0,
+          performanceMetrics: response.data?.performanceMetrics
         });
       } else {
-        throw new Error(response.message || 'Failed to discover pets');
+        throw new Error(response.error || 'Failed to discover pets');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load pets');

@@ -32,7 +32,7 @@ export interface EnhancedWeatherData extends WeatherResponse {
   activitySuggestions: string[];
 }
 
-const API_KEY = process.env.REACT_APP_OPENWEATHER_KEY || process.env.OPENWEATHER_KEY;
+const API_KEY = process.env['REACT_APP_OPENWEATHER_KEY'] || process.env['OPENWEATHER_KEY'];
 const ENDPOINT = 'https://api.openweathermap.org/data/2.5/weather';
 
 async function fetchWeather(lat: number, lon: number): Promise<WeatherResponse> {

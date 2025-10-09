@@ -70,13 +70,13 @@ class SocketService {
       console.log('WebSocket connected');
       this.isConnected = true;
       this.reconnectAttempts = 0;
-      this.emit('connected');
+      this.emitEvent('connected');
     });
 
     this.socket.on('disconnect', (reason) => {
       console.log('WebSocket disconnected:', reason);
       this.isConnected = false;
-      this.emit('disconnected', reason);
+      this.emitEvent('disconnected', reason);
       
       if (reason === 'io server disconnect') {
         // Server initiated disconnect, try to reconnect
@@ -86,74 +86,74 @@ class SocketService {
 
     this.socket.on('connect_error', (error) => {
       console.error('WebSocket connection error:', error);
-      this.emit('error', error);
+      this.emitEvent('error', error);
       this.handleReconnect();
     });
 
     // Chat events
-    this.socket.on('message', (data: MessageData) => {
-      this.emit('message', data);
+    this.socket.on('message', (data: SocketMessageData) => {
+      this.emitEvent('message', data);
     });
 
-    this.socket.on('message_sent', (data: MessageData) => {
-      this.emit('message_sent', data);
+    this.socket.on('message_sent', (data: SocketMessageData) => {
+      this.emitEvent('message_sent', data);
     });
 
     this.socket.on('typing_start', (data: { matchId: string; userId: string }) => {
-      this.emit('typing_start', data);
+      this.emitEvent('typing_start', data);
     });
 
     this.socket.on('typing_stop', (data: { matchId: string; userId: string }) => {
-      this.emit('typing_stop', data);
+      this.emitEvent('typing_stop', data);
     });
 
     // Match events
     this.socket.on('new_match', (data: SocketMatchData) => {
-      this.emit('new_match', data);
+      this.emitEvent('new_match', data);
     });
 
     this.socket.on('match_updated', (data: SocketMatchData) => {
-      this.emit('match_updated', data);
+      this.emitEvent('match_updated', data);
     });
 
     // User status events
     this.socket.on('user_status', (data: SocketUserStatusData) => {
-      this.emit('user_status', data);
+      this.emitEvent('user_status', data);
     });
 
     // Notification events
     this.socket.on('notification', (data: SocketNotificationData) => {
-      this.emit('notification', data);
+      this.emitEvent('notification', data);
     });
 
     // Call events
     this.socket.on('call_incoming', (data: SocketCallData) => {
-      this.emit('call_incoming', data);
+      this.emitEvent('call_incoming', data);
     });
 
     this.socket.on('call_accepted', (data: SocketCallData) => {
-      this.emit('call_accepted', data);
+      this.emitEvent('call_accepted', data);
     });
 
     this.socket.on('call_rejected', (data: SocketCallData) => {
-      this.emit('call_rejected', data);
+      this.emitEvent('call_rejected', data);
     });
 
     this.socket.on('call_ended', (data: SocketCallData) => {
-      this.emit('call_ended', data);
+      this.emitEvent('call_ended', data);
     });
 
     // Error handling
     this.socket.on('error', (error: SocketError) => {
       console.error('WebSocket error:', error);
-      this.emit('error', error);
+      this.emitEvent('error', error);
     });
   }
 
   private handleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('Max reconnection attempts reached');
-      this.emit('reconnect_failed');
+      this.emitEvent('reconnect_failed');
       return;
     }
 
@@ -161,35 +161,49 @@ class SocketService {
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
     
     console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
-    
     setTimeout(() => {
       this.connect();
     }, delay);
   }
 
-  // Event handling
-  on(event: string, handler: Function): void {
+  // Event methods
+  on(event: string, callback: Function): void {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, []);
     }
-    this.eventHandlers.get(event)!.push(handler);
+    this.eventHandlers.get(event)!.push(callback);
   }
 
-  off(event: string, handler?: Function): void {
-    if (!this.eventHandlers.has(event)) return;
+  off(event: string, callback?: Function): void {
+    if (!callback) {
+      this.eventHandlers.delete(event);
+      return;
+    }
     
-    if (handler) {
-      const handlers = this.eventHandlers.get(event)!;
-      const index = handlers.indexOf(handler);
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      const index = handlers.indexOf(callback);
       if (index > -1) {
         handlers.splice(index, 1);
       }
-    } else {
-      this.eventHandlers.delete(event);
     }
   }
 
-  private emit(event: string, data?: unknown): void {
+  emit(event: string, ...args: any[]): void {
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      handlers.forEach(handler => handler(...args));
+    }
+  }
+
+  // Public emit for socket.io
+  emitSocket(event: string, data?: any): void {
+    if (this.socket?.connected) {
+      this.socket.emit(event, data);
+    }
+  }
+
+  private emitEvent(event: string, data?: unknown): void {
     const handlers = this.eventHandlers.get(event);
     if (handlers) {
       handlers.forEach(handler => handler(data));

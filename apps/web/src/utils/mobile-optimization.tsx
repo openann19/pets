@@ -131,10 +131,13 @@ export const useIntersectionObserver = (options: IntersectionObserverInit = {}) 
   const elementRef = useCallback((node: HTMLElement | null) => {
     if (node) {
       const observer = new IntersectionObserver(
-        ([entry]) => {
-          setIsIntersecting(entry.isIntersecting);
-          if (entry.isIntersecting && !hasIntersected) {
-            setHasIntersected(true);
+        (entries) => {
+          const entry = entries[0];
+          if (entry) {
+            setIsIntersecting(entry.isIntersecting);
+            if (entry.isIntersecting && !hasIntersected) {
+              setHasIntersected(true);
+            }
           }
         },
         {
@@ -148,6 +151,7 @@ export const useIntersectionObserver = (options: IntersectionObserverInit = {}) 
 
       return () => observer.disconnect();
     }
+    return undefined;
   }, [hasIntersected, options]);
 
   return { elementRef, isIntersecting, hasIntersected };
@@ -255,7 +259,9 @@ export const usePerformanceMonitor = () => {
       const lcpObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         const lastEntry = entries[entries.length - 1];
-        setMetrics(prev => ({ ...prev, lcp: lastEntry.startTime }));
+        if (lastEntry) {
+          setMetrics(prev => ({ ...prev, lcp: lastEntry.startTime }));
+        }
       });
       lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
 
@@ -263,7 +269,7 @@ export const usePerformanceMonitor = () => {
       const fidObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         const fidEntry = entries[0];
-        if (fidEntry) {
+        if (fidEntry && fidEntry.processingStart) {
           setMetrics(prev => ({ ...prev, fid: fidEntry.processingStart - fidEntry.startTime }));
         }
       });
@@ -288,6 +294,7 @@ export const usePerformanceMonitor = () => {
         clsObserver.disconnect();
       };
     }
+    return undefined;
   }, []);
 
   return metrics;
@@ -385,20 +392,23 @@ export const useTouchGestures = () => {
 
   const handleTouchStart = useCallback((event: TouchEvent) => {
     const touch = event.touches[0];
-    setGestureState(prev => ({
-      ...prev,
-      isPressed: true,
-      startX: touch.clientX,
-      startY: touch.clientY,
-      currentX: touch.clientX,
-      currentY: touch.clientY,
-    }));
+    if (touch) {
+      setGestureState(prev => ({
+        ...prev,
+        isPressed: true,
+        startX: touch.clientX,
+        startY: touch.clientY,
+        currentX: touch.clientX,
+        currentY: touch.clientY,
+      }));
+    }
   }, []);
 
   const handleTouchMove = useCallback((event: TouchEvent) => {
     const touch = event.touches[0];
-    const deltaX = touch.clientX - gestureState.startX;
-    const deltaY = touch.clientY - gestureState.startY;
+    if (touch) {
+      const deltaX = touch.clientX - gestureState.startX;
+      const deltaY = touch.clientY - gestureState.startY;
     
     if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
       setGestureState(prev => ({
@@ -409,6 +419,7 @@ export const useTouchGestures = () => {
         deltaX,
         deltaY,
       }));
+    }
     }
   }, [gestureState.startX, gestureState.startY]);
 

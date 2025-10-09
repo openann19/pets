@@ -3,8 +3,8 @@ import '@testing-library/jest-dom';
 
 // Polyfill for TextEncoder/TextDecoder in Node.js environment
 import { TextDecoder, TextEncoder } from 'util';
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
+(global as any).TextEncoder = TextEncoder;
+(global as any).TextDecoder = TextDecoder;
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
@@ -12,7 +12,8 @@ global.IntersectionObserver = class IntersectionObserver {
   disconnect() {}
   observe() {}
   unobserve() {}
-};
+  takeRecords() { return []; }
+} as any;
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {

@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-import { EnhancedLoading } from './EnhancedLoadingSystem';
+// import { EnhancedLoading } from './EnhancedLoadingSystem'; // File not found, commented out
 import LoadingSpinner from './LoadingSpinner';
 import PremiumSkeleton from './PremiumSkeleton';
 
@@ -29,7 +29,7 @@ interface LoadingContextType {
 
 const LoadingContext = createContext<LoadingContextType | null>(null);
 
-export const useLoadingStates = () => {
+const useLoadingStates = () => {
   const context = useContext(LoadingContext);
   if (!context) {
     throw new Error('useLoadingStates must be used within LoadingProvider');
@@ -43,7 +43,7 @@ interface LoadingProviderProps {
   children: React.ReactNode;
 }
 
-export const LoadingProvider: React.FC<LoadingProviderProps> = ({ children }) => {
+const LoadingProvider: React.FC<LoadingProviderProps> = ({ children }) => {
   const [loadingStates, setLoadingStates] = useState<LoadingState[]>([]);
 
   const startLoading = useCallback((id: string, options: Omit<LoadingState, 'id'>) => {
@@ -101,7 +101,7 @@ interface UniversalLoadingProps {
   className?: string;
 }
 
-export const UniversalLoading: React.FC<UniversalLoadingProps> = ({
+const UniversalLoading: React.FC<UniversalLoadingProps> = ({
   id,
   children,
   fallback,
@@ -140,7 +140,7 @@ interface ProgressLoadingProps {
   className?: string;
 }
 
-export const ProgressLoading: React.FC<ProgressLoadingProps> = ({
+const ProgressLoading: React.FC<ProgressLoadingProps> = ({
   id,
   children,
   className = ''
@@ -186,7 +186,7 @@ export const ProgressLoading: React.FC<ProgressLoadingProps> = ({
 
 // ====== SPECIALIZED LOADING HOOKS ======
 
-export const useAPILoading = () => {
+const useAPILoading = () => {
   const { startLoading, stopLoading, updateLoading } = useLoadingStates();
 
   const startAPILoading = useCallback((operation: string, options?: {
@@ -215,7 +215,7 @@ export const useAPILoading = () => {
   };
 };
 
-export const usePageLoading = () => {
+const usePageLoading = () => {
   const { startLoading, stopLoading } = useLoadingStates();
 
   const startPageLoading = useCallback((page: string, options?: {
@@ -239,7 +239,7 @@ export const usePageLoading = () => {
   };
 };
 
-export const useFormLoading = () => {
+const useFormLoading = () => {
   const { startLoading, stopLoading } = useLoadingStates();
 
   const startFormLoading = useCallback((form: string, options?: {
@@ -271,7 +271,7 @@ interface APILoadingWrapperProps {
   className?: string;
 }
 
-export const APILoadingWrapper: React.FC<APILoadingWrapperProps> = ({
+const APILoadingWrapper: React.FC<APILoadingWrapperProps> = ({
   operation,
   children,
   message,
@@ -295,7 +295,7 @@ interface PageLoadingWrapperProps {
   className?: string;
 }
 
-export const PageLoadingWrapper: React.FC<PageLoadingWrapperProps> = ({
+const PageLoadingWrapper: React.FC<PageLoadingWrapperProps> = ({
   page,
   children,
   skeletonType = 'card',
@@ -317,7 +317,7 @@ interface FormLoadingWrapperProps {
   className?: string;
 }
 
-export const FormLoadingWrapper: React.FC<FormLoadingWrapperProps> = ({
+const FormLoadingWrapper: React.FC<FormLoadingWrapperProps> = ({
   form,
   children,
   className = ''
@@ -334,7 +334,7 @@ export const FormLoadingWrapper: React.FC<FormLoadingWrapperProps> = ({
 
 // ====== LOADING INDICATORS ======
 
-export const LoadingIndicator: React.FC<{
+const LoadingIndicator: React.FC<{
   id: string;
   className?: string;
 }> = ({ id, className = '' }) => {
@@ -354,7 +354,7 @@ export const LoadingIndicator: React.FC<{
   );
 };
 
-export const LoadingBadge: React.FC<{
+const LoadingBadge: React.FC<{
   id: string;
   className?: string;
 }> = ({ id, className = '' }) => {

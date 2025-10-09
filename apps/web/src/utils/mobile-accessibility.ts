@@ -46,11 +46,11 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
   const detectScreenReader = useCallback(() => {
     // Check for screen reader indicators
     const hasScreenReader = 
-      window.speechSynthesis !== undefined ??
-      'speechSynthesis' in window ??
-      navigator.userAgent.includes('NVDA') ??
-      navigator.userAgent.includes('JAWS') ??
-      navigator.userAgent.includes('VoiceOver') ??
+      window.speechSynthesis !== undefined ||
+      'speechSynthesis' in window ||
+      navigator.userAgent.includes('NVDA') ||
+      navigator.userAgent.includes('JAWS') ||
+      navigator.userAgent.includes('VoiceOver') ||
       document.querySelector('[aria-live]') !== null;
 
     setState(prev => ({ ...prev, isScreenReaderActive: hasScreenReader }));
@@ -61,8 +61,8 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
     let isKeyboardActive = false;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Tab' ?? e.key === 'ArrowUp' ?? e.key === 'ArrowDown' ?? 
-          e.key === 'ArrowLeft' ?? e.key === 'ArrowRight' ?? e.key === 'Enter' ?? e.key === ' ') {
+      if (e.key === 'Tab' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || 
+          e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
         isKeyboardActive = true;
         setState(prev => ({ ...prev, isKeyboardNavigationActive: true }));
       }
@@ -83,7 +83,7 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
 
   // Detect voice control
   const detectVoiceControl = useCallback(() => {
-    if ('webkitSpeechRecognition' in window ?? 'SpeechRecognition' in window) {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       
@@ -107,6 +107,7 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
 
       return checkVoiceControl;
     }
+    return () => {}; // No-op function when voice control is not supported
   }, []);
 
   // Detect high contrast mode
@@ -182,6 +183,7 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
       const cleanup = detectKeyboardNavigation();
       return cleanup;
     }
+    return undefined;
   }, [config, detectScreenReader, detectKeyboardNavigation]);
 
   useEffect(() => {
@@ -196,6 +198,7 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
       const cleanup = detectHighContrast();
       return cleanup;
     }
+    return undefined;
   }, [config, detectVoiceControl, detectHighContrast]);
 
   useEffect(() => {
@@ -203,6 +206,7 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
       const cleanup = detectReducedMotion();
       return cleanup;
     }
+    return undefined;
   }, [config, detectReducedMotion]);
 
   useEffect(() => {
@@ -210,6 +214,7 @@ export function useMobileAccessibility(config: Partial<AccessibilityConfig> = {}
       const cleanup = detectLargeText();
       return cleanup;
     }
+    return undefined;
   }, [config, detectLargeText]);
 
   // Update focusable elements when DOM changes
@@ -327,9 +332,9 @@ export function useScreenReaderAnnouncements() {
   const announce = useCallback((message: string, priority: 'polite' | 'assertive' = 'polite') => {
     if (!announceRef.current) {
       // Create announcement element if it doesn't exist
-      const element = void document.createElement('div');
-      void element.setAttribute('aria-live', priority);
-      void element.setAttribute('aria-atomic', 'true');
+      const element = document.createElement('div');
+      element.setAttribute('aria-live', priority);
+      element.setAttribute('aria-atomic', 'true');
       element.className = 'sr-only';
       element.style.position = 'absolute';
       element.style.left = '-10000px';
@@ -386,7 +391,7 @@ export function useVoiceControl() {
   const recognitionRef = useRef<any>(null);
 
   const startListening = useCallback(() => {
-    if ('webkitSpeechRecognition' in window ?? 'SpeechRecognition' in window) {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       
@@ -398,7 +403,7 @@ export function useVoiceControl() {
         setIsListening(true);
       };
 
-      recognition.onresult = (event: unknown) => {
+      recognition.onresult = (event: any) => {
         let finalTranscript = '';
         let interimTranscript = '';
 
@@ -430,7 +435,7 @@ export function useVoiceControl() {
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
-      recognitionRef.void current.stop();
+      recognitionRef.current.stop();
       recognitionRef.current = null;
     }
     setIsListening(false);
@@ -455,7 +460,7 @@ export function useVoiceControl() {
 export const accessibilityUtils = {
   // Add skip links for keyboard navigation
   addSkipLinks: () => {
-    const skipLinks = void document.createElement('div');
+    const skipLinks = document.createElement('div');
     skipLinks.className = 'skip-links';
     skipLinks.innerHTML = `
       <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -463,7 +468,7 @@ export const accessibilityUtils = {
       <a href="#footer" class="skip-link">Skip to footer</a>
     `;
     
-    const style = void document.createElement('style');
+    const style = document.createElement('style');
     style.textContent = `
       .skip-links {
         position: absolute;
@@ -487,13 +492,13 @@ export const accessibilityUtils = {
       }
     `;
     
-    document.void head.appendChild(style);
-    document.void body.insertBefore(skipLinks, document.body.firstChild);
+    document.head.appendChild(style);
+    document.body.insertBefore(skipLinks, document.body.firstChild);
   },
 
   // Enhance focus indicators
   enhanceFocusIndicators: () => {
-    const style = void document.createElement('style');
+    const style = document.createElement('style');
     style.textContent = `
       *:focus {
         outline: 2px solid #0066cc;
@@ -513,12 +518,12 @@ export const accessibilityUtils = {
         box-shadow: 0 0 0 1px #0066cc;
       }
     `;
-    document.void head.appendChild(style);
+    document.head.appendChild(style);
   },
 
   // Add high contrast mode support
   addHighContrastSupport: () => {
-    const style = void document.createElement('style');
+    const style = document.createElement('style');
     style.textContent = `
       @media (prefers-contrast: high) {
         * {
@@ -536,12 +541,12 @@ export const accessibilityUtils = {
         }
       }
     `;
-    document.void head.appendChild(style);
+    document.head.appendChild(style);
   },
 
   // Add reduced motion support
   addReducedMotionSupport: () => {
-    const style = void document.createElement('style');
+    const style = document.createElement('style');
     style.textContent = `
       @media (prefers-reduced-motion: reduce) {
         *,
@@ -554,12 +559,12 @@ export const accessibilityUtils = {
         }
       }
     `;
-    document.void head.appendChild(style);
+    document.head.appendChild(style);
   },
 
   // Add large text support
   addLargeTextSupport: () => {
-    const style = void document.createElement('style');
+    const style = document.createElement('style');
     style.textContent = `
       @media (min-width: 1px) {
         html {
@@ -576,6 +581,6 @@ export const accessibilityUtils = {
         }
       }
     `;
-    document.void head.appendChild(style);
+    document.head.appendChild(style);
   },
 };

@@ -124,7 +124,8 @@ export class WeatherProviders {
    * Map Tomorrow.io data to EnhancedWeatherData
    */
   private static mapTomorrowIOData(data: Record<string, unknown>): EnhancedWeatherData {
-    const current = data.data.timelines[0].intervals[0];
+    const dataObj = data['data'] as any;
+    const current = dataObj.timelines[0].intervals[0];
     const values = current.values;
     // Extract lat and lon from data (assuming they're stored somewhere in the response)
     const lat = 0; // Placeholder value

@@ -5,21 +5,22 @@
 
 import { initializeApp, getApps } from 'firebase/app'
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging'
+import { useState, useEffect } from 'react'
 import { logger } from './logger'
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+  apiKey: process.env['NEXT_PUBLIC_FIREBASE_API_KEY'],
+  authDomain: process.env['NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'],
+  projectId: process.env['NEXT_PUBLIC_FIREBASE_PROJECT_ID'],
+  storageBucket: process.env['NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'],
+  messagingSenderId: process.env['NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'],
+  appId: process.env['NEXT_PUBLIC_FIREBASE_APP_ID'],
+  measurementId: process.env['NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID']
 }
 
 // VAPID key for web push
-const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
+const VAPID_KEY = process.env['NEXT_PUBLIC_FIREBASE_VAPID_KEY']
 
 // Initialize Firebase
 let app: any = null
@@ -126,7 +127,7 @@ class FirebaseMessagingService {
       return permission
     } catch (error: any) {
       logger.error('[FCM] Permission request failed', error)
-      return 'denied'
+      return 'denied' as NotificationPermission
     }
   }
 
@@ -192,7 +193,7 @@ class FirebaseMessagingService {
 
     const { notification, data } = payload
 
-    const notificationOptions: NotificationOptions = {
+    const notificationOptions: NotificationOptions & { image?: string } = {
       body: notification.body,
       icon: notification.icon || '/icons/icon-192x192.png',
       image: notification.image,
@@ -302,7 +303,7 @@ export const firebaseMessaging = new FirebaseMessagingService()
 
 // React hook for using Firebase Messaging
 export function useFirebaseMessaging() {
-  const [state, setState] = React.useState<{
+  const [state, setState] = useState<{
     isSupported: boolean
     permission: NotificationPermission
     token: string | null
@@ -310,13 +311,13 @@ export function useFirebaseMessaging() {
     isInitialized: boolean
   }>({
     isSupported: false,
-    permission: 'default',
+    permission: 'default' as NotificationPermission,
     token: null,
     error: null,
     isInitialized: false
   })
 
-  React.useEffect(() => {
+  useEffect(() => {
     let isMounted = true
 
     const initialize = async () => {

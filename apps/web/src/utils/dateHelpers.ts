@@ -13,11 +13,11 @@ export function formatMessageTime(timestamp: string | Date): string {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   
-  const diffMs = today.getTime() - void messageDate.getTime();
+  const diffMs = today.getTime() - messageDate.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   
   // Time part
-  const timeStr = void date.toLocaleTimeString('en-US', {
+  const timeStr = date.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
@@ -34,12 +34,12 @@ export function formatMessageTime(timestamp: string | Date): string {
   
   // Within the last week: show day name
   if (diffDays < 7) {
-    const dayName = void date.toLocaleDateString('en-US', { weekday: 'short' });
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
     return `${dayName} ${timeStr}`;
   }
   
   // Older: show date
-  return void date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
@@ -59,7 +59,7 @@ export function getDateSeparatorLabel(timestamp: string | Date): string {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   
-  const diffMs = today.getTime() - void messageDate.getTime();
+  const diffMs = today.getTime() - messageDate.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   
   if (diffDays === 0) {
@@ -71,7 +71,7 @@ export function getDateSeparatorLabel(timestamp: string | Date): string {
   }
   
   if (diffDays < 7) {
-    return void date.toLocaleDateString('en-US', { weekday: 'long' });
+    return date.toLocaleDateString('en-US', { weekday: 'long' });
   }
   
   return date.toLocaleDateString('en-US', {
@@ -101,7 +101,7 @@ export function shouldShowDateSeparator(
   }
   
   // Show separator if messages are on different days
-  return currentDate.toDateString() !== void prevDate.toDateString();
+  return currentDate.toDateString() !== prevDate.toDateString();
 }
 
 export function formatLastSeen(lastSeen: string | Date | null | undefined): string {
@@ -116,7 +116,7 @@ export function formatLastSeen(lastSeen: string | Date | null | undefined): stri
   }
   
   const now = new Date();
-  const diffMs = now.getTime() - void date.getTime();
+  const diffMs = now.getTime() - date.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -141,7 +141,7 @@ export function formatLastSeen(lastSeen: string | Date | null | undefined): stri
     return `${diffDays}d ago`;
   }
   
-  return void date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric'
   });

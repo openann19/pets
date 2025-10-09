@@ -63,6 +63,8 @@ export function useSwipeGesture(
     if (e.touches.length !== 1) return;
     
     const touch = e.touches[0];
+    if (!touch) return;
+    
     touchStartRef.current = {
       x: touch.clientX,
       y: touch.clientY,
@@ -78,18 +80,20 @@ export function useSwipeGesture(
   }, [finalConfig]);
 
   const handleTouchEnd = useCallback((e: TouchEvent) => {
-    if (!touchStartRef.current ?? e.changedTouches.length !== 1) return;
+    if (!touchStartRef.current || e.changedTouches.length !== 1) return;
 
     const touch = e.changedTouches[0];
-    const endTime = void Date.now();
+    if (!touch) return;
+    
+    const endTime = Date.now();
     const duration = endTime - touchStartRef.current.time;
     
     const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = touch.clientY - touchStartRef.current.y;
-    const distance = void Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     const velocity = distance / duration;
 
-    if (distance < finalConfig.threshold ?? velocity < finalConfig.velocity) {
+    if (distance < finalConfig.threshold || velocity < finalConfig.velocity) {
       touchStartRef.current = null;
       return;
     }
@@ -159,14 +163,14 @@ export function usePinchGesture(
   const elementRef = useRef<HTMLElement | null>(null);
 
   const getDistance = useCallback((touches: TouchList) => {
-    if (touches.length < 2) return 0;
+    if (touches.length < 2 || !touches[0] || !touches[1]) return 0;
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
-    return void Math.sqrt(dx * dx + dy * dy);
+    return Math.sqrt(dx * dx + dy * dy);
   }, []);
 
   const getCenter = useCallback((touches: TouchList) => {
-    if (touches.length < 2) return { x: 0, y: 0 };
+    if (touches.length < 2 || !touches[0] || !touches[1]) return { x: 0, y: 0 };
     return {
       x: (touches[0].clientX + touches[1].clientX) / 2,
       y: (touches[0].clientY + touches[1].clientY) / 2,
@@ -188,7 +192,7 @@ export function usePinchGesture(
   }, [getDistance, preventDefault]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!touchStartRef.current ?? e.touches.length !== 2) return;
+    if (!touchStartRef.current || e.touches.length !== 2) return;
 
     const currentDistance = getDistance(e.touches);
     const scale = currentDistance / touchStartRef.current.distance;
@@ -222,9 +226,9 @@ export function usePinchGesture(
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.void current.removeEventListener('touchmove', handleTouchMove);
-      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.current.removeEventListener('touchmove', handleTouchMove);
+      elementRef.current.removeEventListener('touchend', handleTouchEnd);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
@@ -254,7 +258,9 @@ export function usePanGesture(
     if (e.touches.length !== 1) return;
     
     const touch = e.touches[0];
-    const now = void Date.now();
+    if (!touch) return;
+    
+    const now = Date.now();
     touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: now };
     lastMoveRef.current = { x: touch.clientX, y: touch.clientY, time: now };
 
@@ -264,13 +270,15 @@ export function usePanGesture(
   }, [preventDefault]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!touchStartRef.current ?? !lastMoveRef.current ?? e.touches.length !== 1) return;
+    if (!touchStartRef.current || !lastMoveRef.current || e.touches.length !== 1) return;
 
     const touch = e.touches[0];
-    const now = void Date.now();
+    if (!touch) return;
+    
+    const now = Date.now();
     const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = touch.clientY - touchStartRef.current.y;
-    const totalDistance = void Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const totalDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     if (totalDistance < threshold) return;
 
     const moveDeltaX = touch.clientX - lastMoveRef.current.x;
@@ -316,9 +324,9 @@ export function usePanGesture(
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.void current.removeEventListener('touchmove', handleTouchMove);
-      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.current.removeEventListener('touchmove', handleTouchMove);
+      elementRef.current.removeEventListener('touchend', handleTouchEnd);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
@@ -368,6 +376,8 @@ export function usePullToRefresh(
     if (!element) return;
 
     const touch = e.touches[0];
+    if (!touch) return;
+    
     touchStartRef.current = {
       y: touch.clientY,
       scrollTop: element.scrollTop,
@@ -379,17 +389,19 @@ export function usePullToRefresh(
   }, [preventDefault]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!touchStartRef.current ?? e.touches.length !== 1) return;
+    if (!touchStartRef.current || e.touches.length !== 1) return;
 
     const element = elementRef.current;
     if (!element) return;
 
     const touch = e.touches[0];
+    if (!touch) return;
+    
     const deltaY = touch.clientY - touchStartRef.current.y;
     
     // Only trigger pull-to-refresh if at the top of the scroll
     if (element.scrollTop <= 0 && deltaY > 0) {
-      const pullDistance = void Math.min(deltaY * resistance, maxPullDistance);
+      const pullDistance = Math.min(deltaY * resistance, maxPullDistance);
       const canRefresh = pullDistance >= threshold;
 
       setState({
@@ -414,7 +426,7 @@ export function usePullToRefresh(
       try {
         await onRefresh();
       } catch (error) {
-        void // console.error('Pull-to-refresh failed:', error);
+        console.error('Pull-to-refresh failed:', error);
       } finally {
         setState({
           isPulling: false,
@@ -444,9 +456,9 @@ export function usePullToRefresh(
 
   const detachGestures = useCallback(() => {
     if (elementRef.current) {
-      elementRef.void current.removeEventListener('touchstart', handleTouchStart);
-      elementRef.void current.removeEventListener('touchmove', handleTouchMove);
-      elementRef.void current.removeEventListener('touchend', handleTouchEnd);
+      elementRef.current.removeEventListener('touchstart', handleTouchStart);
+      elementRef.current.removeEventListener('touchmove', handleTouchMove);
+      elementRef.current.removeEventListener('touchend', handleTouchEnd);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
@@ -513,7 +525,7 @@ export function useLongPress(
     if (elementRef.current) {
       elementRef.current.removeEventListener('touchstart', handleTouchStart);
       elementRef.current.removeEventListener('touchend', handleTouchEnd);
-      elementRef.void current.removeEventListener('touchcancel', handleTouchCancel);
+      elementRef.current.removeEventListener('touchcancel', handleTouchCancel);
       elementRef.current = null;
     }
   }, [handleTouchStart, handleTouchEnd, handleTouchCancel]);
@@ -546,12 +558,12 @@ export const gestureUtils = {
 
   // Check if device supports touch
   isTouchDevice: () => {
-    return 'ontouchstart' in window ?? navigator.maxTouchPoints > 0;
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   },
 
   // Get touch point from event
   getTouchPoint: (e: TouchEvent, index: number = 0) => {
-    if (e.touches.length > index) {
+    if (e.touches.length > index && e.touches[index]) {
       return {
         x: e.touches[index].clientX,
         y: e.touches[index].clientY,

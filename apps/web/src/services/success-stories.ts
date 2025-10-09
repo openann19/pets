@@ -3,6 +3,7 @@
  * Manages user testimonials and success stories from CMS
  */
 
+import { useState } from 'react'
 import { logger } from './logger'
 
 export interface SuccessStory {
@@ -39,9 +40,9 @@ export interface SuccessStoriesResponse {
 }
 
 class SuccessStoriesService {
-  private apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
-  private cmsApiUrl = process.env.NEXT_PUBLIC_CMS_API_URL
-  private cmsApiKey = process.env.CMS_API_KEY
+  private apiUrl = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5001'
+  private cmsApiUrl = process.env['NEXT_PUBLIC_CMS_API_URL']
+  private cmsApiKey = process.env['CMS_API_KEY']
 
   /**
    * Get success stories from CMS or database
@@ -57,9 +58,19 @@ class SuccessStoriesService {
 
       // Try CMS first, fallback to database
       if (this.cmsApiUrl && this.cmsApiKey) {
-        return await this.getStoriesFromCMS({ limit, featured, tags, cursor })
+        return await this.getStoriesFromCMS({ 
+          limit, 
+          ...(featured !== undefined && { featured }), 
+          ...(tags !== undefined && { tags }), 
+          ...(cursor !== undefined && { cursor }) 
+        })
       } else {
-        return await this.getStoriesFromDatabase({ limit, featured, tags, cursor })
+        return await this.getStoriesFromDatabase({ 
+          limit, 
+          ...(featured !== undefined && { featured }), 
+          ...(tags !== undefined && { tags }), 
+          ...(cursor !== undefined && { cursor }) 
+        })
       }
     } catch (error: any) {
       logger.error('Failed to fetch success stories', error)

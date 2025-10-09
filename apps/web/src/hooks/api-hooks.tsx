@@ -8,6 +8,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { PetCreationData } from '@/types';
 import apiClient from '../lib/api-client';
 import type { Match, Message, Pet, SwipeAction, User } from '../types';
 
@@ -136,7 +137,7 @@ export function useCreatePet() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Omit<Pet, 'id'>) => apiClient.createPet(data),
+    mutationFn: (data: PetCreationData) => apiClient.createPet(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pets'] });
     }

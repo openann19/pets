@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+// Solid variant icons actually used
 import {
   HeartIcon,
   XMarkIcon,
@@ -28,135 +29,33 @@ import {
   ExclamationTriangleIcon,
   InformationCircleIcon,
   XCircleIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  PlayIcon,
-  PauseIcon,
-  StopIcon,
-  ForwardIcon,
-  BackwardIcon,
-  VolumeUpIcon,
-  VolumeOffIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  LockClosedIcon,
-  LockOpenIcon,
-  KeyIcon,
-  ShieldCheckIcon,
-  GlobeAltIcon,
-  LanguageIcon,
-  SunIcon,
-  MoonIcon,
-  ComputerDesktopIcon,
-  AdjustmentsHorizontalIcon,
-  FunnelIcon,
-  Squares2X2Icon,
-  ListBulletIcon,
-  CalendarIcon,
-  ClockIcon,
-  TagIcon,
-  BookmarkIcon,
-  ShareIcon,
-  DownloadIcon,
-  UploadIcon,
-  DocumentIcon,
-  FolderIcon,
-  TrashIcon,
-  PencilIcon,
-  DocumentDuplicateIcon,
-  ClipboardIcon,
-  PrinterIcon,
-  ArchiveBoxIcon,
-  CubeIcon,
-  GiftIcon,
-  TrophyIcon,
-  FireIcon,
-  BoltIcon,
-  LightBulbIcon,
-  PuzzlePieceIcon,
-  RocketLaunchIcon,
-  BeakerIcon,
-  WrenchIcon,
-  PaintBrushIcon,
-  ScissorsIcon,
-  CursorArrowRaysIcon,
-  HandRaisedIcon,
-  FingerPrintIcon,
-  QrCodeIcon,
-  CreditCardIcon,
-  BanknotesIcon,
-  ReceiptPercentIcon,
-  ShoppingCartIcon,
-  ShoppingBagIcon,
-  TruckIcon,
-  BuildingStorefrontIcon,
-  BuildingOfficeIcon,
-  HomeModernIcon,
-  BuildingLibraryIcon,
-  AcademicCapIcon,
-  BookOpenIcon,
-  GraduationCapIcon,
-  PresentationChartLineIcon,
-  ChartBarIcon,
-  ChartPieIcon,
-  PresentationChartBarIcon,
-  DocumentChartBarIcon,
-  DocumentTextIcon,
-  DocumentMagnifyingGlassIcon,
-  MagnifyingGlassCircleIcon,
-  MagnifyingGlassMinusIcon,
-  MagnifyingGlassPlusIcon,
-  FunnelIcon as FunnelOutlineIcon,
-  AdjustmentsHorizontalIcon as AdjustmentsOutlineIcon,
-  Cog6ToothIcon as CogOutlineIcon,
-  UserIcon as UserOutlineIcon,
+} from '@heroicons/react/24/solid';
+
+// Outline variant icons
+import {
   HeartIcon as HeartOutlineIcon,
+  XMarkIcon as XOutlineIcon,
   StarIcon as StarOutlineIcon,
-  BookmarkIcon as BookmarkOutlineIcon,
-  ShareIcon as ShareOutlineIcon,
+  SparklesIcon as SparklesOutlineIcon,
+  ArrowPathIcon as RefreshOutlineIcon,
+  UserIcon as UserOutlineIcon,
   ChatBubbleLeftRightIcon as ChatOutlineIcon,
-  BellIcon as BellOutlineIcon,
+  MapPinIcon as LocationOutlineIcon,
+  CameraIcon as CameraOutlineIcon,
+  PhotoIcon as PhotoOutlineIcon,
+  VideoCameraIcon as VideoOutlineIcon,
+  PhoneIcon as PhoneOutlineIcon,
+  EnvelopeIcon as EmailOutlineIcon,
+  BellIcon as NotificationOutlineIcon,
+  Cog6ToothIcon as SettingsOutlineIcon,
   HomeIcon as HomeOutlineIcon,
   MagnifyingGlassIcon as SearchOutlineIcon,
   PlusIcon as PlusOutlineIcon,
   MinusIcon as MinusOutlineIcon,
   CheckIcon as CheckOutlineIcon,
-  XMarkIcon as XOutlineIcon,
   ExclamationTriangleIcon as WarningOutlineIcon,
   InformationCircleIcon as InfoOutlineIcon,
   XCircleIcon as ErrorOutlineIcon,
-} from '@heroicons/react/24/solid';
-
-import {
-  HeartIcon as HeartOutline,
-  XMarkIcon as XOutline,
-  StarIcon as StarOutline,
-  SparklesIcon as SparklesOutline,
-  ArrowPathIcon as ArrowPathOutline,
-  UserIcon as UserOutline,
-  ChatBubbleLeftRightIcon as ChatOutline,
-  MapPinIcon as MapPinOutline,
-  CameraIcon as CameraOutline,
-  PhotoIcon as PhotoOutline,
-  VideoCameraIcon as VideoOutline,
-  PhoneIcon as PhoneOutline,
-  EnvelopeIcon as EnvelopeOutline,
-  BellIcon as BellOutline,
-  Cog6ToothIcon as CogOutline,
-  HomeIcon as HomeOutline,
-  MagnifyingGlassIcon as SearchOutline,
-  PlusIcon as PlusOutline,
-  MinusIcon as MinusOutline,
-  CheckIcon as CheckOutline,
-  ExclamationTriangleIcon as WarningOutline,
-  InformationCircleIcon as InfoOutline,
-  XCircleIcon as ErrorOutline,
 } from '@heroicons/react/24/outline';
 
 // Icon size variants
@@ -361,139 +260,139 @@ export const Error = (props: BaseIconProps) => (
 // Outline icons
 export const HeartOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <HeartOutline className="w-full h-full" />
+    <HeartOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const XOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <XOutline className="w-full h-full" />
+    <XOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const StarOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <StarOutline className="w-full h-full" />
+    <StarOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const SparklesOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <SparklesOutline className="w-full h-full" />
+    <SparklesOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const RefreshOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <ArrowPathOutline className="w-full h-full" />
+    <RefreshOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const UserOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <UserOutline className="w-full h-full" />
+    <UserOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const ChatOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <ChatOutline className="w-full h-full" />
+    <ChatOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const LocationOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <MapPinOutline className="w-full h-full" />
+    <LocationOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const CameraOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <CameraOutline className="w-full h-full" />
+    <CameraOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const PhotoOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <PhotoOutline className="w-full h-full" />
+    <PhotoOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const VideoOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <VideoOutline className="w-full h-full" />
+    <VideoOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const PhoneOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <PhoneOutline className="w-full h-full" />
+    <PhoneOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const EmailOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <EnvelopeOutline className="w-full h-full" />
+    <EmailOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const NotificationOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <BellOutline className="w-full h-full" />
+    <NotificationOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const SettingsOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <CogOutline className="w-full h-full" />
+    <SettingsOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const HomeOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <HomeOutline className="w-full h-full" />
+    <HomeOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const SearchOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <SearchOutline className="w-full h-full" />
+    <SearchOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const PlusOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <PlusOutline className="w-full h-full" />
+    <PlusOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const MinusOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <MinusOutline className="w-full h-full" />
+    <MinusOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const CheckOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <CheckOutline className="w-full h-full" />
+    <CheckOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const WarningOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <WarningOutline className="w-full h-full" />
+    <WarningOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const InfoOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <InfoOutline className="w-full h-full" />
+    <InfoOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 
 export const ErrorOutline = (props: BaseIconProps) => (
   <IconWrapper {...props}>
-    <ErrorOutline className="w-full h-full" />
+    <ErrorOutlineIcon className="w-full h-full" />
   </IconWrapper>
 );
 

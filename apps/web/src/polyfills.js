@@ -55,7 +55,12 @@ if (typeof globalThis.process === 'undefined') {
 
 // Handle CommonJS exports
 if (typeof module !== 'undefined' && module.exports) {
-  // Already handled by globalThis.module
+  // Use Object.defineProperty to avoid reassignment
+  Object.defineProperty(module, 'exports', {
+    value: globalThis.module.exports,
+    writable: true,
+    configurable: true
+  });
 }
 
 // Handle AMD exports

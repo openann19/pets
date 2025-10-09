@@ -110,7 +110,7 @@ const getVelocity = (startPos: { x: number; y: number }, endPos: { x: number; y:
 
 // ====== MAIN HOOK ======
 
-export const useAdvancedGestures = (
+const useAdvancedGestures = (
   config: GestureConfig = {},
   callbacks: GestureCallbacks = {}
 ) => {
@@ -505,7 +505,7 @@ export const useAdvancedGestures = (
 
 // ====== SPECIALIZED GESTURE HOOKS ======
 
-export const useSwipeGestures = (callbacks: {
+const useSwipeGestures = (callbacks: {
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
   onSwipeUp?: () => void;
@@ -546,7 +546,7 @@ export const useSwipeGestures = (callbacks: {
   );
 };
 
-export const usePinchGestures = (callbacks: {
+const usePinchGestures = (callbacks: {
   onPinchIn?: (scale: number) => void;
   onPinchOut?: (scale: number) => void;
   onPinch?: (scale: number, delta: number) => void;
@@ -575,7 +575,7 @@ export const usePinchGestures = (callbacks: {
   );
 };
 
-export const useRotateGestures = (callbacks: {
+const useRotateGestures = (callbacks: {
   onRotate?: (rotation: number, delta: number) => void;
 }) => {
   const lastRotation = useRef(0);
@@ -595,7 +595,7 @@ export const useRotateGestures = (callbacks: {
   );
 };
 
-export const usePanGestures = (callbacks: {
+const usePanGestures = (callbacks: {
   onPan?: (delta: { x: number; y: number }, velocity: { x: number; y: number }) => void;
   onPanStart?: () => void;
   onPanEnd?: () => void;

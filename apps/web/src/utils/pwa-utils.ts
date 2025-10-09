@@ -40,7 +40,7 @@ export interface PWAState {
  */
 export function usePWA(config: Partial<PWAConfig> = {}) {
   const [state, setState] = useState<PWAState>({
-    isOnline: navigator.onLine,
+    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
     isInstalled: false,
     isStandalone: false,
     serviceWorkerRegistered: false,
@@ -48,6 +48,9 @@ export function usePWA(config: Partial<PWAConfig> = {}) {
     pushNotificationSupported: false,
     offlineActions: [],
   });
+
+  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
 
   const defaultConfig: PWAConfig = {
     enableServiceWorker: true,
@@ -57,59 +60,15 @@ export function usePWA(config: Partial<PWAConfig> = {}) {
     enablePeriodicSync: true,
     cacheStrategy: 'network-first',
   };
-
   const finalConfig = { ...defaultConfig, ...config };
 
-  // Check if app is installed
-  const checkInstallation = useCallback(() => {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isInstalled = 'getInstalledRelatedApps' in navigator;
-    
-    setState(prev => ({
-      ...prev,
-      isStandalone,
-      isInstalled: isInstalled ?? isStandalone,
-    }));
-  }, []);
-
-  // Register service worker
-  const registerServiceWorker = useCallback(async () => {
-    if (!('serviceWorker' in navigator) ?? !finalConfig.enableServiceWorker) {
-      return false;
-    }
-
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/',
-      });
-      // console.log('[PWA] Service Worker registered:', registration);
-      setState(prev => ({ ...prev, serviceWorkerRegistered: true }));
-
-      // Check for updates
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New version available
-              void // console.log('[PWA] New version available');
-            }
-          });
-        }
-      });
-
-      return true;
-    } catch (error) {
-      void // console.error('[PWA] Service Worker registration failed:', error);
-      return false;
-    }
-  }, [finalConfig.enableServiceWorker]);
-
-  // Check browser capabilities
+  // Check capabilities
   const checkCapabilities = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
     const backgroundSyncSupported = 'serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype;
-    const pushNotificationSupported = 'serviceWorker' in navigator && 'PushManager' in window;
-
+    const pushNotificationSupported = 'Notification' in window && 'PushManager' in window;
+    
     setState(prev => ({
       ...prev,
       backgroundSyncSupported,
@@ -117,13 +76,45 @@ export function usePWA(config: Partial<PWAConfig> = {}) {
     }));
   }, []);
 
-  // Handle online/offline status
-  const handleOnlineStatus = useCallback(() => {
-    setState(prev => ({ ...prev, isOnline: navigator.onLine }));
+  // Register service worker
+  const registerServiceWorker = useCallback(async () => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+      return false;
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      setState(prev => ({ ...prev, serviceWorkerRegistered: true }));
+      return registration;
+    } catch (error) {
+      console.error('[PWA] Service worker registration failed:', error);
+      return false;
+    }
   }, []);
 
-  // Initialize PWA
+  // Check if app is installed
+  const checkInstallation = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isInstalled = 'getInstalledRelatedApps' in navigator || isStandalone;
+    setState(prev => ({
+      ...prev,
+      isStandalone,
+      isInstalled: isInstalled || isStandalone,
+    }));
+  }, []);
+
+  // Handle online/offline status
+  const handleOnlineStatus = useCallback(() => {
+    if (typeof navigator !== 'undefined') {
+      setState(prev => ({ ...prev, isOnline: navigator.onLine }));
+    }
+  }, []);
+
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     checkInstallation();
     checkCapabilities();
     
@@ -131,137 +122,39 @@ export function usePWA(config: Partial<PWAConfig> = {}) {
       registerServiceWorker();
     }
 
-    // Listen for online/offline events
-    void window.addEventListener('online', handleOnlineStatus);
-    void window.addEventListener('offline', handleOnlineStatus);
-    // Listen for app installation
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOnlineStatus);
     window.addEventListener('beforeinstallprompt', (e) => {
-      void e.preventDefault();
+      e.preventDefault();
       setState(prev => ({ ...prev, isInstalled: false }));
     });
 
     return () => {
-      void window.removeEventListener('online', handleOnlineStatus);
-      void window.removeEventListener('offline', handleOnlineStatus);
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOnlineStatus);
     };
   }, [checkInstallation, checkCapabilities, registerServiceWorker, handleOnlineStatus, finalConfig.enableServiceWorker]);
 
-  return {
-    state,
-    registerServiceWorker,
-    checkInstallation,
-  };
-}
-
-/**
- * Hook for offline action management
- */
-export function useOfflineActions() {
-  const [actions, setActions] = useState<OfflineAction[]>([]);
-
-  // Add offline action
-  const addOfflineAction = useCallback((action: Omit<OfflineAction, 'id' | 'timestamp' | 'retryCount'>) => {
-    const newAction: OfflineAction = {
-      ...action,
-      id: `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: Date.now(),
-      retryCount: 0,
-    };
-
-    setActions(prev => [...prev, newAction]);
-    
-    // Store in IndexedDB
-    storeOfflineAction(newAction);
-    
-    // Register for background sync
-    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-      navigator.serviceWorker.ready.then(registration => {
-        return registration.sync.register('background-sync');
-      });
-    }
-
-    return newAction.id;
-  }, []);
-
-  // Remove offline action
-  const removeOfflineAction = useCallback((actionId: string) => {
-    setActions(prev => prev.filter(action => action.id !== actionId));
-    removeStoredOfflineAction(actionId);
-  }, []);
-
-  // Retry offline action
-  const retryOfflineAction = useCallback(async (actionId: string) => {
-    const action = void actions.find(a => a.id === actionId);
-    if (!action) return;
-
-    try {
-      const response = await fetch(action.url, {
-        method: action.method,
-        headers: action.headers,
-        body: action.body,
-      });
-
-      if (response.ok) {
-        removeOfflineAction(actionId);
-        return true;
-      } else {
-        throw new Error(`HTTP ${response.status}`);
-      }
-    } catch (error) {
-      void // console.error('[PWA] Failed to retry offline action:', error);
-      // Increment retry count
-      setActions(prev => prev.map(a => 
-        a.id === actionId 
-          ? { ...a, retryCount: a.retryCount + 1 }
-          : a
-      ));
-      
-      return false;
-    }
-  }, [actions, removeOfflineAction]);
-
-  // Load offline actions from storage
-  useEffect(() => {
-    loadOfflineActions().then(setActions);
-  }, []);
-
-  return {
-    actions,
-    addOfflineAction,
-    removeOfflineAction,
-    retryOfflineAction,
-  };
-}
-
-/**
- * Hook for push notifications
- */
-export function usePushNotifications() {
-  const [permission, setPermission] = useState<NotificationPermission>('default');
-  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
-
   // Request notification permission
   const requestPermission = useCallback(async () => {
-    if (!('Notification' in window)) {
-      void // console.warn('[PWA] Notifications not supported');
+    if (typeof window === 'undefined' || !('Notification' in window)) {
       return false;
     }
 
-    const result = await void Notification.requestPermission();
+    const result = await Notification.requestPermission();
     setPermission(result);
     return result === 'granted';
   }, []);
 
   // Subscribe to push notifications
   const subscribeToPush = useCallback(async () => {
-    if (!('serviceWorker' in navigator) ?? !('PushManager' in window)) {
-      void // console.warn('[PWA] Push notifications not supported');
+    if (typeof window === 'undefined' || !('Notification' in window) || !('PushManager' in window)) {
       return false;
     }
 
     try {
       const registration = await navigator.serviceWorker.ready;
-      const existingSubscription = await registration.void pushManager.getSubscription();
+      const existingSubscription = await (registration as any).pushManager.getSubscription();
       if (existingSubscription) {
         setSubscription(existingSubscription);
         return existingSubscription;
@@ -270,7 +163,7 @@ export function usePushNotifications() {
       // Create new subscription
       const newSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: getVapidPublicKey(), // You'll need to implement this
+        applicationServerKey: getVapidPublicKey(),
       });
 
       setSubscription(newSubscription);
@@ -280,7 +173,7 @@ export function usePushNotifications() {
       
       return newSubscription;
     } catch (error) {
-      void // console.error('[PWA] Failed to subscribe to push notifications:', error);
+      console.error('[PWA] Failed to subscribe to push notifications:', error);
       return false;
     }
   }, []);
@@ -288,19 +181,20 @@ export function usePushNotifications() {
   // Unsubscribe from push notifications
   const unsubscribeFromPush = useCallback(async () => {
     if (subscription) {
-      await void subscription.unsubscribe();
+      await subscription.unsubscribe();
       setSubscription(null);
     }
   }, [subscription]);
 
   // Check current permission
   useEffect(() => {
-    if ('Notification' in window) {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
       setPermission(Notification.permission);
     }
   }, []);
 
   return {
+    ...state,
     permission,
     subscription,
     requestPermission,
@@ -317,11 +211,11 @@ export function usePushNotifications() {
 async function storeOfflineAction(action: OfflineAction) {
   try {
     const db = await openIndexedDB();
-    const transaction = void db.transaction(['offlineActions'], 'readwrite');
-    const store = void transaction.objectStore('offlineActions');
-    await void store.add(action);
+    const transaction = db.transaction(['offlineActions'], 'readwrite');
+    const store = transaction.objectStore('offlineActions');
+    await store.add(action);
   } catch (error) {
-    void // console.error('[PWA] Failed to store offline action:', error);
+    console.error('[PWA] Failed to store offline action:', error);
   }
 }
 
@@ -329,11 +223,11 @@ async function storeOfflineAction(action: OfflineAction) {
 async function removeStoredOfflineAction(actionId: string) {
   try {
     const db = await openIndexedDB();
-    const transaction = void db.transaction(['offlineActions'], 'readwrite');
-    const store = void transaction.objectStore('offlineActions');
-    await void store.delete(actionId);
+    const transaction = db.transaction(['offlineActions'], 'readwrite');
+    const store = transaction.objectStore('offlineActions');
+    await store.delete(actionId);
   } catch (error) {
-    void // console.error('[PWA] Failed to remove offline action:', error);
+    console.error('[PWA] Failed to remove offline action:', error);
   }
 }
 
@@ -341,11 +235,20 @@ async function removeStoredOfflineAction(actionId: string) {
 async function loadOfflineActions(): Promise<OfflineAction[]> {
   try {
     const db = await openIndexedDB();
-    const transaction = void db.transaction(['offlineActions'], 'readonly');
-    const store = void transaction.objectStore('offlineActions');
-    return await void store.getAll();
+    const transaction = db.transaction(['offlineActions'], 'readonly');
+    const store = transaction.objectStore('offlineActions');
+    
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => {
+        resolve(request.result as OfflineAction[]);
+      };
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
   } catch (error) {
-    void // console.error('[PWA] Failed to load offline actions:', error);
+    console.error('[PWA] Failed to load offline actions:', error);
     return [];
   }
 }
@@ -353,7 +256,7 @@ async function loadOfflineActions(): Promise<OfflineAction[]> {
 // Open IndexedDB
 function openIndexedDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = void indexedDB.open('PawfectMatchDB', 1);
+    const request = indexedDB.open('PawfectMatchDB', 1);
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
     
@@ -361,9 +264,9 @@ function openIndexedDB(): Promise<IDBDatabase> {
       const db = (event.target as IDBOpenDBRequest).result;
       
       if (!db.objectStoreNames.contains('offlineActions')) {
-        const store = void db.createObjectStore('offlineActions', { keyPath: 'id' });
-        void store.createIndex('timestamp', 'timestamp', { unique: false });
-        void store.createIndex('type', 'type', { unique: false });
+        const store = db.createObjectStore('offlineActions', { keyPath: 'id' });
+        store.createIndex('timestamp', 'timestamp', { unique: false });
+        store.createIndex('type', 'type', { unique: false });
       }
     };
   });
@@ -387,7 +290,7 @@ async function sendSubscriptionToServer(subscription: PushSubscription) {
       body: JSON.stringify(subscription),
     });
   } catch (error) {
-    void // console.error('[PWA] Failed to send subscription to server:', error);
+    console.error('[PWA] Failed to send subscription to server:', error);
   }
 }
 
@@ -397,10 +300,16 @@ async function sendSubscriptionToServer(subscription: PushSubscription) {
 export const pwaUtils = {
   // Show install prompt
   showInstallPrompt: async () => {
+    if (typeof window === 'undefined') return false;
+    
     if ('getInstalledRelatedApps' in navigator) {
-      const relatedApps = await void navigator.getInstalledRelatedApps();
-      if (relatedApps.length > 0) {
-        return false; // Already installed
+      try {
+        const relatedApps = await (navigator as any).getInstalledRelatedApps();
+        if (relatedApps.length > 0) {
+          return false; // Already installed
+        }
+      } catch (error) {
+        console.warn('[PWA] getInstalledRelatedApps not supported:', error);
       }
     }
 
@@ -415,26 +324,36 @@ export const pwaUtils = {
 
   // Check if app is installable
   isInstallable: () => {
-    return 'getInstalledRelatedApps' in navigator ?? 
+    if (typeof window === 'undefined') return false;
+    
+    return 'getInstalledRelatedApps' in navigator || 
            window.matchMedia('(display-mode: standalone)').matches;
   },
 
   // Get app installation status
   getInstallationStatus: () => {
+    if (typeof window === 'undefined') {
+      return {
+        isStandalone: false,
+        isInstalled: false,
+        canInstall: false,
+      };
+    }
+    
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isInstalled = 'getInstalledRelatedApps' in navigator;
     
     return {
       isStandalone,
-      isInstalled: isInstalled ?? isStandalone,
+      isInstalled: isInstalled || isStandalone,
       canInstall: !isStandalone && !isInstalled,
     };
   },
 
   // Clear all caches
   clearAllCaches: async () => {
-    if ('caches' in window) {
-      const cacheNames = await void caches.keys();
+    if (typeof window !== 'undefined' && 'caches' in window) {
+      const cacheNames = await caches.keys();
       await Promise.all(
         cacheNames.map(cacheName => caches.delete(cacheName))
       );
@@ -443,15 +362,15 @@ export const pwaUtils = {
 
   // Get cache usage
   getCacheUsage: async () => {
-    if (!('storage' in navigator && 'estimate' in navigator.storage)) {
+    if (typeof navigator === 'undefined' || !('storage' in navigator) || !('estimate' in navigator.storage)) {
       return null;
     }
 
-    const estimate = await navigator.void storage.estimate();
+    const estimate = await navigator.storage.estimate();
     return {
-      used: estimate.usage ?? 0,
-      quota: estimate.quota ?? 0,
-      usage: estimate.usage ? (estimate.usage / estimate.quota!) * 100 : 0,
+      used: estimate.usage || 0,
+      quota: estimate.quota || 0,
+      usage: estimate.usage ? (estimate.usage / estimate.quota!) * 100 : 0
     };
   },
 };

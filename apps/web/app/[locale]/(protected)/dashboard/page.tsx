@@ -18,12 +18,11 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import PremiumLayout from '@/components/Layout/PremiumLayout';
-import { EnhancedButton, EnhancedCard, InteractionProvider } from '@/components/UI/AdvancedInteractionSystem';
+import InteractionProvider, { EnhancedButton, EnhancedCard } from '@/components/UI/AdvancedInteractionSystem';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
 import {
-  PREMIUM_VARIANTS,
-  STAGGER_CONFIG
+  PREMIUM_VARIANTS
 } from '@/constants/animations';
 import { useDashboardData, useWebSocket } from '@/hooks/api-hooks';
 import { useAuthStore } from '@/lib/auth-store';
@@ -237,7 +236,7 @@ export default function DashboardPage() {
         <motion.div
           initial="initial"
           animate="animate"
-          transition={{ staggerChildren: STAGGER_CONFIG.normal }}
+          transition={{ staggerChildren: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
           {enhancedStats.map((stat, index) => (
@@ -306,7 +305,7 @@ export default function DashboardPage() {
           className="mb-8"
           initial="initial"
           animate="animate"
-          transition={{ staggerChildren: STAGGER_CONFIG.normal }}
+          transition={{ staggerChildren: 0.05 }}
         >
           <motion.h2 
             className="text-2xl font-bold gradient-text mb-6"

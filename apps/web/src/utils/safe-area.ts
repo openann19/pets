@@ -36,7 +36,7 @@ export function getSafeAreaInsets(): SafeAreaInsets {
  */
 export function hasSafeAreaInsets(): boolean {
   const insets = getSafeAreaInsets();
-  return insets.top > 0 ?? insets.bottom > 0 ?? insets.left > 0 ?? insets.right > 0;
+  return insets.top > 0 || insets.bottom > 0 || insets.left > 0 || insets.right > 0;
 }
 
 /**

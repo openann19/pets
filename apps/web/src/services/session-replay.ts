@@ -3,6 +3,7 @@
  * UX recording system for debugging and analytics
  */
 
+import { useState, useEffect } from 'react'
 import { logger } from './logger'
 import { OpenReplayConfig, CustomEvent, UserEvent } from '@/types/common'
 
@@ -34,9 +35,9 @@ class SessionReplayService {
 
   constructor() {
     this.config = {
-      projectKey: process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY || '',
-      enabled: process.env.NODE_ENV === 'production' && !!process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY,
-      sampleRate: 0.1, // 10% of sessions
+      projectKey: process.env['NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY'] || '',
+      enabled: process.env.NODE_ENV === 'production' && !!process.env['NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY'],
+      sampleRate: 0.1,
       maskAllInputs: true,
       maskAllText: false,
       defaultInputMode: 0,
@@ -78,7 +79,6 @@ class SessionReplayService {
         
         this.sessionId = OpenReplay.start({
           projectKey: this.config.projectKey,
-          sampleRate: this.config.sampleRate,
           maskAllInputs: this.config.maskAllInputs,
           maskAllText: this.config.maskAllText,
           defaultInputMode: this.config.defaultInputMode,
@@ -144,26 +144,29 @@ class SessionReplayService {
     const OpenReplay = window.OpenReplay
 
     // Track user authentication
-    window.addEventListener('user-login', (event: CustomEvent) => {
-      OpenReplay.setUserID(event.detail.userId)
+    window.addEventListener('user-login', (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const detail = customEvent.detail as { userId: string; email: string; name: string };
+      OpenReplay.setUserID(detail.userId)
       OpenReplay.setMetadata('user', {
-        id: event.detail.userId,
-        email: event.detail.email,
-        name: event.detail.name
+        id: detail.userId,
+        email: detail.email,
+        name: detail.name
       })
     })
 
     // Track user logout
     window.addEventListener('user-logout', () => {
-      OpenReplay.setUserID(null)
+      OpenReplay.setUserID('')
       OpenReplay.setMetadata('user', null)
     })
 
     // Track page views
-    window.addEventListener('page-view', (event: CustomEvent) => {
+    window.addEventListener('page-view', (event: Event) => {
+      const customEvent = event as CustomEvent;
       OpenReplay.setMetadata('page', {
-        url: event.detail.url,
-        title: event.detail.title,
+        url: customEvent.detail['url'],
+        title: customEvent.detail['title'],
         timestamp: new Date().toISOString()
       })
     })
@@ -173,7 +176,6 @@ class SessionReplayService {
       OpenReplay.addIssue({
         type: 'error',
         message: event.message,
-        stack: event.error?.stack,
         url: event.filename,
         line: event.lineno,
         column: event.colno
@@ -184,8 +186,7 @@ class SessionReplayService {
     window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
       OpenReplay.addIssue({
         type: 'unhandledrejection',
-        message: event.reason?.message || 'Unhandled promise rejection',
-        stack: event.reason?.stack
+        message: event.reason?.message || 'Unhandled promise rejection'
       })
     })
   }
@@ -219,7 +220,7 @@ class SessionReplayService {
     }
 
     const OpenReplay = window.OpenReplay
-    OpenReplay.setUserID(null)
+    OpenReplay.setUserID('')
     OpenReplay.setMetadata('user', null)
   }
 

@@ -254,7 +254,7 @@ class AdvancedAnalytics {
         connectionType: this.getConnectionType(),
       },
       timestamp: Date.now(),
-      userId: this.userId ?? undefined,
+      ...(this.userId && { userId: this.userId }),
       sessionId: this.sessionId,
     };
 
@@ -373,9 +373,13 @@ class AdvancedAnalytics {
     const recent = this.performanceMetrics.memoryUsage.slice(-5);
     if (recent.length < 3) return 'stable';
     
-    const trend = recent[recent.length - 1] - recent[0];
-    if (trend > recent[0] * 0.1) return 'increasing';
-    if (trend < -recent[0] * 0.1) return 'decreasing';
+    const first = recent[0];
+    const last = recent[recent.length - 1];
+    if (first === undefined || last === undefined) return 'stable';
+    
+    const trend = last - first;
+    if (trend > first * 0.1) return 'increasing';
+    if (trend < -first * 0.1) return 'decreasing';
     return 'stable';
   }
 

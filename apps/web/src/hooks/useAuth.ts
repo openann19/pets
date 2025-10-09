@@ -56,7 +56,10 @@ export function useAuth() {
 
     // Decode JWT to get expiry (simple base64 decode for client-side)
     try {
-      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      const tokenParts = accessToken.split('.');
+      if (tokenParts.length !== 3) return;
+      
+      const payload = JSON.parse(atob(tokenParts[1]));
       const expiryTime = payload.exp * 1000; // Convert to milliseconds
       const currentTime = Date.now();
       const refreshTime = expiryTime - 5 * 60 * 1000; // Refresh 5 minutes before expiry
@@ -74,6 +77,8 @@ export function useAuth() {
     } catch (error) {
       logger.error('Failed to decode token for refresh', error);
     }
+    
+    return undefined;
   }, [accessToken, refreshToken]);
 
   /**
@@ -84,7 +89,7 @@ export function useAuth() {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/auth/login`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5001'}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -128,7 +133,7 @@ export function useAuth() {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/auth/register`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5001'}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +178,7 @@ export function useAuth() {
     try {
       // Call logout endpoint to invalidate server-side session
       if (accessToken) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/auth/logout`, {
+        await fetch(`${process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5001'}/api/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -210,7 +215,7 @@ export function useAuth() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/auth/refresh`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5001'}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -255,7 +260,7 @@ export function useAuth() {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/users/profile`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5001'}/api/users/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -293,7 +298,7 @@ export function useAuth() {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/auth/verify`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5001'}/api/auth/verify`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`,

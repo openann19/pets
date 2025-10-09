@@ -132,8 +132,9 @@ export function SuccessStoriesCarousel({
       {/* Story Content */}
       <div className="relative">
         <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStory.id}
+          {currentStory && (
+            <motion.div
+              key={currentStory.id}
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
@@ -252,6 +253,7 @@ export function SuccessStoriesCarousel({
               </div>
             </div>
           </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Navigation */}

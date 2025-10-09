@@ -48,7 +48,7 @@ class Logger {
       timestamp: new Date().toISOString(),
       context,
       sessionId: this.sessionId,
-      userId: typeof window !== 'undefined' ? localStorage.getItem('userId') || undefined : undefined,
+      userId: typeof window !== 'undefined' ? localStorage.getItem('userId') || '' : '',
     };
   }
 
@@ -79,7 +79,7 @@ class Logger {
   private async sendToExternalService(logEntry: LogEntry): Promise<void> {
     try {
       // Send to your logging service (e.g., Sentry, LogRocket, etc.)
-      if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      if (process.env['NEXT_PUBLIC_SENTRY_DSN']) {
         // Sentry integration would go here
         console.log('Sending log to external service:', logEntry);
       }

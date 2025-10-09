@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send to configured service
-    const service = process.env.FEEDBACK_SERVICE || 'slack' // 'slack' or 'linear'
+    const service = process.env['FEEDBACK_SERVICE'] || 'slack' // 'slack' or 'linear'
     
     let success = false
     let serviceResponse = null
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function sendToSlack(payload: FeedbackData & { userId: string; userName: string; environment: string }) {
-  const webhookUrl = process.env.SLACK_FEEDBACK_WEBHOOK_URL
+  const webhookUrl = process.env['SLACK_FEEDBACK_WEBHOOK_URL']
   
   if (!webhookUrl) {
     console.warn('Slack webhook URL not configured')
@@ -178,8 +178,8 @@ async function sendToSlack(payload: FeedbackData & { userId: string; userName: s
 }
 
 async function sendToLinear(payload: FeedbackData & { userId: string; userName: string; environment: string }) {
-  const linearApiKey = process.env.LINEAR_API_KEY
-  const linearTeamId = process.env.LINEAR_TEAM_ID
+  const linearApiKey = process.env['LINEAR_API_KEY']
+  const linearTeamId = process.env['LINEAR_TEAM_ID']
   
   if (!linearApiKey || !linearTeamId) {
     console.warn('Linear API key or team ID not configured')

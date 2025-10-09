@@ -20,8 +20,8 @@ import {
 // Centralized API configuration
 const getApiBaseUrl = (): string => {
   // Check environment variable first
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
+  if (process.env['NEXT_PUBLIC_API_URL']) {
+    return process.env['NEXT_PUBLIC_API_URL'];
   }
   
   // Fallback to localhost with correct port

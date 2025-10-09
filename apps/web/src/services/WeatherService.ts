@@ -362,25 +362,25 @@ class EnhancedWeatherService {
       enabled: true
     },
     weatherApi: {
-      key: process.env.NEXT_PUBLIC_WEATHERAPI_KEY || '',
+      key: process.env['NEXT_PUBLIC_WEATHERAPI_KEY'] || '',
       url: 'https://api.weatherapi.com/v1',
       priority: 2,
       enabled: true
     },
     tomorrow: {
-      key: process.env.NEXT_PUBLIC_TOMORROW_API_KEY || '',
+      key: process.env['NEXT_PUBLIC_TOMORROW_API_KEY'] || '',
       url: 'https://api.tomorrow.io/v4',
       priority: 3,
       enabled: true
     },
     visualCrossing: {
-      key: process.env.NEXT_PUBLIC_VISUALCROSSING_KEY || '',
+      key: process.env['NEXT_PUBLIC_VISUALCROSSING_KEY'] || '',
       url: 'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services',
       priority: 4,
       enabled: true
     },
     meteomatics: {
-      key: process.env.NEXT_PUBLIC_METEOMATICS_KEY || '',
+      key: process.env['NEXT_PUBLIC_METEOMATICS_KEY'] || '',
       url: 'https://api.meteomatics.com',
       priority: 5,
       enabled: true
@@ -396,10 +396,10 @@ class EnhancedWeatherService {
   private websockets = new Map<string, WebSocket>();
   
   // AI Model Integration
-  private aiModelEndpoint = process.env.NEXT_PUBLIC_AI_WEATHER_MODEL || '';
+  private aiModelEndpoint = process.env['NEXT_PUBLIC_AI_WEATHER_MODEL'] || '';
   
   // Blockchain verification
-  private blockchainNetwork = process.env.NEXT_PUBLIC_BLOCKCHAIN_NETWORK || 'polygon';
+  private blockchainNetwork = process.env['NEXT_PUBLIC_BLOCKCHAIN_NETWORK'] || 'polygon';
   
   // Performance monitoring
   private metrics = {

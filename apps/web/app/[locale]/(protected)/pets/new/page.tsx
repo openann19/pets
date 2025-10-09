@@ -22,6 +22,7 @@ import PremiumInput from '@/components/UI/PremiumInput';
 import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import { PREMIUM_VARIANTS, STAGGER_CONFIG } from '@/constants/animations';
 import { useCreatePet } from '@/hooks/api-hooks';
+import { PetFormData } from '@/types';
 
 interface PhotoData {
   file: File;
@@ -29,11 +30,29 @@ interface PhotoData {
   isPrimary: boolean;
 }
 
+interface FormData {
+  name: string;
+  species: string;
+  breed: string;
+  age: string;
+  gender: string;
+  size: string;
+  description: string;
+  personalityTags: string[];
+  intent: string;
+  healthInfo: {
+    isVaccinated: boolean;
+    isSpayedNeutered: boolean;
+    isMicrochipped: boolean;
+    specialNeeds: string;
+  };
+}
+
 export default function CreatePetPage() {
   const router = useRouter();
   const createPet = useCreatePet();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     species: '',
     breed: '',
@@ -41,13 +60,13 @@ export default function CreatePetPage() {
     gender: '',
     size: '',
     description: '',
-    personalityTags: [] as string[],
+    personalityTags: [],
     intent: '',
     healthInfo: {
-      vaccinated: false,
-      spayedNeutered: false,
-      microchipped: false,
-      specialNeeds: false
+      isVaccinated: false,
+      isSpayedNeutered: false,
+      isMicrochipped: false,
+      specialNeeds: ''
     }
   });
 
@@ -76,16 +95,21 @@ export default function CreatePetPage() {
     'good-with-kids', 'good-with-pets', 'trained', 'house-trained', 'intelligent'
   ];
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: keyof FormData | 'healthInfo.isVaccinated' | 'healthInfo.isSpayedNeutered' | 'healthInfo.isMicrochipped' | 'healthInfo.specialNeeds', value: any) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev] as any,
-          [child]: value
-        }
-      }));
+      if (parent === 'healthInfo') {
+        setFormData(prev => ({
+          ...prev,
+          healthInfo: {
+            ...prev.healthInfo,
+            ...(child === 'isVaccinated' && { isVaccinated: value }),
+            ...(child === 'isSpayedNeutered' && { isSpayedNeutered: value }),
+            ...(child === 'isMicrochipped' && { isMicrochipped: value }),
+            ...(child === 'specialNeeds' && { specialNeeds: value }),
+          }
+        }));
+      }
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
@@ -136,7 +160,7 @@ export default function CreatePetPage() {
     setPhotos(prev => {
       const newPhotos = prev.filter((_, i) => i !== index);
       // If we removed the primary photo, make the first remaining photo primary
-      if (prev[index].isPrimary && newPhotos.length > 0) {
+      if (prev[index]?.isPrimary && newPhotos.length > 0 && newPhotos[0]) {
         newPhotos[0].isPrimary = true;
       }
       return newPhotos;
@@ -153,18 +177,18 @@ export default function CreatePetPage() {
   const togglePersonalityTag = (tag: string) => {
     setFormData(prev => ({
       ...prev,
-      personalityTags: prev.personalityTags.includes(tag)
-        ? prev.personalityTags.filter(t => t !== tag)
-        : [...prev.personalityTags, tag]
+      personalityTags: (prev.personalityTags || []).includes(tag)
+        ? (prev.personalityTags || []).filter(t => t !== tag)
+        : [...(prev.personalityTags || []), tag]
     }));
   };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Pet name is required';
+    if (!formData.name?.trim()) newErrors.name = 'Pet name is required';
     if (!formData.species) newErrors.species = 'Species is required';
-    if (!formData.breed.trim()) newErrors.breed = 'Breed is required';
+    if (!formData.breed?.trim()) newErrors.breed = 'Breed is required';
     if (!formData.age || isNaN(Number(formData.age)) || Number(formData.age) < 0 || Number(formData.age) > 30) {
       newErrors.age = 'Age must be between 0 and 30 years';
     }
@@ -184,13 +208,16 @@ export default function CreatePetPage() {
     setErrors({});
 
     try {
+      // Transform PetFormData to PetCreationData
       const petData = {
-        ...formData,
-        age: Number(formData.age),
-        photos: photos.map((photo, index) => ({
-          file: photo.file,
-          isPrimary: photo.isPrimary || (index === 0 && photos.length === 1)
-        }))
+        name: formData['name'],
+        species: formData['species'],
+        breed: formData['breed'],
+        age: Number(formData['age']),
+        gender: formData['gender'],
+        size: formData['size'],
+        description: formData['description'] || '',
+        // Note: photos will need to be uploaded separately via file upload API
       };
 
       await createPet.mutateAsync(petData);
@@ -256,7 +283,7 @@ export default function CreatePetPage() {
         )}
 
         {/* Error Message */}
-        {errors.submit && (
+        {errors['submit'] && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -265,7 +292,7 @@ export default function CreatePetPage() {
             <PremiumCard variant="neon" className="p-4 border-red-200">
               <div className="flex items-center space-x-3">
                 <ExclamationTriangleIcon className="w-6 h-6 text-red-500" />
-                <p className="text-red-700 font-medium">{errors.submit}</p>
+                <p className="text-red-700 font-medium">{errors['submit']}</p>
               </div>
             </PremiumCard>
           </motion.div>
@@ -285,11 +312,11 @@ export default function CreatePetPage() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <PremiumInput
                     label="Pet Name"
-                    value={formData.name}
+                    value={formData['name']}
                     onChange={(value) => handleInputChange('name', value)}
                     placeholder="Enter your pet's name"
                     required
-                    error={errors.name}
+                    {...(errors.name && { error: errors.name })}
                   />
 
                   <div className="space-y-2">
@@ -302,7 +329,7 @@ export default function CreatePetPage() {
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleInputChange('species', option.value)}
                           className={`p-3 rounded-xl border-2 transition-all ${
-                            formData.species === option.value
+                            formData['species'] === option.value
                               ? 'border-purple-500 bg-purple-50 text-purple-700'
                               : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
                           }`}
@@ -312,30 +339,30 @@ export default function CreatePetPage() {
                         </motion.button>
                       ))}
                     </div>
-                    {errors.species && (
-                      <p className="text-sm text-red-600 mt-1">{errors.species}</p>
+                    {errors['species'] && (
+                      <p className="text-sm text-red-600 mt-1">{errors['species']}</p>
                     )}
                   </div>
 
                   <PremiumInput
                     label="Breed"
-                    value={formData.breed}
+                    value={formData['breed']}
                     onChange={(value) => handleInputChange('breed', value)}
                     placeholder="e.g., Golden Retriever, Siamese"
                     required
-                    error={errors.breed}
+                    {...(errors.breed && { error: errors.breed })}
                   />
 
                   <PremiumInput
                     label="Age (years)"
                     type="number"
-                    value={formData.age}
+                    value={formData['age']}
                     onChange={(value) => handleInputChange('age', value)}
                     placeholder="0-30"
                     min="0"
                     max="30"
                     required
-                    error={errors.age}
+                    {...(errors.age && { error: errors.age })}
                   />
 
                   <div className="space-y-2">
@@ -351,7 +378,7 @@ export default function CreatePetPage() {
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleInputChange('gender', option.value)}
                           className={`flex-1 p-3 rounded-xl border-2 transition-all ${
-                            formData.gender === option.value
+                            formData['gender'] === option.value
                               ? 'border-purple-500 bg-purple-50 text-purple-700'
                               : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
                           }`}
@@ -382,7 +409,7 @@ export default function CreatePetPage() {
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleInputChange('size', option.value)}
                           className={`p-3 rounded-xl border-2 transition-all text-left ${
-                            formData.size === option.value
+                            formData['size'] === option.value
                               ? 'border-purple-500 bg-purple-50 text-purple-700'
                               : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
                           }`}
@@ -399,13 +426,15 @@ export default function CreatePetPage() {
                 </div>
 
                 <div className="mt-6">
-                  <PremiumInput
-                    label="Description"
-                    type="textarea"
-                    value={formData.description}
-                    onChange={(value) => handleInputChange('description', value)}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={formData['description']}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
                     placeholder="Tell us about your pet's personality, habits, and what makes them special..."
                     rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
               </PremiumCard>
@@ -430,7 +459,7 @@ export default function CreatePetPage() {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => togglePersonalityTag(tag)}
                         className={`px-4 py-2 rounded-full border-2 transition-all ${
-                          formData.personalityTags.includes(tag)
+                          formData['personalityTags'].includes(tag)
                             ? 'border-purple-500 bg-purple-100 text-purple-700'
                             : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
                         }`}
@@ -462,7 +491,7 @@ export default function CreatePetPage() {
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleInputChange('intent', option.value)}
                           className={`p-4 rounded-xl border-2 transition-all text-left ${
-                            formData.intent === option.value
+                            formData['intent'] === option.value
                               ? 'border-purple-500 bg-purple-50 text-purple-700'
                               : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
                           }`}
@@ -489,7 +518,7 @@ export default function CreatePetPage() {
                         <label key={item.key} className="flex items-center space-x-3">
                           <input
                             type="checkbox"
-                            checked={formData.healthInfo[item.key as keyof typeof formData.healthInfo] as boolean}
+                            checked={formData['healthInfo'][item.key as keyof typeof formData['healthInfo']] as boolean}
                             onChange={(e) => handleInputChange(`healthInfo.${item.key}`, e.target.checked)}
                             className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                           />

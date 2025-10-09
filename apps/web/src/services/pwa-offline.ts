@@ -3,6 +3,7 @@
  * Handles offline functionality with Workbox and IndexedDB
  */
 
+import { useState, useEffect } from 'react'
 import { logger } from './logger'
 import { Pet, Message } from '@/types/common'
 
@@ -120,13 +121,13 @@ class PWAOfflineService {
 
     for (const pet of pets) {
       const cachedPet: CachedPet = {
-        id: pet.id,
+        id: pet._id,
         name: pet.name,
         breed: pet.breed,
         age: pet.age,
         photos: pet.photos || [],
-        bio: pet.bio,
-        location: pet.location,
+        bio: pet.description || '',
+        location: pet.location ? JSON.stringify(pet.location) : '',
         cachedAt: Date.now()
       }
 
@@ -172,11 +173,11 @@ class PWAOfflineService {
 
     for (const message of messages) {
       const cachedMessage: CachedMessage = {
-        id: message.id,
+        id: message._id,
         chatId: message.chatId,
         content: message.content,
-        senderId: message.senderId,
-        timestamp: message.timestamp,
+        senderId: typeof message.sender === 'string' ? message.sender : message.sender._id,
+        timestamp: new Date(message.createdAt).getTime(),
         cachedAt: Date.now()
       }
 
@@ -248,7 +249,7 @@ class PWAOfflineService {
    * Execute a queued action
    */
   private async executeAction(action: OfflineAction): Promise<void> {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
+    const apiUrl = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5001'
 
     switch (action.type) {
       case 'swipe':
@@ -276,7 +277,7 @@ class PWAOfflineService {
         break
 
       case 'profile_update':
-        await fetch(`${apiUrl}/api/pets/${action.data.petId}`, {
+        await fetch(`${apiUrl}/api/pets/${action.data['petId']}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(action.data)

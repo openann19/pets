@@ -3,6 +3,7 @@
  * Handles streaks, badges, and achievement system
  */
 
+import { useState, useEffect } from 'react'
 import { logger } from './logger'
 
 export interface Badge {
@@ -47,7 +48,7 @@ export interface UserGamification {
 }
 
 class GamificationService {
-  private apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
+  private apiUrl = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5001'
 
   /**
    * Get user's gamification data

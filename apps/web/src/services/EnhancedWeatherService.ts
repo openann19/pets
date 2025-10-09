@@ -10,7 +10,7 @@ import {
   DailyForecast, 
   AirQuality, 
   PetSafetyInfo 
-} from '../types';
+} from '../types/weather';
 
 // Enhanced interfaces with production features
 interface WeatherData {

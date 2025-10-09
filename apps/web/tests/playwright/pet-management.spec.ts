@@ -47,7 +47,7 @@ test.describe('Pet Management & Swiping - Enterprise Tests', () => {
     await expect(page).toHaveURL('/discover');
     
     // Should show pet cards
-    await expect(page.locator('[data-testid="pet-card"]')).toHaveCount.greaterThan(0);
+    await expect(page.locator('[data-testid="pet-card"]')).toHaveCount({ gte: 1 });
     
     // Should show pet details
     const firstPet = page.locator('[data-testid="pet-card"]').first();
@@ -62,7 +62,7 @@ test.describe('Pet Management & Swiping - Enterprise Tests', () => {
     const petCard = page.locator('[data-testid="pet-card"]').first();
     const petName = await petCard.locator('[data-testid="pet-name"]').textContent();
     
-    await petCard.click('[data-testid="like-button"]');
+    await petCard.locator('[data-testid="like-button"]').click();
     
     // Should show like animation
     await expect(petCard.locator('[data-testid="like-animation"]')).toBeVisible();
@@ -79,7 +79,7 @@ test.describe('Pet Management & Swiping - Enterprise Tests', () => {
     const petCard = page.locator('[data-testid="pet-card"]').first();
     const petName = await petCard.locator('[data-testid="pet-name"]').textContent();
     
-    await petCard.click('[data-testid="pass-button"]');
+    await petCard.locator('[data-testid="pass-button"]').click();
     
     // Should show pass animation
     await expect(petCard.locator('[data-testid="pass-animation"]')).toBeVisible();
@@ -155,7 +155,7 @@ test.describe('Pet Management & Swiping - Enterprise Tests', () => {
     
     // Click on existing pet
     const petCard = page.locator('[data-testid="pet-card"]').first();
-    await petCard.click('[data-testid="edit-pet-button"]');
+    await petCard.locator('[data-testid="edit-pet-button"]').click();
     
     await expect(page).toHaveURL(/\/pets\/\w+\/edit/);
     
@@ -174,7 +174,7 @@ test.describe('Pet Management & Swiping - Enterprise Tests', () => {
     const petCard = page.locator('[data-testid="pet-card"]').first();
     const petName = await petCard.locator('[data-testid="pet-name"]').textContent();
     
-    await petCard.click('[data-testid="delete-pet-button"]');
+    await petCard.locator('[data-testid="delete-pet-button"]').click();
     
     // Should show confirmation dialog
     await expect(page.locator('[data-testid="delete-confirmation"]')).toBeVisible();
@@ -226,7 +226,7 @@ test.describe('Pet Management & Swiping - Enterprise Tests', () => {
     await page.goto('/discover');
     
     const petCard = page.locator('[data-testid="pet-card"]').first();
-    await petCard.click('[data-testid="like-button"]');
+    await petCard.locator('[data-testid="like-button"]').click();
     
     // Should show error message
     await expect(page.locator('[data-testid="error-message"]')).toContainText('Network error');

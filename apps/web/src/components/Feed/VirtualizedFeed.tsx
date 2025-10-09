@@ -7,14 +7,21 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
+import type { MotionStyle } from 'framer-motion';
+import * as RW from 'react-window';
 import { useInView } from 'react-intersection-observer';
+import {
+  HeartIcon,
+  ChatBubbleLeftRightIcon,
+  ShareIcon
+} from '@heroicons/react/24/outline';
+import Image from 'next/image';
 
 interface VirtualizedFeedProps {
   items: any[];
   itemHeight: number;
   onLoadMore: () => Promise<any[]>;
-  renderItem: (props: ListChildComponentProps) => React.ReactElement;
+  renderItem: (props: { index: number; style: React.CSSProperties; data: any[] }) => React.ReactElement;
   className?: string;
   overscan?: number;
   threshold?: number;
@@ -33,7 +40,6 @@ export default function VirtualizedFeed({
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [containerHeight, setContainerHeight] = useState(600);
-  const listRef = useRef<List>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -77,9 +83,9 @@ export default function VirtualizedFeed({
 
   // Memoized list component for performance
   const MemoizedList = useMemo(() => {
-    return React.memo(({ items, itemHeight, renderItem, onItemsRendered }: any) => (
-      <List
-        ref={listRef}
+    const ListComponent = (RW as any).FixedSizeList as React.ComponentType<any>;
+    return React.memo(({ items, itemHeight, renderItem, onItemsRendered }: { items: any[]; itemHeight: number; renderItem: any; onItemsRendered: (props: any) => void; }) => (
+      <ListComponent
         height={containerHeight}
         itemCount={items.length}
         itemSize={itemHeight}
@@ -89,7 +95,7 @@ export default function VirtualizedFeed({
         className="scrollbar-hide"
       >
         {renderItem}
-      </List>
+      </ListComponent>
     ));
   }, [containerHeight, itemHeight, overscan]);
 
@@ -125,9 +131,12 @@ export default function VirtualizedFeed({
 }
 
 // Optimized post item component for virtualization
-interface VirtualizedPostItemProps extends ListChildComponentProps {
+interface VirtualizedPostItemProps {
+  index: number;
+  style: React.CSSProperties;
   data: any[];
 }
+
 
 export function VirtualizedPostItem({ index, style, data }: VirtualizedPostItemProps) {
   const post = data[index];
@@ -153,7 +162,7 @@ export function VirtualizedPostItem({ index, style, data }: VirtualizedPostItemP
   return (
     <motion.div
       ref={ref}
-      style={style}
+      style={style as unknown as MotionStyle}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -280,10 +289,4 @@ export function useVirtualizedFeed<T>(
   };
 }
 
-// Import required icons
-import {
-  HeartIcon,
-  ChatBubbleLeftRightIcon,
-  ShareIcon
-} from '@heroicons/react/24/outline';
-import Image from 'next/image';
+// imports moved to the top of the file

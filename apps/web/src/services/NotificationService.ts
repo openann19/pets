@@ -166,7 +166,7 @@ class NotificationService {
 
     try {
       // Get VAPID public key from environment
-      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      const vapidPublicKey = process.env['NEXT_PUBLIC_VAPID_PUBLIC_KEY'];
       if (!vapidPublicKey) {
         logger.warn('VAPID public key not configured');
         return;
@@ -206,7 +206,7 @@ class NotificationService {
 
   private async sendSubscriptionToServer(subscription: PushSubscription) {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/subscribe`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/api/notifications/subscribe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -284,7 +284,7 @@ class NotificationService {
       body: notification.body,
       icon: notification.icon || '/icon-192.png',
       badge: notification.badge || '/badge-72.png',
-      tag: notification.tag,
+      ...(notification.tag && { tag: notification.tag }),
       data: notification.data,
       requireInteraction: notification.requireInteraction || false
     };
@@ -427,9 +427,8 @@ class NotificationService {
       const { messaging } = await import('./firebase');
       
       if (messaging) {
-        this.fcmToken = await getToken(messaging, {
-          vapidKey: process.env.NEXT_PUBLIC_FCM_VAPID_KEY
-        });
+        const vapidKey = process.env['NEXT_PUBLIC_FCM_VAPID_KEY'];
+        this.fcmToken = await getToken(messaging, vapidKey ? { vapidKey } : {});
         
         logger.info('FCM token obtained', { token: this.fcmToken });
         await this.sendFCMTokenToServer(this.fcmToken);
@@ -451,7 +450,7 @@ class NotificationService {
 
   private async sendFCMTokenToServer(token: string) {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/fcm-token`, {
+      await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/api/notifications/fcm-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

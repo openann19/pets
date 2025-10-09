@@ -31,7 +31,7 @@ export function ResponsiveTest() {
  * Hook to detect current screen size
  */
 export function useScreenSize() {
-  const [screenSize, setScreenSize] = void React.useState({
+  const [screenSize, setScreenSize] = React.useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 0,
     height: typeof window !== 'undefined' ? window.innerHeight : 0,
     isMobile: false,
@@ -53,8 +53,8 @@ export function useScreenSize() {
     };
 
     handleResize();
-    void window.addEventListener('resize', handleResize);
-    return () => void window.removeEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return screenSize;
@@ -66,19 +66,19 @@ export function useScreenSize() {
 export function responsiveClass(baseClass: string, mobileClass?: string, tabletClass?: string, desktopClass?: string) {
   const classes = [baseClass];
   
-  if (mobileClass) {
-    void classes.push(mobileClass);
+  if (mobileClass !== undefined) {
+    classes.push(mobileClass);
   }
   
-  if (tabletClass) {
-    void classes.push(`md:${tabletClass}`);
+  if (tabletClass !== undefined) {
+    classes.push(`md:${tabletClass}`);
   }
   
-  if (desktopClass) {
-    void classes.push(`lg:${desktopClass}`);
+  if (desktopClass !== undefined) {
+    classes.push(`lg:${desktopClass}`);
   }
   
-  return void classes.join(' ');
+  return classes.join(' ');
 }
 
 /**

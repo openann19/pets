@@ -34,7 +34,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Handle internationalization first
-  const intlResponse = intlMiddleware(request);
+  const intlResponse = intlMiddleware(request as any);
   if (intlResponse) {
     return intlResponse;
   }

@@ -339,7 +339,7 @@ export const VARIANTS = {
     glass: {
       background: GRADIENTS.glass,
       border: `1px solid ${COLORS.neutral[200]}`,
-      shadow: SHADOWS.glass,
+      shadow: SHADOWS.lg,
       radius: RADIUS.xl,
       backdropFilter: 'blur(12px)',
     },

@@ -191,14 +191,10 @@ export default function MyPetsPage() {
                   <div className="relative h-48 bg-gradient-to-br from-purple-100 to-pink-100">
                     {pet.photos && pet.photos.length > 0 ? (
                       <SafeImage
-                        src={pet.photos.find(p => p.isPrimary)?.url || pet.photos[0].url}
+                        src={pet.photos.find(p => p.isPrimary)?.url || pet.photos[0]?.url || ''}
                         alt={`${pet.name} - ${pet.breed}`}
                         className="w-full h-full object-cover"
-                        fallback={
-                          <div className="w-full h-full flex items-center justify-center text-4xl">
-                            {getSpeciesEmoji(pet.species)}
-                          </div>
-                        }
+                        fallbackType="pet"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-4xl">

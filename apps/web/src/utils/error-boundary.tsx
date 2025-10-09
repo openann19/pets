@@ -5,14 +5,15 @@
 
 'use client';
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { motion } from 'framer-motion';
 import { 
   ExclamationTriangleIcon, 
   ArrowPathIcon,
   HomeIcon,
   ChatBubbleLeftIcon 
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import type { ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -51,19 +52,19 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    void this.setState({ errorInfo });
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    this.setState({ errorInfo });
     // Log error details
-    void // console.error('🚨 Error Boundary Caught:', error);
-    void // console.error('📍 Error Info:', errorInfo);
+    // console.error('🚨 Error Boundary Caught:', error);
+    // console.error('📍 Error Info:', errorInfo);
     // Send to monitoring service
-    void this.reportError(error, errorInfo);
+    this.reportError(error, errorInfo);
     // Call custom error handler
     this.props.onError?.(error, errorInfo);
 
     // Auto-retry for component-level errors
     if (this.props.level === 'component' && this.state.retryCount < 3) {
-      void this.scheduleRetry();
+      this.scheduleRetry();
     }
   }
 
@@ -115,7 +116,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     }, 2000 * (this.state.retryCount + 1)); // Exponential backoff
   }
 
-  private handleRetry = () => {
+  private readonly handleRetry = () => {
     this.setState(prevState => ({
       hasError: false,
       error: null,
@@ -124,13 +125,13 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     }));
   };
 
-  private handleGoHome = () => {
+  private readonly handleGoHome = () => {
     if (typeof window !== 'undefined') {
       window.location.href = './dashboard';
     }
   };
 
-  private handleReport = () => {
+  private readonly handleReport = () => {
     if (typeof window !== 'undefined') {
       const subject = encodeURIComponent('PawfectMatch Error Report');
       const body = encodeURIComponent(`Error ID: ${this.state.errorId}\nError: ${this.state.error?.message}`);
@@ -138,7 +139,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     }
   };
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       // Custom fallback UI
       if (this.props.fallback) {
@@ -281,7 +282,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 
-  componentWillUnmount() {
+  override componentWillUnmount() {
     if (this.retryTimeoutId) {
       clearTimeout(this.retryTimeoutId);
     }
@@ -306,7 +307,7 @@ export const withErrorBoundary = <P extends object>(
 // ====== HOOK FOR ERROR REPORTING ======
 export const useErrorReporting = () => {
   const reportError = React.useCallback((error: Error, context?: Record<string, any>) => {
-    void // console.error('🚨 Manual Error Report:', error);
+    // console.error('🚨 Manual Error Report:', error);
     try {
       const errorReport = {
         message: error.message,
@@ -323,7 +324,7 @@ export const useErrorReporting = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(errorReport),
       }).catch(err => {
-        void // console.warn('Failed to report error:', err);
+        // console.warn('Failed to report error:', err);
       });
 
     } catch (reportingError) {

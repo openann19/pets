@@ -7,9 +7,11 @@
 // User Types
 export interface User {
   _id: string;
+  id: string; // Alias for _id for convenience
   email: string;
   firstName: string;
   lastName: string;
+  name?: string; // Computed property for full name
   dateOfBirth: string;
   age: number;
   avatar?: string;

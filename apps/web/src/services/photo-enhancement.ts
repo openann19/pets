@@ -3,6 +3,7 @@
  * Uses Cloudinary transformations for automatic photo improvement
  */
 
+import { useState } from 'react'
 import { logger } from './logger'
 
 export interface PhotoEnhancementOptions {
@@ -37,8 +38,8 @@ export interface EnhancedPhoto {
 }
 
 class PhotoEnhancementService {
-  private cloudinaryUrl = process.env.NEXT_PUBLIC_CLOUDINARY_URL
-  private cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+  private cloudinaryUrl = process.env['NEXT_PUBLIC_CLOUDINARY_URL']
+  private cloudName = process.env['NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME']
 
   /**
    * Enhance a photo with automatic improvements

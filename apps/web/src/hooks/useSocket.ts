@@ -31,23 +31,26 @@ export const useSocket = (
 
   // Update handlers when they change
   useEffect(() => {
-    handlersRef.current = eventHandlers;
   }, [eventHandlers]);
 
   // Initialize socket service
   useEffect(() => {
     if (autoConnect && isAuthenticated && user?.id) {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001';
+      const apiUrl = process.env['NEXT_PUBLIC_API_URL']?.replace('/api', '') || 'http://localhost:5001';
       
-      socketRef.current = createSocketService({
+      const config: any = {
         url: apiUrl,
-        token: localStorage.getItem('accessToken') || localStorage.getItem('auth_token') || undefined,
         autoConnect: true,
-      });
+      };
+      const token = localStorage.getItem('accessToken') || localStorage.getItem('auth_token');
+      if (token) {
+        config.token = token;
+      }
+      
+      socketRef.current = createSocketService(config);
 
       // Set up event listeners
       const socket = socketRef.current;
-      
       socket.on('connected', () => {
         setIsConnected(true);
         setConnectionError(null);
@@ -237,6 +240,7 @@ export const useSocket = (
     // Event methods
     on: socketRef.current?.on?.bind(socketRef.current),
     off: socketRef.current?.off?.bind(socketRef.current),
+    emit: socketRef.current?.emitSocket?.bind(socketRef.current),
   };
 };
 

@@ -30,7 +30,7 @@ jest.mock('next/navigation', () => ({
 
 // Mock Next.js Image component
 jest.mock('next/image', () => {
-  return function MockImage({ src, alt, ...props }: Record<string, unknown>) {
+  return function MockImage({ src, alt, ...props }: { src?: string; alt?: string; [key: string]: unknown }) {
     return <img src={src} alt={alt} {...props} />;
   };
 });
@@ -150,7 +150,7 @@ const createTestQueryClient = () =>
     defaultOptions: {
       queries: {
         retry: false,
-        cacheTime: 0,
+        gcTime: 0,
       },
       mutations: {
         retry: false,

@@ -8,7 +8,7 @@ import { AdminStats, User, Pet, Match, SystemLog, NotificationRequest, SystemHea
 
 // HTTP Client for Admin API
 class AdminHttpClient {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+  private baseUrl = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5001/api';
   private token: string | null = null;
 
   constructor() {
@@ -51,14 +51,14 @@ class AdminHttpClient {
   async post<T>(endpoint: string, data?: Record<string, unknown>): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      ...(data && { body: JSON.stringify(data) }),
     });
   }
 
   async put<T>(endpoint: string, data?: Record<string, unknown>): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+      ...(data && { body: JSON.stringify(data) }),
     });
   }
 

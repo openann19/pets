@@ -336,7 +336,15 @@ export default function APIManagement() {
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         initial="hidden"
         animate="visible"
-        variants={STAGGER_CONFIG}
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: STAGGER_CONFIG.normal,
+            },
+          },
+        }}
       >
         {stats && [
           { 
@@ -768,19 +776,19 @@ export default function APIManagement() {
               
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                  <p className="text-2xl font-bold text-blue-600">{testResults.total}</p>
+                  <p className="text-2xl font-bold text-blue-600">{testResults['total']}</p>
                   <p className="text-sm text-blue-500 font-medium">Total Tests</p>
                 </div>
                 <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-                  <p className="text-2xl font-bold text-green-600">{testResults.passed}</p>
+                  <p className="text-2xl font-bold text-green-600">{testResults['passed']}</p>
                   <p className="text-sm text-green-500 font-medium">Passed</p>
                 </div>
                 <div className="text-center p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border border-red-200">
-                  <p className="text-2xl font-bold text-red-600">{testResults.failed}</p>
+                  <p className="text-2xl font-bold text-red-600">{testResults['failed']}</p>
                   <p className="text-sm text-red-500 font-medium">Failed</p>
                 </div>
                 <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200">
-                  <p className="text-2xl font-bold text-yellow-600">{testResults.executionTime}ms</p>
+                  <p className="text-2xl font-bold text-yellow-600">{testResults['executionTime']}ms</p>
                   <p className="text-sm text-yellow-500 font-medium">Execution Time</p>
                 </div>
               </div>

@@ -28,6 +28,7 @@ interface EnhancedSocketHook {
   socket: Socket | null;
   state: SocketState;
   typingUsers: TypingUser[];
+  isConnected: boolean;
   
   // Connection methods
   connect: () => void;
@@ -414,6 +415,7 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
     socket: socketRef.current,
     state,
     typingUsers,
+    isConnected: state === 'connected',
     connect,
     disconnect,
     sendMessage,

@@ -31,7 +31,7 @@ const TestProviders: React.FC<TestProvidersProps> = ({
     defaultOptions: {
       queries: {
         retry: false,
-        cacheTime: 0,
+        gcTime: 0,
         staleTime: 0,
       },
       mutations: {
@@ -40,7 +40,7 @@ const TestProviders: React.FC<TestProvidersProps> = ({
     },
   });
 
-  const client = queryClient || defaultQueryClient;
+  const client = queryClient ?? defaultQueryClient;
 
   return (
     <QueryClientProvider client={client}>
@@ -435,16 +435,7 @@ export const a11yTestUtils = {
 };
 
 // ====== EXPORTS ======
-export {
-  renderWithProviders as render,
-  animationTestUtils,
-  socketTestUtils,
-  apiTestUtils,
-  premiumTestUtils,
-  performanceTestUtils,
-  errorBoundaryTestUtils,
-  a11yTestUtils,
-};
+export { renderWithProviders as render };
 
 // Re-export common testing utilities
 export { screen, waitFor, userEvent };

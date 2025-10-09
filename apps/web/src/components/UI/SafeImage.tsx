@@ -13,7 +13,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { getBlurData, getPetPhotoBlur } from '@/lib/getBlur';
+import { getBlurData, getPetPhotoBlur } from '@/lib/getBlur.client';
 
 interface SafeImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
   src: string | undefined | null;

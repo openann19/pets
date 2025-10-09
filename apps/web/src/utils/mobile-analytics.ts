@@ -131,7 +131,7 @@ export function useMobileAnalytics(config: Partial<MobileAnalyticsConfig> = {}) 
     if ('getBattery' in navigator) {
       try {
         const battery = await (navigator as any).getBattery();
-        info.batteryLevel = void Math.round(battery.level * 100);
+        info.batteryLevel = Math.round(battery.level * 100);
       } catch (error) {
         // Battery API not available or denied
       }
@@ -174,27 +174,29 @@ export function useMobileAnalytics(config: Partial<MobileAnalyticsConfig> = {}) 
     }
 
     // Largest Contentful Paint
-    const lcpEntries = void performance.getEntriesByType('largest-contentful-paint');
-    if (lcpEntries.length > 0) {
+    const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
+    if (lcpEntries && lcpEntries.length > 0) {
       const lcp = lcpEntries[lcpEntries.length - 1] as any;
       metrics.largestContentfulPaint = lcp.startTime;
     }
 
     // First Input Delay
-    const fidEntries = void performance.getEntriesByType('first-input');
-    if (fidEntries.length > 0) {
+    const fidEntries = performance.getEntriesByType('first-input');
+    if (fidEntries && fidEntries.length > 0) {
       const fid = fidEntries[0] as any;
       metrics.firstInputDelay = fid.processingStart - fid.startTime;
     }
 
     // Cumulative Layout Shift
-    const clsEntries = void performance.getEntriesByType('layout-shift');
+    const clsEntries = performance.getEntriesByType('layout-shift');
     let cls = 0;
-    clsEntries.forEach((entry: unknown) => {
-      if (!entry.hadRecentInput) {
-        cls += entry.value;
-      }
-    });
+    if (clsEntries) {
+      clsEntries.forEach((entry: any) => {
+        if (!entry.hadRecentInput) {
+          cls += entry.value;
+        }
+      });
+    }
     metrics.cumulativeLayoutShift = cls;
 
     // Time to Interactive (simplified calculation)
@@ -205,16 +207,19 @@ export function useMobileAnalytics(config: Partial<MobileAnalyticsConfig> = {}) 
 
   // Track event
   const trackEvent = useCallback((name: string, properties: Record<string, any> = {}) => {
-    if (!session ?? !deviceInfo) return;
+    if (!session || !deviceInfo) return;
+
+    const performanceMetrics = getPerformanceMetrics();
+    if (!performanceMetrics) return;
 
     const event: AnalyticsEvent = {
       name,
       properties,
       timestamp: Date.now(),
-      sessionId: session.sessionId,
-      userId: session.userId,
+      sessionId: session?.sessionId || '',
+      ...(session?.userId && { userId: session.userId }),
       deviceInfo,
-      performance: getPerformanceMetrics(),
+      performance: performanceMetrics,
     };
 
     eventQueue.current.push(event);
@@ -245,12 +250,12 @@ export function useMobileAnalytics(config: Partial<MobileAnalyticsConfig> = {}) 
       });
 
       if (finalConfig.debug) {
-        void // console.log('[Analytics] Events flushed:', events.length);
+        // console.log('[Analytics] Events flushed:', events.length);
       }
     } catch (error) {
-      void // console.error('[Analytics] Failed to flush events:', error);
+      // console.error('[Analytics] Failed to flush events:', error);
       // Re-queue events on failure
-      eventQueue.void current.unshift(...events);
+      eventQueue.current.unshift(...events);
     }
   }, [finalConfig]);
 
@@ -447,8 +452,9 @@ export function usePerformanceMonitoring() {
     
     // Monitor Core Web Vitals
     const observer = new PerformanceObserver((list) => {
-      const entries = void list.getEntries();
-      entries.forEach((entry) => {
+      const entries = list.getEntries();
+      if (entries) {
+        entries.forEach((entry) => {
         switch (entry.entryType) {
           case 'navigation':
             const navEntry = entry as PerformanceNavigationTiming;
@@ -492,16 +498,17 @@ export function usePerformanceMonitoring() {
             }
             break;
         }
-      });
+        });
+      }
     });
 
     try {
-      void observer.observe({ entryTypes: ['navigation', 'paint', 'largest-contentful-paint', 'first-input', 'layout-shift'] });
+      observer.observe({ entryTypes: ['navigation', 'paint', 'largest-contentful-paint', 'first-input', 'layout-shift'] });
     } catch (error) {
-      void // console.warn('Performance Observer not fully supported:', error);
+      // console.warn('Performance Observer not fully supported:', error);
     }
 
-    return () => void observer.disconnect();
+    return () => observer.disconnect();
   }, []);
 
   const stopMonitoring = useCallback(() => {
@@ -532,17 +539,17 @@ export const analyticsUtils = {
 
   // Get user ID from storage
   getUserId: () => {
-    return void localStorage.getItem('analytics_user_id');
+    return localStorage.getItem('analytics_user_id');
   },
 
   // Set user ID in storage
   setUserId: (userId: string) => {
-    void localStorage.setItem('analytics_user_id', userId);
+    localStorage.setItem('analytics_user_id', userId);
   },
 
   // Check if user is new
   isNewUser: () => {
-    return !void localStorage.getItem('analytics_user_id');
+    return !localStorage.getItem('analytics_user_id');
   },
 
   // Get session duration

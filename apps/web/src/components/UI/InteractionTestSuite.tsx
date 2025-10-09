@@ -24,10 +24,10 @@ export const InteractionTestSuite: React.FC = () => {
       if (hoverElement) {
         const event = new MouseEvent('mouseenter', { bubbles: true });
         hoverElement.dispatchEvent(event);
-        results.hover = true;
+        results['hover'] = true;
       }
     } catch (error) {
-      results.hover = false;
+      results['hover'] = false;
     }
 
     // Test 2: Magnetic effects
@@ -40,10 +40,10 @@ export const InteractionTestSuite: React.FC = () => {
           clientY: 100 
         });
         magneticElement.dispatchEvent(event);
-        results.magnetic = true;
+        results['magnetic'] = true;
       }
     } catch (error) {
-      results.magnetic = false;
+      results['magnetic'] = false;
     }
 
     // Test 3: Sound effects
@@ -52,10 +52,10 @@ export const InteractionTestSuite: React.FC = () => {
       if (soundElement) {
         const event = new MouseEvent('click', { bubbles: true });
         soundElement.dispatchEvent(event);
-        results.sound = true;
+        results['sound'] = true;
       }
     } catch (error) {
-      results.sound = false;
+      results['sound'] = false;
     }
 
     // Test 4: Haptic feedback
@@ -64,10 +64,10 @@ export const InteractionTestSuite: React.FC = () => {
       if (hapticElement) {
         const event = new MouseEvent('click', { bubbles: true });
         hapticElement.dispatchEvent(event);
-        results.haptic = true;
+        results['haptic'] = true;
       }
     } catch (error) {
-      results.haptic = false;
+      results['haptic'] = false;
     }
 
     // Test 5: API integration
@@ -76,10 +76,10 @@ export const InteractionTestSuite: React.FC = () => {
       if (apiElement) {
         const event = new MouseEvent('click', { bubbles: true });
         apiElement.dispatchEvent(event);
-        results.api = true;
+        results['api'] = true;
       }
     } catch (error) {
-      results.api = false;
+      results['api'] = false;
     }
 
     setTestResults(results);

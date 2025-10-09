@@ -44,9 +44,11 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 // User Types
 export interface User {
   _id: string;
+  id: string; // Alias for _id for convenience
   email: string;
   firstName: string;
   lastName: string;
+  name?: string; // Computed property for full name
   avatar?: string;
   isVerified: boolean;
   createdAt: string;

@@ -44,6 +44,7 @@ export interface PetOwner {
   firstName: string;
   lastName: string;
   avatar?: string;
+  location?: string;
   premium?: {
     isActive: boolean;
     tier?: 'basic' | 'premium' | 'ultra';
@@ -78,6 +79,7 @@ export interface Pet {
   gender: 'male' | 'female';
   photos: PetPhoto[];
   description?: string;
+  bio?: string;
   personalityTags?: string[];
   location?: PetLocation;
   owner?: PetOwner;
@@ -88,6 +90,17 @@ export interface Pet {
   isVerified?: boolean;
   healthInfo?: PetHealthInfo;
   analytics?: PetAnalytics;
+  views?: number;
+  likes?: number;
+  shares?: number;
+  matchRate?: number;
+  responseTime?: number;
+  lastActive?: string;
+  verificationStatus?: 'pending' | 'verified' | 'rejected';
+  boost?: {
+    active: boolean;
+    expiresAt?: string;
+  };
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
@@ -96,10 +109,13 @@ export interface Pet {
 // ===== User Types =====
 export interface User {
   _id: string;
+  id: string; // Alias for _id for convenience
   email: string;
   firstName: string;
   lastName: string;
+  name?: string; // Computed property for full name
   avatar?: string;
+  profilePicture?: string;
   dateOfBirth?: string;
   location?: PetLocation;
   bio?: string;
@@ -112,7 +128,15 @@ export interface User {
   };
   isVerified?: boolean;
   isActive?: boolean;
+  emailVerified?: boolean;
+  phoneNumber?: string;
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+  };
   createdAt: string;
+  updatedAt?: string;
   lastActive: string;
 }
 
@@ -138,6 +162,14 @@ export interface Match {
   messagesCount: number;
   isTyping?: boolean;
   unreadCount?: number;
+  archived?: boolean;
+  muted?: boolean;
+  blocked?: boolean;
+  meetingScheduled?: {
+    date: string;
+    location: string;
+    confirmed: boolean;
+  };
   // Extended properties for chat UI
   petName?: string;
   petPhoto?: string;
@@ -165,6 +197,7 @@ export interface Message {
   metadata?: MessageMetadata;
   attachments?: MessageAttachment[];
   read: boolean;
+  isEdited?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -447,7 +480,7 @@ export interface FormField {
   };
 }
 
-export interface FormData {
+export interface GenericFormData {
   [key: string]: string | number | boolean | string[] | undefined;
 }
 
@@ -672,6 +705,26 @@ export interface PetCreationData {
   photos?: PetPhoto[];
 }
 
+export interface PetFormData {
+  name: string;
+  species: string;
+  breed: string;
+  age: number;
+  size: string;
+  gender: string;
+  description?: string;
+  personalityTags?: string[];
+  intent?: string;
+  healthInfo?: {
+    isVaccinated?: boolean;
+    isSpayedNeutered?: boolean;
+    isMicrochipped?: boolean;
+    medicalConditions?: string;
+    specialNeeds?: string;
+  };
+  photos?: { file: File; isPrimary: boolean }[];
+}
+
 export interface BioGenerationData {
   petId: string;
   species: string;
@@ -691,6 +744,141 @@ export interface BehaviorAnalysisData {
   environment: string;
   triggers?: string[];
   duration?: number;
+}
+
+// ===== Additional Types for Error Fixes =====
+export interface CachedPet {
+  id: string;
+  name: string;
+  breed: string;
+  age: number;
+  photos: string[];
+  bio: string;
+  location: string;
+  cachedAt: number;
+}
+
+export interface CachedMessage {
+  id: string;
+  matchId: string;
+  senderId: string;
+  content: string;
+  type: string;
+  read: boolean;
+  timestamp: number;
+  createdAt: string;
+}
+
+export interface SessionReplayConfig {
+  projectKey: string;
+  enabled: boolean;
+  sampleRate: number;
+  maskAllInputs: boolean;
+  maskAllText: boolean;
+  defaultInputMode: number;
+  obscureTextEmails: boolean;
+  obscureInputEmails: boolean;
+  maskTextSelector: string;
+  maskAllTextSelector: string;
+  maskTextPatterns: RegExp[];
+  blockClass: string;
+  blockSelector: string;
+  ignoreClass: string;
+  maskClass: string;
+  maskSelector: string;
+}
+
+export interface OpenReplayConfig {
+  projectKey: string;
+  enabled: boolean;
+  maskAllInputs: boolean;
+  maskAllText: boolean;
+  defaultInputMode: number;
+  obscureTextEmails: boolean;
+  obscureInputEmails: boolean;
+  maskTextSelector: string;
+  maskAllTextSelector: string;
+  maskTextPatterns: RegExp[];
+  blockClass: string;
+  blockSelector: string;
+  ignoreClass: string;
+  maskClass: string;
+  maskSelector: string;
+}
+
+export interface PerformanceMetrics {
+  loadTime: number;
+  firstContentfulPaint: number;
+  largestContentfulPaint: number;
+  firstInputDelay: number;
+  cumulativeLayoutShift: number;
+}
+
+export interface DeviceInfo {
+  type: string;
+  model: string;
+  os: string;
+  osVersion: string;
+  browser: string;
+  browserVersion: string;
+  screenResolution: string;
+  viewportSize: string;
+  pixelRatio: number;
+  colorDepth: number;
+  timezone: string;
+  language: string;
+  platform: string;
+  userAgent: string;
+  isMobile: boolean;
+  isTablet: boolean;
+  isDesktop: boolean;
+  touchSupport: boolean;
+  orientation: string;
+  connectionType: string;
+  memoryInfo?: {
+    usedJSHeapSize: number;
+    totalJSHeapSize: number;
+    jsHeapSizeLimit: number;
+  };
+  batteryInfo?: {
+    level: number;
+    charging: boolean;
+    chargingTime: number;
+    dischargingTime: number;
+  };
+}
+
+export interface AnalyticsEvent {
+  name: string;
+  properties: Record<string, any>;
+  timestamp: number;
+  sessionId: string;
+  userId?: string;
+  deviceInfo: DeviceInfo;
+  performance: PerformanceMetrics;
+}
+
+export interface ErrorEvent {
+  message: string;
+  stack?: string;
+  timestamp: number;
+}
+
+// ===== Swipe Action Types =====
+export type SwipeAction = 'like' | 'pass' | 'superLike';
+
+export interface SwipeActionData {
+  type: SwipeAction;
+  petId: string;
+  timestamp: Date;
+  userId: string;
+}
+
+// Legacy SwipeAction interface for backward compatibility
+export interface SwipeActionLegacy {
+  petId: string;
+  action: 'like' | 'pass' | 'superlike';
+  timestamp: string;
 }
 
 // ===== Export all types =====

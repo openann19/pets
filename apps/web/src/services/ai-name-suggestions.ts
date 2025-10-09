@@ -3,6 +3,7 @@
  * Uses DeepSeek API to generate cute pet names
  */
 
+import { useState } from 'react'
 import { logger } from './logger'
 
 export interface PetInfo {
@@ -32,8 +33,8 @@ export interface NameSuggestionsResponse {
 }
 
 class AINameSuggestionService {
-  private apiUrl = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8000'
-  private apiKey = process.env.DEEPSEEK_API_KEY
+  private apiUrl = process.env['NEXT_PUBLIC_AI_SERVICE_URL'] || 'http://localhost:8000'
+  private apiKey = process.env['DEEPSEEK_API_KEY']
 
   /**
    * Generate name suggestions for a pet
