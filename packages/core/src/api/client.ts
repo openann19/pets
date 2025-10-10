@@ -1,10 +1,37 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-export interface ApiClientResponse<T = any> {
+// Generic API response wrapper
+export interface ApiClientResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
+}
+
+// Error response structure
+export interface ApiError {
+  message: string;
+  code?: string;
+  details?: Record<string, unknown>;
+  statusCode?: number;
+}
+
+// Request configuration types
+export interface RequestConfig {
+  timeout?: number;
+  retries?: number;
+  retryDelay?: number;
+  headers?: Record<string, string>;
+  params?: Record<string, string | number | boolean>;
+}
+
+// File upload configuration
+export interface FileUploadConfig {
+  file: File;
+  additionalData?: Record<string, string | number | boolean>;
+  onProgress?: (progress: number) => void;
+  maxFileSize?: number;
+  allowedTypes?: string[];
 }
 
 class ApiClient {
@@ -52,73 +79,93 @@ class ApiClient {
     );
   }
 
-  // Generic request methods
-  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  // Generic request methods with proper error handling
+  async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.get<ApiClientResponse<T>>(url, config);
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Request failed');
+    } catch (error: unknown) {
+      const apiError = error as { response?: { data?: { message?: string } }; message?: string };
+      throw new Error(apiError.response?.data?.message || apiError.message || 'Request failed');
     }
   }
 
-  async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.post<ApiClientResponse<T>>(url, data, config);
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Request failed');
+    } catch (error: unknown) {
+      const apiError = error as { response?: { data?: { message?: string } }; message?: string };
+      throw new Error(apiError.response?.data?.message || apiError.message || 'Request failed');
     }
   }
 
-  async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.put<ApiClientResponse<T>>(url, data, config);
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Request failed');
+    } catch (error: unknown) {
+      const apiError = error as { response?: { data?: { message?: string } }; message?: string };
+      throw new Error(apiError.response?.data?.message || apiError.message || 'Request failed');
     }
   }
 
-  async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.patch<ApiClientResponse<T>>(url, data, config);
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Request failed');
+    } catch (error: unknown) {
+      const apiError = error as { response?: { data?: { message?: string } }; message?: string };
+      throw new Error(apiError.response?.data?.message || apiError.message || 'Request failed');
     }
   }
 
-  async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.delete<ApiClientResponse<T>>(url, config);
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Request failed');
+    } catch (error: unknown) {
+      const apiError = error as { response?: { data?: { message?: string } }; message?: string };
+      throw new Error(apiError.response?.data?.message || apiError.message || 'Request failed');
     }
   }
 
-  // File upload helper
-  async uploadFile<T = any>(url: string, file: File, additionalData?: Record<string, any>): Promise<ApiClientResponse<T>> {
+  // File upload helper with proper typing
+  async uploadFile<T = unknown>(
+    url: string, 
+    config: FileUploadConfig
+  ): Promise<ApiClientResponse<T>> {
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', config.file);
 
-      if (additionalData) {
-        Object.entries(additionalData).forEach(([key, value]) => {
-          formData.append(key, value);
+      if (config.additionalData) {
+        Object.entries(config.additionalData).forEach(([key, value]) => {
+          formData.append(key, String(value));
         });
       }
 
-      const response = await this.client.post<ApiClientResponse<T>>(url, formData, {
+      const axiosConfig: AxiosRequestConfig = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-      });
+      };
+      
+      if (config.onProgress) {
+        axiosConfig.onUploadProgress = (progressEvent) => {
+          if (progressEvent.total) {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            config.onProgress!(progress);
+          }
+        };
+      }
 
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || 'Upload failed');
+      const response = await this.client.post<ApiClientResponse<T>>(url, formData, axiosConfig);
+
+      return response.data as ApiClientResponse<T>;
+    } catch (error: unknown) {
+      const apiError = error as { response?: { data?: { message?: string } }; message?: string };
+      throw new Error(apiError.response?.data?.message || apiError.message || 'Upload failed');
     }
   }
 }

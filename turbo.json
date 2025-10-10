@@ -39,6 +39,9 @@
     "type-check": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "@pawfectmatch/mobile#type-check": {
+      "cache": false
     }
   }
 }
