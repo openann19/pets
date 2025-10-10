@@ -19,6 +19,7 @@ export * from './services';
 
 // Export API client and hooks
 export * from './api';
+export * from './hooks';
 
 // Version
 export const VERSION = '1.0.0';

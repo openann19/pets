@@ -7,7 +7,7 @@ import { getGeminiClient } from './gemini-client';
 
 export interface PhotoAnalysisRequest {
   photoUrl: string;
-  petType?: string;
+  petType?: string | undefined;
 }
 
 export interface PhotoAnalysisResult {
@@ -47,11 +47,11 @@ export class PhotoAnalyzerService {
    */
   async analyzeMultiplePhotos(
     photoUrls: string[],
-    petType?: string
+    petType?: string | undefined
   ): Promise<Array<PhotoAnalysisResult & { url: string }>> {
     const analyses = await Promise.all(
       photoUrls.map(async (url) => {
-        const result = await this.analyzePhoto({ photoUrl: url, petType });
+        const result = await this.analyzePhoto({ photoUrl: url, petType: petType });
         return { ...result, url };
       })
     );
@@ -63,9 +63,9 @@ export class PhotoAnalyzerService {
   /**
    * Get best photo for profile
    */
-  async getBestProfilePhoto(photoUrls: string[], petType?: string): Promise<string> {
+  async getBestProfilePhoto(photoUrls: string[], petType?: string | undefined): Promise<string> {
     const analyses = await this.analyzeMultiplePhotos(photoUrls, petType);
-    return analyses[0]?.url || photoUrls[0];
+    return analyses[0]?.url || photoUrls[0] || '';
   }
 
   /**

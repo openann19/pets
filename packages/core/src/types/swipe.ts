@@ -35,7 +35,7 @@ export interface SwipeAction {
 
 export interface SwipeResult {
   isMatch: boolean;
-  matchId?: string;
+  matchId?: string | undefined;
   pet: Pet;
   action: SwipeAction;
 }

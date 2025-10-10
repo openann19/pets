@@ -94,8 +94,8 @@ export class BioGeneratorService {
    */
   private extractBio(response: string): string {
     // Remove tags section
-    const bioText = response.split('TAGS:')[0].trim();
-    return bioText;
+    const bioText = response.split('TAGS:')[0]?.trim();
+    return bioText || '';
   }
 
   /**

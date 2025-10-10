@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { z } from 'zod';
 
 /**
@@ -32,7 +32,7 @@ export interface EnhancedWeatherData extends WeatherResponse {
   activitySuggestions: string[];
 }
 
-const API_KEY = process.env.REACT_APP_OPENWEATHER_KEY || process.env.OPENWEATHER_KEY;
+const API_KEY = process.env['REACT_APP_OPENWEATHER_KEY'] || process.env['OPENWEATHER_KEY'];
 const ENDPOINT = 'https://api.openweathermap.org/data/2.5/weather';
 
 async function fetchWeather(lat: number, lon: number): Promise<WeatherResponse> {
@@ -76,8 +76,6 @@ function generatePetTips(weather: WeatherResponse, timeOfDay: string, season: st
   const tips: string[] = [];
   const temp = weather.main.temp;
   const condition = weather.weather[0]?.main.toLowerCase();
-  const windSpeed = weather.wind.speed;
-  const humidity = weather.main.humidity;
 
   // Temperature-based tips
   if (temp < 5) {
@@ -154,7 +152,7 @@ function generateActivitySuggestions(weather: WeatherResponse, timeOfDay: string
 /**
  * Enhanced weather hook with time-of-day and seasonal context
  */
-export function useEnhancedWeather() {
+export function useEnhancedWeather(): UseQueryResult<EnhancedWeatherData, Error> {
   return useQuery({
     queryKey: ['enhanced-weather'],
     queryFn: async () => {
@@ -193,7 +191,7 @@ export function useEnhancedWeather() {
 /**
  * React Query + Geolocation hook for basic weather
  */
-export function useWeather() {
+export function useWeather(): UseQueryResult<WeatherResponse, Error> {
   return useQuery({
     queryKey: ['weather'],
     queryFn: async () => {

@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { COLORS, GRADIENTS, SHADOWS, RADIUS, BACKDROP } from '../../theme/design-system';
 import { transitions } from '../../animations/premium-motion';
@@ -27,6 +27,7 @@ interface PremiumInputProps {
   className?: string;
   autoComplete?: string;
   maxLength?: number;
+  glow?: boolean;
 }
 
 export function PremiumInput({
@@ -46,6 +47,7 @@ export function PremiumInput({
   className = '',
   autoComplete,
   maxLength,
+  glow = false,
 }: PremiumInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -331,16 +333,6 @@ export function PremiumInput({
         )}
       </AnimatePresence>
 
-      {/* Holographic animation styles */}
-      {variant === 'holographic' && (
-        <style jsx>{`
-          @keyframes holographic {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-        `}</style>
-      )}
     </motion.div>
   );
 }

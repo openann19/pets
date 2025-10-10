@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { Pet, Match, User } from '../types';
+import { Pet, Match } from '../types';
 
 export interface MatchState {
   // Current pet being viewed in swipe
@@ -97,7 +97,10 @@ export const useMatchStore = create<MatchState>()(
     updateMatch: (matchId: string, data: Partial<Match>) => set((state) => {
       const index = state.matches.findIndex(match => match._id === matchId);
       if (index !== -1) {
-        state.matches[index] = { ...state.matches[index], ...data };
+        const existing = state.matches[index];
+        if (existing) {
+          Object.assign(existing, data);
+        }
       }
       return state;
     }),

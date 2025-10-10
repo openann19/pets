@@ -143,14 +143,14 @@ export function PremiumCard({
           rotateY: tilt ? rotateY : 0,
           transformStyle: tilt ? 'preserve-3d' : 'flat',
         }}
-        initial={entranceVariants[entrance]?.initial}
-        animate={entranceVariants[entrance]?.animate}
+        initial={entranceVariants[entrance]?.['initial'] as any}
+        animate={entranceVariants[entrance]?.['animate'] as any}
         transition={{
-          ...entranceVariants[entrance]?.transition,
+          ...entranceVariants[entrance]?.['transition'],
           delay,
         }}
-        whileHover={hover && !onClick ? hoverVariants.gentleLift : {}}
-        whileTap={onClick ? tapVariants.press : {}}
+        whileHover={hover && !onClick ? hoverVariants['gentleLift'] : {}}
+        whileTap={onClick ? (hoverVariants as any)['press'] : {}}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={handleMouseLeave}
@@ -210,7 +210,7 @@ export function PremiumCard({
 
       {/* Holographic animation styles */}
       {variant === 'holographic' && (
-        <style jsx>{`
+        <style>{`
           @keyframes holographic {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
