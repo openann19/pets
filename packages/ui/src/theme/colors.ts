@@ -133,7 +133,7 @@ export const getThemeColors = (isDark: boolean) => {
 
 export const withOpacity = (color: string, opacity: number) => {
   if (color.startsWith('rgba')) {
-    return color.replace(/[\d\.]+\)$/g, `${opacity})`);
+    return color.replace(/[\d.]+\)$/g, `${opacity})`);
   }
   if (color.startsWith('#')) {
     const hex = color.slice(1);

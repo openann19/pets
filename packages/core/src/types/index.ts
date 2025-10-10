@@ -352,14 +352,14 @@ export interface CompatibilityAnalysis {
 }
 
 // API Response Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
 }
 
-export interface PaginatedResponse<T = any> extends ApiResponse<{
+export type PaginatedResponse<T = unknown> = ApiResponse<{
   items?: T[];
   pets?: T[];
   matches?: T[];
@@ -369,7 +369,7 @@ export interface PaginatedResponse<T = any> extends ApiResponse<{
     total?: number;
     hasMore: boolean;
   };
-}> {}
+}>;
 
 // UI Types
 export interface NotificationProps {

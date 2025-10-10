@@ -3,7 +3,7 @@
  * Comprehensive end-to-end testing for all PawfectMatch Premium features
  */
 
-import apiClient from '../lib/api-client';
+import { apiClient } from '@pawfectmatch/core';
 
 interface TestResult {
   name: string;

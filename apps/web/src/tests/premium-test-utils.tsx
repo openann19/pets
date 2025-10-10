@@ -434,17 +434,6 @@ export const a11yTestUtils = {
   },
 };
 
-// ====== EXPORTS ======
-export {
-  renderWithProviders as render,
-  animationTestUtils,
-  socketTestUtils,
-  apiTestUtils,
-  premiumTestUtils,
-  performanceTestUtils,
-  errorBoundaryTestUtils,
-  a11yTestUtils,
-};
 
 // Re-export common testing utilities
 export { screen, waitFor, userEvent };

@@ -13,12 +13,13 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "skipLibCheck": true,
+    "types": ["node"],
     "plugins": [
       {
         "name": "next"
       }
     ],
-    "strictNullChecks": true
+    "strictNullChecks": true, "noImplicitAny": false
   },
   "include": [
     "next-env.d.ts",
