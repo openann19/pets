@@ -1,31 +1,14 @@
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatar?: string;
-  bio?: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-    city: string;
-    state: string;
-    country: string;
-  };
-  dateOfBirth?: string;
-  isPremium?: boolean;
-  premiumFeatures?: {
-    unlimitedLikes: boolean;
-    seeWhoLikesYou: boolean;
-    advancedFilters: boolean;
-    priorityMatching: boolean;
-    aiRecommendations: boolean;
-  };
-  preferences?: UserPreferences;
-  stats?: UserStats;
-  createdAt: string;
-  updatedAt: string;
-}
+// Re-export core types
+export type {
+  User,
+  Pet,
+  Match,
+  Message,
+  SwipeAction,
+  SwipeResult,
+} from '@pawfectmatch/core';
 
+// Web-specific type extensions
 export interface UserPreferences {
   maxDistance: number;
   ageRange: { min: number; max: number };
@@ -47,41 +30,7 @@ export interface UserStats {
   averageResponseTime: number;
 }
 
-export interface Pet {
-  id: string;
-  name: string;
-  breed: string;
-  age: number;
-  gender: 'male' | 'female';
-  size: 'small' | 'medium' | 'large';
-  weight: number;
-  description: string;
-  temperament: string[];
-  energy: 'low' | 'medium' | 'high';
-  training: 'none' | 'basic' | 'intermediate' | 'advanced';
-  goodWithKids: boolean;
-  goodWithPets: boolean;
-  houseTrained: boolean;
-  specialNeeds?: string;
-  medicalHistory?: MedicalRecord[];
-  vaccinations?: Vaccination[];
-  photos: Photo[];
-  videos?: Video[];
-  ownerId: string;
-  owner?: User;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-  isActive: boolean;
-  isAvailableForAdoption?: boolean;
-  isAvailableForPlaydates?: boolean;
-  isAvailableForBreeding?: boolean;
-  aiScore?: number;
-  aiTags?: string[];
-  createdAt: string;
-  updatedAt: string;
-}
+// Pet-specific web extensions (if needed, otherwise use core Pet type)
 
 export interface MedicalRecord {
   id: string;
@@ -124,43 +73,7 @@ export interface Video {
   size: number;
 }
 
-export interface Match {
-  id: string;
-  pet1Id: string;
-  pet2Id: string;
-  pet1?: Pet;
-  pet2?: Pet;
-  user1Id: string;
-  user2Id: string;
-  user1?: User;
-  user2?: User;
-  status: 'pending' | 'matched' | 'rejected' | 'unmatched';
-  compatibilityScore?: number;
-  aiReasons?: string[];
-  lastActivity?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Message {
-  id: string;
-  matchId: string;
-  senderId: string;
-  receiverId: string;
-  content: string;
-  type: 'text' | 'image' | 'video' | 'audio' | 'location';
-  attachments?: MessageAttachment[];
-  isRead: boolean;
-  isDelivered: boolean;
-  readAt?: string;
-  deliveredAt?: string;
-  isEdited?: boolean;
-  editedAt?: string;
-  replyTo?: string;
-  reactions?: Reaction[];
-  createdAt: string;
-}
-
+// Web-specific message extensions
 export interface MessageAttachment {
   id: string;
   type: 'image' | 'video' | 'audio' | 'document';
@@ -175,16 +88,6 @@ export interface Reaction {
   userId: string;
   emoji: string;
   timestamp: string;
-}
-
-export interface SwipeAction {
-  petId: string;
-  action: 'like' | 'pass' | 'superlike';
-  timestamp: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
 }
 
 // Notification data types for different notification types
