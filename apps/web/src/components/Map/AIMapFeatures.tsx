@@ -359,7 +359,7 @@ const AIMapFeatures: React.FC<AIMapFeaturesProps> = ({
             className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl p-4 border border-gray-200/50 dark:border-gray-700/50 shadow-xl mb-4"
           >
             <div className="flex items-center space-x-3">
-              <LoadingSpinner size="small" color="#3B82F6" />
+              <LoadingSpinner size="sm" color="#3B82F6" />
               <span className="text-sm font-medium text-gray-900 dark:text-white">
                 AI analyzing map data...
               </span>

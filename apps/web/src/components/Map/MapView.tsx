@@ -324,7 +324,7 @@ const MapView: React.FC<MapViewProps> = ({ filters }) => {
     return (
       <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-2xl">
         <div className="text-center">
-          <LoadingSpinner size="large" color="#EC4899" className="mb-4" />
+          <LoadingSpinner size="lg" color="#EC4899" className="mb-4" />
           <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
         </div>
       </div>
