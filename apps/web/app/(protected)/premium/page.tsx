@@ -15,7 +15,7 @@ import {
   GlobeAltIcon,
   BoltIcon
 } from '@heroicons/react/24/solid';
-import { useAuthStore } from '@/lib/auth-store';
+import { useAuthStore } from '../../../src/stores/auth-store';
 import PremiumButton from '@/components/UI/PremiumButton';
 import PremiumCard from '@/components/UI/PremiumCard';
 

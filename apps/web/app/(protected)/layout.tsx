@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuthStore } from '../../src/lib/auth-store';
+import { useAuthStore } from '../../src/stores/auth-store';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import LoadingSpinner from '../../src/components/UI/LoadingSpinner';

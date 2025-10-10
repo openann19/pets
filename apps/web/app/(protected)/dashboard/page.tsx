@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import PremiumLayout from '@/components/Layout/PremiumLayout';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore } from '../../../src/lib/auth-store';
+import { useAuthStore } from '../../../src/stores/auth-store';
 import { useDashboardData, useWebSocket } from '../../../src/hooks/api-hooks';
 import PremiumCard from '../../../src/components/UI/PremiumCard';
 import PremiumButton from '../../../src/components/UI/PremiumButton';

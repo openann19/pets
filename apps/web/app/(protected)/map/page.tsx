@@ -7,7 +7,7 @@ import { ChatBubbleLeftRightIcon, AdjustmentsHorizontalIcon } from '@heroicons/r
 import { MapPinIcon as MapPinSolid, HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import MapView from '@/components/Map/MapView';
 import AIMapFeatures from '@/components/Map/AIMapFeatures';
-import { useAuthStore } from '@/lib/auth-store';
+import { useAuthStore } from '../../../src/stores/auth-store';
 import { geofencingService } from '@/services/GeofencingService';
 
 interface MapFilters {

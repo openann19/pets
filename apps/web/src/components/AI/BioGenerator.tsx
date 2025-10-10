@@ -15,7 +15,7 @@ import {
   CheckCircleIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
-import { useAuthStore } from '../../lib/auth-store';
+import { useAuthStore } from '../../stores/auth-store';
 import { api } from '../../services/api';
 import { logger } from '../../services/logger';
 

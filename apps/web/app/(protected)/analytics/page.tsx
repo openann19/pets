@@ -18,7 +18,7 @@ import {
   CalendarIcon
 } from '@heroicons/react/24/outline';
 import { useUserAnalytics, useMatchAnalytics, usePremiumTier } from '../../../src/hooks/premium-hooks';
-import { useAuthStore } from '../../../src/lib/auth-store';
+import { useAuthStore } from '../../../src/stores/auth-store';
 import PremiumCard from '../../../src/components/UI/PremiumCard';
 import PremiumButton from '../../../src/components/UI/PremiumButton';
 import LoadingSpinner from '../../../src/components/UI/LoadingSpinner';

@@ -172,7 +172,7 @@ const SwipeStack: React.FC<SwipeStackProps> = ({
           animate={{ opacity: 1 }}
           className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 text-gray-600"
         >
-          <LoadingSpinner size="small" color="#EC4899" />
+          <LoadingSpinner size="sm" color="#EC4899" />
           <span className="text-sm">Loading more pets...</span>
         </motion.div>
       )}

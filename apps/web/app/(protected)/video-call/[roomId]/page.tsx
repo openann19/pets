@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import VideoCallRoom from '../../../../src/components/VideoCall/VideoCallRoom';
-import { useAuthStore } from '../../../../src/lib/auth-store';
+import { useAuthStore } from '../../../../src/stores/auth-store';
 import { usePremiumTier } from '../../../../src/hooks/premium-hooks';
 import PremiumButton from '../../../../src/components/UI/PremiumButton';
 import PremiumCard from '../../../../src/components/UI/PremiumCard';

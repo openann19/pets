@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline } from
 import L, { LatLngExpression, Icon, DivIcon } from 'leaflet';
 import { io, Socket } from 'socket.io-client';
 // import { PulsePin } from '@pawfectmatch/core/types/realtime';
-import { useAuthStore } from '../../lib/auth-store';
+import { useAuthStore } from '../../stores/auth-store';
 import { motion, AnimatePresence } from 'framer-motion';
 // import { SPRING_CONFIG } from '@pawfectmatch/core/constants/animations';
 const SPRING_CONFIG = { type: "spring", stiffness: 260, damping: 20 };
