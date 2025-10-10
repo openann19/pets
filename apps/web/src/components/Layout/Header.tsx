@@ -22,26 +22,22 @@ import ThemeToggle from '../ThemeToggle';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
+    await logout();
+    setIsMobileMenuOpen(false);
+    router.push('/');
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => pathname === path;
 
   const navigationItems = [
     {
       name: 'Discover',
       path: '/swipe',
-      icon: HeartIcon,
       iconSolid: HeartSolid,
     },
     {
@@ -69,7 +65,7 @@ const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/dashboard" className="flex items-center space-x-2">
+          <Link href="/dashboard" className="flex items-center space-x-2">
             <div className="text-2xl">🐾</div>
             <span className="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
               PawfectMatch
@@ -86,7 +82,7 @@ const Header: React.FC = () => {
               return (
                 <Link
                   key={item.path}
-                  to={item.path}
+                  href={item.path}
                   className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     isActive(item.path)
                       ? 'text-pink-600 bg-pink-50'
@@ -106,7 +102,7 @@ const Header: React.FC = () => {
             <ThemeToggle />
             {/* Add Pet Button */}
             <Link
-              to="/pets/new"
+              href="/pets/new"
               className="flex items-center space-x-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <PlusIcon className="w-4 h-4" />
@@ -116,7 +112,7 @@ const Header: React.FC = () => {
             {/* Premium Button */}
             {!user?.premium.isActive && (
               <Link
-                to="/premium"
+                href="/premium"
                 className="flex items-center space-x-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-lg hover:from-yellow-500 hover:to-orange-600 transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 <SparklesIcon className="w-4 h-4" />
@@ -168,7 +164,7 @@ const Header: React.FC = () => {
                 return (
                   <Link
                     key={item.path}
-                    to={item.path}
+                    href={item.path}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
                       isActive(item.path)
@@ -185,7 +181,7 @@ const Header: React.FC = () => {
               {/* Mobile Actions */}
               <div className="pt-4 space-y-2">
                 <Link
-                  to="/pets/new"
+                  href="/pets/new"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center space-x-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-3 py-2 rounded-md text-base font-medium"
                 >
@@ -195,7 +191,7 @@ const Header: React.FC = () => {
                 
                 {!user?.premium.isActive && (
                   <Link
-                    to="/premium"
+                    href="/premium"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center space-x-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-2 rounded-md text-base font-medium"
                   >
