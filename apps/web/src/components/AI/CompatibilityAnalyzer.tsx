@@ -16,7 +16,7 @@ import {
   InformationCircleIcon,
   ArrowTrendingUpIcon
 } from '@heroicons/react/24/outline';
-import { useAuthStore } from '@/lib/auth-store';
+import { useAuthStore } from '../../stores/auth-store';
 import { aiAPI } from '../../services/api';
 import { logger } from '../../services/logger';
 

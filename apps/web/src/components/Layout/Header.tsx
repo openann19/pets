@@ -38,6 +38,7 @@ const Header: React.FC = () => {
     {
       name: 'Discover',
       path: '/swipe',
+      icon: HeartIcon,
       iconSolid: HeartSolid,
     },
     {

@@ -10,7 +10,7 @@ import apiClient, {
   User, Pet, Match, Message, SwipeAction, 
   Subscription, AIBioRequest, Location 
 } from '../lib/api-client';
-import { useAuthStore } from '@/lib/auth-store';
+import { useAuthStore } from '../stores/auth-store';
 
 // ============= AUTHENTICATION HOOKS =============
 export function useAuth() {

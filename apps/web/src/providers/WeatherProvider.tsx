@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { enhancedWeatherService } from '../services/WeatherService';
-import { useAuthStore } from '@/lib/auth-store';
+import { useAuthStore } from '../stores/auth-store';
 import { logger } from '../services/logger';
 
 interface WeatherContextType {

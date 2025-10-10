@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, ReactNode, useEffect } from 'react';
-import { useAuthStore } from '@/lib/auth-store';
+import { useAuthStore } from '../stores/auth-store';
 
 interface AuthContextType {
   user: any;
