@@ -50,7 +50,7 @@ const SwipeStack: React.FC<SwipeStackProps> = ({
         onMatch(result.matchId);
       }
     } catch (error) {
-      logger.error('Swipe error', error as Error, { petId: currentPet._id, action: direction });
+      logger.error('Swipe error', { error, petId: currentPet._id, action: direction });
       // Remove from swiped if there was an error
       setSwipedPets(prev => {
         const newSet = new Set(prev);

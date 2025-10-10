@@ -29,7 +29,7 @@ export function useSocket() {
         logger.info('Socket connected', { id: newSocket.id });
         
         // Register user
-        newSocket.emit('register', { userId: user.id });
+        newSocket.emit('register', { userId: user._id });
       });
 
       newSocket.on('disconnect', (reason) => {
@@ -62,7 +62,7 @@ export function useSocket() {
         setSocket(null);
       }
     }
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user?._id]);
 
   return socket;
 }

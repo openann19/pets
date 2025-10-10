@@ -218,7 +218,11 @@ class ApiService {
     // Build query string from params
     let finalUrl = url;
     if (options.params) {
-      const queryString = new URLSearchParams(options.params).toString();
+      const stringParams = Object.entries(options.params).reduce((acc, [key, value]) => {
+        acc[key] = String(value);
+        return acc;
+      }, {} as Record<string, string>);
+      const queryString = new URLSearchParams(stringParams).toString();
       finalUrl = `${url}?${queryString}`;
     }
 
@@ -363,8 +367,11 @@ class ApiService {
 
   // Weather endpoints
   async getWeather(lat?: number, lon?: number) {
+    const params: Record<string, string | number | boolean> = {};
+    if (lat !== undefined) params.lat = lat;
+    if (lon !== undefined) params.lon = lon;
     return this.request('/weather', {
-      params: { lat, lon },
+      params,
     });
   }
 
@@ -405,7 +412,7 @@ interface PetFilters {
 export const petsAPI = {
   async getSwipeablePets(filters?: PetFilters) {
     return apiInstance.request('/pets/swipeable', {
-      params: filters,
+      params: filters as Record<string, string | number | boolean> | undefined,
     });
   },
   

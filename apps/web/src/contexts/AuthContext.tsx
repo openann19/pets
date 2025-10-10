@@ -37,8 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       const response = await api.login(email, password);
       
-      setTokens(response.accessToken, response.refreshToken);
-      setUser(response.user);
+      setTokens(response.token, response.refreshToken);
+      setUser(response.user as any);
     } catch (error: any) {
       setError(error.message || 'Login failed');
       throw error;
@@ -52,10 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       setError(null);
       
-      const response = await api.register({ email, password, firstName, lastName });
+      const response = await api.register({ email, password, name: `${firstName} ${lastName}` });
       
-      setTokens(response.accessToken, response.refreshToken);
-      setUser(response.user);
+      setTokens(response.token, response.refreshToken);
+      setUser(response.user as any);
     } catch (error: any) {
       setError(error.message || 'Registration failed');
       throw error;
