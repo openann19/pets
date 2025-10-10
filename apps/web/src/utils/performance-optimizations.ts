@@ -368,8 +368,11 @@ export const usePerformanceMonitoring = () => {
           if (entry.entryType === 'navigation') {
             const navEntry = entry as PerformanceNavigationTiming;
             setMetrics(prev => ({
-              ...prev,
               loadTime: navEntry.loadEventEnd - navEntry.loadEventStart,
+              firstContentfulPaint: prev?.firstContentfulPaint ?? 0,
+              largestContentfulPaint: prev?.largestContentfulPaint ?? 0,
+              firstInputDelay: prev?.firstInputDelay ?? 0,
+              cumulativeLayoutShift: prev?.cumulativeLayoutShift ?? 0,
             }));
           }
         });

@@ -104,8 +104,8 @@ export class PerformanceMonitor {
         for (const entry of list.getEntries()) {
           if (entry.entryType === 'navigation') {
             const nav = entry as PerformanceNavigationTiming;
-            this.trackMetric('page_load', nav.loadEventEnd - nav.navigationStart);
-            this.trackMetric('first_paint', nav.domContentLoadedEventEnd - nav.navigationStart);
+            this.trackMetric('page_load', nav.loadEventEnd - nav.startTime);
+            this.trackMetric('first_paint', nav.domContentLoadedEventEnd - nav.startTime);
           }
         }
       });

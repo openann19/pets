@@ -254,7 +254,7 @@ class AdvancedAnalytics {
         connectionType: this.getConnectionType(),
       },
       timestamp: Date.now(),
-      userId: this.userId,
+      userId: this.userId ?? undefined,
       sessionId: this.sessionId,
     };
 
