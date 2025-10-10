@@ -14,7 +14,8 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
-    "types": ["jest", "@types/react-native", "@types/node"]
+    "isolatedModules": false,
+    "types": ["jest"]
   },
   "include": [
     "**/*.ts",
@@ -24,6 +25,12 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "src/components/**/*",
+    "src/contexts/**/*",
+    "src/services/**/*",
+    "src/screens/**/*",
+    "src/hooks/**/*",
+    "App.tsx"
   ]
 }

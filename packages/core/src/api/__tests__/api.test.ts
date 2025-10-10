@@ -1,11 +1,11 @@
-import React, { ReactNode } from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { apiClient, useApiQuery, useApiMutation } from '../index';
+import { renderHook, waitFor } from '@testing-library/react';
+import mockedAxios from 'axios';
+import React from 'react';
+import { apiClient, useApiMutation, useApiQuery } from '../index';
 
 // Mock axios
 jest.mock('axios');
-const mockedAxios = require('axios');
 
 // Create wrapper for React Query
 const createWrapper = () => {

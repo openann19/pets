@@ -11,7 +11,7 @@ module.exports = {
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@core/(.*)$': '<rootDir>/../packages/core/src/$1',
     '^@ui/(.*)$': '<rootDir>/../packages/ui/src/$1'

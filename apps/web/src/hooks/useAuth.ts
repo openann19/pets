@@ -18,7 +18,50 @@ interface RegisterData extends LoginCredentials {
 }
 
 interface AuthResponse {
-  user: any;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    avatar?: string;
+    bio?: string;
+    location?: {
+      latitude: number;
+      longitude: number;
+      city: string;
+      state: string;
+      country: string;
+    };
+    dateOfBirth?: string;
+    isPremium?: boolean;
+    premiumFeatures?: {
+      unlimitedLikes: boolean;
+      seeWhoLikesYou: boolean;
+      advancedFilters: boolean;
+      priorityMatching: boolean;
+      aiRecommendations: boolean;
+    };
+    preferences?: {
+      maxDistance: number;
+      ageRange: { min: number; max: number };
+      sizePreference: ('small' | 'medium' | 'large')[];
+      breedPreference: string[];
+      temperamentPreference: string[];
+      notificationsEnabled: boolean;
+      emailNotifications: boolean;
+      pushNotifications: boolean;
+    };
+    stats?: {
+      totalSwipes: number;
+      totalLikes: number;
+      totalMatches: number;
+      totalSuperLikes: number;
+      matchRate: number;
+      responseRate: number;
+      averageResponseTime: number;
+    };
+    createdAt: string;
+    updatedAt: string;
+  };
   accessToken: string;
   refreshToken: string;
 }
@@ -112,9 +155,10 @@ export function useAuth() {
       logger.info('User logged in successfully', { userId: data.user.id });
       
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Login error', error);
-      setError(error.message || 'Failed to login');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to login';
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -156,9 +200,10 @@ export function useAuth() {
       logger.info('User registered successfully', { userId: responseData.user.id });
       
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Registration error', error);
-      setError(error.message || 'Failed to register');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to register';
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -246,7 +291,7 @@ export function useAuth() {
   /**
    * Update user profile
    */
-  const updateProfile = useCallback(async (updates: Partial<any>): Promise<boolean> => {
+  const updateProfile = useCallback(async (updates: Partial<AuthResponse['user']>): Promise<boolean> => {
     if (!accessToken) {
       setError('Not authenticated');
       return false;
@@ -276,9 +321,10 @@ export function useAuth() {
       
       logger.info('Profile updated successfully');
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Profile update error', error);
-      setError(error.message || 'Failed to update profile');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);

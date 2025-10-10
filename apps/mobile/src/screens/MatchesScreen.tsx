@@ -40,7 +40,15 @@ interface MatchesScreenProps {
 export default function MatchesScreen({ navigation }: MatchesScreenProps) {
   const { user } = useAuthStore();
   const [matches, setMatches] = useState<Match[]>([]);
-  const [likedYou, setLikedYou] = useState<any[]>([]);
+  const [likedYou, setLikedYou] = useState<Array<{
+    id: string;
+    petId: string;
+    petName: string;
+    petPhoto: string;
+    userId: string;
+    userName: string;
+    timestamp: string;
+  }>>([]);
   const [selectedTab, setSelectedTab] = useState<'matches' | 'likedYou'>('matches');
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

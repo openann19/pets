@@ -24,7 +24,7 @@ export const useDebounce = <T>(value: T, delay: number): T => {
 };
 
 // Throttle utility for performance
-export const useThrottle = <T extends (...args: any[]) => any>(
+export const useThrottle = <T extends (...args: unknown[]) => unknown>(
   callback: T,
   delay: number
 ): T => {

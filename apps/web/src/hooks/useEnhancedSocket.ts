@@ -46,9 +46,9 @@ interface EnhancedSocketHook {
   updatePresence: (status: 'online' | 'away' | 'offline') => void;
   
   // Event subscription
-  on: (event: string, callback: (...args: any[]) => void) => void;
-  off: (event: string, callback: (...args: any[]) => void) => void;
-  emit: (event: string, data?: any) => void;
+  on: (event: string, callback: (...args: unknown[]) => void) => void;
+  off: (event: string, callback: (...args: unknown[]) => void) => void;
+  emit: (event: string, data?: unknown) => void;
 }
 
 export const useEnhancedSocket = (): EnhancedSocketHook => {
@@ -284,17 +284,17 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
   }, [user]);
 
   // Event subscription methods
-  const on = useCallback((event: string, callback: (...args: any[]) => void) => {
+  const on = useCallback((event: string, callback: (...args: unknown[]) => void) => {
     if (!socketRef.current) return;
     socketRef.current.on(event, callback);
   }, []);
 
-  const off = useCallback((event: string, callback: (...args: any[]) => void) => {
+  const off = useCallback((event: string, callback: (...args: unknown[]) => void) => {
     if (!socketRef.current) return;
     socketRef.current.off(event, callback);
   }, []);
 
-  const emit = useCallback((event: string, data?: any) => {
+  const emit = useCallback((event: string, data?: unknown) => {
     if (!socketRef.current?.connected) {
       logger.warn(`Cannot emit ${event} - socket not connected`);
       return;

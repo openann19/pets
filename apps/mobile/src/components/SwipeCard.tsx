@@ -42,6 +42,192 @@ interface Pet {
   tags: string[];
 }
 
+// React Native StyleSheet types for SwipeCard
+interface SwipeCardStyle {
+  card?: {
+    position?: 'absolute' | 'relative';
+    width?: number | string;
+    height?: number | string;
+    borderRadius?: number;
+    backgroundColor?: string;
+    shadowColor?: string;
+    shadowOffset?: { width: number; height: number };
+    shadowOpacity?: number;
+    shadowRadius?: number;
+    elevation?: number;
+  };
+  cardDisabled?: {
+    opacity?: number;
+  };
+  photoContainer?: {
+    flex?: number;
+    borderRadius?: number;
+    overflow?: 'hidden' | 'visible';
+    position?: 'absolute' | 'relative';
+  };
+  photo?: {
+    width?: number | string;
+    height?: number | string;
+  };
+  photoIndicators?: {
+    position?: 'absolute';
+    top?: number;
+    left?: number;
+    right?: number;
+    flexDirection?: 'row';
+    gap?: number;
+  };
+  photoDot?: {
+    flex?: number;
+    height?: number;
+    borderRadius?: number;
+    backgroundColor?: string;
+  };
+  photoNavigation?: {
+    position?: 'absolute';
+    top?: number;
+    left?: number;
+    right?: number;
+    bottom?: number;
+    flexDirection?: 'row';
+  };
+  photoNavLeft?: {
+    flex?: number;
+  };
+  photoNavRight?: {
+    flex?: number;
+  };
+  verifiedBadge?: {
+    position?: 'absolute';
+    top?: number;
+    right?: number;
+    backgroundColor?: string;
+    borderRadius?: number;
+    padding?: number;
+  };
+  distanceBadge?: {
+    position?: 'absolute';
+    bottom?: number;
+    right?: number;
+    backgroundColor?: string;
+    paddingHorizontal?: number;
+    paddingVertical?: number;
+    borderRadius?: number;
+  };
+  distanceText?: {
+    color?: string;
+    fontSize?: number;
+    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
+  };
+  overlay?: {
+    position?: 'absolute';
+    top?: number;
+    left?: number;
+    right?: number;
+    bottom?: number;
+    justifyContent?: 'center';
+    alignItems?: 'center';
+    borderRadius?: number;
+  };
+  likeOverlay?: {
+    backgroundColor?: string;
+  };
+  nopeOverlay?: {
+    backgroundColor?: string;
+  };
+  superLikeOverlay?: {
+    backgroundColor?: string;
+  };
+  overlayText?: {
+    color?: string;
+    fontSize?: number;
+    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
+    textAlign?: 'center';
+    textShadowColor?: string;
+    textShadowOffset?: { width: number; height: number };
+    textShadowRadius?: number;
+  };
+  infoGradient?: {
+    position?: 'absolute';
+    bottom?: number;
+    left?: number;
+    right?: number;
+    height?: number;
+    borderBottomLeftRadius?: number;
+    borderBottomRightRadius?: number;
+  };
+  infoContainer?: {
+    flex?: number;
+    justifyContent?: 'flex-end';
+    padding?: number;
+  };
+  nameRow?: {
+    flexDirection?: 'row';
+    alignItems?: 'baseline';
+    marginBottom?: number;
+  };
+  name?: {
+    fontSize?: number;
+    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
+    color?: string;
+    marginRight?: number;
+  };
+  age?: {
+    fontSize?: number;
+    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
+    color?: string;
+  };
+  breed?: {
+    fontSize?: number;
+    color?: string;
+    marginBottom?: number;
+  };
+  compatibilityContainer?: {
+    flexDirection?: 'row';
+    alignItems?: 'center';
+    marginBottom?: number;
+  };
+  compatibilityBar?: {
+    flex?: number;
+    height?: number;
+    backgroundColor?: string;
+    borderRadius?: number;
+    marginRight?: number;
+  };
+  compatibilityFill?: {
+    height?: number | string;
+    borderRadius?: number;
+    backgroundColor?: string;
+  };
+  compatibilityText?: {
+    color?: string;
+    fontSize?: number;
+    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
+  };
+  tagsContainer?: {
+    flexDirection?: 'row';
+    marginBottom?: number;
+    gap?: number;
+  };
+  tag?: {
+    paddingHorizontal?: number;
+    paddingVertical?: number;
+    borderRadius?: number;
+    backgroundColor?: string;
+  };
+  tagText?: {
+    fontSize?: number;
+    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
+    color?: string;
+  };
+  bio?: {
+    fontSize?: number;
+    color?: string;
+    lineHeight?: number;
+  };
+  [key: string]: unknown; // Allow additional style properties
+}
+
 interface SwipeCardProps {
   pet: Pet;
   onSwipeLeft: (pet: Pet) => void;
@@ -49,7 +235,7 @@ interface SwipeCardProps {
   onSwipeUp: (pet: Pet) => void;
   isTopCard?: boolean;
   disabled?: boolean;
-  style?: any;
+  style?: SwipeCardStyle;
 }
 
 const DEFAULT_SWIPE_CONFIG = {
@@ -474,7 +660,7 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
       </LinearGradient>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

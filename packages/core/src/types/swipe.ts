@@ -40,6 +40,59 @@ export interface SwipeResult {
   action: SwipeAction;
 }
 
+// React Native StyleSheet types
+export interface SwipeCardStyle {
+  card?: {
+    position?: 'absolute' | 'relative';
+    width?: number | string;
+    height?: number | string;
+    borderRadius?: number;
+    backgroundColor?: string;
+    shadowColor?: string;
+    shadowOffset?: { width: number; height: number };
+    shadowOpacity?: number;
+    shadowRadius?: number;
+    elevation?: number;
+  };
+  photoContainer?: {
+    flex?: number;
+    borderRadius?: number;
+    overflow?: 'hidden' | 'visible';
+    position?: 'absolute' | 'relative';
+  };
+  photo?: {
+    width?: number | string;
+    height?: number | string;
+  };
+  infoContainer?: {
+    flex?: number;
+    justifyContent?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly';
+    padding?: number;
+  };
+  name?: {
+    fontSize?: number;
+    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
+    color?: string;
+    marginRight?: number;
+  };
+  age?: {
+    fontSize?: number;
+    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
+    color?: string;
+  };
+  breed?: {
+    fontSize?: number;
+    color?: string;
+    marginBottom?: number;
+  };
+  bio?: {
+    fontSize?: number;
+    color?: string;
+    lineHeight?: number;
+  };
+  [key: string]: any; // Allow additional style properties
+}
+
 export interface SwipeCardProps {
   pet: Pet;
   onSwipeLeft: (pet: Pet) => void | Promise<void>;
@@ -47,7 +100,7 @@ export interface SwipeCardProps {
   onSwipeUp: (pet: Pet) => void | Promise<void>;
   isTopCard?: boolean;
   disabled?: boolean;
-  style?: any;
+  style?: SwipeCardStyle;
 }
 
 export interface SwipeGestureConfig {

@@ -5,20 +5,104 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-// Logger utility
-const logger = {
-  info: (...args: any[]) => console.log('[INFO]', ...args),
-  error: (...args: any[]) => console.error('[ERROR]', ...args),
-  warn: (...args: any[]) => console.warn('[WARN]', ...args),
+// Auth response types
+interface AuthResponse {
+  token: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    avatar?: string;
+    isPremium?: boolean;
+    preferences?: Record<string, unknown>;
+  };
+}
+
+// Pet creation/update types
+interface PetCreateData {
+  name: string;
+  breed: string;
+  age: number;
+  gender: 'male' | 'female';
+  size: 'small' | 'medium' | 'large';
+  weight: number;
+  description: string;
+  temperament: string[];
+  energy: 'low' | 'medium' | 'high';
+  training: 'none' | 'basic' | 'intermediate' | 'advanced';
+  goodWithKids: boolean;
+  goodWithPets: boolean;
+  houseTrained: boolean;
+  specialNeeds?: string;
+  photos: string[];
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+interface PetUpdateData extends Partial<PetCreateData> {
+  id: string;
+}
+
+// User preferences type
+interface UserPreferences {
+  maxDistance: number;
+  ageRange: { min: number; max: number };
+  sizePreference: ('small' | 'medium' | 'large')[];
+  breedPreference: string[];
+  temperamentPreference: string[];
+  notificationsEnabled: boolean;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+}
+
+// Message attachment type
+interface MessageAttachment {
+  id: string;
+  type: 'image' | 'video' | 'audio' | 'document';
+  url: string;
+  name: string;
+  size: number;
+  mimeType: string;
+}
+
+// AI analysis types
+interface AIAnalysisOptions {
+  includeBehavior?: boolean;
+  includeCompatibility?: boolean;
+  includeRecommendations?: boolean;
+}
+
+interface BehaviorAnalysisData {
+  activityLevel: number;
+  socialBehavior: string[];
+  trainingProgress: number;
+  healthIndicators: Record<string, unknown>;
+}
+
+// Logger utility with proper typing
+interface LogLevel {
+  info: (...args: unknown[]) => void;
+  error: (...args: unknown[]) => void;
+  warn: (...args: unknown[]) => void;
+}
+
+const logger: LogLevel = {
+  info: (...args: unknown[]) => console.log('[INFO]', ...args),
+  error: (...args: unknown[]) => console.error('[ERROR]', ...args),
+  warn: (...args: unknown[]) => console.warn('[WARN]', ...args),
 };
 
+// Request options with proper typing
 interface RequestOptions extends RequestInit {
-  params?: Record<string, any>;
+  params?: Record<string, string | number | boolean>;
 }
 class ApiService {
   private token: string | null = null;
   private refreshToken: string | null = null;
-  private cache: Map<string, { data: any; timestamp: number; ttl: number }> = new Map();
+  private cache: Map<string, { data: unknown; timestamp: number; ttl: number }> = new Map();
   private retryAttempts = 3;
   private retryDelay = 1000;
 
@@ -40,11 +124,11 @@ class ApiService {
     }, 60000); // Cleanup every minute
   }
 
-  private getCacheKey(endpoint: string, options: any): string {
+  private getCacheKey(endpoint: string, options: RequestOptions): string {
     return `${endpoint}_${JSON.stringify(options)}`;
   }
 
-  private setCache(key: string, data: any, ttl: number = 300000) { // 5 minutes default
+  private setCache(key: string, data: unknown, ttl: number = 300000): void { // 5 minutes default
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
@@ -52,7 +136,7 @@ class ApiService {
     });
   }
 
-  private getCache(key: string): any | null {
+  private getCache(key: string): unknown | null {
     const cached = this.cache.get(key);
     if (!cached) return null;
     
@@ -148,7 +232,7 @@ class ApiService {
     };
 
     // Remove params from config as they're in the URL
-    delete (config as any).params;
+    delete (config as RequestOptions & { params?: unknown }).params;
 
     try {
       const response = await fetch(finalUrl, config);
@@ -172,7 +256,7 @@ class ApiService {
       }
 
       return await response.json();
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (retryCount < this.retryAttempts) {
         logger.warn(`Retrying request to ${endpoint} (attempt ${retryCount + 1})`);
         await new Promise(resolve => setTimeout(resolve, this.retryDelay * (retryCount + 1)));
@@ -185,8 +269,8 @@ class ApiService {
   }
 
   // Auth endpoints
-  async login(email: string, password: string) {
-    const response = await this.request<{ token: string; refreshToken: string; user: any }>('/auth/login', {
+  async login(email: string, password: string): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -194,8 +278,14 @@ class ApiService {
     return response;
   }
 
-  async register(data: any) {
-    const response = await this.request<{ token: string; refreshToken: string; user: any }>('/auth/register', {
+  async register(data: {
+    email: string;
+    password: string;
+    name: string;
+    dateOfBirth?: string;
+    location?: string;
+  }): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -220,14 +310,14 @@ class ApiService {
     return this.request(`/pets/${id}`);
   }
 
-  async createPet(data: any) {
+  async createPet(data: PetCreateData) {
     return this.request('/pets', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updatePet(id: string, data: any) {
+  async updatePet(id: string, data: PetUpdateData) {
     return this.request(`/pets/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -240,7 +330,7 @@ class ApiService {
     });
   }
 
-  async updatePetProfile(data: any) {
+  async updatePetProfile(data: Partial<PetCreateData>) {
     return this.request('/pets/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -287,7 +377,7 @@ class ApiService {
   }
 
   // Preferences endpoints
-  async syncPreferences(preferences: any) {
+  async syncPreferences(preferences: UserPreferences) {
     return this.request('/users/preferences', {
       method: 'PUT',
       body: JSON.stringify(preferences),
@@ -298,9 +388,22 @@ class ApiService {
 // Create singleton instance
 const apiInstance = new ApiService();
 
+// Pet filters interface
+interface PetFilters {
+  ageRange?: { min: number; max: number };
+  maxDistance?: number;
+  sizePreference?: ('small' | 'medium' | 'large')[];
+  breedPreference?: string[];
+  temperamentPreference?: string[];
+  energyLevel?: ('low' | 'medium' | 'high')[];
+  goodWithKids?: boolean;
+  goodWithPets?: boolean;
+  houseTrained?: boolean;
+}
+
 // Pets API endpoints
 export const petsAPI = {
-  async getSwipeablePets(filters?: any) {
+  async getSwipeablePets(filters?: PetFilters) {
     return apiInstance.request('/pets/swipeable', {
       params: filters,
     });
@@ -359,7 +462,7 @@ export const chatAPI = {
     return apiInstance.request(`/chat/conversations/${conversationId}/messages`);
   },
   
-  async sendMessage(conversationId: string, message: string, attachments?: any[]) {
+  async sendMessage(conversationId: string, message: string, attachments?: MessageAttachment[]) {
     return apiInstance.request(`/chat/conversations/${conversationId}/messages`, {
       method: 'POST',
       body: JSON.stringify({ message, attachments }),
@@ -375,7 +478,13 @@ export const chatAPI = {
 
 // AI API endpoints
 export const aiAPI = {
-  async generateBio(data: any) {
+  async generateBio(data: {
+    petName: string;
+    breed: string;
+    age: number;
+    temperament: string[];
+    specialTraits?: string[];
+  }) {
     return apiInstance.request('/ai/generate-bio', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -393,7 +502,7 @@ export const aiAPI = {
     }).then(res => res.json());
   },
   
-  async analyzeCompatibility(petAId: string, petBId: string, options?: any) {
+  async analyzeCompatibility(petAId: string, petBId: string, options?: AIAnalysisOptions) {
     return apiInstance.request('/ai/analyze-compatibility', {
       method: 'POST',
       body: JSON.stringify({ petAId, petBId, ...options }),
@@ -412,7 +521,7 @@ export const aiAPI = {
     });
   },
   
-  async analyzeBehavior(petId: string, data: any) {
+  async analyzeBehavior(petId: string, data: BehaviorAnalysisData) {
     return apiInstance.request('/ai/behavior-analysis', {
       method: 'POST',
       body: JSON.stringify({ petId, ...data }),
@@ -434,7 +543,7 @@ export const subscriptionAPI = {
     priceId: string;
     successUrl: string;
     cancelUrl: string;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
   }) {
     return apiInstance.request('/subscription/create-checkout', {
       method: 'POST',

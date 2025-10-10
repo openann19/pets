@@ -187,13 +187,66 @@ export interface SwipeAction {
   };
 }
 
+// Notification data types for different notification types
+export interface MatchNotificationData {
+  matchId: string;
+  petId: string;
+  petName: string;
+  petPhoto?: string;
+}
+
+export interface MessageNotificationData {
+  matchId: string;
+  senderId: string;
+  senderName: string;
+  messagePreview: string;
+  messageId: string;
+}
+
+export interface LikeNotificationData {
+  likerId: string;
+  likerName: string;
+  likerPhoto?: string;
+  petId: string;
+}
+
+export interface SuperLikeNotificationData {
+  likerId: string;
+  likerName: string;
+  likerPhoto?: string;
+  petId: string;
+  message?: string;
+}
+
+export interface VisitorNotificationData {
+  visitorId: string;
+  visitorName: string;
+  visitorPhoto?: string;
+  visitCount: number;
+}
+
+export interface SystemNotificationData {
+  action?: string;
+  metadata?: Record<string, unknown>;
+  version?: string;
+}
+
+// Union type for all notification data
+export type NotificationData = 
+  | MatchNotificationData 
+  | MessageNotificationData 
+  | LikeNotificationData 
+  | SuperLikeNotificationData 
+  | VisitorNotificationData 
+  | SystemNotificationData;
+
 export interface Notification {
   id: string;
   userId: string;
   type: 'match' | 'message' | 'like' | 'superlike' | 'visitor' | 'system';
   title: string;
   message: string;
-  data?: any;
+  data?: NotificationData;
   imageUrl?: string;
   actionUrl?: string;
   isRead: boolean;

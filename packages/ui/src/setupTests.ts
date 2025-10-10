@@ -24,7 +24,7 @@ jest.mock('@react-aria/interactions', () => ({
 }));
 
 jest.mock('@react-aria/utils', () => ({
-  mergeProps: (...props: any[]) => Object.assign({}, ...props)
+  mergeProps: (...props: Record<string, unknown>[]) => Object.assign({}, ...props)
 }));
 
 jest.mock('@react-aria/textfield', () => ({

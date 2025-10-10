@@ -274,7 +274,13 @@ class GeofencingService {
   }
 
   // Simulate fetching nearby matches
-  private async fetchNearbyMatches(location: { lat: number; lng: number }): Promise<any[]> {
+  private async fetchNearbyMatches(location: { lat: number; lng: number }): Promise<Array<{
+    id: string;
+    name: string;
+    distance: number;
+    photo?: string;
+    lastSeen: string;
+  }>> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     

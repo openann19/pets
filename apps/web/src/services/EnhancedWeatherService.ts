@@ -286,7 +286,11 @@ class OpenWeatherMapProvider implements WeatherProvider {
     return 'waning_crescent';
   }
   
-  private calculateAdvancedPetSafety(current: any, daily: any, alerts: any[]): PetSafetyInfo {
+  private calculateAdvancedPetSafety(
+    current: { temp: number; humidity: number; uv: number; windSpeed: number },
+    daily: { tempMin: number; tempMax: number; condition: string },
+    alerts: Array<{ title: string; severity: string; description: string }>
+  ): PetSafetyInfo {
     const temp = current.temp || 20;
     const humidity = current.humidity || 50;
     const uv = current.uvi || 5;
@@ -387,7 +391,7 @@ class OpenWeatherMapProvider implements WeatherProvider {
     humidity: number, 
     uv: number, 
     windSpeed: number, 
-    alerts: any[]
+    alerts: Array<{ title: string; severity: string; description: string }>
   ): string[] {
     const recommendations: string[] = [];
     
