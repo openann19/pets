@@ -225,6 +225,63 @@ The MongoDB database consists of three core collections: `Users`, `Pets`, and `M
 
 ---
 
+## 🏁 Type Safety & Code Quality Standards
+
+This project enforces **strict TypeScript** and **zero-warning ESLint** configurations to ensure production-grade code quality.
+
+### 🔒 **Strict Mode Requirements**
+
+1.  **TypeScript Strict Mode:**
+    -   All code must compile with `tsc --noEmit` with zero errors
+    -   No `any` types allowed (use `unknown` with proper type guards instead)
+    -   No `@ts-ignore` comments (use `@ts-expect-error` with a ticket reference only when absolutely necessary)
+    -   All function parameters and return types must be explicitly typed
+
+2.  **ESLint Zero-Warning Policy:**
+    -   All code must pass `eslint --max-warnings=0`
+    -   No unused variables or imports
+    -   All async functions must handle errors properly
+    -   React hooks must follow exhaustive-deps rules
+
+3.  **Domain Type Alignment:**
+    -   User type has unified `id` field (alias for `_id`) in `packages/core/src/types/User`
+    -   All components use the shared core types from `@pawfectmatch/core`
+    -   No type extensions in `apps/web/src/types/index.ts` that duplicate core fields
+    -   Socket events use proper generics for type-safe event payloads
+
+4.  **CI/CD Quality Gates:**
+    -   `pnpm run lint:strict` must exit with code 0
+    -   `pnpm run type:strict` must exit with code 0
+    -   Both checks run automatically in CI pipeline
+    -   Pull requests cannot merge if quality gates fail
+
+5.  **Testing Requirements:**
+    -   All test files use proper TypeScript typings
+    -   Jest globals defined in `tsconfig.test.json`
+    -   Test utilities and mocks are fully typed
+    -   No implicit `any` in test files
+
+### 📝 **Development Workflow**
+
+Before committing code:
+```bash
+# Run type checking
+pnpm run type:strict
+
+# Run linting
+pnpm run lint:strict
+
+# Both must pass with zero errors/warnings
+```
+
+### 🚫 **Prohibited Patterns**
+
+1. **No tsconfig.exclude for avoiding type errors** - Fix the types instead
+2. **No @ts-ignore** - Use `@ts-expect-error` with ticket reference
+3. **No `any` types** - Use proper typing or `unknown` with type guards
+4. **No HTML `<img>` tags** - Use Next.js `<Image>` component
+5. **No untyped socket events** - Use proper generic types for socket.io
+
 ## 🏁 Final To-Do List & Next Steps
 
 This list addresses the identified gaps and outlines the final steps to make the project 100% production-ready.

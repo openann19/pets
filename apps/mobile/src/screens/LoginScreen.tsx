@@ -1,16 +1,10 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  StyleSheet, 
-  TouchableOpacity, 
-  KeyboardAvoidingView, 
-  Platform,
-  ScrollView 
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { logger } from '@pawfectmatch/core';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as Haptics from 'expo-haptics';
+import { useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { authService } from '../services/AuthService';
 
 // Define the navigation props type
 type RootStackParamList = {
@@ -21,41 +15,69 @@ type RootStackParamList = {
 
 type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
-const LoginScreen = ({ navigation }: LoginScreenProps) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
-  
-  const validateForm = () => {
-    const newErrors: {email?: string; password?: string} = {};
-    
+  const [_loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  const validateForm = (): boolean => {
+    const newErrors: { email?: string; password?: string } = {};
+
     if (!email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Email format is invalid';
     }
-    
+
     if (!password) {
       newErrors.password = 'Password is required';
     } else if (password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
-  const handleLogin = () => {
-    if (validateForm()) {
-      // Handle login logic here
-      console.log('Login with:', email, password);
-      
-      // For demo purposes, navigate to Home
-      // In a real app, you would authenticate first
-      // navigation.navigate('Home');
+
+  const handleLogin = async (): Promise<void> => {
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      // Haptic feedback for login attempt
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      // Attempt login with real authentication service
+      const response = await authService.login({
+        email: email.trim(),
+        password,
+      });
+
+      logger.info('Login successful', { userId: response.user.id });
+
+      // Show success message
+      Alert.alert('Success', `Welcome back, ${response.user.name}!`, [
+        {
+          text: 'Continue',
+          onPress: () => navigation.navigate('Main'),
+        },
+      ]);
+    } catch (error) {
+      logger.error('Login error:', { error });
+
+      // Handle different types of authentication errors
+      let errorMessage = 'Login failed. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert('Login Failed', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -67,10 +89,10 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
             <Text style={styles.logo}>PawfectMatch</Text>
             <Text style={styles.tagline}>Find your pet's perfect match</Text>
           </View>
-          
+
           <View style={styles.form}>
             <Text style={styles.title}>Welcome Back</Text>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email</Text>
               <TextInput
@@ -82,9 +104,9 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                 keyboardType="email-address"
                 autoCorrect={false}
               />
-              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+              {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
             </View>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Password</Text>
               <TextInput
@@ -94,17 +116,19 @@ const LoginScreen = ({ navigation }: LoginScreenProps) => {
                 placeholder="********"
                 secureTextEntry
               />
-              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+              {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
             </View>
-            
+
             <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+              <Text style={styles.forgotPasswordText} onPress={() => navigation.navigate('ForgotPassword')}>
+                Forgot password?
+              </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.button} onPress={handleLogin}>
               <Text style={styles.buttonText}>Sign In</Text>
             </TouchableOpacity>
-            
+
             <View style={styles.registerContainer}>
               <Text style={styles.registerText}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('Register')}>

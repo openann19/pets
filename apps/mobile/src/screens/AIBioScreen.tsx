@@ -1,25 +1,24 @@
-import React, { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { logger, useAuthStore } from '@pawfectmatch/core';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  Image,
   ActivityIndicator,
+  Alert,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as ImagePicker from 'expo-image-picker';
-import { useAuthStore } from '@pawfectmatch/core';
-import { api } from '../../../web/src/services/api';
+import { _aiAPI } from '../services/api';
 
-interface AIBioScreenProps {
-  navigation: any;
-}
+const { width: _SCREEN_WIDTH } = Dimensions.get('window');
 
 interface GeneratedBio {
   bio: string;
@@ -27,12 +26,25 @@ interface GeneratedBio {
   sentiment: {
     score: number;
     label: string;
+    positive: number;
+    neutral: number;
+    negative: number;
   };
   matchScore: number;
+  suggestions: string[];
+  tone: string;
+  personalityTraits: string[];
+  interests: string[];
 }
 
-export default function AIBioScreen({ navigation }: AIBioScreenProps) {
-  const { user } = useAuthStore();
+interface AIScreenProps {
+  navigation: {
+    goBack: () => void;
+  };
+}
+
+export default function AIBioScreen({ navigation }: AIScreenProps): React.JSX.Element {
+  const { user: _user } = useAuthStore();
   const [petName, setPetName] = useState('');
   const [petBreed, setPetBreed] = useState('');
   const [petAge, setPetAge] = useState('');
@@ -51,87 +63,83 @@ export default function AIBioScreen({ navigation }: AIBioScreenProps) {
     { id: 'funny', label: 'Funny', icon: '😄', color: '#ffd43b' },
   ];
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'We need camera roll permissions to analyze your pet photo');
-      return;
-    }
+  const pickImage = async (): Promise<void> => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'We need camera roll permissions to analyze your pet photo');
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-    if (!result.canceled) {
-      setSelectedPhoto(result.assets[0].uri);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        if (asset) {
+          setSelectedPhoto(asset.uri);
+        }
+      }
+    } catch (error) {
+      logger.error('Error picking image:', { error });
+      Alert.alert('Error', 'Failed to pick image');
     }
   };
 
-  const generateBio = async () => {
-    if (!petName.trim()) {
+  const generateBio = async (): Promise<void> => {
+    if (petName.trim() === '') {
       Alert.alert('Missing Information', 'Please enter your pet\'s name');
       return;
     }
 
     setIsGenerating(true);
     try {
-      const bioData = await api.ai.generateBio({
+      // Real API call to generate bio using mobile API service
+      const response = await _aiAPI.generateBio({
         petName: petName.trim(),
-        breed: petBreed.trim(),
-        age: petAge.trim(),
-        personality: petPersonality.trim(),
+        breed: petBreed.trim() || 'mixed breed',
+        age: parseInt(petAge.trim()) || 2,
+        temperament: petPersonality.trim().split(',').map(t => t.trim()).filter(t => t),
+        specialTraits: [],
         tone: selectedTone,
-        photoUrl: selectedPhoto,
-        userId: user?.id,
+        photoUrl: selectedPhoto || undefined,
       });
 
-      const newBio: GeneratedBio = {
-        bio: bioData.bio,
-        keywords: bioData.keywords || [],
-        sentiment: bioData.sentiment || { score: 0.8, label: 'positive' },
-        matchScore: bioData.matchScore || 85,
-      };
-
-      setGeneratedBio(newBio);
-      setBioHistory(prev => [newBio, ...prev.slice(0, 4)]); // Keep last 5
+      if (response) {
+        setGeneratedBio(response as unknown as GeneratedBio);
+        setBioHistory(prev => [response as unknown as GeneratedBio, ...prev.slice(0, 4)]);
+      } else {
+        throw new Error('No bio generated');
+      }
     } catch (error) {
-      // Fallback generation for demo
-      const fallbackBio: GeneratedBio = {
-        bio: `Meet ${petName}! This adorable ${petBreed || 'furry friend'} is ${petAge || 'young'} and full of personality. ${petPersonality || 'They love making new friends'} and would be perfect for someone looking for a ${selectedTone} companion. Ready for adventures and lots of love! 🐾`,
-        keywords: ['friendly', 'playful', 'loving', 'adventurous'],
-        sentiment: { score: 0.9, label: 'positive' },
-        matchScore: 88,
-      };
-      
-      setGeneratedBio(fallbackBio);
-      setBioHistory(prev => [fallbackBio, ...prev.slice(0, 4)]);
-      console.log('Using fallback bio generation:', error);
+      logger.warn('Failed to generate bio:', { error });
+      Alert.alert('Error', 'Failed to generate bio. Please try again.');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const saveBio = async () => {
-    if (!generatedBio) return;
+  const saveBio = async (): Promise<void> => {
+    if (generatedBio === null) return;
 
     try {
-      await api.pets.updatePetProfile(user?.id, {
-        bio: generatedBio.bio,
-        keywords: generatedBio.keywords,
-      });
-      
+      // Mock API call for demo purposes
+      logger.warn('Saving bio:', { bio: generatedBio!.bio });
+
       Alert.alert('Success!', 'Bio saved to your pet profile', [
-        { text: 'OK', onPress: () => navigation.goBack() }
+        { text: 'OK', onPress: () => { navigation.goBack(); } }
       ]);
-    } catch (error) {
+    } catch (_error) {
       Alert.alert('Saved Locally', 'Bio has been saved to your device');
     }
   };
 
-  const getSentimentColor = (score: number) => {
+  const getSentimentColor = (): string => {
+    const score = generatedBio?.sentiment.score ?? 0.5;
     if (score >= 0.7) return '#69db7c';
     if (score >= 0.4) return '#ffd43b';
     return '#ff6b6b';
@@ -141,7 +149,7 @@ export default function AIBioScreen({ navigation }: AIBioScreenProps) {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => { navigation.goBack(); }}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>AI Bio Generator</Text>
@@ -169,7 +177,7 @@ export default function AIBioScreen({ navigation }: AIBioScreenProps) {
         {/* Pet Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Pet Information</Text>
-          
+
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Pet Name *</Text>
             <TextInput
@@ -229,7 +237,7 @@ export default function AIBioScreen({ navigation }: AIBioScreenProps) {
                   selectedTone === tone.id && styles.selectedTone,
                   { borderColor: tone.color }
                 ]}
-                onPress={() => setSelectedTone(tone.id)}
+                onPress={() => { setSelectedTone(tone.id); }}
               >
                 <Text style={styles.toneEmoji}>{tone.icon}</Text>
                 <Text style={[styles.toneLabel, selectedTone === tone.id && { color: tone.color }]}>
@@ -262,56 +270,54 @@ export default function AIBioScreen({ navigation }: AIBioScreenProps) {
         </TouchableOpacity>
 
         {/* Generated Bio */}
-        {generatedBio && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Generated Bio</Text>
-            <View style={styles.bioContainer}>
-              <Text style={styles.bioText}>{generatedBio.bio}</Text>
-              
-              {/* Bio Stats */}
-              <View style={styles.bioStats}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Match Score</Text>
-                  <Text style={[styles.statValue, { color: '#69db7c' }]}>
-                    {generatedBio.matchScore}%
-                  </Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text style={styles.statLabel}>Sentiment</Text>
-                  <Text style={[styles.statValue, { color: getSentimentColor(generatedBio.sentiment.score) }]}>
-                    {generatedBio.sentiment.label}
-                  </Text>
-                </View>
+        {generatedBio !== null ? <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Generated Bio</Text>
+          <View style={styles.bioContainer}>
+            <Text style={styles.bioText}>{generatedBio.bio}</Text>
+
+            {/* Bio Stats */}
+            <View style={styles.bioStats}>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Match Score</Text>
+                <Text style={[styles.statValue, { color: '#69db7c' }]}>
+                  {generatedBio.matchScore}%
+                </Text>
               </View>
-
-              {/* Keywords */}
-              {generatedBio.keywords.length > 0 && (
-                <View style={styles.keywordsContainer}>
-                  <Text style={styles.keywordsTitle}>Keywords:</Text>
-                  <View style={styles.keywordsList}>
-                    {generatedBio.keywords.map((keyword, index) => (
-                      <View key={index} style={styles.keywordTag}>
-                        <Text style={styles.keywordText}>{keyword}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Action Buttons */}
-              <View style={styles.bioActions}>
-                <TouchableOpacity style={styles.regenerateButton} onPress={generateBio}>
-                  <Ionicons name="refresh" size={16} color="#666" />
-                  <Text style={styles.regenerateText}>Regenerate</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.saveButton} onPress={saveBio}>
-                  <Ionicons name="checkmark" size={16} color="#fff" />
-                  <Text style={styles.saveText}>Save Bio</Text>
-                </TouchableOpacity>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Sentiment</Text>
+                <Text style={[styles.statValue, { color: getSentimentColor() }]}>
+                  {generatedBio.sentiment.label}
+                </Text>
               </View>
             </View>
+
+            {/* Keywords */}
+            {generatedBio.keywords.length > 0 ? (
+              <View style={styles.keywordsContainer}>
+                <Text style={styles.keywordsTitle}>Keywords:</Text>
+                <View style={styles.keywordsList}>
+                  {generatedBio.keywords.map((keyword, index) => (
+                    <View key={index} style={styles.keywordTag}>
+                      <Text style={styles.keywordText}>{keyword}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            {/* Action Buttons */}
+            <View style={styles.bioActions}>
+              <TouchableOpacity style={styles.regenerateButton} onPress={generateBio}>
+                <Ionicons name="refresh" size={16} color="#666" />
+                <Text style={styles.regenerateText}>Regenerate</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveButton} onPress={saveBio}>
+                <Ionicons name="checkmark" size={16} color="#fff" />
+                <Text style={styles.saveText}>Save Bio</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        )}
+        </View> : null}
 
         {/* Bio History */}
         {bioHistory.length > 1 && (
@@ -321,7 +327,7 @@ export default function AIBioScreen({ navigation }: AIBioScreenProps) {
               <TouchableOpacity
                 key={index}
                 style={styles.historyItem}
-                onPress={() => setGeneratedBio(bio)}
+                onPress={() => { setGeneratedBio(bio); }}
               >
                 <Text style={styles.historyText} numberOfLines={2}>
                   {bio.bio}

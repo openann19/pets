@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const pulsePinSchema = z.object({
+export const _pulsePinSchema = z.object({
   _id: z.string(),
   petId: z.string(),
   ownerId: z.string(),
@@ -10,7 +10,7 @@ export const pulsePinSchema = z.object({
   createdAt: z.string()
 });
 
-export const memoryNodeSchema = z.object({
+export const _memoryNodeSchema = z.object({
   _id: z.string(),
   matchId: z.string(),
   summary: z.string(),
@@ -19,7 +19,7 @@ export const memoryNodeSchema = z.object({
   createdAt: z.string()
 });
 
-export const suggestionEventSchema = z.object({
+export const _suggestionEventSchema = z.object({
   matchId: z.string(),
   senderId: z.string(),
   suggestionType: z.enum(['schedule_playdate','share_photo','share_location']),

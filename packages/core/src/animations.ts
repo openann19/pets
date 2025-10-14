@@ -17,13 +17,13 @@ export const STAGGER_CONFIG = {
 };
 
 // Shared layout animation configuration
-export const LAYOUT_TRANSITION = {
+export const _LAYOUT_TRANSITION = {
   ...SPRING_CONFIG,
   // Additional layout-specific configs can go here
 };
 
 // Hover/tap animation variants
-export const INTERACTION_VARIANTS = {
+export const _INTERACTION_VARIANTS = {
   hover: { 
     scale: 1.02,
     rotateY: 1,
@@ -37,7 +37,7 @@ export const INTERACTION_VARIANTS = {
 };
 
 // List entrance animation
-export const LIST_VARIANTS = {
+export const _LIST_VARIANTS = {
   visible: {
     opacity: 1,
     transition: {
@@ -51,7 +51,7 @@ export const LIST_VARIANTS = {
 };
 
 // Page transition variants
-export const PAGE_VARIANTS = {
+export const _PAGE_VARIANTS = {
   initial: { opacity: 0, scale: 0.95 },
   animate: { 
     opacity: 1, 

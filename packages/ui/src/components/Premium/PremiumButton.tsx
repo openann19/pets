@@ -6,10 +6,10 @@
 
 'use client';
 
-import React, { useRef, useState, useCallback } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { COLORS, GRADIENTS, SHADOWS, RADIUS } from '../../theme/design-system';
-import { transitions, hoverVariants, tapVariants } from '../../animations/premium-motion';
+import {  } from 'framer-motion';
+import React, { useCallback, useRef, useState } from 'react';
+import {  } from '../../animations/premium-motion';
+import {  } from '../../theme/design-system';
 
 interface PremiumButtonProps {
   children: React.ReactNode;
@@ -28,9 +28,29 @@ interface PremiumButtonProps {
   magneticEffect?: boolean;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
+
+  /**
+   * Accessible label for screen readers
+   */
+  'aria-label'?: string;
+
+  /**
+   * Whether the button is disabled for accessibility
+   */
+  'aria-disabled'?: boolean;
+
+  /**
+   * ARIA role override
+   */
+  role?: string;
+
+  /**
+   * Tab index for accessibility
+   */
+  tabIndex?: number;
 }
 
-export function PremiumButton({
+export const PremiumButton = ({
   children,
   onClick,
   variant = 'primary',
@@ -47,7 +67,7 @@ export function PremiumButton({
   magneticEffect = false,
   className = '',
   type = 'button',
-}: PremiumButtonProps) {
+}: PremiumButtonProps): JSX.Element => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [isPressed, setIsPressed] = useState(false);
   const [showParticles, setShowParticles] = useState(false);
@@ -78,7 +98,7 @@ export function PremiumButton({
     if (!sound || typeof window === 'undefined') return;
     
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -93,8 +113,8 @@ export function PremiumButton({
       
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.1);
-    } catch (error) {
-      console.debug('Audio feedback not available');
+    } catch {
+      // Audio feedback not available - silently fail
     }
   }, [sound]);
 
@@ -120,7 +140,7 @@ export function PremiumButton({
   }, [magneticEffect, x, y]);
 
   const handleMouseLeave = useCallback(() => {
-    if (magneticEffect) {
+    if (magneticEffect !== null && magneticEffect !== undefined) {
       x.set(0);
       y.set(0);
     }
@@ -133,16 +153,16 @@ export function PremiumButton({
     triggerHaptic('medium');
     triggerSound('press');
     
-    if (particles) {
+    if (particles !== null && particles !== undefined) {
       setShowParticles(true);
-      setTimeout(() => setShowParticles(false), 600);
+      setTimeout(() => { setShowParticles(false); }, 600);
     }
     
     onClick?.();
   }, [disabled, loading, onClick, triggerHaptic, triggerSound, particles]);
 
   // Get variant styles
-  const getVariantStyles = () => {
+  const getVariantStyles = (): Record<string, string | number | string[]> => {
     const variants = {
       primary: {
         background: GRADIENTS.primary,
@@ -190,7 +210,7 @@ export function PremiumButton({
   };
 
   // Get size styles
-  const getSizeStyles = () => {
+  const getSizeStyles = (): Record<string, string | number> => {
     const sizes = {
       sm: {
         padding: '8px 16px',
@@ -227,7 +247,7 @@ export function PremiumButton({
   return (
     <div className="relative inline-block">
       {/* Particle Effect */}
-      {showParticles && (
+      {showParticles !== undefined &&  (
         <div className="absolute inset-0 pointer-events-none">
           {[...Array(6)].map((_, i) => (
             <motion.div
@@ -258,6 +278,10 @@ export function PremiumButton({
       <motion.button
         ref={buttonRef}
         type={type}
+        aria-label={props['aria-label']}
+        aria-disabled={props['aria-disabled']}
+        role={props.role || 'button'}
+        tabIndex={props.tabIndex ?? 0}
         disabled={disabled || loading}
         onClick={handleClick}
         onMouseMove={handleMouseMove}
@@ -266,8 +290,8 @@ export function PremiumButton({
           triggerHaptic('light');
           triggerSound('hover');
         }}
-        onMouseDown={() => setIsPressed(true)}
-        onMouseUp={() => setIsPressed(false)}
+        onMouseDown={() => { setIsPressed(true); }}
+        onMouseUp={() => { setIsPressed(false); }}
         style={{
           x: magneticEffect ? springX : 0,
           y: magneticEffect ? springY : 0,
@@ -276,6 +300,7 @@ export function PremiumButton({
           width: fullWidth ? '100%' : 'auto',
           opacity: disabled ? 0.5 : 1,
           cursor: disabled ? 'not-allowed' : 'pointer',
+          outline: isPressed ? '2px solid var(--pm-primary)' : undefined,
         }}
         className={`
           relative inline-flex items-center justify-center
@@ -291,13 +316,13 @@ export function PremiumButton({
         transition={transitions.spring}
       >
         {/* Glow effect overlay */}
-        {glow && !disabled && (
+        {glow !== undefined &&  !disabled && (
           <motion.div
             className="absolute inset-0 rounded-inherit"
             initial={{ opacity: 0 }}
             whileHover={{ opacity: 1 }}
             style={{
-              background: variantStyles.background,
+              background: typeof variantStyles.background === 'string' ? variantStyles.background : 'currentColor',
               filter: 'blur(8px)',
               zIndex: -1,
             }}
@@ -306,7 +331,7 @@ export function PremiumButton({
         )}
 
         {/* Loading overlay */}
-        {loading && (
+        {loading !== undefined &&  (
           <motion.div
             className="absolute inset-0 rounded-inherit bg-black bg-opacity-20 flex items-center justify-center"
             initial={{ opacity: 0 }}
@@ -334,7 +359,7 @@ export function PremiumButton({
           }}
           transition={transitions.micro}
         >
-          {icon && iconPosition === 'left' && (
+          {icon !== undefined &&  iconPosition === 'left' && (
             <motion.span
               className="flex-shrink-0"
               whileHover={{ rotate: 10 }}
@@ -346,7 +371,7 @@ export function PremiumButton({
           
           <span>{children}</span>
           
-          {icon && iconPosition === 'right' && (
+          {icon !== undefined &&  iconPosition === 'right' && (
             <motion.span
               className="flex-shrink-0"
               whileHover={{ rotate: -10 }}

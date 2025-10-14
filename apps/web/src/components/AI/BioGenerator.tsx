@@ -1,23 +1,21 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  SparklesIcon, 
-  PhotoIcon, 
-  HeartIcon,
-  BoltIcon,
-  FireIcon,
-  StarIcon,
+import {
+  ArrowPathIcon,
   CheckCircleIcon,
-  ArrowPathIcon
+  FireIcon,
+  PhotoIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
-import { useAuthStore } from '../../stores/auth-store';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Textarea } from '@/components/ui/textarea';
 import { api } from '../../services/api';
 import { logger } from '../../services/logger';
+import { _useAuthStore as useAuthStore } from '../../stores/auth-store';
 
 const bioSchema = z.object({
   petName: z.string().min(1, 'Pet name is required'),
@@ -26,8 +24,8 @@ const bioSchema = z.object({
   age: z.number().min(0).max(30),
   personality: z.array(z.string()).min(1, 'Select at least one personality trait'),
   interests: z.array(z.string()).min(1, 'Select at least one interest'),
-  lookingFor: z.string().min(10, 'Tell us what you\'re looking for'),
-  tone: z.enum(['playful', 'serious', 'romantic', 'funny', 'mysterious'])
+  lookingFor: z.string().min(10, "Tell us what you're looking for"),
+  tone: z.enum(['playful', 'serious', 'romantic', 'funny', 'mysterious']),
 });
 
 type BioFormData = z.infer<typeof bioSchema>;
@@ -44,28 +42,30 @@ interface GeneratedBio {
   suggestions: string[];
 }
 
-export function BioGenerator() {
+export function BioGenerator(): JSX.Element {
   const { user } = useAuthStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedBio, setGeneratedBio] = useState<GeneratedBio | null>(null);
   const [selectedVersion, setSelectedVersion] = useState(0);
   const [bioHistory, setBioHistory] = useState<GeneratedBio[]>([]);
-  const [photoAnalysis, setPhotoAnalysis] = useState<any>(null);
+  const [photoAnalysis, setPhotoAnalysis] = useState<{ tags: string[]; confidence: number } | null>(
+    null,
+  );
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
-    formState: { errors, isValid }
+    formState: { errors, isValid },
   } = useForm<BioFormData>({
     resolver: zodResolver(bioSchema),
     mode: 'onChange',
     defaultValues: {
       personality: [],
       interests: [],
-      tone: 'playful'
-    }
+      tone: 'playful',
+    },
   });
 
   const personalityTraits = [
@@ -78,7 +78,7 @@ export function BioGenerator() {
     { value: 'loyal', label: 'Loyal', icon: '💙' },
     { value: 'protective', label: 'Protective', icon: '🛡️' },
     { value: 'social', label: 'Social', icon: '👥' },
-    { value: 'independent', label: 'Independent', icon: '🦁' }
+    { value: 'independent', label: 'Independent', icon: '🦁' },
   ];
 
   const interests = [
@@ -91,7 +91,7 @@ export function BioGenerator() {
     { value: 'training', label: 'Training', icon: '🎯' },
     { value: 'hiking', label: 'Hiking', icon: '🥾' },
     { value: 'socializing', label: 'Socializing', icon: '🐕' },
-    { value: 'cuddles', label: 'Cuddles', icon: '💕' }
+    { value: 'cuddles', label: 'Cuddles', icon: '💕' },
   ];
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,51 +102,51 @@ export function BioGenerator() {
     formData.append('photo', file);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/analyze-photo`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/api/ai/analyze-photo`, {
         method: 'POST',
         body: formData,
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('auth-token')}`,
+        },
       });
 
       if (response.ok) {
         const analysis = await response.json();
         setPhotoAnalysis(analysis);
-        
+
         // Auto-fill form based on photo analysis
         if (analysis.breed) setValue('breed', analysis.breed);
         if (analysis.estimatedAge) setValue('age', analysis.estimatedAge);
         if (analysis.suggestedTraits) {
-          const traits = analysis.suggestedTraits.filter((t: string) => 
-            personalityTraits.some(pt => pt.value === t)
+          const traits = analysis.suggestedTraits.filter((t: string) =>
+            personalityTraits.some((pt) => pt.value === t),
           );
           setValue('personality', traits);
         }
-        
+
         logger.info('Photo analysis completed', analysis);
       }
     } catch (error) {
-      logger.error('Photo analysis failed', error);
+      logger.error('Photo analysis failed', { error });
     }
   };
 
   const generateBio = async (data: BioFormData) => {
     setIsGenerating(true);
-    
+
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/generate-bio`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/api/ai/generate-bio`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
         },
         body: JSON.stringify({
           ...data,
           photoAnalysis,
           userId: user?.id,
-          previousBios: bioHistory.map(b => b.content)
-        })
+          previousBios: bioHistory.map((b) => b.content),
+        }),
       });
 
       if (response.ok) {
@@ -156,40 +156,40 @@ export function BioGenerator() {
           matchScore: result.matchScore || 85,
           keywords: result.keywords || [],
           sentiment: result.sentiment || { positive: 0.8, neutral: 0.15, negative: 0.05 },
-          suggestions: result.suggestions || []
+          suggestions: result.suggestions || [],
         };
-        
+
         setGeneratedBio(newBio);
-        setBioHistory(prev => [...prev, newBio]);
+        setBioHistory((prev) => [...prev, newBio]);
         logger.info('Bio generated successfully', { matchScore: newBio.matchScore });
       }
     } catch (error) {
-      logger.error('Bio generation failed', error);
+      logger.error('Bio generation failed', { error });
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const regenerateBio = () => {
+  const regenerateBio = (): void => {
     handleSubmit(generateBio)();
   };
 
   const saveBio = async () => {
     if (!generatedBio) return;
-    
+
     try {
       await api.updatePetProfile({
-        bio: generatedBio.content,
-        bioMetadata: {
-          generatedAt: new Date().toISOString(),
-          matchScore: generatedBio.matchScore,
-          keywords: generatedBio.keywords
-        }
+        description: generatedBio.content,
+        // bioMetadata: {
+        //   generatedAt: new Date().toISOString(),
+        //   matchScore: generatedBio.matchScore,
+        //   keywords: generatedBio.keywords
+        // }
       });
-      
+
       logger.info('Bio saved successfully');
     } catch (error) {
-      logger.error('Failed to save bio', error);
+      logger.error('Failed to save bio', { error });
     }
   };
 
@@ -210,7 +210,10 @@ export function BioGenerator() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(generateBio)} className="space-y-6">
+        <form
+          onSubmit={handleSubmit(generateBio)}
+          className="space-y-6"
+        >
           {/* Photo Upload Section */}
           <div className="bg-white rounded-2xl p-6 shadow-lg">
             <label className="block mb-4">
@@ -225,8 +228,8 @@ export function BioGenerator() {
                 className="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
               />
             </label>
-            
-            {photoAnalysis && (
+
+            {photoAnalysis !== undefined && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -234,8 +237,11 @@ export function BioGenerator() {
               >
                 <p className="text-sm font-semibold text-purple-700">Photo Analysis Complete!</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {photoAnalysis.detectedFeatures?.map((feature: string) => (
-                    <span key={feature} className="px-3 py-1 bg-white rounded-full text-xs">
+                  {photoAnalysis?.tags?.map((feature: string) => (
+                    <span
+                      key={feature}
+                      className="px-3 py-1 bg-white rounded-full text-xs"
+                    >
                       {feature}
                     </span>
                   ))}
@@ -253,7 +259,9 @@ export function BioGenerator() {
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none transition-colors"
                 placeholder="e.g., Max"
               />
-              {errors.petName && <p className="text-red-500 text-sm mt-1">{errors.petName.message}</p>}
+              {errors.petName !== undefined && (
+                <p className="text-red-500 text-sm mt-1">{errors.petName.message}</p>
+              )}
             </div>
 
             <div>
@@ -269,7 +277,9 @@ export function BioGenerator() {
                 <option value="rabbit">Rabbit 🐰</option>
                 <option value="other">Other 🐾</option>
               </select>
-              {errors.species && <p className="text-red-500 text-sm mt-1">{errors.species.message}</p>}
+              {errors.species !== undefined && (
+                <p className="text-red-500 text-sm mt-1">{errors.species.message}</p>
+              )}
             </div>
           </div>
 
@@ -277,7 +287,7 @@ export function BioGenerator() {
           <div>
             <label className="block text-gray-700 font-semibold mb-3">Personality Traits</label>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {personalityTraits.map(trait => {
+              {personalityTraits.map((trait) => {
                 const isSelected = watch('personality')?.includes(trait.value);
                 return (
                   <motion.label
@@ -285,8 +295,8 @@ export function BioGenerator() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className={`cursor-pointer p-3 rounded-xl border-2 transition-all ${
-                      isSelected 
-                        ? 'border-purple-500 bg-purple-50' 
+                      isSelected
+                        ? 'border-purple-500 bg-purple-50'
                         : 'border-gray-200 hover:border-purple-300'
                     }`}
                   >
@@ -304,14 +314,16 @@ export function BioGenerator() {
                 );
               })}
             </div>
-            {errors.personality && <p className="text-red-500 text-sm mt-2">{errors.personality.message}</p>}
+            {errors.personality !== undefined && (
+              <p className="text-red-500 text-sm mt-2">{errors.personality.message}</p>
+            )}
           </div>
 
           {/* Interests */}
           <div>
             <label className="block text-gray-700 font-semibold mb-3">Interests</label>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {interests.map(interest => {
+              {interests.map((interest) => {
                 const isSelected = watch('interests')?.includes(interest.value);
                 return (
                   <motion.label
@@ -319,8 +331,8 @@ export function BioGenerator() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className={`cursor-pointer p-3 rounded-xl border-2 transition-all ${
-                      isSelected 
-                        ? 'border-pink-500 bg-pink-50' 
+                      isSelected
+                        ? 'border-pink-500 bg-pink-50'
                         : 'border-gray-200 hover:border-pink-300'
                     }`}
                   >
@@ -338,21 +350,23 @@ export function BioGenerator() {
                 );
               })}
             </div>
-            {errors.interests && <p className="text-red-500 text-sm mt-2">{errors.interests.message}</p>}
+            {errors.interests !== undefined && (
+              <p className="text-red-500 text-sm mt-2">{errors.interests.message}</p>
+            )}
           </div>
 
           {/* Bio Tone */}
           <div>
             <label className="block text-gray-700 font-semibold mb-3">Bio Tone</label>
             <div className="flex gap-3 flex-wrap">
-              {['playful', 'serious', 'romantic', 'funny', 'mysterious'].map(tone => (
+              {['playful', 'serious', 'romantic', 'funny', 'mysterious'].map((tone) => (
                 <motion.label
                   key={tone}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={`cursor-pointer px-6 py-3 rounded-full border-2 transition-all capitalize ${
-                    watch('tone') === tone 
-                      ? 'border-purple-500 bg-purple-50' 
+                    watch('tone') === tone
+                      ? 'border-purple-500 bg-purple-50'
                       : 'border-gray-200 hover:border-purple-300'
                   }`}
                 >
@@ -370,13 +384,16 @@ export function BioGenerator() {
 
           {/* Looking For */}
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">What are you looking for?</label>
-            <textarea
+            <Textarea
               {...register('lookingFor')}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none transition-colors h-24 resize-none"
               placeholder="e.g., Looking for a playmate who loves adventures and belly rubs..."
+              className="focus:border-purple-500 min-h-[120px]"
+              aria-label="What are you looking for?"
+              aria-invalid={!!errors.lookingFor}
             />
-            {errors.lookingFor && <p className="text-red-500 text-sm mt-1">{errors.lookingFor.message}</p>}
+            {errors.lookingFor && (
+              <p className="mt-1 text-sm text-red-600">{errors.lookingFor.message}</p>
+            )}
           </div>
 
           {/* Generate Button */}
@@ -386,8 +403,8 @@ export function BioGenerator() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className={`w-full py-4 rounded-xl font-semibold text-white transition-all flex items-center justify-center ${
-              isValid 
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' 
+              isValid
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
                 : 'bg-gray-400 cursor-not-allowed'
             }`}
           >
@@ -407,7 +424,7 @@ export function BioGenerator() {
 
         {/* Generated Bio Display */}
         <AnimatePresence>
-          {generatedBio && (
+          {generatedBio !== undefined && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -420,7 +437,7 @@ export function BioGenerator() {
                   <div className="flex items-center bg-green-50 px-3 py-1 rounded-full">
                     <FireIcon className="h-4 w-4 text-green-600 mr-1" />
                     <span className="text-sm font-semibold text-green-600">
-                      {generatedBio.matchScore}% Match Score
+                      {generatedBio?.matchScore ?? 0}% Match Score
                     </span>
                   </div>
                 </div>
@@ -428,17 +445,22 @@ export function BioGenerator() {
 
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 mb-4">
                 <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                  {generatedBio.content}
+                  {generatedBio?.content ?? ''}
                 </p>
               </div>
 
               {/* Keywords */}
-              {generatedBio.keywords.length > 0 && (
+              {generatedBio?.keywords && generatedBio.keywords.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-sm font-semibold text-gray-600 mb-2">Keywords for Better Matches:</p>
+                  <p className="text-sm font-semibold text-gray-600 mb-2">
+                    Keywords for Better Matches:
+                  </p>
                   <div className="flex flex-wrap gap-2">
-                    {generatedBio.keywords.map(keyword => (
-                      <span key={keyword} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                    {generatedBio.keywords.map((keyword) => (
+                      <span
+                        key={keyword}
+                        className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm"
+                      >
                         {keyword}
                       </span>
                     ))}
@@ -452,22 +474,29 @@ export function BioGenerator() {
                 <div className="flex gap-4">
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-sm">Positive: {(generatedBio.sentiment.positive * 100).toFixed(0)}%</span>
+                    <span className="text-sm">
+                      Positive: {((generatedBio?.sentiment?.positive ?? 0) * 100).toFixed(0)}%
+                    </span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-gray-500 rounded-full mr-2"></div>
-                    <span className="text-sm">Neutral: {(generatedBio.sentiment.neutral * 100).toFixed(0)}%</span>
+                    <span className="text-sm">
+                      Neutral: {((generatedBio?.sentiment?.neutral ?? 0) * 100).toFixed(0)}%
+                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Suggestions */}
-              {generatedBio.suggestions.length > 0 && (
+              {generatedBio?.suggestions && generatedBio.suggestions.length > 0 && (
                 <div className="mb-4">
                   <p className="text-sm font-semibold text-gray-600 mb-2">AI Suggestions:</p>
                   <ul className="space-y-1">
                     {generatedBio.suggestions.map((suggestion, index) => (
-                      <li key={index} className="flex items-start">
+                      <li
+                        key={index}
+                        className="flex items-start"
+                      >
                         <CheckCircleIcon className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
                         <span className="text-sm text-gray-700">{suggestion}</span>
                       </li>
@@ -504,7 +533,9 @@ export function BioGenerator() {
         {/* Bio History */}
         {bioHistory.length > 1 && (
           <div className="mt-6">
-            <p className="text-sm font-semibold text-gray-600 mb-2">Previous Generations ({bioHistory.length})</p>
+            <p className="text-sm font-semibold text-gray-600 mb-2">
+              Previous Generations ({bioHistory.length})
+            </p>
             <div className="flex gap-2 overflow-x-auto">
               {bioHistory.map((bio, index) => (
                 <button
@@ -514,8 +545,8 @@ export function BioGenerator() {
                     setSelectedVersion(index);
                   }}
                   className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
-                    selectedVersion === index 
-                      ? 'bg-purple-600 text-white' 
+                    selectedVersion === index
+                      ? 'bg-purple-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >

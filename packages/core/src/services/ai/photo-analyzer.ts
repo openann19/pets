@@ -3,7 +3,7 @@
  * AI-powered pet photo analysis using Gemini Vision
  */
 
-import { getGeminiClient } from './gemini-client';
+import { _getGeminiClient } from './gemini-client';
 
 export interface PhotoAnalysisRequest {
   photoUrl: string;
@@ -32,7 +32,7 @@ export class PhotoAnalyzerService {
     const prompt = this.buildAnalysisPrompt(request.petType);
     
     try {
-      const gemini = getGeminiClient();
+      const gemini = _getGeminiClient();
       const response = await gemini.analyzeImage(request.photoUrl, prompt);
       
       return this.parseAnalysisResponse(response);
@@ -155,4 +155,4 @@ export class PhotoAnalyzerService {
 }
 
 // Export singleton
-export const photoAnalyzerService = new PhotoAnalyzerService();
+export const _photoAnalyzerService = new PhotoAnalyzerService();

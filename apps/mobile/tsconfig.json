@@ -1,36 +1,60 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "allowJs": true,
     "esModuleInterop": true,
     "jsx": "react-native",
-    "lib": ["es2017", "dom"],
-    "moduleResolution": "node",
+    "lib": [
+      "ES2023",
+      "DOM"
+    ],
+    "moduleResolution": "bundler",
     "noEmit": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "strict": false,
-    "target": "es2017",
+    // === STRICT 2025 TYPE CHECKING - NO COMPROMISES ===
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    // === ADDITIONAL STRICT SETTINGS ===
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    // === CODE QUALITY ===
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "target": "ES2022",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
-    "isolatedModules": false,
-    "types": ["jest"]
+    "isolatedModules": true,
+    "types": [
+      "jest",
+      "react-native"
+    ]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     "**/*.js",
-    "**/*.jsx"
+    "**/*.jsx",
+    "src/types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "src/components/**/*",
-    "src/contexts/**/*",
-    "src/services/**/*",
-    "src/screens/**/*",
-    "src/hooks/**/*",
-    "App.tsx"
+    "coverage",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**"
   ]
 }

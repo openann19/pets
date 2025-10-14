@@ -2,13 +2,17 @@ const express = require('express');
 const {
   getChatHistory,
   markMessagesRead,
-  getOnlineUsers
+  getOnlineUsers,
+  getMessages,
+  sendMessage
 } = require('../controllers/chatController');
 
 const router = express.Router();
 
 // Routes
 router.get('/history/:matchId', getChatHistory);
+router.get('/:matchId/messages', getMessages);
+router.post('/:matchId/messages', sendMessage);
 router.post('/read/:matchId', markMessagesRead);
 router.get('/online', getOnlineUsers);
 

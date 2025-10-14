@@ -1,8 +1,9 @@
 import React, { useRef, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { Message, User } from '../../types';
+import { motion, AnimatePresence } from 'framer-motion';
+import {} from '../../types';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
+import {} from '../providers/AppErrorBoundary';
 
 interface MessageListProps {
   messages: Message[];
@@ -14,7 +15,7 @@ interface MessageListProps {
   onScroll?: () => void;
 }
 
-const MessageList: React.FC<MessageListProps> = ({
+const MessageList = ({
   messages,
   currentUser,
   isLoading,
@@ -22,7 +23,7 @@ const MessageList: React.FC<MessageListProps> = ({
   typingUsers,
   onLoadMore,
   onScroll,
-}) => {
+}: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -32,7 +33,7 @@ const MessageList: React.FC<MessageListProps> = ({
   }, [messages]);
 
   // Handle scroll to load more messages
-  const handleScroll = () => {
+  const handleScroll = (): void => {
     const container = messagesContainerRef.current;
     if (container && container.scrollTop === 0 && hasMoreMessages && !isLoading) {
       onLoadMore();
@@ -41,13 +42,13 @@ const MessageList: React.FC<MessageListProps> = ({
   };
 
   return (
-    <div 
+    <div
       ref={messagesContainerRef}
       onScroll={handleScroll}
       className="flex-1 overflow-y-auto bg-gray-50 px-4 py-4"
     >
       {/* Load more indicator */}
-      {hasMoreMessages && (
+      {hasMoreMessages !== undefined && (
         <div className="text-center py-4">
           <button
             onClick={onLoadMore}
@@ -62,16 +63,19 @@ const MessageList: React.FC<MessageListProps> = ({
       {/* Messages */}
       <AnimatePresence initial={false}>
         {messages.map((message, index) => {
-          const isOwnMessage = typeof message.sender === 'object' 
-            ? message.sender._id === currentUser?._id 
-            : message.sender === currentUser?._id;
-          
-          const showAvatar = index === 0 || 
+          const isOwnMessage =
+            typeof message.sender === 'object'
+              ? message.sender._id === currentUser?._id
+              : message.sender === currentUser?._id;
+
+          const showAvatar =
+            index === 0 ||
             (typeof messages[index - 1]?.sender === 'object' && typeof message.sender === 'object'
               ? (messages[index - 1].sender as User)._id !== message.sender._id
-              : (typeof messages[index - 1]?.sender === 'string' && typeof message.sender === 'string')
-              ? messages[index - 1].sender !== message.sender
-              : true);
+              : typeof messages[index - 1]?.sender === 'string' &&
+                  typeof message.sender === 'string'
+                ? messages[index - 1].sender !== message.sender
+                : true);
 
           return (
             <MessageBubble
@@ -97,4 +101,4 @@ const MessageList: React.FC<MessageListProps> = ({
   );
 };
 
-export default MessageList;
+export default withErrorBoundary(MessageList);

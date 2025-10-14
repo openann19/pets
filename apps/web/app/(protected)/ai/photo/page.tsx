@@ -23,7 +23,7 @@ export default function AiPhotoPage() {
               <ArrowLeftIcon className="h-5 w-5 mr-2" />
               Back to Dashboard
             </Link>
-            
+
             <div className="flex items-center gap-3">
               <div className="flex items-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
                 <CameraIcon className="h-4 w-4 mr-2" />
@@ -47,7 +47,7 @@ export default function AiPhotoPage() {
           className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-8 text-white shadow-xl"
         >
           <h2 className="text-2xl font-bold mb-6">Powered by Advanced AI</h2>
-          
+
           <div className="grid md:grid-cols-2 gap-8">
             <div>
               <h3 className="font-semibold text-lg mb-3">🧬 Deep Learning Models</h3>
@@ -58,7 +58,7 @@ export default function AiPhotoPage() {
                 <li>• Custom CNN for health assessment</li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="font-semibold text-lg mb-3">📊 Real-time Analysis</h3>
               <ul className="space-y-2 text-sm opacity-90">
@@ -97,7 +97,8 @@ export default function AiPhotoPage() {
             <div className="text-3xl mb-3">📸</div>
             <h3 className="font-bold text-lg mb-2">Perfect Photo Tips</h3>
             <p className="text-gray-600 text-sm">
-              Use natural lighting, capture your pet at eye level, and ensure their full body is visible for best results.
+              Use natural lighting, capture your pet at eye level, and ensure their full body is
+              visible for best results.
             </p>
           </div>
 
@@ -105,7 +106,8 @@ export default function AiPhotoPage() {
             <div className="text-3xl mb-3">🎯</div>
             <h3 className="font-bold text-lg mb-2">Boost Match Rates</h3>
             <p className="text-gray-600 text-sm">
-              Photos with high quality scores get 3x more likes. Follow our AI recommendations to improve.
+              Photos with high quality scores get 3x more likes. Follow our AI recommendations to
+              improve.
             </p>
           </div>
 
@@ -113,7 +115,8 @@ export default function AiPhotoPage() {
             <div className="text-3xl mb-3">🔒</div>
             <h3 className="font-bold text-lg mb-2">Privacy Protected</h3>
             <p className="text-gray-600 text-sm">
-              Your photos are encrypted and never shared. AI processing happens securely with bank-level encryption.
+              Your photos are encrypted and never shared. AI processing happens securely with
+              bank-level encryption.
             </p>
           </div>
         </motion.div>

@@ -3,6 +3,8 @@
  * Smooth, delightful micro-interactions and transitions
  */
 
+import type { PremiumAnimations, GestureAnimations, AIAnimations } from '../types/animations';
+
 export const animations = {
   // === TIMING FUNCTIONS ===
   easing: {
@@ -222,11 +224,11 @@ export const animations = {
 };
 
 // === ANIMATION UTILITIES ===
-export const createTransition = (
+export const _createTransition = (
   property: string | string[],
   duration: number = animations.duration.normal,
   easing: string = animations.easing.smooth
-) => {
+): string => {
   const properties = Array.isArray(property) ? property : [property];
   return properties.map(prop => `${prop} ${duration}ms ${easing}`).join(', ');
 };
@@ -236,7 +238,7 @@ type KeyframeValue = string | number;
 type KeyframeStyles = Record<string, KeyframeValue>;
 type KeyframeFrames = Record<string, KeyframeStyles>;
 
-export const createKeyframes = (name: string, frames: KeyframeFrames): string => {
+export const _createKeyframes = (name: string, frames: KeyframeFrames): string => {
   const keyframeString = Object.entries(frames)
     .map(([key, value]) => {
       const styles = Object.entries(value)
@@ -261,12 +263,12 @@ interface AnimationConfig {
   [key: string]: unknown;
 }
 
-export const withDelay = (animation: AnimationConfig, delay: number): AnimationConfig => ({
+export const _withDelay = (animation: AnimationConfig, delay: number): AnimationConfig => ({
   ...animation,
   delay,
 });
 
-export const withStagger = (
+export const _withStagger = (
   animation: AnimationConfig, 
   index: number, 
   staggerDelay: number = animations.stagger.normal
@@ -274,5 +276,261 @@ export const withStagger = (
   ...animation,
   delay: (animation.delay || 0) + (index * staggerDelay),
 });
+
+// === PREMIUM ANIMATIONS FOR ALL USERS ===
+export const premiumAnimations: PremiumAnimations = {
+  // World-class animations available to everyone
+  worldClass: {
+    // Smooth, delightful micro-interactions
+    micro: {
+      button: {
+        from: { transform: 'scale(1)' },
+        to: { transform: 'scale(0.95)' },
+        duration: 100,
+        easing: animations.easing.smooth,
+      },
+      card: {
+        from: { transform: 'translateY(0) scale(1)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+        to: { transform: 'translateY(-8px) scale(1.02)', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' },
+        duration: 200,
+        easing: animations.easing.smooth,
+      },
+      input: {
+        from: { transform: 'scale(1)', borderColor: '#e5e7eb' },
+        to: { transform: 'scale(1.01)', borderColor: '#9333EA' },
+        duration: 150,
+        easing: animations.easing.smooth,
+      },
+    },
+    
+    // Smooth page transitions
+    transitions: {
+      fade: {
+        from: { opacity: 0 },
+        to: { opacity: 1 },
+        duration: 300,
+        easing: animations.easing.smooth,
+      },
+      slide: {
+        from: { opacity: 0, transform: 'translateY(20px)' },
+        to: { opacity: 1, transform: 'translateY(0)' },
+        duration: 400,
+        easing: animations.easing.bounce,
+      },
+      scale: {
+        from: { opacity: 0, transform: 'scale(0.9)' },
+        to: { opacity: 1, transform: 'scale(1)' },
+        duration: 350,
+        easing: animations.easing.bounce,
+      },
+    },
+    
+    // Celebration animations
+    celebrations: {
+      success: {
+        from: { opacity: 0, transform: 'scale(0.5) rotate(-10deg)' },
+        to: { opacity: 1, transform: 'scale(1.1) rotate(0deg)' },
+        duration: 600,
+        easing: animations.easing.elastic,
+      },
+      match: {
+        from: { opacity: 0, transform: 'scale(0) rotate(180deg)' },
+        to: { opacity: 1, transform: 'scale(1.2) rotate(0deg)' },
+        duration: 800,
+        easing: animations.easing.elastic,
+      },
+      achievement: {
+        from: { opacity: 0, transform: 'translateY(30px) scale(0.8)' },
+        to: { opacity: 1, transform: 'translateY(0) scale(1)' },
+        duration: 500,
+        easing: animations.easing.bounce,
+      },
+    },
+  },
+  
+  // Enhanced gesture animations
+  gestures: {
+    swipe: {
+      left: {
+        from: { transform: 'translateX(0) rotate(0deg)' },
+        to: { transform: 'translateX(-100%) rotate(-8deg)' },
+        duration: 300,
+        easing: animations.easing.ios,
+      },
+      right: {
+        from: { transform: 'translateX(0) rotate(0deg)' },
+        to: { transform: 'translateX(100%) rotate(8deg)' },
+        duration: 300,
+        easing: animations.easing.ios,
+      },
+      up: {
+        from: { transform: 'translateY(0) scale(1)' },
+        to: { transform: 'translateY(-100%) scale(0.9)' },
+        duration: 300,
+        easing: animations.easing.bounce,
+      },
+      down: {
+        from: { transform: 'translateY(0) scale(1)' },
+        to: { transform: 'translateY(100%) scale(0.9)' },
+        duration: 300,
+        easing: animations.easing.bounce,
+      },
+    },
+    
+    // Magnetic effects
+    magnetic: {
+      duration: 150,
+      easing: animations.easing.smooth,
+      threshold: 20,
+    },
+    
+    // Haptic feedback
+    haptic: {
+      light: [10],
+      medium: [20],
+      heavy: [30, 10, 30],
+    },
+  },
+};
+
+// === GESTURE ENHANCEMENTS ===
+export const gestureAnimations: GestureAnimations = {
+  swipe: {
+    left: {
+      from: { transform: 'translateX(0) rotate(0deg)' },
+      to: { transform: 'translateX(-100%) rotate(-5deg)' },
+      duration: 300,
+      easing: animations.easing.ios,
+    },
+    right: {
+      from: { transform: 'translateX(0) rotate(0deg)' },
+      to: { transform: 'translateX(100%) rotate(5deg)' },
+      duration: 300,
+      easing: animations.easing.ios,
+    },
+    up: {
+      from: { transform: 'translateY(0) scale(1)' },
+      to: { transform: 'translateY(-100%) scale(0.9)' },
+      duration: 300,
+      easing: animations.easing.bounce,
+    },
+    down: {
+      from: { transform: 'translateY(0) scale(1)' },
+      to: { transform: 'translateY(100%) scale(0.9)' },
+      duration: 300,
+      easing: animations.easing.bounce,
+    },
+  },
+  
+  // Premium gesture effects
+  premium: {
+    magnetic: {
+      duration: 150,
+      easing: animations.easing.smooth,
+      threshold: 20,
+    },
+    haptic: {
+      intensity: 'medium',
+      pattern: 'short',
+    },
+    particle: {
+      count: 15,
+      colors: ['#9333EA', '#EC4899', '#F59E0B'],
+      duration: 1000,
+    },
+  },
+};
+
+// === AI-POWERED ANIMATIONS ===
+export const aiAnimations: AIAnimations = {
+  matching: {
+    analysis: {
+      from: { opacity: 0, transform: 'scale(0.8)' },
+      to: { opacity: 1, transform: 'scale(1)' },
+      duration: 400,
+      easing: animations.easing.bounce,
+    },
+    result: {
+      high: {
+        from: { opacity: 0, transform: 'scale(0.5) rotate(-10deg)' },
+        to: { opacity: 1, transform: 'scale(1.2) rotate(0deg)' },
+        duration: 600,
+        easing: animations.easing.elastic,
+      },
+      medium: {
+        from: { opacity: 0, transform: 'translateY(20px)' },
+        to: { opacity: 1, transform: 'translateY(0)' },
+        duration: 400,
+        easing: animations.easing.smooth,
+      },
+      low: {
+        from: { opacity: 0, transform: 'scale(0.9)' },
+        to: { opacity: 1, transform: 'scale(1)' },
+        duration: 300,
+        easing: animations.easing.standard,
+      },
+    },
+  },
+  
+  // Computer vision animations
+  vision: {
+    scanning: {
+      duration: 2000,
+      easing: 'linear',
+      iterationCount: 'infinite',
+    },
+    detected: {
+      from: { opacity: 0, transform: 'scale(0) rotate(180deg)' },
+      to: { opacity: 1, transform: 'scale(1) rotate(0deg)' },
+      duration: 500,
+      easing: animations.easing.bounce,
+    },
+  },
+};
+
+// === PERFORMANCE MONITORING ===
+export const performanceAnimations = {
+  // Optimized animations for low-end devices
+  lightweight: {
+    fade: {
+      duration: 200,
+      easing: animations.easing.linear,
+    },
+    slide: {
+      duration: 250,
+      easing: animations.easing.standard,
+    },
+  },
+  
+  // High-performance animations
+  optimized: {
+    useTransform: true,
+    useOpacity: true,
+    avoidLayout: true,
+    preferCompositing: true,
+  },
+};
+
+// === ACCESSIBILITY ENHANCEMENTS ===
+export const accessibilityAnimations = {
+  // Respect user preferences
+  reducedMotion: {
+    duration: 0,
+    easing: 'linear',
+    effects: ['opacity'],
+  },
+  
+  // High contrast support
+  highContrast: {
+    duration: 100,
+    easing: animations.easing.sharp,
+  },
+  
+  // Screen reader announcements
+  announcements: {
+    delay: 100,
+    duration: 0,
+  },
+};
 
 export default animations;

@@ -1,22 +1,73 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    // === Language & Environment ===
+    "target": "ES2022",
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "baseUrl": ".",
+    "paths": {
+      "@pawfectmatch/core/*": [
+        "packages/core/src/"
+      ],
+      "@pawfectmatch/core/types": [
+        "packages/core/src/types.ts"
+      ],
+      "@pawfectmatch/ui/*": [
+        "packages/ui/src/"
+      ]
+    },
+    // === Module Resolution ===
     "allowImportingTsExtensions": false,
     "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
     "isolatedModules": true,
-    "noEmit": true,
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    // === Emit ===
+    "noEmit": true,
+    "incremental": true,
+    // === Type Checking - STRICTEST 2025 SETTINGS ===
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    // === Strict Mode Flags (enabled by strict: true, but explicit for clarity) ===
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    // === Code Quality ===
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    // === Performance ===
+    "skipLibCheck": true,
+    // === Other ===
+    "types": []
   },
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "**/*.cy.ts",
+    "**/*.cy.tsx",
+    "cypress",
+    "dist",
+    ".next",
+    "coverage"
+  ]
 }

@@ -1,127 +1,144 @@
+// Clean Next.js config for bundle optimization
+const path = require('path');
+
+const securityHeaders = [
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), geolocation=(self), payment=(self)' },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+  {
+    key: 'Content-Security-Policy',
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://js.stripe.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://via.placeholder.com",
+      "font-src 'self' data: https://fonts.gstatic.com",
+      "connect-src 'self' https://api.stripe.com https://res.cloudinary.com http://localhost:* ws://localhost:*",
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+      "media-src 'self' blob: https://res.cloudinary.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      "upgrade-insecure-requests"
+    ].join('; ')
+  },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  compress: true,
   poweredByHeader: false,
-  productionBrowserSourceMaps: false,
-  transpilePackages: ['@pawfectmatch/core', '@pawfectmatch/ui'],
-  
-  // Enable for production - keep disabled for dev speed
-  eslint: {
-    ignoreDuringBuilds: process.env.NODE_ENV === 'development',
-  },
-  typescript: {
-    ignoreBuildErrors: process.env.NODE_ENV === 'development',
-  },
-  
-  experimental: {
-    optimizeCss: true,
-    optimizePackageImports: ['framer-motion', '@heroicons/react', 'react-leaflet', 'zustand'],
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
-  },
-  
+  compiler: { removeConsole: process.env.NODE_ENV === 'production' },
+  transpilePackages: ['@pawfectmatch/ui'],
+  outputFileTracingRoot: path.join(__dirname, '../..'),
+
+  eslint: { ignoreDuringBuilds: false },
+  typescript: { ignoreBuildErrors: false },
+
   images: {
-    domains: ['images.unsplash.com', 'i.pravatar.cc'],
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-      },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-      },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'via.placeholder.com' },
+      { protocol: 'http', hostname: 'localhost' },
     ],
+    deviceSizes: [320, 420, 768, 1024, 1200, 1600, 1920, 2560, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 60,
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    minimumCacheTTL: 86400,
+    dangerouslyAllowSVG: false,
   },
-  
-  async headers() {
-    return [
-      {
-        source: '/((?!_next/static|_next/image|favicon.ico).*)',
-        headers: [
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on'
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block'
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin'
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self)'
-          }
-        ],
-      },
-    ];
-  },
-  
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `http://localhost:${process.env.BACKEND_PORT || 5000}/api/:path*`,
-      },
-    ];
-  },
-  
-  webpack: (config, { isServer, dev }) => {
-    // Production optimizations
+
+  // Webpack optimizations for bundle size reduction
+  webpack: (config, { dev, isServer, webpack }) => {
     if (!dev && !isServer) {
       config.optimization = {
         ...config.optimization,
         splitChunks: {
           chunks: 'all',
           cacheGroups: {
-            default: false,
-            vendors: false,
-            framework: {
-              name: 'framework',
-              chunks: 'all',
-              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
-              priority: 40,
-              enforce: true,
-            },
-            lib: {
+            vendor: {
               test: /[\\/]node_modules[\\/]/,
-              name(module) {
-                const match = module.context?.match?.(/[\\/]node_modules[\\/](.*?)([\\/]|$)/);
-                const packageName = match ? match[1] : 'vendor';
-                return `npm.${packageName.replace('@', '')}`;
-              },
-              priority: 30,
+              name: 'vendors',
+              chunks: 'all',
+              priority: 10,
             },
-            commons: {
-              name: 'commons',
-              minChunks: 2,
+            three: {
+              test: /[\\/]node_modules[\\/]three[\\/]/,
+              name: 'three',
+              chunks: 'all',
+              priority: 20,
+            },
+            framer: {
+              test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
+              name: 'framer-motion',
+              chunks: 'all',
+              priority: 20,
+            },
+            charts: {
+              test: /[\\/]node_modules[\\/](chart\.js|react-chartjs-2|recharts)[\\/]/,
+              name: 'charts',
+              chunks: 'all',
+              priority: 20,
+            },
+            maps: {
+              test: /[\\/]node_modules[\\/]leaflet[\\/]/,
+              name: 'maps',
+              chunks: 'all',
               priority: 20,
             },
           },
-          maxInitialRequests: 25,
-          minSize: 20000,
         },
       };
+
+      config.plugins.push(
+        new webpack.optimize.ModuleConcatenationPlugin()
+      );
     }
+
     return config;
+  },
+
+  experimental: {
+    optimizePackageImports: ['@heroicons/react', 'lucide-react', 'framer-motion'],
+    // Enable React Server Components optimizations
+    serverComponentsExternalPackages: ['@pawfectmatch/core'],
+    // Optimize CSS
+    optimizeCss: true,
+    // Enable optimized fonts
+    optimizeFonts: true,
+    // Reduce server startup time
+    optimizeServerReact: true,
+    // Enable experimental WebAssembly support for performance
+    webVitalsAttribution: ['CLS', 'FCP', 'FID', 'INP', 'LCP', 'TTFB'],
+  },
+
+  compress: true,
+
+  // Enable SWC minification for faster builds
+  swcMinify: true,
+
+  // Production optimizations
+  productionBrowserSourceMaps: false,
+
+  // HTTP/2 Server Push hints
+  generateBuildId: async () => {
+    // Use timestamp for cache busting
+    return `build_${Date.now()}`;
+  },
+
+  async headers() {
+    return [{ source: '/(.*)', headers: securityHeaders }];
+  },
+
+  async rewrites() {
+    return [{
+      source: '/api/:path*',
+      destination: `http://localhost:${process.env.BACKEND_PORT || 5000}/api/:path*`,
+    }];
   },
 };
 

@@ -4,9 +4,20 @@
  * Comprehensive types migrated from client/src/types
  */
 
+// Export account management types
+export * from './account';
+
+// Export API response types
+export * from './api-responses';
+
+// Export story types
+export * from './story';
+
 // User Types
 export interface User {
   _id: string;
+  id: string; // Alias for _id
+  activePetId?: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -15,6 +26,7 @@ export interface User {
   avatar?: string;
   bio?: string;
   phone?: string;
+  token?: string;
   location: {
     type: 'Point';
     coordinates: [number, number];
@@ -51,6 +63,42 @@ export interface User {
       seeWhoLiked: boolean;
       advancedFilters: boolean;
     };
+  };
+  streak?: {
+    current: number;
+    longest: number;
+    lastCheckIn?: string;
+  };
+  stats?: {
+    matches?: number;
+    messages?: number;
+    likes?: number;
+  };
+  twoFactorEnabled?: boolean;
+  privacySettings?: {
+    profileVisibility: 'everyone' | 'matches' | 'nobody';
+    showOnlineStatus: boolean;
+    showDistance: boolean;
+    showLastActive: boolean;
+    allowMessages: 'everyone' | 'matches' | 'nobody';
+    showReadReceipts: boolean;
+    incognitoMode: boolean;
+    shareLocation: boolean;
+  };
+  notificationPreferences?: {
+    enabled: boolean;
+    matches: boolean;
+    messages: boolean;
+    likes: boolean;
+    reminders: boolean;
+    quietHours: {
+      enabled: boolean;
+      start: string;
+      end: string;
+    };
+    frequency: 'instant' | 'batched' | 'daily';
+    sound: boolean;
+    vibration: boolean;
   };
   pets: string[];
   analytics: {
@@ -224,13 +272,15 @@ export interface Message {
   _id: string;
   sender: User;
   content: string;
-  messageType: 'text' | 'image' | 'location' | 'system';
+  messageType: 'text' | 'image' | 'location' | 'system' | 'voice' | 'video' | 'audio' | 'gif' | 'sticker';
   attachments?: Attachment[];
   readBy: ReadReceipt[];
   sentAt: string;
   editedAt?: string;
   isEdited: boolean;
   isDeleted: boolean;
+  duration?: number; // For voice/video messages
+  thumbnailUrl?: string; // For video messages
 }
 
 export interface Attachment {
@@ -323,6 +373,8 @@ export interface PetFilters {
   size?: string;
   gender?: string;
   breed?: string;
+  personalityTags?: string[];
+  excludeIds?: string[];
 }
 
 // Swipe Types
@@ -371,6 +423,10 @@ export type PaginatedResponse<T = unknown> = ApiResponse<{
   };
 }>;
 
+// Re-export socket event types
+export * from './moderation';
+export * from './socket';
+
 // UI Types
 export interface NotificationProps {
   type: 'success' | 'error' | 'warning' | 'info';
@@ -403,34 +459,235 @@ export interface SocketNotification {
   userId?: string;
 }
 
-// Constants
-export const SPECIES_OPTIONS = [
-  { value: 'dog', label: '🐕 Dog' },
-  { value: 'cat', label: '🐱 Cat' },
-  { value: 'bird', label: '🐦 Bird' },
-  { value: 'rabbit', label: '🐰 Rabbit' },
-  { value: 'other', label: '🐾 Other' },
-];
+// Shelter Types
+export interface Shelter {
+  _id: string;
+  name: string;
+  description?: string;
+  contactInfo: {
+    email: string;
+    phone?: string;
+    website?: string;
+    address: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+      country: string;
+      coordinates: [number, number];
+    };
+  };
+  verificationStatus: 'pending' | 'verified' | 'rejected' | 'suspended';
+  verificationDocuments?: {
+    businessLicense?: string;
+    nonProfitStatus?: string;
+    insurance?: string;
+    facilityPhotos?: string[];
+  };
+  operatingHours: WeeklySchedule;
+  capacity: {
+    current: number;
+    max: number;
+  };
+  specializations: string[]; // e.g., ['dogs', 'cats', 'rescue', 'foster']
+  services: string[]; // e.g., ['adoption', 'foster', 'medical', 'training']
+  socialMedia?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+  };
+  adoptionStats: {
+    totalAdoptions: number;
+    successRate: number;
+    averageWaitTime: number; // in days
+  };
+  policies: {
+    adoptionFee?: number;
+    applicationProcess?: string;
+    homeVisitRequired: boolean;
+    referencesRequired: number;
+    ageRestrictions?: {
+      minAge?: number;
+      maxAge?: number;
+    };
+  };
+  admins: string[]; // User IDs of shelter administrators
+  volunteers: string[]; // User IDs of volunteers
+  pets: string[]; // Pet IDs available for adoption
+  createdAt: string;
+  updatedAt: string;
+}
 
-export const SIZE_OPTIONS = [
-  { value: 'tiny', label: 'Tiny (0-10 lbs)' },
-  { value: 'small', label: 'Small (11-25 lbs)' },
-  { value: 'medium', label: 'Medium (26-60 lbs)' },
-  { value: 'large', label: 'Large (61-100 lbs)' },
-  { value: 'extra-large', label: 'Extra Large (100+ lbs)' },
-];
+export interface AdoptionApplication {
+  _id: string;
+  petId: string;
+  applicantId: string;
+  shelterId: string;
+  status: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'withdrawn' | 'completed';
+  submittedAt?: string;
+  reviewedAt?: string;
+  completedAt?: string;
 
-export const INTENT_OPTIONS = [
-  { value: 'adoption', label: '🏠 Adoption' },
-  { value: 'mating', label: '❤️ Mating' },
-  { value: 'playdate', label: '🎾 Playdate' },
-  { value: 'all', label: '🌟 All' },
-];
+  // Application data
+  personalInfo: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    dateOfBirth: string;
+    occupation?: string;
+    householdSize: number;
+    hasChildren: boolean;
+    childrenAges?: number[];
+  };
 
-export const PERSONALITY_TAGS = [
-  'friendly', 'energetic', 'calm', 'playful', 'shy', 'protective',
-  'good-with-kids', 'good-with-pets', 'good-with-strangers',
-  'trained', 'house-trained', 'leash-trained', 'crate-trained',
-  'vocal', 'quiet', 'independent', 'clingy', 'intelligent',
-  'gentle', 'active', 'lazy', 'social', 'aggressive', 'anxious'
-];
+  livingSituation: {
+    residenceType: 'house' | 'apartment' | 'condo' | 'mobile_home' | 'other';
+    ownership: 'own' | 'rent' | 'lease' | 'other';
+    yardType?: 'fenced' | 'unfenced' | 'no_yard' | 'shared';
+    landlordPermission?: boolean; // if renting
+    movePlans?: string; // any planned moves
+  };
+
+  petExperience: {
+    hasOwnedPets: boolean;
+    currentPets: CurrentPetInfo[];
+    previousPets: PreviousPetInfo[];
+    petPreferences: {
+      species: string[];
+      size: string[];
+      ageRange: {
+        min: number;
+        max: number;
+      };
+      specialNeeds: boolean;
+    };
+  };
+
+  lifestyle: {
+    dailySchedule: string;
+    exercisePlan: string;
+    aloneTime: string; // how long pet would be alone
+    vacationPlans: string;
+    budget: {
+      monthlyPetBudget: number;
+      emergencyFund: boolean;
+    };
+  };
+
+  references: AdoptionReference[];
+  homeVisit: {
+    scheduled: boolean;
+    scheduledDate?: string;
+    completed: boolean;
+    completedDate?: string;
+    notes?: string;
+  };
+
+  documents: {
+    idVerification?: string;
+    incomeProof?: string;
+    residenceProof?: string;
+    references?: string[];
+  };
+
+  aiInsights?: {
+    compatibilityScore: number;
+    riskFactors: string[];
+    recommendations: string[];
+    interviewQuestions?: string[];
+  };
+
+  notes?: string; // Internal shelter notes
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CurrentPetInfo {
+  name: string;
+  species: string;
+  age: number;
+  vaccinated: boolean;
+  spayedNeutered: boolean;
+}
+
+export interface PreviousPetInfo {
+  name: string;
+  species: string;
+  ownedFor: number; // years
+  reasonForChange: string;
+}
+
+export interface AdoptionReference {
+  name: string;
+  relationship: string;
+  phone: string;
+  email?: string;
+  knownFor: number; // years known
+  contacted: boolean;
+  response?: string;
+}
+
+export interface VirtualMeetup {
+  _id: string;
+  petId: string;
+  applicantId: string;
+  shelterId: string;
+  applicationId: string;
+  scheduledDate: string;
+  duration: number; // minutes
+  platform: 'zoom' | 'google_meet' | 'phone' | 'video_call';
+  meetingLink?: string;
+  phoneNumber?: string;
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  participants: {
+    shelter: string[]; // User IDs
+    applicant: string; // User ID
+  };
+  agenda: string[];
+  notes?: string;
+  followUpRequired: boolean;
+  rescheduleReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdoptionSuccessStory {
+  _id: string;
+  petId: string;
+  adopterId: string;
+  shelterId: string;
+  title: string;
+  story: string;
+  photos: string[];
+  adoptionDate: string;
+  featured: boolean;
+  testimonial?: string;
+  followUpUpdates?: FollowUpUpdate[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FollowUpUpdate {
+  date: string;
+  update: string;
+  photos?: string[];
+}
+
+// Pack Group Types
+export interface PackGroup {
+  _id: string;
+  name: string;
+  description: string;
+  location: string;
+  maxMembers: number;
+  currentMembers: number;
+  activityLevel: string;
+  meetingFrequency: string;
+  privacy: string;
+  tags: string[];
+  members: string[];
+  admins: string[];
+  createdAt: string;
+  updatedAt: string;
+}

@@ -1,21 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useCallback, useState } from 'react';
 
 interface PredictiveTypingConfig {
+  maxSuggestions: number;
+  minConfidence: number;
   contextWindow: number;
-  predictionDepth: number;
-  confidenceThreshold: number;
-}
-
-interface PredictionResult {
-  text: string;
-  confidence: number;
-  probability: number;
-  context: string[];
-  metadata: {
-    tokens: string[];
-    logProbability: number;
-    entropy: number;
-  };
+  learningRate: number;
 }
 
 interface LanguageModel {
@@ -26,7 +15,14 @@ interface LanguageModel {
   totalTokens: number;
 }
 
-export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
+interface Prediction {
+  text: string;
+  confidence: number;
+  probability: number;
+  context: string[];
+}
+
+export const usePredictiveTyping = (config: PredictiveTypingConfig = { maxSuggestions: 5, minConfidence: 0.5, contextWindow: 10, learningRate: 0.1 }) => {
   const [languageModel, setLanguageModel] = useState<LanguageModel>({
     vocabulary: new Map(),
     bigrams: new Map(),
@@ -34,9 +30,17 @@ export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
     contextModel: new Map(),
     totalTokens: 0,
   });
-
   const [isLearning, setIsLearning] = useState(false);
-  const [predictionCache, setPredictionCache] = useState<Map<string, PredictionResult[]>>(new Map());
+  const [predictionCache, setPredictionCache] = useState<Map<string, Prediction[]>>(new Map());
+
+  // Tokenize text into words and meaningful units
+  const tokenize = useCallback((text: string): string[] =>
+    text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
+      .split(/\s+/) // Split on whitespace
+      .filter((token) => token.length > 0) // Remove empty tokens
+    , []);
 
   // Build language model from training data
   const buildLanguageModel = useCallback((trainingTexts: string[]) => {
@@ -49,7 +53,7 @@ export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
     let totalTokens = 0;
 
     // Process each training text
-    trainingTexts.forEach(text => {
+    trainingTexts.forEach((text) => {
       const tokens = tokenize(text);
 
       tokens.forEach((token, index) => {
@@ -73,11 +77,13 @@ export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
         // Update context model
         if (index > 0) {
           const context = tokens[index - 1];
-          if (!contextModel.has(context)) {
+          if (context && !contextModel.has(context)) {
             contextModel.set(context, new Map());
           }
-          const contextMap = contextModel.get(context)!;
-          contextMap.set(token, (contextMap.get(token) || 0) + 1);
+          if (context) {
+            const contextMap = contextModel.get(context)!;
+            contextMap.set(token, (contextMap.get(token) || 0) + 1);
+          }
         }
       });
     });
@@ -91,247 +97,240 @@ export const usePredictiveTyping = (config: PredictiveTypingConfig) => {
     });
 
     setIsLearning(false);
-  }, []);
-
-  // Tokenize text into words and meaningful units
-  const tokenize = useCallback((text: string): string[] => {
-    return text
-      .toLowerCase()
-      .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
-      .split(/\s+/)
-      .filter(token => token.length > 0)
-      .slice(-config.contextWindow); // Keep only recent context
-  }, [config.contextWindow]);
-
-  // Calculate probability of a token given context
-  const getTokenProbability = useCallback((token: string, context: string[]): number => {
-    if (context.length === 0) {
-      return (languageModel.vocabulary.get(token) || 0) / languageModel.totalTokens;
-    }
-
-    const lastToken = context[context.length - 1];
-
-    // Try trigram probability first
-    if (context.length >= 2) {
-      const trigram = `${context[context.length - 2]} ${lastToken} ${token}`;
-      const trigramCount = languageModel.trigrams.get(trigram) || 0;
-
-      const bigram = `${context[context.length - 2]} ${lastToken}`;
-      const bigramCount = languageModel.bigrams.get(bigram) || 0;
-
-      if (bigramCount > 0) {
-        return trigramCount / bigramCount;
-      }
-    }
-
-    // Fall back to bigram probability
-    const bigram = `${lastToken} ${token}`;
-    const bigramCount = languageModel.bigrams.get(bigram) || 0;
-
-    if (bigramCount > 0) {
-      const singleCount = languageModel.vocabulary.get(lastToken) || 0;
-      return bigramCount / singleCount;
-    }
-
-    // Fall back to unigram probability
-    return (languageModel.vocabulary.get(token) || 0) / languageModel.totalTokens;
-  }, [languageModel]);
-
-  // Predict next words based on context
-  const predictNextWords = useCallback((contextText: string, maxPredictions: number = 5): PredictionResult[] => {
-    const cacheKey = `${contextText}-${maxPredictions}`;
-    const cached = predictionCache.get(cacheKey);
-
-    if (cached) {
-      return cached;
-    }
-
-    const tokens = tokenize(contextText);
-    const predictions: PredictionResult[] = [];
-
-    // Get all possible next tokens
-    const context = tokens.slice(-2); // Use last 2 tokens as context
-    const possibleTokens = new Set<string>();
-
-    // Add tokens from vocabulary
-    languageModel.vocabulary.forEach((_, token) => possibleTokens.add(token));
-
-    // Add tokens from context model
-    if (context.length > 0) {
-      const contextMap = languageModel.contextModel.get(context[context.length - 1]);
-      if (contextMap) {
-        contextMap.forEach((_, token) => possibleTokens.add(token));
-      }
-    }
-
-    // Calculate probabilities for each possible token
-    const tokenProbabilities: Array<{ token: string; probability: number }> = [];
-
-    possibleTokens.forEach(token => {
-      const probability = getTokenProbability(token, context);
-      if (probability > 0) {
-        tokenProbabilities.push({ token, probability });
-      }
-    });
-
-    // Sort by probability and take top predictions
-    tokenProbabilities
-      .sort((a, b) => b.probability - a.probability)
-      .slice(0, maxPredictions)
-      .forEach(({ token, probability }) => {
-        const confidence = Math.min(probability * 10, 1); // Scale to 0-1 confidence
-
-        predictions.push({
-          text: token,
-          confidence,
-          probability,
-          context: context,
-          metadata: {
-            tokens: [token],
-            logProbability: Math.log(probability),
-            entropy: -probability * Math.log(probability),
-          },
-        });
-      });
-
-    // Cache predictions
-    setPredictionCache(prev => new Map(prev).set(cacheKey, predictions));
-
-    return predictions;
-  }, [tokenize, getTokenProbability, languageModel, predictionCache, config.contextWindow]);
-
-  // Advanced prediction with beam search
-  const predictNextSequence = useCallback((contextText: string, sequenceLength: number = 3): PredictionResult[] => {
-    const tokens = tokenize(contextText);
-    const context = tokens.slice(-2);
-
-    let beams: Array<{
-      sequence: string[];
-      probability: number;
-      logProbability: number;
-    }> = [{ sequence: [], probability: 1, logProbability: 0 }];
-
-    // Beam search for sequence prediction
-    for (let step = 0; step < sequenceLength; step++) {
-      const newBeams: typeof beams = [];
-
-      beams.forEach(beam => {
-        const currentContext = [...context, ...beam.sequence];
-        const possibleTokens = new Set<string>();
-
-        languageModel.vocabulary.forEach((_, token) => possibleTokens.add(token));
-
-        if (currentContext.length > 0) {
-          const contextMap = languageModel.contextModel.get(currentContext[currentContext.length - 1]);
-          if (contextMap) {
-            contextMap.forEach((_, token) => possibleTokens.add(token));
-          }
-        }
-
-        possibleTokens.forEach(token => {
-          const probability = getTokenProbability(token, currentContext);
-          if (probability > 0) {
-            const newSequence = [...beam.sequence, token];
-            const newProbability = beam.probability * probability;
-            const newLogProbability = beam.logProbability + Math.log(probability);
-
-            newBeams.push({
-              sequence: newSequence,
-              probability: newProbability,
-              logProbability: newLogProbability,
-            });
-          }
-        });
-      });
-
-      // Keep top 5 beams
-      beams = newBeams
-        .sort((a, b) => b.probability - a.probability)
-        .slice(0, 5);
-    }
-
-    // Convert beams to prediction results
-    return beams.map(beam => ({
-      text: beam.sequence.join(' '),
-      confidence: Math.min(beam.probability * 10, 1),
-      probability: beam.probability,
-      context,
-      metadata: {
-        tokens: beam.sequence,
-        logProbability: beam.logProbability,
-        entropy: -beam.sequence.reduce((entropy, token) => {
-          const prob = getTokenProbability(token, [...context, ...beam.sequence.slice(0, -1)]);
-          return entropy - prob * Math.log(prob);
-        }, 0),
-      },
-    }));
-  }, [tokenize, getTokenProbability, languageModel]);
-
-  // Learn from user input in real-time
-  const learnFromInput = useCallback((input: string) => {
-    const tokens = tokenize(input);
-
-    // Update language model with new tokens
-    setLanguageModel(prev => {
-      const newVocabulary = new Map(prev.vocabulary);
-      const newBigrams = new Map(prev.bigrams);
-      const newTrigrams = new Map(prev.trigrams);
-      const newContextModel = new Map(prev.contextModel);
-
-      tokens.forEach((token, index) => {
-        // Update vocabulary
-        newVocabulary.set(token, (newVocabulary.get(token) || 0) + 1);
-
-        // Update bigrams
-        if (index > 0) {
-          const bigram = `${tokens[index - 1]} ${token}`;
-          newBigrams.set(bigram, (newBigrams.get(bigram) || 0) + 1);
-        }
-
-        // Update trigrams
-        if (index > 1) {
-          const trigram = `${tokens[index - 2]} ${tokens[index - 1]} ${token}`;
-          newTrigrams.set(trigram, (newTrigrams.get(trigram) || 0) + 1);
-        }
-
-        // Update context model
-        if (index > 0) {
-          const context = tokens[index - 1];
-          if (!newContextModel.has(context)) {
-            newContextModel.set(context, new Map());
-          }
-          const contextMap = newContextModel.get(context)!;
-          contextMap.set(token, (contextMap.get(token) || 0) + 1);
-        }
-      });
-
-      return {
-        vocabulary: newVocabulary,
-        bigrams: newBigrams,
-        trigrams: newTrigrams,
-        contextModel: newContextModel,
-        totalTokens: prev.totalTokens + tokens.length,
-      };
-    });
   }, [tokenize]);
 
-  // Get prediction confidence based on context
-  const getPredictionConfidence = useCallback((contextText: string): number => {
-    const predictions = predictNextWords(contextText, 1);
-    return predictions.length > 0 ? predictions[0].confidence : 0;
-  }, [predictNextWords]);
+  // Calculate n-gram probability
+  const calculateProbability = useCallback(
+    (context: string[], token: string): number => {
+      if (context.length === 0) {
+        // Unigram probability
+        const tokenCount = languageModel.vocabulary.get(token) || 0;
+        return tokenCount / languageModel.totalTokens;
+      }
 
-  // Clear prediction cache
-  const clearCache = useCallback(() => {
+      if (context.length === 1) {
+        // Bigram probability
+        const bigram = `${context[0]} ${token}`;
+        const bigramCount = languageModel.bigrams.get(bigram) || 0;
+        const contextCount = context[0] ? languageModel.vocabulary.get(context[0]) || 0 : 0;
+        return contextCount > 0 ? bigramCount / contextCount : 0;
+      }
+
+      if (context.length === 2) {
+        // Trigram probability
+        const trigram = `${context[0]} ${context[1]} ${token}`;
+        const trigramCount = languageModel.trigrams.get(trigram) || 0;
+        const bigram = `${context[0]} ${context[1]}`;
+        const bigramCount = languageModel.bigrams.get(bigram) || 0;
+        return bigramCount > 0 ? trigramCount / bigramCount : 0;
+      }
+
+      // Fallback to context model
+      const contextKey = context.join(' ');
+      const contextMap = languageModel.contextModel.get(contextKey);
+      if (!contextMap) return 0;
+
+      const tokenCount = contextMap.get(token) || 0;
+      const totalContextCount = Array.from(contextMap.values()).reduce(
+        (sum, count) => sum + count,
+        0,
+      );
+      return totalContextCount > 0 ? tokenCount / totalContextCount : 0;
+    },
+    [languageModel],
+  );
+
+  // Generate predictions based on context
+  const generatePredictions = useCallback(
+    (context: string[]): Prediction[] => {
+      const cacheKey = context.join('|');
+
+      // Check cache first
+      if (predictionCache.has(cacheKey)) {
+        return predictionCache.get(cacheKey)!;
+      }
+
+      const predictions: Prediction[] = [];
+      const processedTokens = new Set<string>();
+
+      // Get all possible next tokens from vocabulary
+      languageModel.vocabulary.forEach((_, token) => {
+        if (processedTokens.has(token)) return;
+
+        const probability = calculateProbability(context, token);
+        const confidence = Math.min(probability * 100, 1);
+
+        if (confidence >= config.minConfidence) {
+          predictions.push({
+            text: token,
+            confidence,
+            probability,
+            context: [...context],
+          });
+          processedTokens.add(token);
+        }
+      });
+
+      // Sort by confidence and limit results
+      predictions.sort((a, b) => b.confidence - a.confidence);
+      const limitedPredictions = predictions.slice(0, config.maxSuggestions);
+
+      // Cache the results
+      setPredictionCache((prev) => {
+        const newCache = new Map(prev);
+        newCache.set(cacheKey, limitedPredictions);
+        return newCache;
+      });
+
+      return limitedPredictions;
+    },
+    [languageModel, calculateProbability, config, predictionCache],
+  );
+
+  // Predict next word based on current text
+  const predictNext = useCallback(
+    (currentText: string): Prediction[] => {
+      const tokens = tokenize(currentText);
+      const context = tokens.slice(-config.contextWindow);
+      return generatePredictions(context);
+    },
+    [tokenize, generatePredictions, config.contextWindow],
+  );
+
+  // Learn from user input
+  const learnFromInput = useCallback(
+    (text: string) => {
+      const tokens = tokenize(text);
+
+      // Update vocabulary
+      tokens.forEach((token) => {
+        languageModel.vocabulary.set(token, (languageModel.vocabulary.get(token) || 0) + 1);
+      });
+
+      // Update bigrams
+      for (let i = 1; i < tokens.length; i++) {
+        const bigram = `${tokens[i - 1]} ${tokens[i]}`;
+        languageModel.bigrams.set(bigram, (languageModel.bigrams.get(bigram) || 0) + 1);
+      }
+
+      // Update trigrams
+      for (let i = 2; i < tokens.length; i++) {
+        const trigram = `${tokens[i - 2]} ${tokens[i - 1]} ${tokens[i]}`;
+        languageModel.trigrams.set(trigram, (languageModel.trigrams.get(trigram) || 0) + 1);
+      }
+
+      // Update context model
+      for (let i = 1; i < tokens.length; i++) {
+        const context = tokens[i - 1];
+        const token = tokens[i];
+        if (context && token && !languageModel.contextModel.has(context)) {
+          languageModel.contextModel.set(context, new Map());
+        }
+        if (context && token) {
+          const contextMap = languageModel.contextModel.get(context)!;
+          contextMap.set(token, (contextMap.get(token) || 0) + 1);
+        }
+      }
+
+      // Update total tokens
+      setLanguageModel((prev) => ({
+        ...prev,
+        totalTokens: prev.totalTokens + tokens.length,
+      }));
+
+      // Clear cache to force recalculation
+      setPredictionCache(new Map());
+    },
+    [tokenize, languageModel],
+  );
+
+  // Get typing suggestions for autocomplete
+  const getSuggestions = useCallback(
+    (partialWord: string, context: string[] = []): Prediction[] => {
+      const suggestions: Prediction[] = [];
+      const lowerPartial = partialWord.toLowerCase();
+
+      languageModel.vocabulary.forEach((_, token) => {
+        if (token.toLowerCase().startsWith(lowerPartial)) {
+          const probability = calculateProbability(context, token);
+          const confidence = Math.min(probability * 100, 1);
+
+          if (confidence >= config.minConfidence) {
+            suggestions.push({
+              text: token,
+              confidence,
+              probability,
+              context: [...context],
+            });
+          }
+        }
+      });
+
+      return suggestions
+        .sort((a, b) => b.confidence - a.confidence)
+        .slice(0, config.maxSuggestions);
+    },
+    [languageModel, calculateProbability, config],
+  );
+
+  // Clear all learned data
+  const clearModel = useCallback(() => {
+    setLanguageModel({
+      vocabulary: new Map(),
+      bigrams: new Map(),
+      trigrams: new Map(),
+      contextModel: new Map(),
+      totalTokens: 0,
+    });
     setPredictionCache(new Map());
   }, []);
 
+  // Export model for persistence
+  const exportModel = useCallback(() => ({
+    vocabulary: Array.from(languageModel.vocabulary.entries()),
+    bigrams: Array.from(languageModel.bigrams.entries()),
+    trigrams: Array.from(languageModel.trigrams.entries()),
+    contextModel: Array.from(languageModel.contextModel.entries()).map(([key, value]) => [
+      key,
+      Array.from(value.entries()),
+    ]),
+    totalTokens: languageModel.totalTokens,
+  }), [languageModel]);
+
+  // Import model from persisted data
+  const importModel = useCallback(
+    (data: {
+      vocabulary: [string, number][];
+      bigrams: [string, number][];
+      trigrams: [string, number][];
+      contextModel: [string, [string, number][]][];
+      totalTokens: number;
+    }) => {
+      setLanguageModel({
+        vocabulary: new Map(data.vocabulary),
+        bigrams: new Map(data.bigrams),
+        trigrams: new Map(data.trigrams),
+        contextModel: new Map(
+          data.contextModel.map(([key, value]: [string, [string, number][]]) => [
+            key,
+            new Map(value),
+          ]),
+        ),
+        totalTokens: data.totalTokens,
+      });
+      setPredictionCache(new Map());
+    },
+    [],
+  );
+
   return {
-    predictNextWords,
-    predictNextSequence,
+    predictNext,
+    getSuggestions,
     learnFromInput,
-    getPredictionConfidence,
-    clearCache,
+    buildLanguageModel,
+    clearModel,
+    exportModel,
+    importModel,
     languageModel,
     isLearning,
     predictionCache: Array.from(predictionCache.entries()),

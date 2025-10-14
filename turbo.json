@@ -1,6 +1,5 @@
 {
-  "$schema": "https://turbo.build/schema.v2.json",
-  "ui": "tui",
+  "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
@@ -22,6 +21,16 @@
       "outputs": [],
       "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
     },
+    "test:ci": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+    },
+    "test:critical": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+    },
     "test:integration": {
       "dependsOn": ["^build"],
       "outputs": []
@@ -33,12 +42,49 @@
     "lint": {
       "outputs": []
     },
-    "clean": {
-      "cache": false
+    "lint:check": {
+      "outputs": []
+    },
+    "lint:fix": {
+      "outputs": []
+    },
+    "format": {
+      "outputs": []
+    },
+    "format:check": {
+      "outputs": []
     },
     "type-check": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "bundle:check": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
+    "perf:check": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
+    "a11y:check": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
+    "deps:check": {
+      "outputs": []
+    },
+    "complexity:check": {
+      "outputs": []
+    },
+    "analyze:bundle": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
+    "clean": {
+      "cache": false
+    },
+    "clean:all": {
+      "cache": false
     },
     "@pawfectmatch/mobile#type-check": {
       "cache": false,

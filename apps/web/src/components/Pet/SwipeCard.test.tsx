@@ -1,8 +1,8 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react';
+import {} from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SwipeCard from './SwipeCard';
-import { Pet } from '../../types';
+import {} from '../../types';
 
 const mockPet: Pet = {
   _id: 'pet1',
@@ -33,7 +33,12 @@ const mockPet: Pet = {
 describe('SwipeCard Component', () => {
   it('renders pet information correctly', () => {
     const onSwipe = jest.fn();
-    const { getByText } = render(<SwipeCard pet={mockPet} onSwipe={onSwipe} />);
+    const { getByText } = render(
+      <SwipeCard
+        pet={mockPet}
+        onSwipe={onSwipe}
+      />,
+    );
 
     expect(getByText('Buddy')).toBeInTheDocument();
     expect(getByText('3 years')).toBeInTheDocument();
@@ -45,23 +50,35 @@ describe('SwipeCard Component', () => {
 
   it('calls onSwipe with "like" when like button is clicked', async () => {
     const onSwipe = jest.fn();
-    const { getByLabelText } = render(<SwipeCard pet={mockPet} onSwipe={onSwipe} style={{}} />);
+    const { getByLabelText } = render(
+      <SwipeCard
+        pet={mockPet}
+        onSwipe={onSwipe}
+        style={{}}
+      />,
+    );
     const likeButton = getByLabelText('Like button');
     fireEvent.click(likeButton);
-    
+
     // Wait for the timeout in handleButtonClick (200ms)
-    await new Promise(resolve => setTimeout(resolve, 250));
+    await new Promise((resolve) => setTimeout(resolve, 250));
     expect(onSwipe).toHaveBeenCalledWith('like');
   });
 
   it('calls onSwipe with "pass" when pass button is clicked', async () => {
     const onSwipe = jest.fn();
-    const { getByLabelText } = render(<SwipeCard pet={mockPet} onSwipe={onSwipe} style={{}} />);
+    const { getByLabelText } = render(
+      <SwipeCard
+        pet={mockPet}
+        onSwipe={onSwipe}
+        style={{}}
+      />,
+    );
     const passButton = getByLabelText('Pass button');
     fireEvent.click(passButton);
-    
+
     // Wait for the timeout in handleButtonClick (200ms)
-    await new Promise(resolve => setTimeout(resolve, 250));
+    await new Promise((resolve) => setTimeout(resolve, 250));
     expect(onSwipe).toHaveBeenCalledWith('pass');
   });
 

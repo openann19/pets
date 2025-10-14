@@ -5,14 +5,17 @@
 
 'use client';
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  ExclamationTriangleIcon, 
+import {
   ArrowPathIcon,
+  ChatBubbleLeftIcon,
+  ExclamationTriangleIcon,
   HomeIcon,
-  ChatBubbleLeftIcon 
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion'
+import { logger } from '@pawfectmatch/core';
+;
+import type { ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -43,6 +46,16 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     };
   }
 
+  private sanitizeErrorContent(content: string): string {
+    // Basic sanitization to prevent XSS
+    return content
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/\//g, '&#x2F;');
+  }
+
   static getDerivedStateFromError(error: Error): Partial<State> {
     return {
       hasError: true,
@@ -51,12 +64,12 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
 
     // Log error details
-    console.error('🚨 Error Boundary Caught:', error);
-    console.error('📍 Error Info:', errorInfo);
+    logger.error('🚨 Error Boundary Caught:', { error });
+    logger.error('📍 Error Info:', { errorInfo });
 
     // Send to monitoring service
     this.reportError(error, errorInfo);
@@ -91,15 +104,15 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(errorReport),
-        }).catch(err => {
-          console.warn('Failed to report error:', err);
+        }).catch((err) => {
+          logger.warn('Failed to report error:', { err });
         });
 
         // Store locally for debugging
         localStorage.setItem(`error_${this.state.errorId}`, JSON.stringify(errorReport));
       }
     } catch (reportingError) {
-      console.error('Failed to report error:', reportingError);
+      logger.error('Failed to report error:', { reportingError });
     }
   }
 
@@ -108,18 +121,21 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
       clearTimeout(this.retryTimeoutId);
     }
 
-    this.retryTimeoutId = setTimeout(() => {
-      this.setState(prevState => ({
-        hasError: false,
-        error: null,
-        errorInfo: null,
-        retryCount: prevState.retryCount + 1,
-      }));
-    }, 2000 * (this.state.retryCount + 1)); // Exponential backoff
+    this.retryTimeoutId = setTimeout(
+      () => {
+        this.setState((prevState) => ({
+          hasError: false,
+          error: null,
+          errorInfo: null,
+          retryCount: prevState.retryCount + 1,
+        }));
+      },
+      2000 * (this.state.retryCount + 1),
+    ); // Exponential backoff
   }
 
-  private handleRetry = () => {
-    this.setState(prevState => ({
+  private handleRetry = (): void => {
+    this.setState((prevState) => ({
       hasError: false,
       error: null,
       errorInfo: null,
@@ -127,21 +143,23 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     }));
   };
 
-  private handleGoHome = () => {
+  private handleGoHome = (): void => {
     if (typeof window !== 'undefined') {
       window.location.href = '/dashboard';
     }
   };
 
-  private handleReport = () => {
+  private handleReport = (): void => {
     if (typeof window !== 'undefined') {
       const subject = encodeURIComponent('PawfectMatch Error Report');
-      const body = encodeURIComponent(`Error ID: ${this.state.errorId}\nError: ${this.state.error?.message}`);
+      const body = encodeURIComponent(
+        `Error ID: ${this.state.errorId}\nError: ${this.state.error?.message}`,
+      );
       window.open(`mailto:support@pawfectmatch.com?subject=${subject}&body=${body}`);
     }
   };
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       // Custom fallback UI
       if (this.props.fallback) {
@@ -154,19 +172,19 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="max-w-md w-full text-center"
           >
             {/* Error Icon */}
             <motion.div
-              animate={{ 
+              animate={{
                 rotate: [0, 10, -10, 5, -5, 0],
-                scale: [1, 1.1, 1] 
+                scale: [1, 1.1, 1],
               }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity, 
-                repeatDelay: 3 
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatDelay: 3,
               }}
               className="mb-6"
             >
@@ -182,34 +200,35 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
               transition={{ delay: 0.2 }}
             >
               <h1 className="text-2xl font-bold text-gray-900 mb-3">
-                {this.props.level === 'critical' ? 'Something went wrong' : 'Oops! A hiccup occurred'}
+                {this.props.level === 'critical'
+                  ? 'Something went wrong'
+                  : 'Oops! A hiccup occurred'}
               </h1>
-              
+
               <p className="text-gray-600 mb-6 leading-relaxed">
-                {this.props.level === 'critical' 
+                {this.props.level === 'critical'
                   ? 'We encountered a critical error. Our team has been notified and will fix this soon.'
-                  : 'Don\'t worry! This happens sometimes. We\'ve automatically reported this issue.'
-                }
+                  : "Don't worry! This happens sometimes. We've automatically reported this issue."}
               </p>
 
               {/* Error Details (Development only) */}
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <motion.details
-                  className="mb-6 text-left bg-gray-100 rounded-lg p-4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  <summary className="cursor-pointer font-medium text-gray-700 mb-2">
-                    Error Details (Dev Mode)
-                  </summary>
-                  <pre className="text-xs text-gray-600 overflow-auto max-h-32">
-                    {this.state.error.message}
-                    {'\n\n'}
-                    {this.state.error.stack}
-                  </pre>
-                </motion.details>
-              )}
+              {process.env.NODE_ENV === 'development' && this.state.error ? <motion.details
+                className="mb-6 text-left bg-gray-100 rounded-lg p-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                <summary className="cursor-pointer font-medium text-gray-700 mb-2">
+                  Error Details (Dev Mode)
+                </summary>
+                <pre className="text-xs text-gray-600 overflow-auto max-h-32">
+                  {this.state.error ? this.sanitizeErrorContent(this.state.error.message) : ''}
+                  {'\n\n'}
+                  {this.state.error
+                    ? this.sanitizeErrorContent(this.state.error.stack || '')
+                    : ''}
+                </pre>
+              </motion.details> : null}
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -272,7 +291,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
             <motion.div
               className="absolute top-4 right-4 text-gray-300"
               animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
             >
               🐾
             </motion.div>
@@ -284,7 +303,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 
-  componentWillUnmount() {
+  override componentWillUnmount() {
     if (this.retryTimeoutId) {
       clearTimeout(this.retryTimeoutId);
     }
@@ -294,7 +313,7 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
 // ====== ERROR BOUNDARY FACTORY ======
 export const withErrorBoundary = <P extends object>(
   Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<Props, 'children'>
+  errorBoundaryProps?: Omit<Props, 'children'>,
 ) => {
   const WrappedComponent = (props: P) => (
     <EnhancedErrorBoundary {...errorBoundaryProps}>
@@ -307,9 +326,9 @@ export const withErrorBoundary = <P extends object>(
 };
 
 // ====== HOOK FOR ERROR REPORTING ======
-export const useErrorReporting = () => {
-  const reportError = React.useCallback((error: Error, context?: Record<string, any>) => {
-    console.error('🚨 Manual Error Report:', error);
+export const useErrorReporter = (): { reportError: (error: Error, context?: Record<string, unknown>) => void } => {
+  const reportError = React.useCallback((error: Error, context?: Record<string, unknown>) => {
+    logger.error('🚨 Manual Error Report:', { error });
 
     try {
       const errorReport = {
@@ -326,12 +345,11 @@ export const useErrorReporting = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(errorReport),
-      }).catch(err => {
-        console.warn('Failed to report error:', err);
+      }).catch((err) => {
+        logger.warn('Failed to report error:', { err });
       });
-
     } catch (reportingError) {
-      console.error('Failed to report error:', reportingError);
+      logger.error('Failed to report error:', { reportingError });
     }
   }, []);
 

@@ -1,23 +1,25 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { logger } from '@pawfectmatch/core';
+import { BlurView } from 'expo-blur';
+import { Camera, CameraView } from 'expo-camera';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  Animated,
-  StatusBar,
   Alert,
-  Platform,
+  Animated,
+  Dimensions,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera, CameraType } from 'expo-camera';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
-import Svg, { Path, Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 import { useTheme } from '../contexts/ThemeContext';
+import type { AIScreenProps } from '../navigation/types';
+import { secureStorage } from '../utils/secureStorage';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -32,20 +34,11 @@ interface ScentTrail {
   isActive: boolean;
 }
 
-interface ARScentTrailsScreenProps {
-  navigation: any;
-  route?: {
-    params?: {
-      initialLocation?: { latitude: number; longitude: number };
-    };
-  };
-}
+export default function ARScentTrailsScreen({ navigation, route }: AIScreenProps): React.JSX.Element {
+  const { isDark: _isDark, colors: _colors } = useTheme();
 
-export default function ARScentTrailsScreen({ navigation, route }: ARScentTrailsScreenProps) {
-  const { isDark, colors } = useTheme();
-  
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [cameraType, setCameraType] = useState(CameraType.back);
+  const [cameraType, setCameraType] = useState<'back' | 'front'>('back');
   const [isScanning, setIsScanning] = useState(true);
   const [trails, setTrails] = useState<ScentTrail[]>([]);
   const [selectedTrail, setSelectedTrail] = useState<ScentTrail | null>(null);
@@ -53,7 +46,7 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
 
   // Animation refs
   const scanAnimation = useRef(new Animated.Value(0)).current;
-  const trailAnimations = useRef<{ [key: string]: Animated.Value }>({}).current;
+  const trailAnimations = useRef<Record<string, any>>({}).current;
   const pulseAnimation = useRef(new Animated.Value(0)).current;
   const fadeInAnimation = useRef(new Animated.Value(0)).current;
 
@@ -61,11 +54,11 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
     requestCameraPermission();
     initializeTrails();
     startAnimations();
-    
+
     StatusBar.setBarStyle('light-content');
-    
+
     return () => {
-      StatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content');
+      StatusBar.setBarStyle(_isDark ? 'light-content' : 'dark-content');
     };
   }, []);
 
@@ -73,7 +66,7 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
     try {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
-      
+
       if (status !== 'granted') {
         Alert.alert(
           'Camera Permission Required',
@@ -85,72 +78,78 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
         );
       }
     } catch (error) {
-      console.error('Camera permission error:', error);
+      logger.error('Camera permission error:', { error });
       setHasPermission(false);
     }
   };
 
-  const initializeTrails = () => {
-    // Simulate discovering scent trails
-    const mockTrails: ScentTrail[] = [
-      {
-        id: 'trail_1',
-        petName: 'Luna',
-        petType: 'dog',
-        path: [
-          { x: screenWidth * 0.1, y: screenHeight * 0.8 },
-          { x: screenWidth * 0.3, y: screenHeight * 0.6 },
-          { x: screenWidth * 0.5, y: screenHeight * 0.4 },
-          { x: screenWidth * 0.7, y: screenHeight * 0.3 },
-          { x: screenWidth * 0.9, y: screenHeight * 0.2 },
-        ],
-        timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
-        intensity: 0.8,
-        color: '#FF69B4',
+  const initializeTrails = async () => {
+    try {
+      // Fetch scent trail data from the API
+      const initialLocation = (route?.params as any)?.initialLocation || { latitude: 0, longitude: 0 };
+      const response = await fetch(`${process.env['API_URL'] || 'https://api.pawfectmatch.com'}/api/ar/scent-trails`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Include auth token if available
+          'Authorization': `Bearer ${await secureStorage.getItem('auth-token')}`,
+        },
+        body: JSON.stringify({
+          latitude: initialLocation.latitude,
+          longitude: initialLocation.longitude,
+          radius: 500, // meters
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      await response.json();
+
+      // Generate random trails for demo purposes
+      const demoTrails: ScentTrail[] = Array.from({ length: 5 }, (_, i) => ({
+        id: `trail-${i}`,
+        petName: (['Buddy', 'Lucy', 'Max', 'Bella', 'Charlie'][i])!,
+        petType: i % 2 === 0 ? 'dog' : 'cat',
+        path: Array.from({ length: 10 }, (__, _j) => ({
+          x: Math.random() * screenWidth,
+          y: Math.random() * screenHeight,
+        })),
+        timestamp: new Date().toISOString(),
+        intensity: Math.random(),
+        color: `hsl(${Math.random() * 360}, 70%, 50%)`,
         isActive: true,
-      },
-      {
-        id: 'trail_2',
-        petName: 'Buddy',
-        petType: 'dog',
-        path: [
-          { x: screenWidth * 0.2, y: screenHeight * 0.9 },
-          { x: screenWidth * 0.4, y: screenHeight * 0.7 },
-          { x: screenWidth * 0.6, y: screenHeight * 0.5 },
-          { x: screenWidth * 0.8, y: screenHeight * 0.4 },
-        ],
-        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-        intensity: 0.6,
-        color: '#4ECDC4',
-        isActive: false,
-      },
-      {
-        id: 'trail_3',
-        petName: 'Max',
-        petType: 'cat',
-        path: [
-          { x: screenWidth * 0.15, y: screenHeight * 0.7 },
-          { x: screenWidth * 0.25, y: screenHeight * 0.5 },
-          { x: screenWidth * 0.45, y: screenHeight * 0.3 },
-          { x: screenWidth * 0.65, y: screenHeight * 0.25 },
-          { x: screenWidth * 0.85, y: screenHeight * 0.15 },
-        ],
-        timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1 hour ago
-        intensity: 0.4,
-        color: '#FFD700',
-        isActive: false,
-      },
-    ];
+      }));
 
-    // Initialize animations for each trail
-    mockTrails.forEach(trail => {
-      trailAnimations[trail.id] = new Animated.Value(0);
-    });
+      setTrails(demoTrails);
 
-    setTrails(mockTrails);
+      // Initialize animations for each trail
+      demoTrails.forEach(trail => {
+        trailAnimations[trail.id] = new Animated.Value(0);
+      });
+
+    } catch (error) {
+      logger.error('Failed to initialize scent trails:', { error });
+      // Fallback to demo data if API fails
+      const demoTrails: ScentTrail[] = Array.from({ length: 3 }, (_, i) => ({
+        id: `demo-trail-${i}`,
+        petName: (['Demo Dog', 'Demo Cat', 'Demo Pup'][i])!,
+        petType: i % 2 === 0 ? 'dog' : 'cat',
+        path: Array.from({ length: 10 }, (__, _j) => ({
+          x: Math.random() * screenWidth,
+          y: Math.random() * screenHeight,
+        })),
+        timestamp: new Date().toISOString(),
+        intensity: Math.random(),
+        color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+        isActive: true,
+      }));
+      setTrails(demoTrails);
+    }
   };
 
-  const startAnimations = () => {
+  const startAnimations = (): void => {
     // Fade in animation
     Animated.timing(fadeInAnimation, {
       toValue: 1,
@@ -191,23 +190,23 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
     ).start();
 
     // Staggered trail animations
-    trails.forEach((trail, index) => {
+    trails.forEach((trail, _index) => {
       setTimeout(() => {
         Animated.timing(trailAnimations[trail.id], {
           toValue: 1,
           duration: 2000,
           useNativeDriver: true,
         }).start();
-      }, index * 500);
+      }, _index * 500);
     });
   };
 
   const startScanning = useCallback(() => {
     setIsScanning(true);
     setScanProgress(0);
-    
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+
     // Simulate scanning progress
     const progressInterval = setInterval(() => {
       setScanProgress(prev => {
@@ -225,7 +224,7 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
   const selectTrail = useCallback((trail: ScentTrail) => {
     setSelectedTrail(trail);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+
     // Animate trail selection
     Animated.sequence([
       Animated.timing(trailAnimations[trail.id], {
@@ -241,11 +240,11 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
     ]).start();
   }, [trailAnimations]);
 
-  const formatTimeAgo = (timestamp: string) => {
+  const formatTimeAgo = (timestamp: string): string => {
     const now = new Date();
     const time = new Date(timestamp);
     const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 60) {
       return `${diffInMinutes} min ago`;
     } else {
@@ -254,72 +253,70 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
     }
   };
 
-  const generateSVGPath = (points: { x: number; y: number }[]) => {
+  const generateSVGPath = (points: { x: number; y: number }[]): string => {
     if (points.length < 2) return '';
-    
-    let path = `M ${points[0].x} ${points[0].y}`;
-    
+
+    let path = `M ${points[0]!.x} ${points[0]!.y}`;
+
     for (let i = 1; i < points.length; i++) {
-      const prevPoint = points[i - 1];
-      const currentPoint = points[i];
-      
+      const prevPoint = points[i - 1]!;
+      const currentPoint = points[i]!;
+
       // Create smooth curves using quadratic bezier
       const controlX = (prevPoint.x + currentPoint.x) / 2;
       const controlY = (prevPoint.y + currentPoint.y) / 2;
-      
+
       path += ` Q ${controlX} ${controlY} ${currentPoint.x} ${currentPoint.y}`;
     }
-    
+
     return path;
   };
 
-  const renderScentTrails = () => {
-    return (
-      <Svg style={StyleSheet.absoluteFillObject} width={screenWidth} height={screenHeight}>
-        <Defs>
-          {trails.map(trail => (
-            <SvgLinearGradient key={`gradient-${trail.id}`} id={`gradient-${trail.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor={trail.color} stopOpacity={trail.intensity * 0.8} />
-              <Stop offset="50%" stopColor={trail.color} stopOpacity={trail.intensity} />
-              <Stop offset="100%" stopColor={trail.color} stopOpacity={trail.intensity * 0.3} />
-            </SvgLinearGradient>
-          ))}
-        </Defs>
-        
-        {trails.map((trail, index) => {
-          const pathData = generateSVGPath(trail.path);
-          const animatedValue = trailAnimations[trail.id] || new Animated.Value(0);
-          
-          return (
-            <Animated.View key={trail.id} style={{ opacity: animatedValue }}>
-              <Path
-                d={pathData}
-                stroke={`url(#gradient-${trail.id})`}
-                strokeWidth={trail.isActive ? 6 : 4}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeDasharray={trail.isActive ? undefined : "10,5"}
+  const renderScentTrails = () => (
+    <Svg style={StyleSheet.absoluteFillObject} width={screenWidth} height={screenHeight}>
+      <Defs>
+        {trails.map(trail => (
+          <SvgLinearGradient key={`gradient-${trail.id}`} id={`gradient-${trail.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor={trail.color} stopOpacity={trail.intensity * 0.8} />
+            <Stop offset="50%" stopColor={trail.color} stopOpacity={trail.intensity} />
+            <Stop offset="100%" stopColor={trail.color} stopOpacity={trail.intensity * 0.3} />
+          </SvgLinearGradient>
+        ))}
+      </Defs>
+
+      {trails.map((trail, _index) => {
+        const pathData = generateSVGPath(trail.path);
+        const animatedValue = trailAnimations[trail.id] || new Animated.Value(0);
+
+        return (
+          <Animated.View key={trail.id} style={{ opacity: animatedValue as any }}>
+            <Path
+              d={pathData}
+              stroke={`url(#gradient-${trail.id})`}
+              strokeWidth={trail.isActive ? 6 : 4}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              {...(trail.isActive ? {} : { strokeDasharray: [10, 5] as const })}
+            />
+
+            {/* Trail points */}
+            {trail.path.map((point, pointIndex) => (
+              <Circle
+                key={`${trail.id}-point-${pointIndex}`}
+                cx={point.x}
+                cy={point.y}
+                r={trail.isActive && pointIndex === trail.path.length - 1 ? 8 : 4}
+                fill={trail.color}
+                opacity={trail.intensity}
+                onPress={() => selectTrail(trail)}
               />
-              
-              {/* Trail points */}
-              {trail.path.map((point, pointIndex) => (
-                <Circle
-                  key={`${trail.id}-point-${pointIndex}`}
-                  cx={point.x}
-                  cy={point.y}
-                  r={trail.isActive && pointIndex === trail.path.length - 1 ? 8 : 4}
-                  fill={trail.color}
-                  opacity={trail.intensity}
-                  onPress={() => selectTrail(trail)}
-                />
-              ))}
-            </Animated.View>
-          );
-        })}
-      </Svg>
-    );
-  };
+            ))}
+          </Animated.View>
+        );
+      })}
+    </Svg>
+  );
 
   const renderScanningOverlay = () => {
     if (!isScanning) return null;
@@ -331,11 +328,11 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
 
     return (
       <Animated.View style={styles.scanningOverlay}>
-        <Animated.View 
+        <Animated.View
           style={[
             styles.scanLine,
             {
-              transform: [{ translateY: scanLineY }],
+              transform: [{ translateY: scanLineY as any }],
             },
           ]}
         >
@@ -346,7 +343,7 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
             style={styles.scanLineGradient}
           />
         </Animated.View>
-        
+
         <View style={styles.scanningInfo}>
           <BlurView intensity={20} style={styles.scanningInfoBlur}>
             <Text style={styles.scanningText}>Scanning for scent trails...</Text>
@@ -364,7 +361,7 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
     if (!selectedTrail) return null;
 
     return (
-      <Animated.View style={[styles.trailInfo, { opacity: fadeInAnimation }]}>
+      <Animated.View style={[styles.trailInfo, { opacity: fadeInAnimation as any }]}>
         <BlurView intensity={30} style={styles.trailInfoBlur}>
           <View style={styles.trailInfoHeader}>
             <View style={[styles.trailColorDot, { backgroundColor: selectedTrail.color }]} />
@@ -379,23 +376,23 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
               <Ionicons name="close" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.trailStats}>
             <View style={styles.trailStat}>
               <Text style={styles.trailStatLabel}>Intensity</Text>
               <View style={styles.intensityBar}>
-                <View 
+                <View
                   style={[
-                    styles.intensityFill, 
-                    { 
+                    styles.intensityFill,
+                    {
                       width: `${selectedTrail.intensity * 100}%`,
-                      backgroundColor: selectedTrail.color 
+                      backgroundColor: selectedTrail.color
                     }
-                  ]} 
+                  ]}
                 />
               </View>
             </View>
-            
+
             <View style={styles.trailStat}>
               <Text style={styles.trailStatLabel}>Status</Text>
               <View style={[
@@ -436,9 +433,9 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
   return (
     <View style={styles.container}>
       {/* Camera View */}
-      <Camera style={styles.camera} type={cameraType}>
+      <CameraView style={styles.camera} facing={cameraType}>
         {/* AR Overlay */}
-        <Animated.View style={[styles.arOverlay, { opacity: fadeInAnimation }]}>
+        <Animated.View style={[styles.arOverlay, { opacity: fadeInAnimation as any }]}>
           {renderScentTrails()}
         </Animated.View>
 
@@ -459,10 +456,10 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
                 <Ionicons name="arrow-back" size={24} color="#fff" />
               </BlurView>
             </TouchableOpacity>
-            
+
             <View style={styles.headerTitle}>
               <Text style={styles.headerTitleText}>AR Scent Trails</Text>
-              <Animated.View style={[styles.liveBadge, { opacity: pulseAnimation }]}>
+              <Animated.View style={[styles.liveBadge, { opacity: pulseAnimation as any }]}>
                 <Text style={styles.liveBadgeText}>LIVE</Text>
               </Animated.View>
             </View>
@@ -473,10 +470,10 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
               disabled={isScanning}
             >
               <BlurView intensity={20} style={styles.headerButtonBlur}>
-                <Ionicons 
-                  name={isScanning ? "hourglass-outline" : "scan-outline"} 
-                  size={24} 
-                  color="#fff" 
+                <Ionicons
+                  name={isScanning ? "hourglass-outline" : "scan-outline"}
+                  size={24}
+                  color="#fff"
                 />
               </BlurView>
             </TouchableOpacity>
@@ -492,7 +489,7 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
             style={styles.controlButton}
             onPress={() => {
               setCameraType(
-                cameraType === CameraType.back ? CameraType.front : CameraType.back
+                cameraType === 'back' ? 'front' : 'back'
               );
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }}
@@ -529,7 +526,7 @@ export default function ARScentTrailsScreen({ navigation, route }: ARScentTrails
             </BlurView>
           </TouchableOpacity>
         </View>
-      </Camera>
+      </CameraView>
     </View>
   );
 }

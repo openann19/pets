@@ -1,22 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  Image,
-  Animated,
-  Vibration,
-  StatusBar,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import WebRTCService, { CallData } from '../../services/WebRTCService';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useRef } from 'react';
+import { Animated, Dimensions, Image, StatusBar, StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { type CallData } from '../../services/WebRTCService';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { height: screenHeight } = Dimensions.get('window');
 
 interface IncomingCallScreenProps {
   callData: CallData;
@@ -24,13 +14,39 @@ interface IncomingCallScreenProps {
   onReject: () => void;
 }
 
-export default function IncomingCallScreen({ 
-  callData, 
-  onAnswer, 
-  onReject 
+export default function IncomingCallScreen({
+  callData,
+  onAnswer,
+  onReject
 }: IncomingCallScreenProps) {
-  const [pulseAnim] = useState(new Animated.Value(1));
-  const [slideAnim] = useState(new Animated.Value(0));
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  // Create interpolation values for transforms
+  const headerTranslateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-50, 0],
+  }) as any;
+
+  const callerInfoScale = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.8, 1],
+  }) as any;
+
+  const avatarScale = pulseAnim.interpolate({
+    inputRange: [1, 1.2],
+    outputRange: [1, 1.2],
+  }) as any;
+
+  const actionsTranslateY = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [100, 0],
+  }) as any;
+
+  const additionalOpacity = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  }) as any;
 
   useEffect(() => {
     // Start pulsing animation for incoming call
@@ -67,26 +83,24 @@ export default function IncomingCallScreen({
       pulseAnimation.stop();
       Vibration.cancel();
     };
-  }, []);
+  }, [pulseAnim, slideAnim]);
 
-  const handleAnswer = () => {
+  const handleAnswer = (): void => {
     Vibration.cancel();
     onAnswer();
   };
 
-  const handleReject = () => {
+  const handleReject = (): void => {
     Vibration.cancel();
     onReject();
   };
 
-  const formatCallType = (type: string) => {
-    return type === 'video' ? 'Video Call' : 'Voice Call';
-  };
+  const formatCallType = (type: 'video' | 'voice'): string => (type === 'video' ? 'Video Call' : 'Voice Call');
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
+
       {/* Background Gradient */}
       <LinearGradient
         colors={['#1a1a2e', '#16213e', '#0f3460']}
@@ -98,16 +112,15 @@ export default function IncomingCallScreen({
 
       <SafeAreaView style={styles.content}>
         {/* Header */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.header,
             {
-              transform: [{
-                translateY: slideAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [-50, 0],
-                })
-              }]
+              transform: [
+                {
+                  translateY: headerTranslateY
+                }
+              ]
             }
           ]}
         >
@@ -116,32 +129,35 @@ export default function IncomingCallScreen({
         </Animated.View>
 
         {/* Caller Info */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.callerInfo,
             {
-              transform: [{
-                scale: slideAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.8, 1],
-                })
-              }]
+              transform: [
+                {
+                  scale: callerInfoScale
+                }
+              ]
             }
           ]}
         >
           {/* Avatar with pulsing effect */}
-          <Animated.View 
+          <Animated.View
             style={[
               styles.avatarContainer,
               {
-                transform: [{ scale: pulseAnim }]
+                transform: [
+                  {
+                    scale: avatarScale
+                  }
+                ]
               }
             ]}
           >
             <View style={styles.avatarRing}>
               <Image
                 source={
-                  callData.callerAvatar 
+                  callData.callerAvatar
                     ? { uri: callData.callerAvatar }
                     : require('../../assets/default-avatar.png')
                 }
@@ -154,16 +170,12 @@ export default function IncomingCallScreen({
           <Text style={styles.callerSubtext}>PawfectMatch</Text>
         </Animated.View>
 
-        {/* Call Actions */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.actionsContainer,
             {
               transform: [{
-                translateY: slideAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [100, 0],
-                })
+                translateY: actionsTranslateY
               }]
             }
           ]}
@@ -198,11 +210,11 @@ export default function IncomingCallScreen({
         </Animated.View>
 
         {/* Additional Actions */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.additionalActions,
             {
-              opacity: slideAnim,
+              opacity: additionalOpacity,
             }
           ]}
         >
@@ -210,10 +222,9 @@ export default function IncomingCallScreen({
             <Ionicons name="chatbubble" size={24} color="#fff" />
             <Text style={styles.additionalButtonText}>Message</Text>
           </TouchableOpacity>
-
           <TouchableOpacity style={styles.additionalButton}>
-            <Ionicons name="person" size={24} color="#fff" />
-            <Text style={styles.additionalButtonText}>Profile</Text>
+            <Ionicons name="alarm" size={24} color="#fff" />
+            <Text style={styles.additionalButtonText}>Remind Me</Text>
           </TouchableOpacity>
         </Animated.View>
       </SafeAreaView>
@@ -227,89 +238,86 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   backgroundGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
   },
   blurOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
   },
   content: {
     flex: 1,
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 30,
+    padding: 20,
   },
   header: {
     alignItems: 'center',
-    marginTop: 60,
+    marginTop: screenHeight * 0.1,
   },
   incomingCallText: {
-    fontSize: 18,
+    fontSize: 24,
+    fontWeight: 'bold',
     color: '#fff',
     opacity: 0.8,
-    marginBottom: 5,
   },
   callTypeText: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#fff',
-    opacity: 0.6,
+    opacity: 0.7,
+    marginTop: 8,
   },
   callerInfo: {
     alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
+    marginTop: screenHeight * 0.15,
   },
   avatarContainer: {
-    marginBottom: 30,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   avatarRing: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   avatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 92,
-    backgroundColor: '#ddd',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
   callerName: {
     fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 8,
-    textAlign: 'center',
+    marginTop: 20,
   },
   callerSubtext: {
     fontSize: 18,
     color: '#fff',
     opacity: 0.7,
+    marginTop: 8,
   },
   actionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'center',
-    marginBottom: 50,
+    width: '100%',
+    marginBottom: screenHeight * 0.1,
   },
   actionButton: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    elevation: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: 4,
+    elevation: 8,
   },
   rejectButton: {},
   answerButton: {},
@@ -323,16 +331,15 @@ const styles = StyleSheet.create({
   additionalActions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 40,
+    width: '100%',
+    marginBottom: 20,
   },
   additionalButton: {
     alignItems: 'center',
-    padding: 15,
   },
   additionalButtonText: {
     color: '#fff',
-    fontSize: 12,
-    marginTop: 5,
-    opacity: 0.8,
+    marginTop: 8,
+    fontSize: 14,
   },
 });

@@ -1,32 +1,53 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Dimensions,
-  Animated,
-  Easing,
-  StatusBar,
-  InteractionManager,
-  LayoutAnimation,
-  UIManager,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@pawfectmatch/core';
+import { logger, useAuthStore } from '@pawfectmatch/core';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Dimensions, Easing, FlatList, Image, InteractionManager, KeyboardAvoidingView, LayoutAnimation, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, UIManager, View } from 'react-native';
 import { useCallManager } from '../components/calling/CallManager';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSocket } from '../hooks/useSocket';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import { _chatAPI as chatAPI } from '../services/api';
+
+// Define Message interface locally to match API usage in this screen
+interface Message {
+  _id: string;
+  // Server may return either `content` or `text`
+  content?: string;
+  text?: string;
+  // Sender identifier from API could be `senderId`, `sender`, or `userId`
+  senderId: string;
+  timestamp: string; // ISO string
+  type?: 'text' | 'image' | 'location' | 'system';
+  attachments?: Array<{
+    type: string;
+    fileType: string;
+    fileName: string;
+    url: string;
+  }>;
+  // Client-side delivery fields (optional)
+  read?: boolean;
+  status?: 'sending' | 'sent' | 'failed';
+  error?: boolean;
+}
+
+// Normalize various backend message shapes into our local Message shape
+const normalizeMessage = (m: any): Message => ({
+  _id: m._id ?? m.id ?? `${Date.now()}`,
+  content: m.content ?? m.text ?? '',
+  text: m.text,
+  senderId: m.senderId ?? m.sender ?? m.userId ?? 'unknown',
+  timestamp: m.timestamp ?? m.createdAt ?? new Date().toISOString(),
+  type: m.type === 'text' || m.type === 'image' || m.type === 'system' ? m.type : 'text',
+  read: m.read ?? false,
+  status: (m.status as Message['status']) ?? 'sent',
+  error: m.error ?? false,
+});
+
+// Import chat components
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -35,67 +56,138 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 const { width: screenWidth } = Dimensions.get('window');
 
-interface Message {
-  _id: string;
-  content: string;
-  senderId: string;
-  timestamp: string;
-  read: boolean;
-  type: 'text' | 'image' | 'emoji';
-  status?: 'sending' | 'sent' | 'failed';
-  error?: boolean;
-}
+// Remove duplicate Message interface - it's imported from MessageBubble
 
-interface ChatScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      matchId: string;
-      petName: string;
-    };
-  };
-}
+type RootStackParamList = {
+  Chat: { matchId: string; petName: string };
+};
 
-export default function ChatScreen({ navigation, route }: ChatScreenProps) {
+type ChatScreenProps = NativeStackScreenProps<RootStackParamList, 'Chat'>;
+
+const ChatScreen: React.FC<ChatScreenProps> = ({ navigation, route }) => {
   const { matchId, petName } = route.params;
   const { user } = useAuthStore();
-  const { startCall, isCallActive } = useCallManager();
+  const { startCall } = useCallManager();
   const { isDark, colors } = useTheme();
-  
+
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [inputText, setInputText] = useState('');
   const [characterCount, setCharacterCount] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
-  const [otherUserTyping, setOtherUserTyping] = useState(false);
-  const [showDateHeader, setShowDateHeader] = useState(false);
-  const socket = useSocket();
+  const [isOnline] = useState(true);
+  const [showSafetyMenu, setShowSafetyMenu] = useState(false);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
-  
+  const socket = useSocket();
+
   // Refs
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
-  const typingTimeoutRef = useRef<any>();
-  
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Animations
   const typingAnimation = useRef(new Animated.Value(0)).current;
   const headerOpacity = useRef(new Animated.Value(1)).current;
   const messageEntryAnimation = useRef(new Animated.Value(0)).current;
   const sendButtonScale = useRef(new Animated.Value(1)).current;
-  
+
   // Constants
   const MAX_MESSAGE_LENGTH = 500;
   const PET_AVATAR = 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=100';
   const TYPING_TIMEOUT = 2000;
-  const MESSAGE_BATCH_SIZE = 20;
+
+  // Safety functions
+  const handleReport = () => {
+    setShowSafetyMenu(false);
+    Alert.alert(
+      'Report User',
+      'Why are you reporting this user?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Spam', onPress: () => reportUser('spam') },
+        { text: 'Harassment', onPress: () => reportUser('harassment') },
+        { text: 'Fake Profile', onPress: () => reportUser('fake_profile') },
+        { text: 'Inappropriate Content', onPress: () => reportUser('inappropriate_content') },
+        { text: 'Other', onPress: () => reportUser('other') },
+      ]
+    );
+  };
+
+  const handleBlock = () => {
+    setShowSafetyMenu(false);
+    Alert.alert(
+      'Block User',
+      `Are you sure you want to block ${petName}? You won't be able to see each other anymore.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: () => blockUser()
+        },
+      ]
+    );
+  };
+
+  const handleUnmatch = () => {
+    setShowSafetyMenu(false);
+    Alert.alert(
+      'Unmatch',
+      `Are you sure you want to unmatch with ${petName}? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Unmatch',
+          style: 'destructive',
+          onPress: () => unmatchUser()
+        },
+      ]
+    );
+  };
+
+  const reportUser = async (reason: string) => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      // TODO: Implement actual API call to report user
+      Alert.alert('Report Sent', 'Thank you for keeping PawfectMatch safe. We will review this report.');
+      logger.info('User reported', { matchId, reason });
+    } catch (error) {
+      logger.error('Failed to report user', { error });
+      Alert.alert('Error', 'Failed to submit report. Please try again.');
+    }
+  };
+
+  const blockUser = async () => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      // TODO: Implement actual API call to block user
+      Alert.alert('User Blocked', `${petName} has been blocked.`);
+      navigation.goBack();
+      logger.info('User blocked', { matchId });
+    } catch (error) {
+      logger.error('Failed to block user', { error });
+      Alert.alert('Error', 'Failed to block user. Please try again.');
+    }
+  };
+
+  const unmatchUser = async () => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      // TODO: Implement actual API call to unmatch
+      Alert.alert('Unmatched', `You have unmatched with ${petName}.`);
+      navigation.goBack();
+      logger.info('User unmatched', { matchId });
+    } catch (error) {
+      logger.error('Failed to unmatch user', { error });
+      Alert.alert('Error', 'Failed to unmatch. Please try again.');
+    }
+  };
 
   // Initialize component with smooth animations
   useEffect(() => {
     StatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content');
-    
+
     // Staggered initialization for smooth UX
     InteractionManager.runAfterInteractions(() => {
       loadMessages();
@@ -112,22 +204,30 @@ export default function ChatScreen({ navigation, route }: ChatScreenProps) {
 
   // Optimized typing animation with staggered dots
   const startTypingAnimation = useCallback(() => {
+    const createDotAnimation = (delay: number) => {
+      return Animated.sequence([
+        // Animated.delay type is incomplete in RN types, cast to any for TS compatibility
+        (Animated as any).delay(delay),
+        Animated.timing(typingAnimation, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.bezier(0.4, 0, 0.2, 1),
+          useNativeDriver: true,
+        }),
+        Animated.timing(typingAnimation, {
+          toValue: 0,
+          duration: 400,
+          easing: Easing.bezier(0.4, 0, 0.2, 1),
+          useNativeDriver: true,
+        }),
+      ]);
+    };
+
     Animated.loop(
-      Animated.stagger(200, [
-        Animated.sequence([
-          Animated.timing(typingAnimation, {
-            toValue: 1,
-            duration: 400,
-            easing: Easing.bezier(0.4, 0, 0.2, 1),
-            useNativeDriver: true,
-          }),
-          Animated.timing(typingAnimation, {
-            toValue: 0,
-            duration: 400,
-            easing: Easing.bezier(0.4, 0, 0.2, 1),
-            useNativeDriver: true,
-          }),
-        ]),
+      Animated.sequence([
+        createDotAnimation(0),
+        createDotAnimation(200),
+        createDotAnimation(400),
       ])
     ).start();
   }, [typingAnimation]);
@@ -137,7 +237,7 @@ export default function ChatScreen({ navigation, route }: ChatScreenProps) {
     if (!socket) return;
 
     socket.on('typing', (data: { userId: string; isTyping: boolean }) => {
-      if (data.userId !== user?.id) {
+      if (data.userId !== user?._id) {
         setTypingUsers((prev: string[]) => {
           if (data.isTyping) {
             return prev.includes(data.userId) ? prev : [...prev, data.userId];
@@ -145,151 +245,110 @@ export default function ChatScreen({ navigation, route }: ChatScreenProps) {
             return prev.filter(id => id !== data.userId);
           }
         });
-        
-        // Auto-hide typing indicator after timeout
-        if (data.isTyping) {
-          if (typingTimeoutRef.current) {
-            clearTimeout(typingTimeoutRef.current);
-          }
-          typingTimeoutRef.current = setTimeout(() => {
-            setTypingUsers((prev: string[]) => 
-              prev.filter(id => id !== data.userId)
-            );
-          }, TYPING_TIMEOUT);
-        }
+
+        // Animate header opacity based on typing state
+        Animated.timing(headerOpacity, {
+          toValue: data.isTyping ? 0.7 : 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
       }
     });
 
     socket.on('new_message', (message: Message) => {
-      if (message.senderId !== user?.id) {
-        // Animate new message entry
+      if (message.senderId !== user?._id) {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setMessages(prev => [...prev, message]);
-        
-        // Haptic feedback for incoming messages
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        
-        // Smooth scroll to bottom
+
+        // Auto-scroll to bottom for new messages
         InteractionManager.runAfterInteractions(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
         });
       }
     });
 
-    socket.on('user_status', (data: any) => {
-      setIsOnline(data.isOnline);
-      
-      // Animate status change
-      Animated.timing(headerOpacity, {
-        toValue: data.isOnline ? 1 : 0.7,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    });
-
-    socket.on('message_read', (data: any) => {
-      setMessages(prev => 
-        prev.map(msg => 
+    socket.on('message_read', (data: { messageId: string }) => {
+      setMessages(prev =>
+        prev.map(msg =>
           msg._id === data.messageId ? { ...msg, read: true } : msg
         )
       );
     });
-  }, [socket, user?.id, headerOpacity]);
+  }, [socket, user?._id, headerOpacity]);
 
   // Optimized message loading with error handling
   const loadMessages = useCallback(async () => {
     try {
       setIsLoading(true);
-      const messagesData = await chatAPI.getMessages(matchId);
-      
-      if (messagesData?.length) {
-        setMessages(messagesData);
-        await chatAPI.markAsRead(matchId);
+
+      // Call API to load messages
+      const response = await chatAPI.getMessages(matchId);
+
+      if (response && Array.isArray(response)) {
+        setMessages(response.map(normalizeMessage));
+      } else if (
+        response &&
+        typeof response === 'object' &&
+        'messages' in (response as any) &&
+        Array.isArray((response as any).messages)
+      ) {
+        setMessages((response as any).messages.map(normalizeMessage));
       } else {
-        // High-quality fallback data for demo
-        const mockMessages: Message[] = [
-          {
-            _id: '1',
-            content: 'Hey! Your pet looks absolutely adorable! 😊 Would love to arrange a playdate sometime!',
-            senderId: 'other',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-            read: true,
-            type: 'text',
-          },
-          {
-            _id: '2',
-            content: 'Thank you so much! Your furry friend is gorgeous too! I\'d love that - they would get along perfectly 🐾',
-            senderId: user?.id || 'me',
-            timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-            read: true,
-            type: 'text',
-          },
-          {
-            _id: '3',
-            content: 'Perfect! What days work best for you? I was thinking maybe the dog park on Elm Street? 🌳',
-            senderId: 'other',
-            timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-            read: true,
-            type: 'text',
-          },
-          {
-            _id: '4',
-            content: 'That sounds amazing! How about this Saturday around 2 PM? The weather should be perfect! ☀️🐕',
-            senderId: user?.id || 'me',
-            timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-            read: false,
-            type: 'text',
-          },
-        ];
-        setMessages(mockMessages);
+        setMessages([]);
       }
+
+      // Track message view for analytics
+      // analyticsAPI.trackMatchEvent(matchId, 'view_messages');
     } catch (error) {
-      console.error('Failed to load messages:', error);
-      Alert.alert('Connection Error', 'Unable to load messages. Please check your connection and try again.');
+      logger.error('Failed to load messages', { error });
+      Alert.alert(
+        'Connection Error',
+        'Failed to load messages. Please check your connection and try again.',
+        [{ text: 'Retry', onPress: loadMessages }]
+      );
+
+      // Set empty array instead of mock messages
+      setMessages([]);
     } finally {
       setIsLoading(false);
+
+      // Smooth scroll to bottom after loading
+      InteractionManager.runAfterInteractions(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      });
     }
-  }, [matchId, user?.id]);
+  }, [matchId]);
 
-  // Elite message sending with optimistic updates
+  // Enhanced message sending with optimistic updates
   const sendMessage = useCallback(async () => {
-    if (!inputText.trim() || isSending) return;
-
     const messageContent = inputText.trim();
-    const tempId = `temp_${Date.now()}`;
-    
-    // Haptic feedback for send action
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    // Animate send button
-    Animated.sequence([
-      Animated.timing(sendButtonScale, {
-        toValue: 0.8,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(sendButtonScale, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    if (!messageContent || isSending) return;
 
-    // Optimistic UI update
+    const tempId = `temp_${Date.now()}`;
     const optimisticMessage: Message = {
       _id: tempId,
       content: messageContent,
-      senderId: user?.id || 'me',
+      senderId: user?._id || 'me',
       timestamp: new Date().toISOString(),
       read: false,
       type: 'text',
+      status: 'sending',
     };
 
-    // Clear input immediately for better UX
+    // Haptic feedback for send action
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Animate send button
+    Animated.sequence([
+      Animated.timing(sendButtonScale, { toValue: 0.9, duration: 100, useNativeDriver: true }),
+      Animated.timing(sendButtonScale, { toValue: 1, duration: 100, useNativeDriver: true }),
+    ]).start();
+
+    // Clear input and update state
     setInputText('');
     setCharacterCount(0);
     setIsSending(true);
-    
+
     // Add message with animation
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setMessages(prev => [...prev, optimisticMessage]);
@@ -302,695 +361,597 @@ export default function ChatScreen({ navigation, route }: ChatScreenProps) {
     try {
       // Send via real API
       const sentMessage = await chatAPI.sendMessage(matchId, messageContent);
-      
+      const normalizedSent = normalizeMessage(sentMessage);
+
       // Replace optimistic message with server response
-      setMessages(prev => prev.map(msg => 
-        msg._id === tempId ? { ...sentMessage, _id: sentMessage._id || tempId, status: 'sent' } : msg
+      setMessages(prev => prev.map(msg =>
+        msg._id === tempId ? { ...normalizedSent, _id: normalizedSent._id || tempId, status: 'sent' } : msg
+      ));
+
+      // Track message sent event
+      // analyticsAPI.trackMatchEvent(
+      //   matchId,
+      //   'message_send',
+      //   {
+      //     messageLength: messageContent.length,
+      //     messageType: 'text'
+      //   }
+      // ).catch(err => logger.error('Failed to track message event', { error: err }));
+
+      // Emit to socket for real-time updates
+      if (socket) {
+        socket.emit('send_message', sentMessage);
+        socket.emit('typing', { matchId, userId: user?._id, isTyping: false });
+      }
+    } catch (error) {
+      logger.error('Failed to send message', { error });
+
+      // Show error state with retry option
+      setMessages(prev => prev.map(msg =>
+        msg._id === tempId ? { ...msg, status: 'failed', error: true } : msg
+      ));
+
+
+    } finally {
+      setIsSending(false);
+    }
+  }, [inputText, isSending, user?._id, matchId, socket, sendButtonScale]);
+
+  // Intelligent response generator for demo
+  // Removed unused demo helper
+
+  // Enhanced typing handler with debouncing
+  const handleTyping = useCallback((text: string) => {
+    setInputText(text);
+    setCharacterCount(text.length);
+
+    // Emit typing status to socket
+    if (socket && !isTyping) {
+      setIsTyping(true);
+      socket.emit('typing', { matchId, userId: user?._id, isTyping: true });
+    }
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set new timeout
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+      if (socket) {
+        socket.emit('typing', { matchId, userId: user?._id, isTyping: false });
+      }
+    }, TYPING_TIMEOUT);
+  }, [socket, matchId, user?._id, isTyping]);
+
+  // Retry failed message
+  const retryMessage = useCallback((messageId: string) => {
+    const failedMessage = messages.find(msg => msg._id === messageId);
+    if (failedMessage) {
+      setInputText(failedMessage.content ?? failedMessage.text ?? '');
+      setMessages(prev => prev.filter(msg => msg._id !== messageId));
+    }
+  }, [messages]);
+
+  const sendImageMessage = useCallback(async (asset: ImagePicker.ImagePickerAsset) => {
+    if (isSending) return;
+
+    const tempId = `temp_${Date.now()}`;
+    const optimisticMessage: Message = {
+      _id: tempId,
+      content: '',
+      senderId: user?._id || 'me',
+      timestamp: new Date().toISOString(),
+      read: false,
+      type: 'image',
+      status: 'sending',
+    };
+
+    // Haptic feedback for send action
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    setIsSending(true);
+
+    // Add message with animation
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    // Scroll to bottom
+    InteractionManager.runAfterInteractions(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    });
+
+    try {
+      // TODO: Upload image to server first, then send message
+      // For now, simulate with base64
+      const sentMessage = await chatAPI.sendMessage(matchId, asset.uri, 'image');
+
+      const normalizedSent = normalizeMessage(sentMessage);
+
+      // Replace optimistic message with server response
+      setMessages(prev => prev.map(msg =>
+        msg._id === tempId ? { ...normalizedSent, _id: normalizedSent._id || tempId, status: 'sent' } : msg
       ));
 
       // Emit to socket for real-time updates
       if (socket) {
         socket.emit('send_message', sentMessage);
-        socket.emit('typing', { matchId, userId: user?.id, isTyping: false });
+        socket.emit('typing', { matchId, userId: user?._id, isTyping: false });
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
-      
+      logger.error('Failed to send image message', { error });
+
       // Show error state with retry option
-      setMessages(prev => prev.map(msg => 
+      setMessages(prev => prev.map(msg =>
         msg._id === tempId ? { ...msg, status: 'failed', error: true } : msg
       ));
-      
-      // Simulate realistic response after delay
-      setTimeout(() => {
-        setOtherUserTyping(true);
-        setTimeout(() => {
-          setOtherUserTyping(false);
-          const response: Message = {
-            _id: `response_${Date.now()}`,
-            content: getIntelligentResponse(messageContent),
-            senderId: 'other',
-            timestamp: new Date().toISOString(),
-            read: false,
-            type: 'text',
-          };
-          
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setMessages(prev => [...prev, response]);
-          
-          // Haptic feedback for received message
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          
-          InteractionManager.runAfterInteractions(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-          });
-        }, 1500 + Math.random() * 1000); // Realistic typing delay
-      }, 800);
     } finally {
       setIsSending(false);
     }
-  }, [inputText, isSending, user?.id, matchId, socket, sendButtonScale]);
+  }, [isSending, user?._id, matchId, socket]);
 
-  // Intelligent response generation based on message content
-  const getIntelligentResponse = useCallback((messageContent: string) => {
-    const content = messageContent.toLowerCase();
-    
-    if (content.includes('weekend') || content.includes('saturday') || content.includes('sunday')) {
-      return "Weekends work perfectly for me! My schedule is pretty flexible then 📅";
+  // Image picker functions with enhanced compression
+  const pickImage = useCallback(async () => {
+    try {
+      // Request permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Camera roll permissions are required to send photos.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7, // Reduced for better performance
+        base64: false, // We'll handle compression separately
+        exif: false, // Reduce metadata
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        if (asset) {
+          await processAndSendImage(asset);
+        }
+      }
+    } catch (error) {
+      logger.error('Image picker error:', { error });
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
     }
-    if (content.includes('park') || content.includes('dog park')) {
-      return "The dog park sounds amazing! My pup absolutely loves meeting new friends there 🌳🐕";
-    }
-    if (content.includes('time') || content.includes('when')) {
-      return "I'm pretty flexible with timing! What works best for your schedule? ⏰";
-    }
-    if (content.includes('weather') || content.includes('sunny') || content.includes('perfect')) {
-      return "Yes! I checked the forecast too - it's going to be beautiful! Perfect day for our pets to play ☀️";
-    }
-    if (content.includes('excited') || content.includes('can\'t wait') || content.includes('looking forward')) {
-      return "Me too! This is going to be so much fun. I think our pets are going to be best friends! 🐾💕";
-    }
-    if (content.includes('photo') || content.includes('picture') || content.includes('pic')) {
-      return "I'd love to see more photos! Your pet is absolutely adorable 📸✨";
-    }
-    
-    // Default contextual responses
-    const responses = [
-      "That sounds absolutely perfect! I'm really looking forward to it 🎾",
-      "Amazing! My pet is going to be so excited to meet yours 🐕💕",
-      "Perfect! I think this is going to be the start of a beautiful friendship 😊",
-      "Wonderful! I can already tell our pets are going to get along great 🌟",
-      "Fantastic! This is exactly what I was hoping for 🎉",
-      "Love it! I have a really good feeling about this playdate ✨",
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
   }, []);
 
-  const getRandomResponse = () => {
-    const responses = [
-      "That sounds perfect! 🎾",
-      "I'm excited! My pet will love it",
-      "Great idea! See you there 😊",
-      "Perfect! Looking forward to it",
-      "Awesome! Can't wait 🐕",
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
+  const takePhoto = useCallback(async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Camera permissions are required to take photos.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
 
-  // Call handlers
-  const handleVoiceCall = useCallback(async () => {
-    if (isCallActive()) {
-      Alert.alert('Call in Progress', 'You already have an active call.');
-      return;
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.7, // Reduced for better performance
+        base64: false,
+        exif: false,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        if (asset) {
+          await processAndSendImage(asset);
+        }
+      }
+    } catch (error) {
+      logger.error('Camera error:', { error });
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
     }
+  }, []);
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    Alert.alert(
-      'Voice Call',
-      `Start a voice call with ${petName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Call', 
-          onPress: async () => {
-            const success = await startCall(matchId, 'voice');
-            if (!success) {
-              Alert.alert('Error', 'Failed to start call. Please check your permissions and try again.');
-            }
+  const processAndSendImage = useCallback(async (asset: ImagePicker.ImagePickerAsset) => {
+    try {
+      // Compress image if it's too large
+      let processedAsset = asset;
+
+      if (asset.fileSize && asset.fileSize > 2 * 1024 * 1024) { // If > 2MB
+        // Create compressed version
+        const compressedResult = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.5, // Further compression for large files
+          base64: false,
+        });
+
+        if (!compressedResult.canceled && compressedResult.assets && compressedResult.assets.length > 0) {
+          const asset = compressedResult.assets[0];
+          if (asset) {
+            processedAsset = asset;
           }
         }
-      ]
-    );
-  }, [matchId, petName, startCall, isCallActive]);
+      }
 
-  const handleVideoCall = useCallback(async () => {
-    if (isCallActive()) {
-      Alert.alert('Call in Progress', 'You already have an active call.');
-      return;
+      if (processedAsset) {
+        await sendImageMessage(processedAsset);
+      }
+    } catch (error) {
+      logger.error('Image processing error:', { error });
+      Alert.alert('Error', 'Failed to process image. Please try again.');
     }
+  }, [sendImageMessage]);
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    Alert.alert(
-      'Video Call',
-      `Start a video call with ${petName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Call', 
-          onPress: async () => {
-            const success = await startCall(matchId, 'video');
-            if (!success) {
-              Alert.alert('Error', 'Failed to start call. Please check your permissions and try again.');
-            }
-          }
-        }
-      ]
-    );
-  }, [matchId, petName, startCall, isCallActive]);
-
-  const formatMessageTime = (timestamp: string) => {
-    const messageTime = new Date(timestamp);
-    const now = new Date();
-    const isToday = messageTime.toDateString() === now.toDateString();
-    
-    if (isToday) {
-      return messageTime.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false 
-      });
-    } else {
-      return messageTime.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
-      });
-    }
-  };
-
-  const getDateHeader = (timestamp: string) => {
-    const messageDate = new Date(timestamp);
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (messageDate.toDateString() === now.toDateString()) {
-      return 'Today';
-    } else if (messageDate.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    } else {
-      return messageDate.toLocaleDateString('en-US', { 
-        weekday: 'long',
-        month: 'long', 
-        day: 'numeric' 
-      });
-    }
-  };
-
-  const shouldShowDateHeader = (currentMessage: Message, previousMessage?: Message) => {
-    if (!previousMessage) return true;
-    
-    const currentDate = new Date(currentMessage.timestamp).toDateString();
-    const previousDate = new Date(previousMessage.timestamp).toDateString();
-    
-    return currentDate !== previousDate;
-  };
-
-  // Memoized message renderer for optimal performance
+  // Enhanced message renderer with animations
   const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
-    const isMyMessage = item.senderId === user?.id || item.senderId === 'me';
-    const showAvatar = !isMyMessage && (index === 0 || messages[index - 1].senderId !== item.senderId);
-    const showTime = index === messages.length - 1 || 
-      messages[index + 1].senderId !== item.senderId ||
-      new Date(messages[index + 1].timestamp).getTime() - new Date(item.timestamp).getTime() > 300000;
-    const showDateHeader = shouldShowDateHeader(item, messages[index - 1]);
-    const hasError = (item as any).error;
+    const isMe = item.senderId === user?._id || item.senderId === 'me';
+    const isLastMessage = index === messages.length - 1;
+    const showAvatar = !isMe && (isLastMessage || messages[index + 1]?.senderId !== item.senderId);
 
     return (
-      <View>
-        {/* Date Header with subtle animation */}
-        {showDateHeader && (
-          <Animated.View 
-            style={[styles.dateHeader, { opacity: headerOpacity }]}
-            entering={Platform.OS === 'ios' ? undefined : 'fadeIn'}
-          >
-            <BlurView intensity={20} style={styles.dateHeaderBlur}>
-              <Text style={styles.dateHeaderText}>{getDateHeader(item.timestamp)}</Text>
-            </BlurView>
-          </Animated.View>
-        )}
+      <Animated.View
+        style={[
+          styles.messageContainer,
+          isMe ? styles.myMessageContainer : styles.otherMessageContainer,
+          // Animated style typing workaround
+          { opacity: messageEntryAnimation as any }
+        ]}
+      >
+        {showAvatar ? <Image source={{ uri: PET_AVATAR }} style={styles.avatar} /> : null}
 
-        {/* Message with enhanced styling */}
-        <Animated.View 
-          style={[styles.messageContainer, isMyMessage && styles.myMessageContainer]}
-          entering={Platform.OS === 'ios' ? undefined : 'slideInUp'}
-        >
-          {!isMyMessage && showAvatar && (
-            <TouchableOpacity 
-              style={styles.avatarContainer}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                // Could navigate to pet profile
-              }}
-            >
-              <Image 
-                source={{ uri: PET_AVATAR }} 
-                style={[styles.avatar, isOnline && styles.avatarOnline]} 
+        <View style={[
+          styles.messageBubble,
+          isMe ? [styles.myMessage, { backgroundColor: colors.primary }] : [styles.otherMessage, { backgroundColor: colors.gray100 }],
+          item.error && styles.errorMessage,
+        ]}>
+          {item.type === 'image' ? (
+            <View style={styles.imageMessageContainer}>
+              <Image
+                source={{ uri: item.attachments?.[0]?.url || item.content }}
+                style={styles.messageImage}
+                resizeMode="cover"
               />
-              {isOnline && <View style={styles.onlineIndicator} />}
-            </TouchableOpacity>
-          )}
-          {!isMyMessage && !showAvatar && <View style={styles.avatarSpacer} />}
-          
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onLongPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              // Could show message options
-            }}
-            style={[
-              styles.messageBubble, 
-              isMyMessage 
-                ? [styles.myMessage, { backgroundColor: colors.primary }]
-                : [styles.otherMessage, { backgroundColor: colors.white, borderColor: colors.gray200 }],
-              hasError && [styles.errorMessage, { backgroundColor: colors.error + '20', borderColor: colors.error }]
-            ]}
-          >
-            {item.type === 'image' ? (
-              <Image source={{ uri: item.content }} style={styles.messageImage} />
-            ) : (
-              <Text style={[
-                styles.messageText, 
-                { color: isMyMessage ? colors.white : colors.gray800 },
-                hasError && { color: colors.error }
-              ]}>
-                {item.content}
-              </Text>
-            )}
-            
-            {/* Message status indicators */}
-            {isMyMessage && (
-              <View style={styles.messageStatus}>
-                {item.status === 'sending' && (
-                  <Animated.View style={styles.sendingIndicator}>
-                    <Text style={[styles.sendingText, { color: colors.white + 'B3' }]}>Sending...</Text>
-                  </Animated.View>
-                )}
-                {item.status === 'failed' && (
-                  <TouchableOpacity 
-                    style={styles.retryButton}
-                    onPress={() => {
-                      // Retry sending message
-                      const retryMessage = { ...item, _id: `retry_${Date.now()}`, status: 'sending' };
-                      setMessages(prev => prev.map(msg => msg._id === item._id ? retryMessage : msg));
-                      // Implement retry logic here
-                    }}
-                  >
-                    <Ionicons name="refresh" size={12} color={colors.error} />
-                    <Text style={[styles.retryText, { color: colors.error }]}>Retry</Text>
-                  </TouchableOpacity>
-                )}
-                {hasError && (
-                  <View style={styles.errorIndicator}>
-                    <Ionicons name="alert-circle" size={12} color="#ff4444" />
-                  </View>
-                )}
-              </View>
-            )}
-          </TouchableOpacity>
-          
-          {showTime && (
-            <View style={[
-              styles.timeContainer, 
-              isMyMessage && { justifyContent: 'flex-end', marginRight: 15 }
-            ]}>
-              <Text style={[styles.messageTime, { color: colors.gray500 }]}>
-                {formatMessageTime(item.timestamp)}
-              </Text>
-              {isMyMessage && !hasError && (
-                <Animated.View style={styles.readReceiptContainer}>
-                  <Ionicons 
-                    name={item.read ? "checkmark-done" : "checkmark"} 
-                    size={14} 
-                    color={item.read ? colors.success : colors.gray500} 
-                    style={styles.readIndicator}
-                  />
-                </Animated.View>
+              {item.content && item.content.trim() && (
+                <Text style={[
+                  styles.messageText,
+                  isMe ? styles.myMessageText : [styles.otherMessageText, { color: colors.gray800 }]
+                ]}>
+                  {item.content}
+                </Text>
               )}
             </View>
+          ) : (
+            <Text style={[
+              styles.messageText,
+              isMe ? styles.myMessageText : [styles.otherMessageText, { color: colors.gray800 }]
+            ]}>
+              {item.content ?? item.text}
+            </Text>
           )}
-        </Animated.View>
-      </View>
-    );
-  }, [user?.id, messages, isOnline, isSending, headerOpacity]);
 
-  const renderTypingIndicator = () => {
+          <View style={styles.messageFooter}>
+            <Text style={[
+              styles.timestamp,
+              isMe ? styles.myTimestamp : [styles.otherTimestamp, { color: colors.gray500 }]
+            ]}>
+              {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+
+            {isMe ? <View style={styles.messageStatus}>
+              {item.status === 'sending' && (
+                <Animated.View style={styles.sendingSpinner}>
+                  <Text style={styles.statusText}>●</Text>
+                </Animated.View>
+              )}
+              {item.status === 'sent' && (
+                <Ionicons name="checkmark" size={12} color={colors.white} />
+              )}
+              {item.status === 'failed' && (
+                <TouchableOpacity onPress={() => retryMessage(item._id)} style={styles.retryButton}>
+                  <Ionicons name="refresh" size={12} color={colors.error} />
+                </TouchableOpacity>
+              )}
+              {item.read ? <Ionicons name="checkmark-done" size={12} color={colors.white} /> : null}
+            </View> : null}
+          </View>
+
+          {item.error ? <TouchableOpacity onPress={() => retryMessage(item._id)} style={styles.retryButton}>
+            <Text style={[styles.retryText, { color: colors.error }]}>Tap to retry</Text>
+          </TouchableOpacity> : null}
+        </View>
+      </Animated.View>
+    );
+  }, [messages, user?._id, colors, messageEntryAnimation, retryMessage]);
+
+  // Typing indicator component
+  const TypingIndicator = (): React.ReactElement | null => {
     if (typingUsers.length === 0) return null;
-    
-    const typingUsersList = typingUsers;
 
     return (
-      <View style={styles.typingContainer}>
-        <Image 
-          source={{ uri: PET_AVATAR }} 
-          style={styles.avatar} 
-        />
-        <View style={[styles.typingBubble, { backgroundColor: colors.white, borderColor: colors.gray200 }]}>
+      <Animated.View style={[
+        styles.typingContainer,
+        { alignItems: 'center', marginVertical: 8 }
+      ]}>
+        <View style={[styles.typingBubble, { backgroundColor: colors.gray100 }]}>
           <View style={styles.typingDots}>
-            {[0, 1, 2].map((i) => (
+            {[0, 1, 2].map((index) => (
               <Animated.View
-                key={i}
+                key={index}
                 style={[
                   styles.typingDot,
+                  { backgroundColor: colors.gray400 },
                   {
-                    backgroundColor: colors.textTertiary,
-                    opacity: typingAnimation.interpolate({
-                      inputRange: [0, 0.5, 1],
-                      outputRange: [0.3, 1, 0.3],
+                    opacity: (typingAnimation as any).interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.3, 1],
                     }),
-                    transform: [{
-                      translateY: typingAnimation.interpolate({
-                        inputRange: [0, 0.5, 1],
-                        outputRange: [0, -3, 0],
-                      }),
-                    }],
-                    animationDelay: i * 200, // Stagger effect
-                  },
+                    transform: [
+                      {
+                        scale: (typingAnimation as any).interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.8, 1.2],
+                        }) as any,
+                      }
+                    ]
+                  }
                 ]}
               />
             ))}
           </View>
-          {typingUsers.length > 1 && (
-            <Text style={[styles.typingText, { color: colors.gray500 }]}>
-              {typingUsers.length} people are typing...
-            </Text>
-          )}
+          <Text style={[styles.typingText, { color: colors.gray500 }]}>
+            {petName} is typing...
+          </Text>
         </View>
-      </View>
+      </Animated.View>
     );
   };
 
-  const quickReplies = [
-    "Sounds good! 👍",
-    "When works for you?",
-    "Let's do it! 🎾",
-    "Perfect! 😊",
-  ];
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.gray50 }]}>
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: colors.gray500 }]}>Loading messages...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.gray100 }]}>
-      {/* Elite Header with Glassmorphic Design */}
-      <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
-        <BlurView intensity={95} style={styles.headerBlur}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity 
-              style={[styles.backButton, { backgroundColor: colors.glassWhiteLight }]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.goBack();
-              }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.gray800} />
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.headerInfo}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                // Navigate to pet profile
-              }}
-              activeOpacity={0.8}
-            >
-              <View style={styles.headerAvatarContainer}>
-                <Image 
-                  source={{ uri: PET_AVATAR }} 
-                  style={styles.headerAvatar} 
-                />
-                {isOnline && <View style={styles.headerOnlineIndicator} />}
-              </View>
-              <View style={styles.headerTextContainer}>
-                <Text style={[styles.headerName, { color: colors.gray800 }]}>{petName}</Text>
-                <Animated.View style={[styles.statusContainer, { opacity: headerOpacity }]}>
-                  <View style={[styles.statusDot, { 
-                    backgroundColor: isOnline ? '#4CAF50' : '#999',
-                    transform: [{ scale: isOnline ? 1 : 0.8 }]
-                  }]} />
-                  <Text style={[styles.statusText, { color: isOnline ? colors.success : colors.gray500 }]}>
-                    {isOnline ? 'Online now' : 'Last seen recently'}
-                  </Text>
-                  {otherUserTyping && (
-                    <Text style={[styles.typingStatus, { color: colors.success }]}>typing...</Text>
-                  )}
-                </Animated.View>
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.headerActions}>
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={handleVoiceCall}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <LinearGradient
-                  colors={['#4CAF50', '#45a049']}
-                  style={styles.headerButtonGradient}
-                >
-                  <Ionicons name="call" size={18} color="#fff" />
-                </LinearGradient>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={handleVideoCall}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <LinearGradient
-                  colors={['#2196F3', '#1976D2']}
-                  style={styles.headerButtonGradient}
-                >
-                  <Ionicons name="videocam" size={18} color="#fff" />
-                </LinearGradient>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.headerButton}
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.gray50 }]}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        {/* Header */}
+        <Animated.View style={[
+          styles.header,
+          // Animated typings workaround
+          { opacity: headerOpacity as any, backgroundColor: colors.white }
+        ]}>
+          <BlurView intensity={80} style={styles.headerBlur}>
+            <View style={styles.headerContent}>
+              <TouchableOpacity
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  Alert.alert('More Options', 'Additional options coming soon!');
+                  navigation.goBack();
                 }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.backButton}
               >
-                <View style={styles.moreButton}>
-                  <Ionicons name="ellipsis-vertical" size={18} color="#666" />
-                </View>
+                <Ionicons name="arrow-back" size={24} color={colors.gray800} />
               </TouchableOpacity>
-            </View>
-          </View>
-        </BlurView>
-      </Animated.View>
 
-      {/* Messages */}
-      <KeyboardAvoidingView 
-        style={styles.chatContainer} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+              <View style={styles.headerInfo}>
+                <Image source={{ uri: PET_AVATAR }} style={styles.headerAvatar} />
+                <View>
+                  <Text style={[styles.headerTitle, { color: colors.gray800 }]}>{petName}</Text>
+                  <Text style={[styles.headerSubtitle, { color: colors.gray500 }]}>
+                    {isOnline ? 'Online' : 'Last seen recently'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.headerActions}>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    startCall(matchId, 'video');
+                  }}
+                  style={styles.callButton}
+                >
+                  <Ionicons name="videocam" size={24} color={colors.primary} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowSafetyMenu(true);
+                  }}
+                  style={styles.safetyButton}
+                >
+                  <Ionicons name="ellipsis-vertical" size={24} color={colors.gray600} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </BlurView>
+        </Animated.View>
+
+        {/* Messages List */}
         <FlatList
           ref={flatListRef}
           data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item._id}
+          style={styles.messagesList}
+          contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.messagesList}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          initialNumToRender={20}
-          windowSize={10}
-          maxToRenderPerBatch={10}
-          updateCellsBatchingPeriod={50}
-          removeClippedSubviews={true}
-          getItemLayout={(data, index) => ({
-            length: 80, // Approximate message height
-            offset: 80 * index,
-            index,
-          })}
+          onContentSizeChange={() => {
+            InteractionManager.runAfterInteractions(() => {
+              flatListRef.current?.scrollToEnd({ animated: true });
+            });
+          }}
+          ListFooterComponent={<TypingIndicator />}
         />
-        
-        {renderTypingIndicator()}
 
-        {/* Smart Quick Replies */}
-        {messages.length > 0 && (
-          <View style={styles.quickRepliesContainer}>
-            <FlatList
-              data={quickReplies}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.quickReply, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                  onPress={() => {
-                    setInputText(item);
-                    // Don't auto-send, let user edit first
-                    inputRef.current?.focus();
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.quickReplyText, { color: colors.textSecondary }]}>{item}</Text>
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item, index) => index.toString()}
-              contentContainerStyle={styles.quickRepliesList}
-            />
-          </View>
-        )}
-
-        {/* Elite Input Area with Glassmorphic Design */}
-        <BlurView intensity={95} style={styles.inputBlur}>
-          <View style={styles.inputContainer}>
-            <TouchableOpacity 
-              style={styles.attachButton}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                Alert.alert('Attach Media', 'Photo and file sharing coming soon!');
-              }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <LinearGradient
-                colors={[colors.gray100, colors.gray200]}
-                style={styles.attachButtonGradient}
-              >
-                <Ionicons name="add" size={20} color={colors.gray600} />
-              </LinearGradient>
-            </TouchableOpacity>
-            
-            <View style={styles.inputWrapper}>
-              <TextInput
-                ref={inputRef}
-                style={[
-                  styles.textInput,
-                  { backgroundColor: colors.gray100, borderColor: colors.gray300, color: colors.gray800 },
-                  isTyping && [styles.textInputFocused, { borderColor: colors.primary, backgroundColor: colors.white }],
-                  characterCount > MAX_MESSAGE_LENGTH * 0.9 && [styles.textInputWarning, { borderColor: colors.warning, backgroundColor: colors.warning + '10' }]
-                ]}
-                value={inputText}
-                onChangeText={(text) => {
-                  setInputText(text);
-                  setCharacterCount(text.length);
-                  
-                  // Debounced typing indicator
-                  if (typingTimeoutRef.current) {
-                    clearTimeout(typingTimeoutRef.current);
-                  }
-                  
-                  if (socket && text.length > 0) {
-                    socket.emit('typing', { matchId, userId: user?.id, isTyping: true });
-                    typingTimeoutRef.current = setTimeout(() => {
-                      socket.emit('typing', { matchId, userId: user?.id, isTyping: false });
-                    }, 1000);
-                  }
-                }}
-                placeholder="Type a message..."
-                placeholderTextColor={colors.gray500}
-                multiline
-                maxLength={MAX_MESSAGE_LENGTH}
-                onFocus={() => {
-                  setIsTyping(true);
-                  Animated.timing(messageEntryAnimation, {
-                    toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
-                  }).start();
-                }}
-                onBlur={() => {
-                  setIsTyping(false);
-                  if (socket) {
-                    socket.emit('typing', { matchId, userId: user?.id, isTyping: false });
-                  }
-                  Animated.timing(messageEntryAnimation, {
-                    toValue: 0,
-                    duration: 200,
-                    useNativeDriver: true,
-                  }).start();
-                }}
-                returnKeyType="send"
-                onSubmitEditing={sendMessage}
-                blurOnSubmit={false}
+        {/* Input Area */}
+        <View style={[styles.inputContainer, { backgroundColor: colors.white }]}>
+          {/* Safety Menu Modal */}
+          {showSafetyMenu && (
+            <View style={styles.safetyMenuOverlay}>
+              <TouchableOpacity
+                style={styles.safetyMenuBackdrop}
+                onPress={() => setShowSafetyMenu(false)}
               />
-              
-              {/* Character Counter with Smart Visibility */}
-              {characterCount > MAX_MESSAGE_LENGTH * 0.8 && (
-                <Animated.View 
-                  style={[
-                    styles.characterCountContainer,
-                    { opacity: messageEntryAnimation }
-                  ]}
+              <View style={[styles.safetyMenu, { backgroundColor: colors.white }]}>
+                <View style={styles.safetyMenuHeader}>
+                  <Text style={[styles.safetyMenuTitle, { color: colors.gray800 }]}>
+                    Safety Options
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.safetyMenuItem}
+                  onPress={handleReport}
                 >
-                  <Text style={[
-                    styles.characterCount,
-                    characterCount > MAX_MESSAGE_LENGTH * 0.95 && styles.characterCountWarning
-                  ]}>
+                  <Ionicons name="flag" size={20} color="#f59e0b" />
+                  <Text style={[styles.safetyMenuText, { color: colors.gray700 }]}>
+                    Report User
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.safetyMenuItem}
+                  onPress={handleBlock}
+                >
+                  <Ionicons name="ban" size={20} color="#ef4444" />
+                  <Text style={[styles.safetyMenuText, { color: colors.gray700 }]}>
+                    Block User
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.safetyMenuItem}
+                  onPress={handleUnmatch}
+                >
+                  <Ionicons name="heart-dislike" size={20} color="#ef4444" />
+                  <Text style={[styles.safetyMenuText, { color: colors.gray700 }]}>
+                    Unmatch
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.safetyMenuItem, styles.safetyMenuCancel]}
+                  onPress={() => setShowSafetyMenu(false)}
+                >
+                  <Text style={[styles.safetyMenuText, { color: colors.primary }]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          <LinearGradient
+            colors={[colors.gray50, colors.white]}
+            style={styles.inputGradient}
+          >
+            <View style={styles.inputContent}>
+              <View style={[styles.textInputContainer, { backgroundColor: colors.gray100 }]}>
+                <TextInput
+                  ref={inputRef}
+                  style={[styles.textInput, { color: colors.gray800 }]}
+                  value={inputText}
+                  onChangeText={handleTyping}
+                  placeholder={`Message ${petName}...`}
+                  placeholderTextColor={colors.gray400}
+                  multiline
+                  maxLength={MAX_MESSAGE_LENGTH}
+                  returnKeyType="send"
+                  onSubmitEditing={sendMessage}
+                  blurOnSubmit={false}
+                />
+
+                <View style={styles.inputActions}>
+                  <Text style={[styles.characterCount, { color: colors.gray400 }]}>
                     {characterCount}/{MAX_MESSAGE_LENGTH}
                   </Text>
-                </Animated.View>
-              )}
-            </View>
-            
-            <TouchableOpacity 
-              style={styles.emojiButton}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                Alert.alert('Emoji Picker', 'Emoji picker coming soon! 😊');
-              }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <LinearGradient
-                colors={[colors.warning + '30', colors.warning + '50']}
-                style={styles.emojiButtonGradient}
-              >
-                <Ionicons name="happy-outline" size={20} color={colors.warning} />
-              </LinearGradient>
-            </TouchableOpacity>
-            
-            <Animated.View style={{ transform: [{ scale: sendButtonScale }] }}>
-              <TouchableOpacity
-                style={[
-                  styles.sendButton, 
-                  inputText.trim() && styles.sendButtonActive,
-                  isSending && styles.sendButtonSending
-                ]}
-                onPress={sendMessage}
-                disabled={!inputText.trim() || isSending}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <LinearGradient
-                  colors={
-                    isSending 
-                      ? [colors.warning, colors.warning + 'DD']
-                      : inputText.trim() 
-                        ? [colors.primary, colors.primaryLight] 
-                        : [colors.gray200, colors.gray300]
-                  }
-                  style={styles.sendButtonGradient}
+                </View>
+              </View>
+
+              {/* Image Picker Buttons */}
+              <View style={styles.imagePickerContainer}>
+                <TouchableOpacity
+                  onPress={pickImage}
+                  style={styles.imagePickerButton}
+                  disabled={isSending}
                 >
-                  {isSending ? (
-                    <Animated.View style={styles.sendingSpinner}>
-                      <Ionicons name="hourglass" size={18} color={colors.white} />
-                    </Animated.View>
-                  ) : (
-                    <Ionicons 
-                      name="send" 
-                      size={18} 
-                      color={inputText.trim() ? colors.white : colors.gray500} 
-                    />
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
-        </BlurView>
+                  <Ionicons name="images" size={20} color={isSending ? colors.gray400 : colors.primary} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={takePhoto}
+                  style={styles.imagePickerButton}
+                  disabled={isSending}
+                >
+                  <Ionicons name="camera" size={20} color={isSending ? colors.gray400 : colors.primary} />
+                </TouchableOpacity>
+              </View>
+
+              <Animated.View style={{ transform: [{ scale: sendButtonScale as any }] } as any}>
+                <TouchableOpacity
+                  onPress={sendMessage}
+                  style={[
+                    styles.sendButton,
+                    { backgroundColor: inputText.trim() ? colors.primary : colors.gray300 },
+                    inputText.trim() ? styles.sendButtonActive : {}
+                  ]}
+                  disabled={!inputText.trim() || isSending}
+                >
+                  <Ionicons
+                    name="send"
+                    size={20}
+                    color={inputText.trim() ? colors.white : colors.gray500}
+                  />
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+          </LinearGradient>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  // === CONTAINER & LAYOUT ===
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
-  
-  // === ELITE HEADER STYLES ===
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+  },
   header: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 1000,
-    paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
+    paddingTop: Platform.OS === 'ios' ? 0 : 24,
   },
   headerBlur: {
-    borderBottomWidth: 0.5,
+    borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   headerContent: {
@@ -1001,444 +962,284 @@ const styles = StyleSheet.create({
     minHeight: 60,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
     marginRight: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   headerInfo: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  headerAvatarContainer: {
-    position: 'relative',
-    marginRight: 12,
-  },
   headerAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  headerOnlineIndicator: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#4CAF50',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 2,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  typingStatus: {
-    fontSize: 13,
-    color: '#4CAF50',
-    fontStyle: 'italic',
-    marginLeft: 8,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    overflow: 'hidden',
+    marginRight: 12,
   },
-  headerButtonGradient: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  moreButton: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  
-  // === CHAT CONTAINER ===
-  chatContainer: {
-    flex: 1,
-    paddingTop: 80, // Account for header
-  },
-  
-  // === MESSAGES STYLES ===
-  messagesList: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingBottom: 20,
-  },
-  
-  // === DATE HEADER ===
-  dateHeader: {
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  dateHeaderBlur: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  dateHeaderText: {
-    fontSize: 12,
+  headerTitle: {
+    fontSize: 18,
     fontWeight: '600',
-    color: '#666',
-    textAlign: 'center',
   },
-  
-  // === MESSAGE CONTAINER ===
+  headerSubtitle: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  callButton: {
+    padding: 8,
+  },
+  messagesList: {
+    flex: 1,
+    paddingTop: Platform.OS === 'ios' ? 100 : 124,
+  },
+  messagesContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
   messageContainer: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 12,
     alignItems: 'flex-end',
     paddingHorizontal: 4,
   },
   myMessageContainer: {
     justifyContent: 'flex-end',
   },
-  
-  // === AVATAR STYLES ===
-  avatarContainer: {
-    position: 'relative',
-    marginRight: 8,
+  otherMessageContainer: {
+    justifyContent: 'flex-start',
   },
   avatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: '#fff',
+    marginRight: 8,
+    marginBottom: 4,
   },
-  avatarOnline: {
-    borderColor: '#4CAF50',
-  },
-  avatarSpacer: {
-    width: 40,
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#4CAF50',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  
-  // === MESSAGE BUBBLE ===
   messageBubble: {
     maxWidth: screenWidth * 0.75,
+    borderRadius: 18,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    marginBottom: 2,
-    position: 'relative',
-  },
-  myMessage: {
-    backgroundColor: '#007AFF',
-    marginLeft: 40,
-    borderBottomRightRadius: 6,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  otherMessage: {
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 6,
+    paddingVertical: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 2,
     elevation: 2,
-    borderWidth: 0.5,
-    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  myMessage: {
+    borderBottomRightRadius: 4,
+  },
+  otherMessage: {
+    borderBottomLeftRadius: 4,
   },
   errorMessage: {
-    backgroundColor: '#ffebee',
-    borderColor: '#ffcdd2',
     borderWidth: 1,
+    borderColor: '#ef4444',
   },
-  
-  // === MESSAGE TEXT ===
   messageText: {
     fontSize: 16,
     lineHeight: 20,
-    color: '#1a1a1a',
   },
   myMessageText: {
-    color: '#fff',
+    color: '#ffffff',
   },
-  errorText: {
-    color: '#d32f2f',
+  otherMessageText: {
+    color: '#1f2937',
   },
-  
-  // === MESSAGE STATUS ===
-  messageStatus: {
-    position: 'absolute',
-    bottom: 4,
-    right: 8,
-  },
-  sendingIndicator: {
+  messageFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
   },
-  sendingText: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.7)',
-    fontStyle: 'italic',
+  timestamp: {
+    fontSize: 12,
+    opacity: 0.7,
   },
-  errorIndicator: {
+  myTimestamp: {
+    color: '#ffffff',
+  },
+  otherTimestamp: {
+    color: '#6b7280',
+  },
+  messageStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  statusText: {
+    color: '#ffffff',
+    fontSize: 8,
+  },
+  sendingSpinner: {},
+  retryButton: {
     marginLeft: 4,
   },
-  
-  // === TIME CONTAINER ===
-  timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    marginLeft: 40,
-    marginBottom: 8,
-  },
-  messageTime: {
-    fontSize: 11,
-    color: '#999',
+  retryText: {
+    fontSize: 12,
     fontWeight: '500',
   },
-  readReceiptContainer: {
-    marginLeft: 4,
-  },
-  readIndicator: {
-    marginLeft: 2,
-  },
-  
-  // === MESSAGE IMAGE ===
-  messageImage: {
-    width: 200,
-    height: 150,
-    borderRadius: 12,
-    resizeMode: 'cover',
-  },
-  
-  // === TYPING INDICATOR ===
   typingContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   typingBubble: {
-    backgroundColor: '#fff',
+    borderRadius: 18,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderBottomLeftRadius: 6,
-    marginLeft: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   typingDots: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    marginRight: 8,
   },
   typingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#999',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 1,
   },
-  
-  // === QUICK REPLIES ===
-  quickRepliesContainer: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  quickRepliesList: {
-    paddingHorizontal: 4,
-  },
-  quickReply: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  quickReplyText: {
+  typingText: {
     fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  
-  // === ELITE INPUT AREA ===
-  inputBlur: {
-    borderTopWidth: 0.5,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+    fontStyle: 'italic',
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
+  },
+  inputGradient: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 12,
   },
-  
-  // === INPUT BUTTONS ===
-  attachButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
+  inputContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
   },
-  attachButtonGradient: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emojiButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
-  emojiButtonGradient: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  
-  // === INPUT WRAPPER ===
-  inputWrapper: {
+  textInputContainer: {
     flex: 1,
-    position: 'relative',
-    minHeight: 36,
-    maxHeight: 120,
-  },
-  textInput: {
-    backgroundColor: '#f8f9fa',
     borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    marginRight: 12,
+    minHeight: 40,
+    maxHeight: 100,
+  },
+  textInput: {
     fontSize: 16,
     lineHeight: 20,
-    color: '#1a1a1a',
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    textAlignVertical: 'center',
+    maxHeight: 80,
   },
-  textInputFocused: {
-    borderColor: '#007AFF',
-    backgroundColor: '#fff',
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  textInputWarning: {
-    borderColor: '#ff9800',
-    backgroundColor: '#fff8e1',
-  },
-  
-  // === CHARACTER COUNTER ===
-  characterCountContainer: {
-    position: 'absolute',
-    bottom: 8,
-    right: 12,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+  inputActions: {
+    alignItems: 'flex-end',
+    marginTop: 4,
   },
   characterCount: {
-    fontSize: 10,
-    color: '#666',
-    fontWeight: '600',
+    fontSize: 12,
   },
-  characterCountWarning: {
-    color: '#ff9800',
+  imagePickerContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginRight: 12,
   },
-  
-  // === SEND BUTTON ===
+  imagePickerButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageMessageContainer: {
+    alignItems: 'center',
+    maxWidth: screenWidth * 0.6,
+  },
+  messageImage: {
+    width: screenWidth * 0.5,
+    height: screenWidth * 0.4,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
-  sendButtonActive: {
-    shadowColor: '#ff6b6b',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
   },
-  sendButtonSending: {
-    opacity: 0.8,
+  sendButtonActive: {
+    shadowColor: '#7c3aed',
+    shadowOpacity: 0.3,
   },
-  sendButtonGradient: {
-    width: '100%',
-    height: '100%',
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  safetyButton: {
+    padding: 8,
+  },
+  safetyMenuOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  sendingSpinner: {
-    // Animation styles would be handled by Animated.View
+  safetyMenuBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  safetyMenu: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 0,
+    minWidth: 280,
+    maxWidth: 320,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  safetyMenuHeader: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  safetyMenuTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  safetyMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  safetyMenuText: {
+    fontSize: 16,
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  safetyMenuCancel: {
+    borderBottomWidth: 0,
+    justifyContent: 'center',
+    paddingVertical: 18,
   },
 });
 

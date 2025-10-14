@@ -1,0 +1,126 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function AdminDashboard() {
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // Check auth on page load
+  useEffect(() => {
+    const token = localStorage.getItem('auth-token');
+    const userData = localStorage.getItem('user');
+
+    if (!token) {
+      router.push('/admin');
+      return;
+    }
+
+    try {
+      const user = userData ? JSON.parse(userData) : null;
+      setUser(user);
+
+      // Check if user has admin role
+      const adminRoles = ['administrator', 'moderator', 'support', 'analyst', 'billing_admin'];
+      const isAdmin = user && adminRoles.includes(user.role);
+
+      if (!isAdmin) {
+        router.push('/admin');
+        return;
+      }
+
+      setIsAuthorized(true);
+    } catch (err) {
+      console.error('Error parsing user data:', err);
+      router.push('/admin');
+    }
+  }, [router]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Checking authorization...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+            <div className="flex items-center">
+              <span className="mr-2 text-sm text-gray-600 dark:text-gray-300">Logged in as:</span>
+              <span className="font-medium text-blue-600 dark:text-blue-400">
+                {user?.firstName} {user?.lastName} ({user?.role})
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg">
+              <h2 className="text-xl font-semibold mb-2">Users</h2>
+              <p className="text-3xl font-bold">15,420</p>
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-green-600 dark:text-green-400">↑ 12.5%</span> from last month
+              </div>
+            </div>
+
+            <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg">
+              <h2 className="text-xl font-semibold mb-2">Pets</h2>
+              <p className="text-3xl font-bold">18,950</p>
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-green-600 dark:text-green-400">↑ 8.3%</span> from last month
+              </div>
+            </div>
+
+            <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-lg">
+              <h2 className="text-xl font-semibold mb-2">Matches</h2>
+              <p className="text-3xl font-bold">45,670</p>
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-green-600 dark:text-green-400">↑ 15.2%</span> from last month
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="flex items-center border-b border-gray-100 dark:border-gray-700 pb-4"
+              >
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-3">
+                  <span className="text-blue-600 dark:text-blue-400 font-medium">{i}</span>
+                </div>
+                <div>
+                  <p className="font-medium">Activity {i}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {new Date().toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6">
+            <button
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+              onClick={() => router.push('/admin')}
+            >
+              Back to Admin Home
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

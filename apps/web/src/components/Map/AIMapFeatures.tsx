@@ -2,17 +2,16 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import LoadingSpinner from '../UI/LoadingSpinner';
-import { 
-  SparklesIcon, 
-  LightBulbIcon, 
+import {
   HeartIcon,
+  SparklesIcon,
+  MapPinIcon,
   ClockIcon,
   CloudIcon,
   ExclamationTriangleIcon,
-  MapPinIcon
+  LightBulbIcon,
 } from '@heroicons/react/24/outline';
-import { useAuthStore } from '../../stores/auth-store';
+// import { _useAuthStore } from '../../stores/auth-store';
 
 interface AIInsight {
   id: string;
@@ -27,18 +26,34 @@ interface AIInsight {
   color: string;
 }
 
+interface PinData {
+  id: string;
+  coordinates: [number, number];
+  activity: string;
+  message?: string;
+  createdAt: string;
+}
+
 interface AIMapFeaturesProps {
-  pins: any[];
+  pins: PinData[];
   userLocation: { latitude: number; longitude: number } | null;
   onInsightClick?: (insight: AIInsight) => void;
 }
 
-const AIMapFeatures: React.FC<AIMapFeaturesProps> = ({ 
-  pins, 
-  userLocation, 
-  onInsightClick 
-}) => {
-  const { user } = useAuthStore();
+interface HotspotData {
+  count: number;
+  center: { lat: number; lng: number };
+  pins: PinData[];
+}
+
+interface OptimalTime {
+  start: string;
+  end: string;
+  activities: number;
+}
+
+const AIMapFeatures = ({ pins, userLocation, onInsightClick }: AIMapFeaturesProps): React.JSX.Element => {
+  // const { user } = _useAuthStore(); // Currently unused
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showInsights, setShowInsights] = useState(true);
@@ -48,9 +63,9 @@ const AIMapFeatures: React.FC<AIMapFeaturesProps> = ({
     if (!pins.length || !userLocation) return;
 
     setIsAnalyzing(true);
-    
+
     // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     const newInsights: AIInsight[] = [];
 
@@ -67,54 +82,49 @@ const AIMapFeatures: React.FC<AIMapFeaturesProps> = ({
         actionable: true,
         priority: hotspot.count > 5 ? 'high' : 'medium',
         icon: '🔥',
-        color: '#EF4444'
+        color: '#EF4444',
       });
     });
 
     // 2. Optimal Timing Analysis
     const optimalTimes = analyzeOptimalTimes(pins);
     if (optimalTimes.length > 0) {
+      const firstOptimalTime = optimalTimes[0]!;
       newInsights.push({
         id: 'timing-optimal',
         type: 'timing',
         title: 'Best Times for Pet Activities',
-        description: `Peak activity between ${optimalTimes[0].start}-${optimalTimes[0].end}. ${optimalTimes[0].activities} pets typically active.`,
+        description: `Peak activity between ${firstOptimalTime.start}-${firstOptimalTime.end}. ${firstOptimalTime.activities} pets typically active.`,
         confidence: 0.85,
         actionable: true,
         priority: 'medium',
         icon: '⏰',
-        color: '#3B82F6'
+        color: '#3B82F6',
       });
     }
 
-    // 3. Weather-Based Recommendations
-    const weatherInsight = generateWeatherInsight();
-    if (weatherInsight) {
-      newInsights.push(weatherInsight);
-    }
-
-    // 4. Match Probability Analysis
+    // 3. Match Probability Analysis
     const matchInsights = analyzeMatchProbability(pins, userLocation);
-    matchInsights.forEach(insight => newInsights.push(insight));
+    matchInsights.forEach((insight) => newInsights.push(insight));
 
-    // 5. Safety Analysis
+    // 4. Safety Analysis
     const safetyInsights = analyzeSafetyFactors(pins, userLocation);
-    safetyInsights.forEach(insight => newInsights.push(insight));
+    safetyInsights.forEach((insight) => newInsights.push(insight));
 
-    // 6. Activity Recommendations
-    const activityRecs = generateActivityRecommendations(pins, userLocation);
-    activityRecs.forEach(rec => newInsights.push(rec));
+    // 5. Activity Recommendations
+    const activityRecs = generateActivityRecommendations(pins);
+    activityRecs.forEach((rec) => newInsights.push(rec));
 
     setInsights(newInsights);
     setIsAnalyzing(false);
   }, [pins, userLocation]);
 
   // Hotspot Detection Algorithm
-  const findActivityHotspots = (pins: any[]) => {
+  const findActivityHotspots = (pinData: PinData[]): HotspotData[] => {
     const gridSize = 0.005; // ~500m grid
-    const grid = new Map();
+    const grid = new Map<string, { count: number; pins: PinData[]; lat: number; lng: number }>();
 
-    pins.forEach(pin => {
+    pinData.forEach((pin) => {
       const gridX = Math.floor(pin.coordinates[0] / gridSize);
       const gridY = Math.floor(pin.coordinates[1] / gridSize);
       const key = `${gridX},${gridY}`;
@@ -123,7 +133,7 @@ const AIMapFeatures: React.FC<AIMapFeaturesProps> = ({
         grid.set(key, { count: 0, pins: [], lat: 0, lng: 0 });
       }
 
-      const cell = grid.get(key);
+      const cell = grid.get(key)!;
       cell.count++;
       cell.pins.push(pin);
       cell.lat += pin.coordinates[1];
@@ -131,115 +141,100 @@ const AIMapFeatures: React.FC<AIMapFeaturesProps> = ({
     });
 
     return Array.from(grid.values())
-      .filter(cell => cell.count >= 3)
-      .map(cell => ({
+      .filter((cell) => cell.count >= 3)
+      .map((cell) => ({
         count: cell.count,
         center: {
           lat: cell.lat / cell.count,
-          lng: cell.lng / cell.count
+          lng: cell.lng / cell.count,
         },
-        pins: cell.pins
+        pins: cell.pins,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 3);
   };
 
   // Optimal Timing Analysis
-  const analyzeOptimalTimes = (pins: any[]) => {
+  const analyzeOptimalTimes = (pinData: PinData[]): OptimalTime[] => {
     const hourCounts = new Array(24).fill(0);
-    
-    pins.forEach(pin => {
+
+    pinData.forEach((pin) => {
       const hour = new Date(pin.createdAt).getHours();
       hourCounts[hour]++;
     });
 
     const peakHours = hourCounts
       .map((count, hour) => ({ hour, count }))
+      .filter((h) => h.count > 0)
       .sort((a, b) => b.count - a.count)
       .slice(0, 3);
 
-    if (peakHours[0].count < 2) return [];
+    if (peakHours.length === 0 || !peakHours[0] || peakHours[0].count < 2) return [];
 
-    return [{
-      start: `${peakHours[0].hour}:00`,
-      end: `${(peakHours[0].hour + 2) % 24}:00`,
-      activities: peakHours[0].count
-    }];
-  };
-
-  // Weather-Based Insights
-  const generateWeatherInsight = (): AIInsight | null => {
-    const hour = new Date().getHours();
-    const isGoodWeatherTime = hour >= 8 && hour <= 18;
-
-    if (isGoodWeatherTime) {
-      return {
-        id: 'weather-optimal',
-        type: 'weather',
-        title: 'Perfect Weather for Outdoor Activities',
-        description: 'Current conditions are ideal for dog walks and park visits. UV levels are safe.',
-        confidence: 0.9,
-        actionable: true,
-        priority: 'medium',
-        icon: '☀️',
-        color: '#F59E0B'
-      };
-    }
-
-    return null;
+    return [
+      {
+        start: `${peakHours[0].hour}:00`,
+        end: `${(peakHours[0].hour + 2) % 24}:00`,
+        activities: peakHours[0].count,
+      },
+    ];
   };
 
   // Match Probability Analysis
-  const analyzeMatchProbability = (pins: any[], userLoc: { latitude: number; longitude: number }) => {
-    const nearbyPins = pins.filter(pin => {
+  const analyzeMatchProbability = (pinData: PinData[], userLoc: { latitude: number; longitude: number }): AIInsight[] => {
+    const nearbyPins = pinData.filter((pin) => {
       const distance = calculateDistance(
-        userLoc.latitude, userLoc.longitude,
-        pin.coordinates[1], pin.coordinates[0]
+        userLoc.latitude,
+        userLoc.longitude,
+        pin.coordinates[1],
+        pin.coordinates[0]
       );
-      return distance <= 2; // Within 2km
+      return distance < 5; // Within 5km
     });
 
-    if (nearbyPins.length < 3) return [];
+    if (nearbyPins.length < 2) return [];
 
-    const matchProbability = Math.min(nearbyPins.length / 10, 0.95);
-
-    return [{
-      id: 'match-probability',
-      type: 'match',
-      title: 'High Match Potential Area',
-      description: `${nearbyPins.length} compatible pets nearby. ${Math.round(matchProbability * 100)}% chance of finding a match here.`,
-      confidence: matchProbability,
-      actionable: true,
-      priority: matchProbability > 0.7 ? 'high' : 'medium',
-      icon: '💖',
-      color: '#EC4899'
-    }];
+    return [
+      {
+        id: 'match-probability',
+        type: 'match',
+        title: 'High Match Potential Nearby',
+        description: `${nearbyPins.length} potential matches within 5km. Perfect for local meetups!`,
+        confidence: 0.75,
+        actionable: true,
+        priority: 'high',
+        icon: '💕',
+        color: '#EC4899',
+      },
+    ];
   };
 
   // Safety Analysis
-  const analyzeSafetyFactors = (pins: any[], userLoc: { latitude: number; longitude: number }) => {
+  const analyzeSafetyFactors = (pinData: PinData[], userLoc: { latitude: number; longitude: number }): AIInsight[] => {
     const insights: AIInsight[] = [];
-    
+
     // Check for crowded areas
-    const crowdedAreas = pins.filter(pin => {
+    const nearbyActivity = pinData.filter((pin) => {
       const distance = calculateDistance(
-        userLoc.latitude, userLoc.longitude,
-        pin.coordinates[1], pin.coordinates[0]
+        userLoc.latitude,
+        userLoc.longitude,
+        pin.coordinates[1],
+        pin.coordinates[0]
       );
-      return distance <= 0.5; // Within 500m
+      return distance < 1; // Within 1km
     });
 
-    if (crowdedAreas.length > 8) {
+    if (nearbyActivity.length > 10) {
       insights.push({
         id: 'safety-crowded',
         type: 'safety',
         title: 'High Activity Area',
-        description: 'This area has high pet traffic. Ensure your pet is comfortable with crowds.',
-        confidence: 0.8,
+        description: 'This area sees heavy pet traffic. Great for socialization, but keep an eye on your pet.',
+        confidence: 0.9,
         actionable: true,
         priority: 'medium',
         icon: '⚠️',
-        color: '#F59E0B'
+        color: '#F59E0B',
       });
     }
 
@@ -247,231 +242,168 @@ const AIMapFeatures: React.FC<AIMapFeaturesProps> = ({
   };
 
   // Activity Recommendations
-  const generateActivityRecommendations = (pins: any[], userLoc: { latitude: number; longitude: number }) => {
+  const generateActivityRecommendations = (pinData: PinData[]): AIInsight[] => {
     const insights: AIInsight[] = [];
-    
-    const activityCounts = pins.reduce((acc, pin) => {
+
+    const activityCounts = pinData.reduce((acc, pin) => {
       acc[pin.activity] = (acc[pin.activity] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
     const topActivity = Object.entries(activityCounts)
-      .sort(([,a], [,b]) => b - a)[0];
+      .sort(([, a], [, b]) => b - a)[0];
 
     if (topActivity && topActivity[1] > 3) {
-      const activityNames: Record<string, string> = {
-        walking: 'dog walking',
-        playing: 'playtime',
-        park: 'park visits',
-        grooming: 'grooming sessions'
-      };
-
       insights.push({
         id: 'activity-recommendation',
         type: 'activity',
-        title: `Popular Activity: ${activityNames[topActivity[0]] || topActivity[0]}`,
-        description: `${topActivity[1]} pets recently enjoyed ${activityNames[topActivity[0]] || topActivity[0]} in this area.`,
-        confidence: 0.75,
+        title: 'Popular Activity',
+        description: `${topActivity[0]} is trending in your area! ${topActivity[1]} recent activities.`,
+        confidence: 0.8,
         actionable: true,
         priority: 'low',
-        icon: '🎾',
-        color: '#10B981'
+        icon: '🎯',
+        color: '#10B981',
       });
     }
 
     return insights;
   };
 
-  // Distance calculation helper
+  // Helper: Calculate distance between two points (Haversine formula)
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371; // Earth's radius in kilometers
-    const dLat = toRadians(lat2 - lat1);
-    const dLon = toRadians(lon2 - lon1);
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const R = 6371; // Radius of Earth in km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
-  const toRadians = (degrees: number): number => degrees * (Math.PI / 180);
-
-  // Run analysis when data changes
   useEffect(() => {
-    if (pins.length > 0 && userLocation) {
-      analyzeMapData();
-    }
-  }, [pins.length, userLocation, analyzeMapData]);
+    analyzeMapData();
+  }, [analyzeMapData]);
 
-  // Get icon component for insight type
-  const getInsightIcon = (type: string) => {
+  // Icon mapping
+  const getIconComponent = (type: AIInsight['type']) => {
     const icons = {
-      hotspot: SparklesIcon,
+      hotspot: MapPinIcon,
       timing: ClockIcon,
       weather: CloudIcon,
       safety: ExclamationTriangleIcon,
       match: HeartIcon,
-      activity: MapPinIcon
+      activity: LightBulbIcon,
     };
-    return icons[type as keyof typeof icons] || LightBulbIcon;
+    return icons[type] || SparklesIcon;
   };
 
-  // Priority-based sorting
+  // Priority sorting
   const sortedInsights = useMemo(() => {
     const priorityOrder = { high: 3, medium: 2, low: 1 };
-    return insights.sort((a, b) => {
-      if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-        return priorityOrder[b.priority] - priorityOrder[a.priority];
-      }
-      return b.confidence - a.confidence;
-    });
+    return [...insights].sort(
+      (a, b) =>
+        priorityOrder[b.priority] - priorityOrder[a.priority] ||
+        b.confidence - a.confidence
+    );
   }, [insights]);
 
-  if (!user?.premium?.isActive) {
+  if (!userLocation) {
     return (
-      <div className="absolute top-4 right-4 z-[1000]">
-        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl p-4 border border-gray-200/50 dark:border-gray-700/50 shadow-xl max-w-sm">
-          <div className="flex items-center space-x-2 mb-2">
-            <SparklesIcon className="h-5 w-5 text-yellow-500" />
-            <span className="font-semibold text-gray-900 dark:text-white">AI Map Insights</span>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-            Unlock AI-powered location insights and recommendations with Premium.
-          </p>
-          <button className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-yellow-500 hover:to-orange-600 transition-all duration-200">
-            Upgrade to Premium
-          </button>
-        </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <p className="text-gray-600 text-sm">Enable location to see AI-powered insights</p>
       </div>
     );
   }
 
   return (
-    <div className="absolute top-4 right-4 z-[1000] max-w-sm">
-      {/* AI Analysis Status */}
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <SparklesIcon className="h-5 w-5 text-purple-600" />
+          <h3 className="font-semibold text-gray-900">AI Insights</h3>
+        </div>
+        <button
+          onClick={() => setShowInsights(!showInsights)}
+          className="text-sm text-gray-600 hover:text-gray-900"
+        >
+          {showInsights ? 'Hide' : 'Show'}
+        </button>
+      </div>
+
+      {/* Loading State */}
+      {isAnalyzing && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-4"
+        >
+          <div className="inline-flex items-center gap-2 text-purple-600">
+            <SparklesIcon className="h-5 w-5 animate-pulse" />
+            <span className="text-sm">Analyzing patterns...</span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Insights List */}
       <AnimatePresence>
-        {isAnalyzing && (
+        {showInsights && !isAnalyzing && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl p-4 border border-gray-200/50 dark:border-gray-700/50 shadow-xl mb-4"
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-2"
           >
-            <div className="flex items-center space-x-3">
-              <LoadingSpinner size="sm" color="#3B82F6" />
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                AI analyzing map data...
-              </span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Insights Panel */}
-      <AnimatePresence>
-        {showInsights && sortedInsights.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, x: 300 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 300 }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl overflow-hidden"
-          >
-            {/* Header */}
-            <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <SparklesIcon className="h-5 w-5 text-blue-500" />
-                  <span className="font-semibold text-gray-900 dark:text-white">AI Insights</span>
-                </div>
-                <button
-                  onClick={() => setShowInsights(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            {/* Insights List */}
-            <div className="max-h-96 overflow-y-auto">
-              {sortedInsights.slice(0, 5).map((insight, index) => {
-                const IconComponent = getInsightIcon(insight.type);
+            {sortedInsights.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                Not enough data to generate insights yet
+              </p>
+            ) : (
+              sortedInsights.map((insight) => {
+                const IconComponent = getIconComponent(insight.type);
                 return (
                   <motion.div
                     key={insight.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="p-4 border-b border-gray-200/30 dark:border-gray-700/30 last:border-b-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className={`
+                      p-4 rounded-lg border-l-4 bg-white shadow-sm cursor-pointer
+                      hover:shadow-md transition-shadow
+                    `}
+                    style={{ borderColor: insight.color }}
                     onClick={() => onInsightClick?.(insight)}
                   >
-                    <div className="flex items-start space-x-3">
-                      <div 
-                        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                        style={{ backgroundColor: `${insight.color}20`, color: insight.color }}
-                      >
-                        {insight.icon}
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <IconComponent className="h-5 w-5" style={{ color: insight.color }} />
                       </div>
-                      
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {insight.title}
-                          </h4>
-                          <div className="flex items-center space-x-1">
-                            {insight.priority === 'high' && (
-                              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                            )}
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {Math.round(insight.confidence * 100)}%
-                            </span>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-medium text-gray-900">{insight.title}</h4>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                            {Math.round(insight.confidence * 100)}%
+                          </span>
                         </div>
-                        
-                        <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-                          {insight.description}
-                        </p>
-                        
+                        <p className="text-sm text-gray-600 mt-1">{insight.description}</p>
                         {insight.actionable && (
-                          <div className="mt-2">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                              Actionable
-                            </span>
-                          </div>
+                          <span className="inline-block mt-2 text-xs text-purple-600 font-medium">
+                            → Take action
+                          </span>
                         )}
                       </div>
                     </div>
                   </motion.div>
                 );
-              })}
-            </div>
-
-            {/* Footer */}
-            <div className="p-3 bg-gray-50/50 dark:bg-gray-800/50">
-              <button
-                onClick={analyzeMapData}
-                className="w-full text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
-              >
-                🔄 Refresh Analysis
-              </button>
-            </div>
+              })
+            )}
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Toggle Button */}
-      {!showInsights && insights.length > 0 && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          onClick={() => setShowInsights(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          <SparklesIcon className="h-5 w-5" />
-        </motion.button>
-      )}
     </div>
   );
 };

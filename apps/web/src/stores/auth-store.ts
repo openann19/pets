@@ -1,5 +1,11 @@
+'use client';
+
+import type { User } from '@pawfectmatch/core'
+import { logger } from '@pawfectmatch/core';
+;
 import { create } from 'zustand';
-import { User } from '@pawfectmatch/core';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { decryptData, encryptData, generateStorageKey } from '../utils/crypto';
 
 interface AuthState {
   user: User | null;
@@ -8,38 +14,104 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  
+
   setUser: (user: User | null) => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
   clearTokens: () => void;
+  logout: () => void;
   setIsLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  accessToken: null,
-  refreshToken: null,
-  isAuthenticated: false,
-  isLoading: false,
-  error: null,
+// Custom storage implementation with encryption
+const encryptedStorage = {
+  getItem: (name: string): string | null => {
+    const item = localStorage.getItem(name);
+    if (item === null || item === '') return null;
 
-  setUser: (user) => set({ user, isAuthenticated: !!user }),
-  
-  setTokens: (accessToken, refreshToken) => set({ 
-    accessToken, 
-    refreshToken, 
-    isAuthenticated: true 
-  }),
-  
-  clearTokens: () => set({ 
-    accessToken: null, 
-    refreshToken: null, 
-    user: null, 
-    isAuthenticated: false 
-  }),
-  
-  setIsLoading: (isLoading) => set({ isLoading }),
-  
-  setError: (error) => set({ error }),
-}));
+    try {
+      const key = generateStorageKey();
+      const decrypted = decryptData(item, key);
+      return decrypted;
+    } catch (error) {
+      logger.error('Failed to decrypt auth store:', { error });
+      return null;
+    }
+  },
+  setItem: (name: string, value: string): void => {
+    try {
+      const key = generateStorageKey();
+      const encrypted = encryptData(value, key);
+      localStorage.setItem(name, encrypted);
+    } catch (error) {
+      logger.error('Failed to encrypt auth store:', { error });
+      // Fallback to regular storage
+      localStorage.setItem(name, value);
+    }
+  },
+  removeItem: (name: string): void => {
+    localStorage.removeItem(name);
+  },
+};
+
+export const _useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+
+      setUser: (user) => {
+        set({ user, isAuthenticated: user !== null });
+      },
+
+      setTokens: (accessToken, refreshToken) => {
+        set({
+          accessToken,
+          refreshToken,
+          isAuthenticated: true,
+        });
+      },
+
+      clearTokens: () => {
+        set({
+          accessToken: null,
+          refreshToken: null,
+          user: null,
+          isAuthenticated: false,
+        });
+      },
+
+      logout: () => {
+        set({
+          accessToken: null,
+          refreshToken: null,
+          user: null,
+          isAuthenticated: false,
+          error: null,
+        });
+      },
+
+      setIsLoading: (isLoading) => {
+        set({ isLoading });
+      },
+
+      setError: (error) => {
+        set({ error });
+      },
+    }),
+    {
+      name: 'pm_auth',
+      storage: createJSONStorage(() => encryptedStorage),
+      partialize: (state) => ({
+        user: state.user,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    },
+  ),
+);

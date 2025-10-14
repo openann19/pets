@@ -1,5 +1,4 @@
 import React from 'react';
-import { render } from '@testing-library/react';
 
 // Mock all the complex dependencies
 jest.mock('../services/feedbackService', () => ({
@@ -11,12 +10,12 @@ jest.mock('../services/feedbackService', () => ({
 }));
 
 jest.mock('../contexts/AuthContext', () => ({
-  AuthProvider: ({ children }: any) => <div data-testid="auth-provider">{children}</div>,
+  AuthProvider: ({ children }: unknown) => <div data-testid="auth-provider">{children}</div>,
   useAuth: () => ({ user: null, loading: false }),
 }));
 
 jest.mock('../contexts/SocketContext', () => ({
-  SocketProvider: ({ children }: any) => <div data-testid="socket-provider">{children}</div>,
+  SocketProvider: ({ children }: unknown) => <div data-testid="socket-provider">{children}</div>,
 }));
 
 test('App component exists', () => {

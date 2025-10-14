@@ -1,7 +1,7 @@
 /**
  * Professional SwipeCard Component for React Native
  * Enterprise-grade implementation with proper architecture
- * 
+ *
  * Features:
  * - Gesture-based swiping with haptic feedback
  * - Smooth animations with spring physics
@@ -12,22 +12,16 @@
  * - TypeScript strict mode
  */
 
-import React, { useRef, useState, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  Dimensions,
-  Animated,
-  PanResponder,
-  Platform,
-  AccessibilityInfo,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { logger } from '@pawfectmatch/core';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Dimensions, PanResponder, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { api } from '../services/api';
+import { haptics } from '../utils/haptics';
+import OptimizedImage from './OptimizedImage';
+
 // Local types until core package is properly configured
 interface Pet {
   _id: string;
@@ -263,62 +257,76 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
   disabled = false,
   style,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isAccessibilityEnabled, setIsAccessibilityEnabled] = useState(false);
-  
+
   // Swipe processing state
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   // Swipe handlers
   const handleLike = useCallback(async (pet: Pet) => {
     setIsProcessing(true);
     try {
-      console.log('Liked pet:', pet.name);
-      // API call would go here
+      await api.swipePet(pet._id, 'like');
     } catch (error) {
-      console.error('Error liking pet:', error);
+      logger.error('Error liking pet:', { error });
     } finally {
       setIsProcessing(false);
     }
   }, []);
-  
+
   const handlePass = useCallback(async (pet: Pet) => {
     setIsProcessing(true);
     try {
-      console.log('Passed pet:', pet.name);
-      // API call would go here
+      await api.swipePet(pet._id, 'pass');
     } catch (error) {
-      console.error('Error passing pet:', error);
+      logger.error('Error passing pet:', { error });
     } finally {
       setIsProcessing(false);
     }
   }, []);
-  
+
   const handleSuperLike = useCallback(async (pet: Pet) => {
     setIsProcessing(true);
     try {
-      console.log('Super liked pet:', pet.name);
-      // API call would go here
+      await api.swipePet(pet._id, 'superlike');
     } catch (error) {
-      console.error('Error super liking pet:', error);
+      logger.error('Error super liking pet:', { error });
     } finally {
       setIsProcessing(false);
     }
   }, []);
-  
+
   // Animation values - memoized for performance
   const animationValues = useMemo(() => ({
-    pan: new Animated.ValueXY(),
+    panX: new Animated.Value(0),
+    panY: new Animated.Value(0),
     scale: new Animated.Value(isTopCard ? 1 : 0.95),
     opacity: new Animated.Value(isTopCard ? 1 : 0.8),
     likeOpacity: new Animated.Value(0),
     nopeOpacity: new Animated.Value(0),
     superLikeOpacity: new Animated.Value(0),
   }), [isTopCard]);
-  
-  const { pan, scale, opacity, likeOpacity, nopeOpacity, superLikeOpacity } = animationValues;
-  
+
+  const { panX, panY, scale, opacity, likeOpacity, nopeOpacity, superLikeOpacity } = animationValues;
+
+  // Create opacity interpolations for overlay styles
+  const likeOverlayOpacity = likeOpacity.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  }) as any;
+
+  const nopeOverlayOpacity = nopeOpacity.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  }) as any;
+
+  const superLikeOverlayOpacity = superLikeOpacity.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  }) as any;
+
   // Check accessibility settings
   React.useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setIsAccessibilityEnabled);
@@ -327,25 +335,16 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
   // Pan responder for gesture handling
   const panResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
-      },
+      onMoveShouldSetPanResponder: () => !disabled,
       onPanResponderGrant: () => {
-        pan.setOffset({
-          x: pan.x._value,
-          y: pan.y._value,
-        });
-        pan.setValue({ x: 0, y: 0 });
-        
         // Haptic feedback on touch
-        if (Platform.OS === 'ios') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
+        void haptics.light();
       },
-      onPanResponderMove: (evt, gestureState) => {
+      onPanResponderMove: (_, gestureState) => {
         // Update pan values
-        pan.setValue({ x: gestureState.dx, y: gestureState.dy });
-        
+        panX.setValue(gestureState.dx);
+        panY.setValue(gestureState.dy);
+
         // Show appropriate overlay based on swipe direction
         if (gestureState.dx > 50) {
           // Swiping right - show like
@@ -372,13 +371,11 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
           superLikeOpacity.setValue(0);
         }
       },
-      onPanResponderRelease: (evt, gestureState) => {
-        pan.flattenOffset();
-        
+      onPanResponderRelease: (_, gestureState) => {
         const { dx, dy } = gestureState;
         const absDx = Math.abs(dx);
         const absDy = Math.abs(dy);
-        
+
         // Determine swipe direction and trigger appropriate action
         if (absDx > DEFAULT_SWIPE_CONFIG.threshold && absDx > absDy) {
           // Horizontal swipe
@@ -402,141 +399,167 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
 
   const animateSwipeRight = useCallback(() => {
     if (disabled || isProcessing) return;
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    const animations = [
-      Animated.timing(pan, {
-        toValue: { x: SCREEN_WIDTH + 100, y: 0 },
-        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-    ];
-    
-    Animated.parallel(animations).start(async () => {
+
+    void haptics.medium();
+
+    // Run animations sequentially to avoid type issues
+    Animated.timing(panX, {
+      toValue: SCREEN_WIDTH + 100,
+      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start();
+
+    Animated.timing(panY, {
+      toValue: 0,
+      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start();
+
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start(async () => {
       try {
         await handleLike(pet);
         onSwipeRight(pet);
       } catch (error) {
-        console.error('Error handling like:', error);
+        logger.error('Error handling like:', error);
       }
     });
-  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handleLike, onSwipeRight]);
+  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handleLike, onSwipeRight, panX, panY, opacity]);
 
   const animateSwipeLeft = useCallback(() => {
     if (disabled || isProcessing) return;
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    const animations = [
-      Animated.timing(pan, {
-        toValue: { x: -SCREEN_WIDTH - 100, y: 0 },
-        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-    ];
-    
-    Animated.parallel(animations).start(async () => {
+
+    void haptics.medium();
+
+    // Run animations sequentially
+    Animated.timing(panX, {
+      toValue: -SCREEN_WIDTH - 100,
+      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start();
+
+    Animated.timing(panY, {
+      toValue: 0,
+      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start();
+
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start(async () => {
       try {
         await handlePass(pet);
         onSwipeLeft(pet);
       } catch (error) {
-        console.error('Error handling pass:', error);
+        logger.error('Error handling pass:', error);
       }
     });
-  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handlePass, onSwipeLeft]);
+  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handlePass, onSwipeLeft, panX, panY, opacity]);
 
   const animateSwipeUp = useCallback(() => {
     if (disabled || isProcessing) return;
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    
-    const animations = [
-      Animated.timing(pan, {
-        toValue: { x: 0, y: -SCREEN_HEIGHT - 100 },
-        duration: isAccessibilityEnabled ? 200 : 400,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: isAccessibilityEnabled ? 200 : 400,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-      Animated.timing(scale, {
-        toValue: 1.1,
-        duration: isAccessibilityEnabled ? 100 : 200,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-    ];
-    
-    Animated.parallel(animations).start(async () => {
+
+    void haptics.heavy();
+
+    // Run animations sequentially
+    Animated.timing(panX, {
+      toValue: 0,
+      duration: isAccessibilityEnabled ? 200 : 400,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start();
+
+    Animated.timing(panY, {
+      toValue: -SCREEN_HEIGHT - 100,
+      duration: isAccessibilityEnabled ? 200 : 400,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start();
+
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: isAccessibilityEnabled ? 200 : 400,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start();
+
+    Animated.timing(scale, {
+      toValue: 1.1,
+      duration: isAccessibilityEnabled ? 100 : 200,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start(async () => {
       try {
         await handleSuperLike(pet);
         onSwipeUp(pet);
       } catch (error) {
-        console.error('Error handling super like:', error);
+        logger.error('Error handling super like:', { error });
       }
     });
-  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handleSuperLike, onSwipeUp]);
+  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handleSuperLike, onSwipeUp, panX, panY, opacity, scale]);
 
   const animateReturn = useCallback(() => {
-    const animations = [
-      Animated.spring(pan, {
-        toValue: { x: 0, y: 0 },
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-        tension: DEFAULT_ANIMATION_CONFIG.tension,
-        friction: DEFAULT_ANIMATION_CONFIG.friction,
-      }),
-      Animated.timing(likeOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-      Animated.timing(nopeOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-      Animated.timing(superLikeOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      }),
-    ];
-    
-    Animated.parallel(animations).start();
-  }, [pan, likeOpacity, nopeOpacity, superLikeOpacity]);
+    // Run animations sequentially
+    Animated.spring(panX, {
+      toValue: 0,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      tension: DEFAULT_ANIMATION_CONFIG.tension,
+      friction: DEFAULT_ANIMATION_CONFIG.friction,
+    }).start();
+
+    Animated.spring(panY, {
+      toValue: 0,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      tension: DEFAULT_ANIMATION_CONFIG.tension,
+      friction: DEFAULT_ANIMATION_CONFIG.friction,
+    }).start();
+
+    Animated.timing(likeOpacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start();
+
+    Animated.timing(nopeOpacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start();
+
+    Animated.timing(superLikeOpacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+    }).start();
+  }, [panX, panY, likeOpacity, nopeOpacity, superLikeOpacity]);
 
   // Calculate rotation based on pan position - memoized for performance
-  const rotate = useMemo(() => 
-    pan.x.interpolate({
+  const rotate = useMemo(() =>
+    panX.interpolate({
       inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
       outputRange: ['-10deg', '0deg', '10deg'],
       extrapolate: 'clamp',
-    }), [pan.x]
+    }) as any, [panX]
   );
+
+  // Create transform interpolations
+  const translateX = panX as any;
+  const translateY = panY as any;
+  const cardScale = scale as any;
+  const cardOpacity = opacity as any;
 
   const nextPhoto = useCallback(() => {
     if (currentPhotoIndex < pet.photos.length - 1) {
       setCurrentPhotoIndex(prev => prev + 1);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      void haptics.light();
     }
   }, [currentPhotoIndex, pet.photos.length]);
 
   const prevPhoto = useCallback(() => {
     if (currentPhotoIndex > 0) {
       setCurrentPhotoIndex(prev => prev - 1);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      void haptics.light();
     }
   }, [currentPhotoIndex]);
 
@@ -546,30 +569,32 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
         styles.card,
         {
           transform: [
-            { translateX: pan.x },
-            { translateY: pan.y },
+            { translateX },
+            { translateY },
             { rotate },
-            { scale },
+            { scale: cardScale },
           ],
-          opacity,
+          opacity: cardOpacity,
         },
         disabled && styles.cardDisabled,
-        style,
+        style as any,
       ]}
       {...(!disabled ? panResponder.panHandlers : {})}
-      accessible={true}
+      accessible
       accessibilityRole="button"
       accessibilityLabel={`Pet profile for ${pet.name}, ${pet.age} years old ${pet.breed}`}
       accessibilityHint="Swipe right to like, left to pass, or up for super like"
     >
       {/* Photo Section */}
       <View style={styles.photoContainer}>
-        <Image
+        <OptimizedImage
           source={{ uri: pet.photos[currentPhotoIndex] }}
           style={styles.photo}
           resizeMode="cover"
+          priority="high"
+          enableCache={true}
         />
-        
+
         {/* Photo Navigation Dots */}
         <View style={styles.photoIndicators}>
           {pet.photos.map((_, index) => (
@@ -604,15 +629,15 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
         </View>
 
         {/* Swipe Overlays */}
-        <Animated.View style={[styles.overlay, styles.likeOverlay, { opacity: likeOpacity }]}>
+        <Animated.View style={[styles.overlay, styles.likeOverlay, { opacity: likeOverlayOpacity }]}>
           <Text style={styles.overlayText}>LIKE</Text>
         </Animated.View>
 
-        <Animated.View style={[styles.overlay, styles.nopeOverlay, { opacity: nopeOpacity }]}>
+        <Animated.View style={[styles.overlay, styles.nopeOverlay, { opacity: nopeOverlayOpacity }]}>
           <Text style={styles.overlayText}>NOPE</Text>
         </Animated.View>
 
-        <Animated.View style={[styles.overlay, styles.superLikeOverlay, { opacity: superLikeOpacity }]}>
+        <Animated.View style={[styles.overlay, styles.superLikeOverlay, { opacity: superLikeOverlayOpacity }]}>
           <Text style={styles.overlayText}>SUPER LIKE</Text>
         </Animated.View>
       </View>
@@ -627,17 +652,17 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
             <Text style={styles.name}>{pet.name}</Text>
             <Text style={styles.age}>{pet.age}</Text>
           </View>
-          
+
           <Text style={styles.breed}>{pet.breed}</Text>
-          
+
           {/* Compatibility Score */}
           <View style={styles.compatibilityContainer}>
             <View style={styles.compatibilityBar}>
-              <View 
+              <View
                 style={[
-                  styles.compatibilityFill, 
+                  styles.compatibilityFill,
                   { width: `${pet.compatibility}%`, backgroundColor: colors.primary }
-                ]} 
+                ]}
               />
             </View>
             <Text style={styles.compatibilityText}>{pet.compatibility}% match</Text>
@@ -646,7 +671,7 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
           {/* Tags */}
           <View style={styles.tagsContainer}>
             {pet.tags.slice(0, 3).map((tag, index) => (
-              <View key={index} style={[styles.tag, { backgroundColor: colors.primary + '20' }]}>
+              <View key={index} style={[styles.tag, { backgroundColor: `${colors.primary}20` }]}>
                 <Text style={[styles.tagText, { color: colors.primary }]}>{tag}</Text>
               </View>
             ))}

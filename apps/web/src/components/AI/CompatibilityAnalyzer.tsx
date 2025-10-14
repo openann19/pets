@@ -1,23 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  HeartIcon,
-  SparklesIcon,
+import {
+  ArrowTrendingUpIcon,
   ChartBarIcon,
-  UserGroupIcon,
-  HomeIcon,
-  ClockIcon,
-  MapPinIcon,
-  StarIcon,
   CheckCircleIcon,
-  XCircleIcon,
+  HeartIcon,
+  HomeIcon,
   InformationCircleIcon,
-  ArrowTrendingUpIcon
+  MapPinIcon,
+  SparklesIcon,
+  StarIcon,
+  UserGroupIcon,
+  XCircleIcon,
 } from '@heroicons/react/24/outline';
-import { useAuthStore } from '../../stores/auth-store';
-import { aiAPI } from '../../services/api';
+import { AnimatePresence, motion } from 'framer-motion'
+import { logger } from '@pawfectmatch/core';
+;
+import { useCallback, useEffect, useState } from 'react';
+import { useAuthStore } from '../../lib/auth-store';
 import { logger } from '../../services/logger';
 
 interface CompatibilityScore {
@@ -93,74 +93,93 @@ interface CompatibilityReport {
   enhancedData?: EnhancedCompatibilityReport;
 }
 
+interface PetData {
+  _id: string;
+  name: string;
+  species: string;
+  breed: string;
+  age: number;
+  gender: string;
+  size: string;
+  personalityTags: string[];
+  healthInfo: {
+    vaccinated: boolean;
+    spayedNeutered: boolean;
+    microchipped: boolean;
+  };
+  location: {
+    coordinates: [number, number];
+  };
+}
+
 interface CompatibilityAnalyzerProps {
   targetPetId?: string;
-  pet1?: any;
-  pet2?: any;
+  pet1?: PetData;
+  pet2?: PetData;
   interactionType?: 'playdate' | 'mating' | 'adoption' | 'cohabitation';
 }
 
-export function CompatibilityAnalyzer({ 
-  targetPetId, 
-  pet1, 
-  pet2, 
-  interactionType = 'playdate' 
-}: CompatibilityAnalyzerProps) {
+export function CompatibilityAnalyzer({
+  targetPetId,
+  pet1,
+  pet2,
+  interactionType = 'playdate',
+}: CompatibilityAnalyzerProps): JSX.Element {
   const { user } = useAuthStore();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [report, setReport] = useState<CompatibilityReport | null>(null);
   const [enhancedData, setEnhancedData] = useState<EnhancedCompatibilityReport | null>(null);
-  const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedInteractionType, setSelectedInteractionType] = useState(interactionType);
 
-  useEffect(() => {
-    if ((targetPetId && user?.activePetId) || (pet1 && pet2)) {
-      analyzeCompatibility();
-    }
-  }, [targetPetId, pet1, pet2, selectedInteractionType]);
-
-  const analyzeCompatibility = async () => {
+  const analyzeCompatibility = useCallback(async () => {
     setIsAnalyzing(true);
-    
+
     try {
       // Use the enhanced compatibility endpoint
-      const pet1Data = pet1 || {
+      interface UserWithActivePet {
+        activePetId?: string;
+        activePetName?: string;
+      }
+      const pet1Data = pet1 ?? {
         id: user?.activePetId,
-        name: user?.activePetName || 'Your Pet',
+        name: (user as unknown as UserWithActivePet)?.activePetName || 'Your Pet',
         species: 'dog',
         breed: 'mixed',
         age: 2,
         size: 'medium',
         personality_tags: ['friendly'],
-        activity_level: 5
+        activity_level: 5,
       };
 
-      const pet2Data = pet2 || {
+      const pet2Data = pet2 ?? {
         id: targetPetId,
-        name: 'Target Pet', 
+        name: 'Target Pet',
         species: 'dog',
         breed: 'mixed',
         age: 3,
-        size: 'medium', 
+        size: 'medium',
         personality_tags: ['friendly'],
-        activity_level: 5
+        activity_level: 5,
       };
 
-      console.log('Analyzing compatibility with enhanced backend:', { pet1Data, pet2Data });
+      logger.info('Analyzing compatibility with enhanced backend:', { pet1Data, pet2Data });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/enhanced-compatibility`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
+      const response = await fetch(
+        `${process.env['NEXT_PUBLIC_API_URL']}/api/ai/enhanced-compatibility`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          },
+          body: JSON.stringify({
+            pet1: pet1Data,
+            pet2: pet2Data,
+            interaction_type: selectedInteractionType,
+          }),
         },
-        body: JSON.stringify({
-          pet1: pet1Data,
-          pet2: pet2Data,
-          interaction_type: selectedInteractionType
-        })
-      });
+      );
 
       if (response.ok) {
         const enhancedResult: EnhancedCompatibilityReport = await response.json();
@@ -169,24 +188,24 @@ export function CompatibilityAnalyzer({
         // Convert to legacy format for UI compatibility
         const legacyReport: CompatibilityReport = {
           petA: {
-            id: pet1Data.id,
+            id: (pet1Data as { id?: string }).id || '',
             name: pet1Data.name,
             photo: '/api/placeholder-pet.jpg',
             breed: pet1Data.breed,
             age: pet1Data.age,
             bio: '',
             location: { city: 'Unknown', distance: 0 },
-            owner: { name: 'Owner', verified: false }
+            owner: { name: 'Owner', verified: false },
           },
           petB: {
-            id: pet2Data.id,
+            id: (pet2Data as { id?: string }).id || '',
             name: pet2Data.name,
             photo: '/api/placeholder-pet.jpg',
             breed: pet2Data.breed,
             age: pet2Data.age,
             bio: '',
             location: { city: 'Unknown', distance: 0 },
-            owner: { name: 'Owner', verified: false }
+            owner: { name: 'Owner', verified: false },
           },
           scores: {
             overall: Math.round(enhancedResult.compatibility_score),
@@ -194,108 +213,73 @@ export function CompatibilityAnalyzer({
             lifestyle: Math.round(enhancedResult.breakdown.breed_compatibility * 100),
             activity: Math.round(enhancedResult.breakdown.activity_match * 100),
             social: Math.round(enhancedResult.breakdown.species_match * 100),
-            environment: Math.round((enhancedResult.breakdown.size_compatibility + enhancedResult.breakdown.age_compatibility) * 50)
+            environment: Math.round(
+              (enhancedResult.breakdown.size_compatibility +
+                enhancedResult.breakdown.age_compatibility) *
+              50,
+            ),
           },
-          insights: enhancedResult.insights.map(insight => ({
+          insights: enhancedResult.insights.map((insight) => ({
             type: 'positive' as const,
             category: 'compatibility',
             message: insight,
-            importance: 'medium' as const
+            importance: 'medium' as const,
           })),
           recommendations: enhancedResult.recommendations,
           successPrediction: {
             shortTerm: Math.round(enhancedResult.interaction_suitability.playdate * 100),
-            longTerm: Math.round(enhancedResult.interaction_suitability.cohabitation * 100)
+            longTerm: Math.round(enhancedResult.interaction_suitability.cohabitation * 100),
           },
           sharedInterests: ['Playing', 'Walking', 'Treats'], // Mock data
           potentialChallenges: enhancedResult.risk_factors,
           meetingTips: [
-            "Start with a neutral, public location",
-            "Keep initial meetings short (15-20 minutes)",
-            "Bring treats and positive reinforcement"
+            'Start with a neutral, public location',
+            'Keep initial meetings short (15-20 minutes)',
+            'Bring treats and positive reinforcement',
           ],
           generatedAt: enhancedResult.calculated_at,
-          enhancedData: enhancedResult
+          enhancedData: enhancedResult,
         };
 
         setReport(legacyReport);
-        logger.info('Enhanced compatibility analysis completed', { 
+        logger.info('Enhanced compatibility analysis completed', {
           overall: enhancedResult.compatibility_score,
-          confidence: enhancedResult.confidence 
+          confidence: enhancedResult.confidence,
         });
-
       } else {
-        console.warn('Enhanced compatibility API failed, falling back to legacy');
-        // Fallback to mock data for demo purposes
-        const mockReport: CompatibilityReport = createMockReport(pet1Data, pet2Data);
-        setReport(mockReport);
+        throw new Error(`API request failed with status: ${response.status}`);
       }
-
     } catch (error) {
-      logger.error('Compatibility analysis failed', error);
-      // Create fallback report
-      if (pet1 && pet2) {
-        const fallbackReport = createMockReport(pet1, pet2);
-        setReport(fallbackReport);
-      }
+      logger.error('Compatibility analysis failed', { error });
+      // Show error state instead of fallback mock data
+      setIsAnalyzing(false);
+      return;
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [user, targetPetId, pet1, pet2, selectedInteractionType, setIsAnalyzing, setReport, setEnhancedData]);
 
-  const createMockReport = (pet1Data: any, pet2Data: any): CompatibilityReport => ({
-    petA: {
-      id: pet1Data.id || '1',
-      name: pet1Data.name || 'Pet 1',
-      photo: '/api/placeholder-pet.jpg',
-      breed: pet1Data.breed || 'Mixed',
-      age: pet1Data.age || 2,
-      bio: '',
-      location: { city: 'Unknown', distance: 0 },
-      owner: { name: 'Owner', verified: false }
-    },
-    petB: {
-      id: pet2Data.id || '2',
-      name: pet2Data.name || 'Pet 2',
-      photo: '/api/placeholder-pet.jpg',
-      breed: pet2Data.breed || 'Mixed',
-      age: pet2Data.age || 3,
-      bio: '',
-      location: { city: 'Unknown', distance: 0 },
-      owner: { name: 'Owner', verified: false }
-    },
-    scores: {
-      overall: 75,
-      personality: 80,
-      lifestyle: 70,
-      activity: 75,
-      social: 85,
-      environment: 65
-    },
-    insights: [
-      { type: 'positive', category: 'personality', message: 'Both pets have compatible energy levels', importance: 'high' }
-    ],
-    recommendations: ['Schedule a supervised meetup', 'Start with neutral territory'],
-    successPrediction: { shortTerm: 80, longTerm: 70 },
-    sharedInterests: ['Playing', 'Treats'],
-    potentialChallenges: ['Size difference may need monitoring'],
-    meetingTips: ['Use neutral location', 'Keep meetings short initially'],
-    generatedAt: new Date().toISOString()
-  });
+  useEffect(() => {
+    if ((targetPetId && user?.activePetId) || (pet1 && pet2)) {
+      analyzeCompatibility();
+    }
+  }, [targetPetId, pet1, pet2, selectedInteractionType, analyzeCompatibility, user?.activePetId]);
 
-  const getScoreColor = (score: number) => {
+  // Removed mock report generator in favor of actual API data
+
+  const getScoreColor = (score: number): string => {
     if (score >= 80) return 'text-green-600 bg-green-50';
     if (score >= 60) return 'text-yellow-600 bg-yellow-50';
     return 'text-red-600 bg-red-50';
   };
 
-  const getScoreGradient = (score: number) => {
+  const getScoreGradient = (score: number): string => {
     if (score >= 80) return 'from-green-400 to-emerald-600';
     if (score >= 60) return 'from-yellow-400 to-orange-600';
     return 'from-red-400 to-pink-600';
   };
 
-  const getScoreEmoji = (score: number) => {
+  const getScoreEmoji = (score: number): string => {
     if (score >= 90) return '🔥';
     if (score >= 80) return '💕';
     if (score >= 70) return '❤️';
@@ -304,7 +288,7 @@ export function CompatibilityAnalyzer({
     return '💔';
   };
 
-  if (isAnalyzing) {
+  if (isAnalyzing !== null && isAnalyzing !== undefined) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <motion.div
@@ -323,7 +307,7 @@ export function CompatibilityAnalyzer({
       <div className="text-center p-8">
         <HeartIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-500">Select pets to analyze compatibility</p>
-        {pet1 && pet2 && (
+        {pet1 !== undefined && pet2 && (
           <motion.button
             onClick={analyzeCompatibility}
             whileHover={{ scale: 1.05 }}
@@ -352,18 +336,21 @@ export function CompatibilityAnalyzer({
               { value: 'playdate', label: 'Playdate', emoji: '🎾' },
               { value: 'mating', label: 'Breeding', emoji: '💕' },
               { value: 'adoption', label: 'Adoption', emoji: '🏠' },
-              { value: 'cohabitation', label: 'Living Together', emoji: '🏡' }
-            ].map(type => (
+              { value: 'cohabitation', label: 'Living Together', emoji: '🏡' },
+            ].map((type) => (
               <motion.button
                 key={type.value}
-                onClick={() => setSelectedInteractionType(type.value as any)}
+                onClick={() =>
+                  setSelectedInteractionType(
+                    type.value as 'playdate' | 'mating' | 'adoption' | 'cohabitation',
+                  )
+                }
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                  selectedInteractionType === type.value
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${selectedInteractionType === type.value
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
               >
                 {type.emoji} {type.label}
               </motion.button>
@@ -372,7 +359,7 @@ export function CompatibilityAnalyzer({
         </div>
 
         {/* Enhanced Data Display */}
-        {enhancedData && (
+        {enhancedData !== undefined && (
           <div className="mb-6 bg-white rounded-2xl p-4 shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-bold text-gray-800 flex items-center">
@@ -380,22 +367,23 @@ export function CompatibilityAnalyzer({
                 Enhanced AI Analysis
               </h3>
               <div className="text-sm text-gray-600">
-                Confidence: {Math.round(enhancedData.confidence * 100)}%
+                Confidence: {enhancedData && Math.round(enhancedData.confidence * 100)}%
               </div>
             </div>
-            
+
             <div className="bg-gray-50 rounded-xl p-4 mb-4">
-              <p className="text-sm text-gray-700 leading-relaxed">
-                {enhancedData.ai_analysis}
-              </p>
+              <p className="text-sm text-gray-700 leading-relaxed">{enhancedData?.ai_analysis}</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
-              {Object.entries(enhancedData.interaction_suitability).map(([type, suitability]) => (
-                <div key={type} className="text-center">
+              {enhancedData && Object.entries(enhancedData.interaction_suitability).map(([type, suitability]) => (
+                <div
+                  key={type}
+                  className="text-center"
+                >
                   <p className="text-xs text-gray-600 uppercase tracking-wide">{type}</p>
                   <p className="text-2xl font-bold text-purple-600">
-                    {Math.round(suitability * 100)}%
+                    {Math.round((suitability as number) * 100)}%
                   </p>
                 </div>
               ))}
@@ -408,8 +396,8 @@ export function CompatibilityAnalyzer({
           <div className="flex items-center gap-6">
             {/* Pet A */}
             <div className="text-center">
-              <img 
-                src={report.petA.photo} 
+              <img
+                src={report.petA.photo}
                 alt={report.petA.name}
                 className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
               />
@@ -430,8 +418,8 @@ export function CompatibilityAnalyzer({
 
             {/* Pet B */}
             <div className="text-center">
-              <img 
-                src={report.petB.photo} 
+              <img
+                src={report.petB.photo}
                 alt={report.petB.name}
                 className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
               />
@@ -499,8 +487,8 @@ export function CompatibilityAnalyzer({
             { key: 'lifestyle', label: 'Lifestyle', icon: HomeIcon },
             { key: 'activity', label: 'Activity', icon: ChartBarIcon },
             { key: 'social', label: 'Social', icon: UserGroupIcon },
-            { key: 'environment', label: 'Environment', icon: MapPinIcon }
-          ].map(category => {
+            { key: 'environment', label: 'Environment', icon: MapPinIcon },
+          ].map((category) => {
             const score = report.scores[category.key as keyof CompatibilityScore];
             return (
               <motion.div
@@ -532,21 +520,25 @@ export function CompatibilityAnalyzer({
         </div>
 
         {/* Enhanced Breakdown (if available) */}
-        {enhancedData && (
+        {enhancedData !== undefined && (
           <div className="mb-6 bg-white rounded-2xl p-6 shadow-lg">
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
               <ChartBarIcon className="h-5 w-5 mr-2" />
               Detailed Compatibility Breakdown
             </h3>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(enhancedData.breakdown).map(([key, value]) => {
+              {enhancedData && Object.entries(enhancedData.breakdown).map(([key, value]) => {
                 const score = Math.round(value * 100);
-                const label = key.split('_').map(word => 
-                  word.charAt(0).toUpperCase() + word.slice(1)
-                ).join(' ');
-                
+                const label = key
+                  .split('_')
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ');
+
                 return (
-                  <div key={key} className="bg-gray-50 rounded-xl p-4">
+                  <div
+                    key={key}
+                    className="bg-gray-50 rounded-xl p-4"
+                  >
                     <p className="text-xs text-gray-600 uppercase tracking-wide mb-1">{label}</p>
                     <div className="flex items-center justify-between">
                       <span className={`text-xl font-bold ${getScoreColor(score).split(' ')[0]}`}>
@@ -565,16 +557,19 @@ export function CompatibilityAnalyzer({
                 );
               })}
             </div>
-            
-            {enhancedData.risk_factors && enhancedData.risk_factors.length > 0 && (
+
+            {enhancedData && enhancedData.risk_factors !== undefined && enhancedData.risk_factors.length > 0 && (
               <div className="mt-4 p-4 bg-yellow-50 rounded-xl">
                 <h4 className="font-semibold text-yellow-800 mb-2 flex items-center">
                   <InformationCircleIcon className="h-4 w-4 mr-2" />
                   Risk Factors to Consider
                 </h4>
                 <ul className="space-y-1">
-                  {enhancedData.risk_factors.map((risk, index) => (
-                    <li key={index} className="text-sm text-yellow-700 flex items-start">
+                  {enhancedData && enhancedData.risk_factors.map((risk, index) => (
+                    <li
+                      key={index}
+                      className="text-sm text-yellow-700 flex items-start"
+                    >
                       <span className="mr-2">⚠️</span>
                       {risk}
                     </li>
@@ -629,8 +624,8 @@ export function CompatibilityAnalyzer({
               Shared Interests
             </h3>
             <div className="flex flex-wrap gap-2 mb-4">
-              {report.sharedInterests.map(interest => (
-                <span 
+              {report.sharedInterests.map((interest) => (
+                <span
                   key={interest}
                   className="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-sm font-medium"
                 >
@@ -638,13 +633,16 @@ export function CompatibilityAnalyzer({
                 </span>
               ))}
             </div>
-            
+
             {report.potentialChallenges.length > 0 && (
               <>
                 <h4 className="font-semibold text-gray-700 mb-2">Potential Challenges</h4>
                 <ul className="space-y-1">
                   {report.potentialChallenges.slice(0, 3).map((challenge, index) => (
-                    <li key={index} className="text-sm text-gray-600 flex items-start">
+                    <li
+                      key={index}
+                      className="text-sm text-gray-600 flex items-start"
+                    >
                       <span className="text-yellow-500 mr-2">⚠️</span>
                       {challenge}
                     </li>
@@ -668,9 +666,14 @@ export function CompatibilityAnalyzer({
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
             {report.meetingTips.map((tip, index) => (
-              <div key={index} className="bg-white/10 backdrop-blur rounded-xl p-3">
+              <div
+                key={index}
+                className="bg-white/10 backdrop-blur rounded-xl p-3"
+              >
                 <div className="flex items-start">
-                  <span className="text-2xl mr-2">{index === 0 ? '📍' : index === 1 ? '⏰' : '💡'}</span>
+                  <span className="text-2xl mr-2">
+                    {index === 0 ? '📍' : index === 1 ? '⏰' : '💡'}
+                  </span>
                   <p className="text-sm">{tip}</p>
                 </div>
               </div>
@@ -689,7 +692,7 @@ export function CompatibilityAnalyzer({
             <ChartBarIcon className="h-5 w-5 mr-2" />
             {showDetails ? 'Hide' : 'Show'} Full Report
           </motion.button>
-          
+
           {report.scores.overall >= 70 && (
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -704,41 +707,26 @@ export function CompatibilityAnalyzer({
 
         {/* Detailed Report (Collapsible) */}
         <AnimatePresence>
-          {showDetails && (
+          {showDetails !== undefined && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="mt-6 bg-white rounded-2xl p-6 shadow-lg overflow-hidden"
             >
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Detailed Compatibility Report</h3>
-              
-              {/* Historical Trend */}
-              {historicalData.length > 0 && (
-                <div className="mb-6">
-                  <h4 className="font-semibold text-gray-700 mb-2">Compatibility Trend</h4>
-                  <div className="h-32 flex items-end gap-2">
-                    {historicalData.map((data, index) => (
-                      <div 
-                        key={index}
-                        className="flex-1 bg-gradient-to-t from-purple-500 to-pink-500 rounded-t"
-                        style={{ height: `${data.score}%` }}
-                      >
-                        <div className="text-xs text-white text-center mt-1">
-                          {data.score}%
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <h3 className="text-lg font-bold text-gray-800 mb-4">
+                Detailed Compatibility Report
+              </h3>
 
               {/* All Recommendations */}
               <div>
                 <h4 className="font-semibold text-gray-700 mb-2">All Recommendations</h4>
                 <ul className="space-y-2">
                   {report.recommendations.map((rec, index) => (
-                    <li key={index} className="flex items-start">
+                    <li
+                      key={index}
+                      className="flex items-start"
+                    >
                       <CheckCircleIcon className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
                       <span className="text-sm text-gray-700">{rec}</span>
                     </li>

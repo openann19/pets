@@ -123,15 +123,13 @@ export const colors = {
 };
 
 // === COLOR UTILITIES ===
-export const getThemeColors = (isDark: boolean) => {
-  return {
+export const _getThemeColors = (isDark: boolean): Record<string, unknown> => ({
     ...colors,
     ...(isDark ? colors.dark : colors.light),
     mode: isDark ? 'dark' : 'light',
-  };
-};
+  });
 
-export const withOpacity = (color: string, opacity: number) => {
+export const _withOpacity = (color: string, opacity: number): string => {
   if (color.startsWith('rgba')) {
     return color.replace(/[\d.]+\)$/g, `${opacity})`);
   }

@@ -1,19 +1,56 @@
 # Dependencies
 node_modules/
-*/node_modules/
-**/node_modules/
+.pnp
+.pnp.js
 
-# Environment variables
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+/dist
+
+# Misc
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Logs
+logs
 *.log
-logs/
-*.pid
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
 # Runtime data
 pids
@@ -41,6 +78,7 @@ bower_components
 build/Release
 
 # Dependency directories
+node_modules/
 jspm_packages/
 
 # TypeScript cache
@@ -67,7 +105,7 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# parcel-bundler cache (https://parceljs.org/)
+# parcel-bundler cache (https://parceljs.com/)
 .cache
 .parcel-cache
 
@@ -91,132 +129,40 @@ tmp/
 temp/
 
 # Editor directories and files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS generated files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # Turbo
-.turbo/
+.turbo
 
-# Cursor
-.cursor/
+# Expo
+.expo/
+.expo-shared/
 
-# Windsurf
-.windsurf/
+# Mobile
+android/
+ios/
 
-# Build outputs
-dist/
-build/
-out/
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Package manager lock files (keep pnpm-lock.yaml but ignore others)
-package-lock.json
-yarn.lock
+# Sentry
+.sentryclirc
 
-# Mobile app specific
-apps/mobile/dist/
-apps/mobile/.expo/
-apps/mobile/.expo-shared/
-
-# Server logs
-server/logs/
-
-# AI service logs
-ai-service.log
-backend.log
-frontend.log
-server.log
-web.log
-demo.log
-
-# PID files
-*.pid
-.ai-service.pid
-.backend.pid
-.web.pid
-
-# Docker
-.dockerignore
+# Stripe test keys
+stripe_publishable_key
+stripe_secret_key
 
 # Database
 *.db
@@ -224,6 +170,58 @@ demo.log
 *.sqlite3
 
 # Backup files
-*.bak
 *.backup
-*.old
+*.bak
+
+# Archive
+.archive/
+
+# Test files
+test-files/
+
+# Console backup
+console-backup/
+
+# Gradient environment
+gradient_env/
+
+# Nginx
+nginx/
+
+# Logs directory
+logs/
+
+# Server logs
+server/logs/
+
+# Husky
+.husky/_
+
+# Cursor
+.cursor/
+
+# Lighthouse
+.lighthouserc.json
+
+# Prettier
+.prettierignore
+
+# Turbo cache
+.turbo/cache/
+.turbo/cookies/
+.turbo/daemon/
+
+# Build artifacts
+apps/mobile/android/
+apps/mobile/ios/
+apps/web/.next/
+packages/*/dist/
+packages/*/node_modules/
+
+# AI service
+ai-service/venv/
+ai-service/__pycache__/
+
+# Temporary files
+*.tmp
+*.temp

@@ -13,7 +13,7 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 // Mock IntersectionObserver
-(global as any).IntersectionObserver = class IntersectionObserver {
+(global as unknown).IntersectionObserver = class IntersectionObserver {
   root = null;
   rootMargin = '';
   thresholds = [];
@@ -49,7 +49,7 @@ global.ResizeObserver = class ResizeObserver {
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation((query: any) => ({
+  value: jest.fn().mockImplementation((query: unknown) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -68,15 +68,15 @@ Object.defineProperty(window, 'scrollTo', {
 });
 
 // Mock requestAnimationFrame
-global.requestAnimationFrame = jest.fn((cb: any) => {
+global.requestAnimationFrame = jest.fn((cb: unknown) => {
   setTimeout(cb, 16);
   return 1;
-}) as any;
+}) as unknown;
 
 global.cancelAnimationFrame = jest.fn();
 
 // Setup MSW (Mock Service Worker) for API mocking
-// import { server } from '../src/__mocks__/server';
+// import {  } from '../src/__mocks__/server';
 // beforeAll(() => server.listen());
 // afterEach(() => server.resetHandlers());
 // afterAll(() => server.close());

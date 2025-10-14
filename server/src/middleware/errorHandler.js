@@ -1,4 +1,5 @@
 const logger = require('../utils/logger');
+const { sendAdminNotification } = require('../services/adminNotificationService');
 
 const errorHandler = (err, req, res, next) => {
   let error = { ...err };
@@ -21,6 +22,34 @@ const errorHandler = (err, req, res, next) => {
     query: req.query,
     params: req.params,
   });
+
+  // Send admin notification for critical errors
+  const shouldNotifyAdmin = err.statusCode >= 500 || 
+                           err.name === 'MongoNetworkError' || 
+                           err.name === 'MongoTimeoutError' ||
+                           err.type === 'StripeCardError' ||
+                           err.message?.includes('AI service');
+
+  if (shouldNotifyAdmin) {
+    sendAdminNotification({
+      type: 'error',
+      severity: err.statusCode >= 500 ? 'critical' : 'high',
+      title: 'Server Error Alert',
+      message: `Error ${errorId}: ${err.message}`,
+      metadata: {
+        errorId,
+        method: req.method,
+        url: req.url,
+        userId: req.user?.id,
+        stack: err.stack,
+      },
+    }).catch(notificationError => {
+      logger.error('Failed to send admin notification', {
+        originalError: err.message,
+        notificationError: notificationError.message,
+      });
+    });
+  }
 
   // Enhanced error type handling
   if (err.name === 'CastError') {

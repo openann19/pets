@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { Vibration } from 'react-native';
+import {  } from '@testing-library/react-native';
+import {  } from 'react-native';
 import IncomingCallScreen from '../IncomingCallScreen';
 
 // Mock dependencies

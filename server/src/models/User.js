@@ -87,14 +87,29 @@ const userSchema = new mongoose.Schema({
   // Premium Features
   premium: {
     isActive: { type: Boolean, default: false },
-    plan: { type: String, enum: ['basic', 'premium', 'gold'], default: 'basic' },
+    plan: { type: String, enum: ['basic', 'premium', 'ultimate'], default: 'basic' },
     expiresAt: Date,
     stripeSubscriptionId: String,
+    cancelAtPeriodEnd: { type: Boolean, default: false },
+    paymentStatus: { type: String, enum: ['active', 'past_due', 'failed'], default: 'active' },
     features: {
       unlimitedLikes: { type: Boolean, default: false },
       boostProfile: { type: Boolean, default: false },
       seeWhoLiked: { type: Boolean, default: false },
-      advancedFilters: { type: Boolean, default: false }
+      advancedFilters: { type: Boolean, default: false },
+      aiMatching: { type: Boolean, default: false },
+      prioritySupport: { type: Boolean, default: false },
+      globalPassport: { type: Boolean, default: false }
+    },
+    usage: {
+      swipesUsed: { type: Number, default: 0 },
+      swipesLimit: { type: Number, default: 50 },
+      superLikesUsed: { type: Number, default: 0 },
+      superLikesLimit: { type: Number, default: 0 },
+      boostsUsed: { type: Number, default: 0 },
+      boostsLimit: { type: Number, default: 0 },
+      messagesSent: { type: Number, default: 0 },
+      profileViews: { type: Number, default: 0 }
     }
   },
   
@@ -132,7 +147,17 @@ const userSchema = new mongoose.Schema({
     totalLikes: { type: Number, default: 0 },
     totalMatches: { type: Number, default: 0 },
     profileViews: { type: Number, default: 0 },
-    lastActive: { type: Date, default: Date.now }
+    lastActive: { type: Date, default: Date.now },
+    totalPetsCreated: { type: Number, default: 0 },
+    totalMessagesSent: { type: Number, default: 0 },
+    totalSubscriptionsStarted: { type: Number, default: 0 },
+    totalSubscriptionsCancelled: { type: Number, default: 0 },
+    totalPremiumFeaturesUsed: { type: Number, default: 0 },
+    events: [{
+      type: String,
+      timestamp: { type: Date, default: Date.now },
+      metadata: Object
+    }]
   },
   
   // Account Status
@@ -140,13 +165,30 @@ const userSchema = new mongoose.Schema({
   isPhoneVerified: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   isBlocked: { type: Boolean, default: false },
+  status: {
+    type: String,
+    enum: ['active', 'suspended', 'banned', 'pending'],
+    default: 'active'
+  },
+  
+  // Admin & Roles
+  role: {
+    type: String,
+    enum: ['user', 'premium', 'administrator', 'moderator', 'support', 'analyst', 'billing_admin'],
+    default: 'user',
+    select: false // Don't include by default for security
+  },
   
   // Security
   refreshTokens: [String],
   passwordResetToken: String,
   passwordResetExpires: Date,
   emailVerificationToken: String,
-  emailVerificationExpires: Date
+  emailVerificationExpires: Date,
+  lastLoginAt: { type: Date },
+  lastLoginIP: { type: String },
+  // WebAuthn challenge (temporary storage during registration)
+  webauthnChallenge: { type: String, default: null }
   
 }, {
   timestamps: true,

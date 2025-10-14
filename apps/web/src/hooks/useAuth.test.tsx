@@ -1,7 +1,8 @@
 import { renderHook, act } from '@testing-library/react';
-import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { AuthProvider } from '../contexts/AuthContext';
 import { api } from '../services/api';
-import { User } from '../types';
+import type { User } from '../types';
+import { useAuth } from './useAuth';
 
 // Mock the API
 jest.mock('../services/api', () => ({
@@ -13,16 +14,32 @@ jest.mock('../services/api', () => ({
 }));
 
 const mockUser: User = {
+  id: '123',
   _id: '123',
   email: 'test@example.com',
   firstName: 'Test',
-  lastName: 'User',
+  lastName: 'Test',
   // Add other required fields from your User type
   dateOfBirth: '1990-01-01',
   age: 30,
   location: { type: 'Point', coordinates: [0, 0] },
-  preferences: { maxDistance: 50, ageRange: { min: 0, max: 20 }, species: [], intents: [], notifications: { email: true, push: true, matches: true, messages: true } },
-  premium: { isActive: false, plan: 'basic', features: { unlimitedLikes: false, boostProfile: false, seeWhoLiked: false, advancedFilters: false } },
+  preferences: {
+    maxDistance: 50,
+    ageRange: { min: 0, max: 20 },
+    species: [],
+    intents: [],
+    notifications: { email: true, push: true, matches: true, messages: true },
+  },
+  premium: {
+    isActive: false,
+    plan: 'basic',
+    features: {
+      unlimitedLikes: false,
+      boostProfile: false,
+      seeWhoLiked: false,
+      advancedFilters: false,
+    },
+  },
   pets: [],
   analytics: { totalSwipes: 0, totalLikes: 0, totalMatches: 0, profileViews: 0, lastActive: '' },
   isEmailVerified: true,
@@ -33,7 +50,9 @@ const mockUser: User = {
 
 describe('useAuth Hook', () => {
   it('should handle login and logout', async () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => <AuthProvider>{children}</AuthProvider>;
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <AuthProvider>{children}</AuthProvider>
+    );
     const { result } = renderHook(() => useAuth(), { wrapper });
 
     // Mock successful login
@@ -45,7 +64,7 @@ describe('useAuth Hook', () => {
 
     // Test login
     await act(async () => {
-      await result.current.login('test@example.com', 'password');
+      await result.current.login({ email: 'test@example.com', password: 'password' });
     });
 
     expect(result.current.user).toEqual(mockUser);

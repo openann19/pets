@@ -1,10 +1,10 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import Router from './Router';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom/client';
+import App from './app';
 
-// Simple entry point that renders the Router
+// Simple entry point that renders the App
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Router />
-  </React.StrictMode>
+    <App />
+  </React.StrictMode>,
 );

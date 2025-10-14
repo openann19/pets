@@ -1,7 +1,7 @@
-import React from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
+import { renderHook } from '@testing-library/react';
+import React from 'react';
 
 // Test React Query integration and configuration
 describe('React Query Integration', () => {
@@ -30,7 +30,7 @@ describe('React Query Integration', () => {
 
   it('configures React Query with correct default options', () => {
     const defaultOptions = queryClient.getDefaultOptions();
-    
+
     expect(defaultOptions.queries?.staleTime).toBe(5 * 60 * 1000);
     expect(defaultOptions.queries?.gcTime).toBe(10 * 60 * 1000);
     expect(defaultOptions.queries?.retry).toBe(2);
@@ -42,11 +42,12 @@ describe('React Query Integration', () => {
     const mockFn = jest.fn().mockResolvedValue(mockData);
 
     const { result } = renderHook(
-      () => useQuery({
-        queryKey: ['test'],
-        queryFn: mockFn,
-      }),
-      { wrapper }
+      () =>
+        useQuery({
+          queryKey: ['test'],
+          queryFn: mockFn,
+        }),
+      { wrapper },
     );
 
     await waitFor(() => {
@@ -58,22 +59,27 @@ describe('React Query Integration', () => {
   });
 
   it('handles query errors with retry', async () => {
-    const mockFn = jest.fn()
+    const mockFn = jest
+      .fn()
       .mockRejectedValueOnce(new Error('First error'))
       .mockRejectedValueOnce(new Error('Second error'))
       .mockRejectedValueOnce(new Error('Third error'));
 
     const { result } = renderHook(
-      () => useQuery({
-        queryKey: ['test-error'],
-        queryFn: mockFn,
-      }),
-      { wrapper }
+      () =>
+        useQuery({
+          queryKey: ['test-error'],
+          queryFn: mockFn,
+        }),
+      { wrapper },
     );
 
-    await waitFor(() => {
-      expect(result.current.isError).toBe(true);
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expect(result.current.isError).toBe(true);
+      },
+      { timeout: 5000 },
+    );
 
     // Should retry 2 times (total 3 calls)
     expect(mockFn).toHaveBeenCalledTimes(3);
@@ -85,11 +91,12 @@ describe('React Query Integration', () => {
 
     // First render
     const { result: result1 } = renderHook(
-      () => useQuery({
-        queryKey: ['cached-test'],
-        queryFn: mockFn,
-      }),
-      { wrapper }
+      () =>
+        useQuery({
+          queryKey: ['cached-test'],
+          queryFn: mockFn,
+        }),
+      { wrapper },
     );
 
     await waitFor(() => {
@@ -98,11 +105,12 @@ describe('React Query Integration', () => {
 
     // Second render with same key should use cache
     const { result: result2 } = renderHook(
-      () => useQuery({
-        queryKey: ['cached-test'],
-        queryFn: mockFn,
-      }),
-      { wrapper }
+      () =>
+        useQuery({
+          queryKey: ['cached-test'],
+          queryFn: mockFn,
+        }),
+      { wrapper },
     );
 
     await waitFor(() => {
@@ -115,17 +123,19 @@ describe('React Query Integration', () => {
   });
 
   it('handles background refetching', async () => {
-    const mockFn = jest.fn()
+    const mockFn = jest
+      .fn()
       .mockResolvedValueOnce({ version: 1 })
       .mockResolvedValueOnce({ version: 2 });
 
     const { result } = renderHook(
-      () => useQuery({
-        queryKey: ['refetch-test'],
-        queryFn: mockFn,
-        staleTime: 0, // Make it stale immediately
-      }),
-      { wrapper }
+      () =>
+        useQuery({
+          queryKey: ['refetch-test'],
+          queryFn: mockFn,
+          staleTime: 0, // Make it stale immediately
+        }),
+      { wrapper },
     );
 
     await waitFor(() => {
@@ -145,17 +155,21 @@ describe('React Query Integration', () => {
   });
 
   it('provides loading states', async () => {
-    let resolvePromise: (value: any) => void;
-    const mockFn = jest.fn(() => new Promise(resolve => {
-      resolvePromise = resolve;
-    }));
+    let resolvePromise: (value: unknown) => void;
+    const mockFn = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          resolvePromise = resolve;
+        }),
+    );
 
     const { result } = renderHook(
-      () => useQuery({
-        queryKey: ['loading-test'],
-        queryFn: mockFn,
-      }),
-      { wrapper }
+      () =>
+        useQuery({
+          queryKey: ['loading-test'],
+          queryFn: mockFn,
+        }),
+      { wrapper },
     );
 
     // Should be loading initially

@@ -1,17 +1,52 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
-  testEnvironment: 'jsdom',
+const nextJest = require('next/jest');
+
+const createJestConfig = nextJest({
+  // Provide the path to your Next.js app to load next.config.js and .env files
+  dir: './',
+});
+
+// Add any custom config to be passed to Jest
+const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  testEnvironment: 'jsdom',
+  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
   moduleNameMapper: {
-    '^@/components/(.*)$': '<rootDir>/src/components/$1',
-    '^@/hooks/(.*)$': '<rootDir>/src/hooks/$1',
-    '^@/services/(.*)$': '<rootDir>/src/services/$1',
-    '^@/providers/(.*)$': '<rootDir>/src/providers/$1',
-    '^@/app/(.*)$': '<rootDir>/app/$1',
-    '^@pawfectmatch/core$': '<rootDir>/../../packages/core/src'
+    // Map alias to src for absolute imports like '@/components/...'
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
+  globals: {
+    'ts-jest': {
+      tsconfig: '<rootDir>/tsconfig.test.json',
+    },
+  },
+  collectCoverageFrom: [
+    '<rootDir>/src/**/*.{js,jsx,ts,tsx}',
+    '!**/__tests__/**',
+    '!**/*.test.*',
+    '!**/*.spec.*',
+    '!**/*.d.ts',
+    '!**/node_modules/**',
+    '!**/.next/**',
+    '!**/coverage/**',
+    '!**/*.config.js',
+    '!**/jest.setup.js',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 0,
+      functions: 0,
+      lines: 0,
+      statements: 0,
+    },
+  },
+  testMatch: ['**/__tests__/**/*.(js|jsx|ts|tsx)', '**/*.(test|spec).(js|jsx|ts|tsx)'],
   transform: {
-    '^.+\.(ts|tsx|js|jsx)$': 'babel-jest',
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
   },
-  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
+  transformIgnorePatterns: ['/node_modules/(?!(recharts|framer-motion|date-fns)/)'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  // Rely on default testEnvironmentOptions; custom export conditions can cause resolution issues
 };
+
+// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
+module.exports = createJestConfig(customJestConfig);

@@ -1,14 +1,14 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { 
-  ArrowLeftIcon, 
-  InformationCircleIcon, 
-  PhoneIcon, 
+import {
+  InformationCircleIcon,
   VideoCameraIcon,
-  EllipsisVerticalIcon 
+  ArrowLeftIcon,
+  PhoneIcon,
+  EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline';
-import { User, Pet } from '../../types';
+import type { User, Pet } from '../../types';
 
 interface ChatHeaderProps {
   otherUser: User;
@@ -16,11 +16,7 @@ interface ChatHeaderProps {
   currentUserPet: Pet;
 }
 
-const ChatHeader: React.FC<ChatHeaderProps> = ({
-  otherUser,
-  otherPet,
-  currentUserPet,
-}) => {
+const ChatHeader = ({ otherUser, otherPet, currentUserPet }: ChatHeaderProps) => {
   const router = useRouter();
 
   return (
@@ -41,12 +37,16 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-r from-pink-400 to-purple-500 flex items-center justify-center text-white font-semibold">
             {otherUser.avatar ? (
-              <img src={otherUser.avatar} alt={otherUser.firstName} className="w-full h-full object-cover" />
+              <img
+                src={otherUser.avatar}
+                alt={otherUser.firstName}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <span>{otherUser.firstName[0]}</span>
             )}
           </div>
-          
+
           <div>
             <h3 className="font-semibold text-gray-900">
               {otherUser.firstName} & {otherPet.name}

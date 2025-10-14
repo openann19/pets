@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef, useEffect } from 'react'
+import { logger } from '@pawfectmatch/core';
+;
 
 export default function FluidGradient() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -10,40 +12,41 @@ export default function FluidGradient() {
     if (!containerRef.current || typeof window === 'undefined') return;
 
     // Dynamically import Three.js only on client-side
-    import('three').then((THREE) => {
-      if (!containerRef.current) return;
+    import('three')
+      .then((THREE) => {
+        if (!containerRef.current) return;
 
-      const scene = new THREE.Scene();
-      const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-      const renderer = new THREE.WebGLRenderer({
-        antialias: true,
-        powerPreference: "high-performance"
-      });
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        const renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          powerPreference: 'high-performance',
+        });
 
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      containerRef.current.appendChild(renderer.domElement);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        containerRef.current.appendChild(renderer.domElement);
 
-      // Shader geometry
-      const geometry = new THREE.PlaneGeometry(2, 2);
+        // Shader geometry
+        const geometry = new THREE.PlaneGeometry(2, 2);
 
-      // Ultra-smooth fluid gradient shader
-      const material = new THREE.ShaderMaterial({
-        uniforms: {
-          time: { value: 0 },
-          resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-          mouse: { value: new THREE.Vector2(0, 0) },
-          pulse: { value: 0 },
-          pulseCenter: { value: new THREE.Vector2(0.5, 0.5) }
-        },
-        vertexShader: `
+        // Ultra-smooth fluid gradient shader
+        const material = new THREE.ShaderMaterial({
+          uniforms: {
+            time: { value: 0 },
+            resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+            mouse: { value: new THREE.Vector2(0, 0) },
+            pulse: { value: 0 },
+            pulseCenter: { value: new THREE.Vector2(0.5, 0.5) },
+          },
+          vertexShader: `
           varying vec2 vUv;
           void main() {
             vUv = uv;
             gl_Position = vec4(position, 1.0);
           }
         `,
-        fragmentShader: `
+          fragmentShader: `
           uniform float time;
           uniform vec2 resolution;
           uniform vec2 mouse;
@@ -88,108 +91,122 @@ export default function FluidGradient() {
 
             gl_FragColor = vec4(finalColor, 1.0);
           }
-        `
-      });
+        `,
+        });
 
-      const plane = new THREE.Mesh(geometry, material);
-      scene.add(plane);
+        const plane = new THREE.Mesh(geometry, material);
+        scene.add(plane);
 
-      // Interaction logic
-      let targetMouse = new THREE.Vector2(0, 0);
-      let isPulsing = false;
+        // Interaction logic
+        const targetMouse = new THREE.Vector2(0, 0);
+        let isPulsing = false;
 
-      const handleMouseMove = (event: MouseEvent) => {
-        targetMouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        targetMouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-      };
+        const handleMouseMove = (event: MouseEvent): void => {
+          targetMouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+          targetMouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        };
 
-      const handleInteraction = (event: MouseEvent | TouchEvent) => {
-        event.preventDefault();
-        let clientX, clientY;
+        const handleInteraction = (event: MouseEvent | TouchEvent): void => {
+          event.preventDefault();
+          let clientX: number;
+          let clientY: number;
 
-        if ('touches' in event && event.touches.length > 0) {
-          clientX = event.touches[0].clientX;
-          clientY = event.touches[0].clientY;
-        } else if ('clientX' in event) {
-          clientX = event.clientX;
-          clientY = event.clientY;
-        } else {
-          return;
-        }
-
-        material.uniforms.pulseCenter.value.x = clientX / window.innerWidth;
-        material.uniforms.pulseCenter.value.y = 1.0 - (clientY / window.innerHeight);
-
-        // Start pulse effect
-        material.uniforms.pulse.value = 0.01;
-        isPulsing = true;
-
-        // Update mouse target
-        targetMouse.x = (clientX / window.innerWidth) * 2 - 1;
-        targetMouse.y = -(clientY / window.innerHeight) * 2 + 1;
-      };
-
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mousedown', handleInteraction);
-      window.addEventListener('touchstart', handleInteraction as any, { passive: false });
-      window.addEventListener('touchmove', handleInteraction as any, { passive: false });
-
-      // Animation loop
-      const clock = new THREE.Clock();
-      const animate = () => {
-        animationIdRef.current = requestAnimationFrame(animate);
-
-        // Smooth mouse interpolation
-        material.uniforms.mouse.value.x += (targetMouse.x - material.uniforms.mouse.value.x) * 0.03;
-        material.uniforms.mouse.value.y += (targetMouse.y - material.uniforms.mouse.value.y) * 0.03;
-
-        // Update pulse
-        if (isPulsing) {
-          material.uniforms.pulse.value += 0.05;
-          if (material.uniforms.pulse.value >= 2.0) {
-            material.uniforms.pulse.value = 0;
-            isPulsing = false;
+          if ('touches' in event && event.touches.length > 0 && event.touches[0]) {
+            clientX = event.touches[0].clientX;
+            clientY = event.touches[0].clientY;
+          } else if ('clientX' in event) {
+            clientX = event.clientX;
+            clientY = event.clientY;
+          } else {
+            return;
           }
-        }
 
-        material.uniforms.time.value = clock.getElapsedTime();
-        renderer.render(scene, camera);
-      };
+          if (material.uniforms['pulseCenter']) {
+            material.uniforms['pulseCenter'].value.x = clientX / window.innerWidth;
+            material.uniforms['pulseCenter'].value.y = 1.0 - clientY / window.innerHeight;
+          }
 
-      // Window resize
-      const onWindowResize = () => {
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        material.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
-      };
+          // Start pulse effect
+          if (material.uniforms['pulse']) {
+            material.uniforms['pulse'].value = 0.01;
+          }
+          isPulsing = true;
 
-      window.addEventListener('resize', onWindowResize);
+          // Update mouse target
+          targetMouse.x = (clientX / window.innerWidth) * 2 - 1;
+          targetMouse.y = -(clientY / window.innerHeight) * 2 + 1;
+        };
 
-      // Start animation
-      animate();
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mousedown', handleInteraction as EventListener);
+        window.addEventListener('touchstart', handleInteraction as EventListener, { passive: false });
+        window.addEventListener('touchmove', handleInteraction as EventListener, { passive: false });
 
-      // Cleanup
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mousedown', handleInteraction);
-        window.removeEventListener('touchstart', handleInteraction as any);
-        window.removeEventListener('touchmove', handleInteraction as any);
-        window.removeEventListener('resize', onWindowResize);
+        // Animation loop
+        const clock = new THREE.Clock();
+        const animate = (): void => {
+          animationIdRef.current = requestAnimationFrame(animate);
 
-        if (animationIdRef.current) {
-          cancelAnimationFrame(animationIdRef.current);
-        }
+          // Smooth mouse interpolation
+          if (material.uniforms['mouse']) {
+            material.uniforms['mouse'].value.x +=
+              (targetMouse.x - material.uniforms['mouse'].value.x) * 0.03;
+            material.uniforms['mouse'].value.y +=
+              (targetMouse.y - material.uniforms['mouse'].value.y) * 0.03;
+          }
 
-        if (containerRef.current && renderer.domElement) {
-          containerRef.current.removeChild(renderer.domElement);
-        }
+          // Update pulse
+          if (isPulsing && material.uniforms['pulse']) {
+            material.uniforms['pulse'].value += 0.05;
+            if (material.uniforms['pulse'].value >= 2.0) {
+              material.uniforms['pulse'].value = 0;
+              isPulsing = false;
+            }
+          }
 
-        geometry.dispose();
-        material.dispose();
-        renderer.dispose();
-      };
-    }).catch(error => {
-      console.error('Failed to load Three.js:', error);
-    });
+          if (material.uniforms['time']) {
+            material.uniforms['time'].value = clock.getElapsedTime();
+          }
+          renderer.render(scene, camera);
+        };
+
+        // Window resize
+        const onWindowResize = (): void => {
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          if (material.uniforms['resolution']) {
+            material.uniforms['resolution'].value.set(window.innerWidth, window.innerHeight);
+          }
+        };
+
+        window.addEventListener('resize', onWindowResize);
+
+        // Start animation
+        animate();
+
+        // Cleanup
+        return () => {
+          window.removeEventListener('mousemove', handleMouseMove);
+          window.removeEventListener('mousedown', handleInteraction as EventListener);
+          window.removeEventListener('touchstart', handleInteraction as EventListener);
+          window.removeEventListener('touchmove', handleInteraction as EventListener);
+          window.removeEventListener('resize', onWindowResize);
+
+          if (animationIdRef.current) {
+            cancelAnimationFrame(animationIdRef.current);
+          }
+
+          if (containerRef.current && renderer.domElement) {
+            containerRef.current.removeChild(renderer.domElement);
+          }
+
+          geometry.dispose();
+          material.dispose();
+          renderer.dispose();
+        };
+      })
+      .catch((error) => {
+        logger.error('Failed to load Three.js:', { error });
+      });
   }, []);
 
   return (
@@ -200,4 +217,3 @@ export default function FluidGradient() {
     />
   );
 }
-

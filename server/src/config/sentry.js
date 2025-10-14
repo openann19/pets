@@ -21,7 +21,7 @@ function initSentry(app) {
 
   // Build integrations array safely
   const integrations = [];
-  
+
   try {
     // Enable HTTP calls tracing
     if (Sentry.Integrations && Sentry.Integrations.Http) {
@@ -39,16 +39,16 @@ function initSentry(app) {
 
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV || 'development',
-    
+    environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
+
     // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
     // Adjust this value in production to reduce volume
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    
+
     // Set profilesSampleRate to 1.0 to profile every transaction.
     // Adjust this value in production
     profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    
+
     // Integrations
     integrations,
 
@@ -93,7 +93,8 @@ function initSentry(app) {
     ],
 
     // Release tracking
-    release: process.env.npm_package_version,
+    // Prefer explicit release env var, fallback to package version
+    release: process.env.SENTRY_RELEASE || process.env.npm_package_version,
   });
 
   console.log('✅ Sentry error tracking initialized');

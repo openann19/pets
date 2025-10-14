@@ -1,7 +1,7 @@
 import React from 'react';
-import { useFocusRing } from '@react-aria/focus';
-import { useHover } from '@react-aria/interactions';
-import { mergeProps } from '@react-aria/utils';
+import {  } from '@react-aria/focus';
+import {  } from '@react-aria/interactions';
+import {  } from '@react-aria/utils';
 
 export interface CardProps {
   /**
@@ -23,6 +23,16 @@ export interface CardProps {
    * Click handler for interactive cards
    */
   onClick?: () => void;
+
+  /**
+   * Accessible label for screen readers
+   */
+  'aria-label'?: string;
+
+  /**
+   * ARIA role override
+   */
+  role?: string;
 }
 
 /**
@@ -49,13 +59,15 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       <div
         {...(interactive ? mergeProps(focusProps, hoverProps, otherProps) : otherProps)}
         ref={ref}
+        aria-label={props['aria-label']}
         tabIndex={interactive ? 0 : undefined}
-        role={interactive ? 'button' : undefined}
-        data-focused={interactive && isFocused ? true : undefined}
-        data-hovered={interactive && isHovered ? true : undefined}
+        role={props.role || (interactive ? 'button' : undefined)}
+        data-focused={interactive !== undefined &&  isFocused ? true : undefined}
+        data-hovered={interactive !== undefined &&  isHovered ? true : undefined}
         data-interactive={interactive || undefined}
         className={className}
         onClick={interactive ? onClick : undefined}
+        style={{ outline: isFocused ? '2px solid var(--pm-primary)' : undefined }}
       >
         {children}
       </div>

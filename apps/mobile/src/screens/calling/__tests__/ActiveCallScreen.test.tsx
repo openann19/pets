@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import {  } from '@testing-library/react-native';
 import ActiveCallScreen from '../ActiveCallScreen';
-import { CallState } from '../../../services/WebRTCService';
+import {  } from '../../../services/WebRTCService';
 
 // Mock dependencies
 jest.mock('react-native-webrtc', () => ({
@@ -48,8 +48,8 @@ const mockCallState: CallState = {
     callType: 'video',
     timestamp: Date.now(),
   },
-  localStream: {} as any,
-  remoteStream: {} as any,
+  localStream: {} as unknown,
+  remoteStream: {} as unknown,
   isMuted: false,
   isVideoEnabled: true,
   callDuration: 120, // 2 minutes

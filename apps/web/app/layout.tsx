@@ -1,14 +1,11 @@
+// import ThemeToggle from '@/components/ThemeToggle';
+import KeyboardShortcutsOverlay from '@/components/KeyboardShortcuts/KeyboardShortcutsOverlay';
+import PWAInitializer from '@/components/PWA/PWAInitializer';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import ErrorBoundary from '../src/components/ErrorBoundary';
+import { ThemeScript } from '../src/contexts/ThemeContext';
 import './globals.css';
 import { Providers } from './providers';
-import ThemeToggle from '@/components/ThemeToggle';
-
-const inter = Inter({
-  subsets: ['latin'], // Optimized subset for perf
-  variable: '--font-inter', // Allow variable font usage in CSS
-  display: 'swap', // Fallback during load
-});
 
 export const viewport = {
   width: 'device-width',
@@ -27,6 +24,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'PawfectMatch Team' }],
   creator: 'PawfectMatch',
   publisher: 'PawfectMatch',
+  manifest: '/manifest.json', // PWA manifest
   formatDetection: {
     email: false,
     address: false,
@@ -58,6 +56,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://pawfectmatch.com', // SEO: Canonical URL
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'PawfectMatch',
+  },
 };
 
 export default function RootLayout({
@@ -66,21 +69,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+    >
+      <head>
+        {/* Prevent flash of unstyled content (FOUC) for theme */}
+        <ThemeScript />
+      </head>
       <body
-        className={`${inter.variable} font-inter min-h-screen bg-gray-50 text-gray-900`}
+        className="min-h-screen bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
         role="document"
         suppressHydrationWarning
       >
-        <Providers>
-          {/* Global floating theme toggle - always visible */}
-          <div className="fixed top-4 right-4 z-[1000]">
-            <ThemeToggle />
-          </div>
-          <main role="main">
-            {children}
-          </main>
-        </Providers>
+        <ErrorBoundary>
+          <Providers>
+            {/* Initialize PWA features */}
+            <PWAInitializer />
+
+            {/* Global Keyboard Shortcuts Overlay (Press '?' to show) */}
+            <KeyboardShortcutsOverlay />
+
+            <main role="main">{children}</main>
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   );

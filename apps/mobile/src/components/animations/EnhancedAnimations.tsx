@@ -1,25 +1,33 @@
-import React, { useRef, useEffect } from 'react';
+import { useEffect } from 'react';
+import { Dimensions } from 'react-native';
 import {
-  Animated,
   Easing,
-  ViewStyle,
-  TextStyle,
-  Dimensions,
-} from 'react-native';
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { height: _screenHeight } = Dimensions.get('window');
 
-// Enhanced Animation Hooks and Components
+// Enhanced Animation Hooks and Components using react-native-reanimated
 
-export const useSpringAnimation = (initialValue = 0, config = {}) => {
-  const animatedValue = useRef(new Animated.Value(initialValue)).current;
-  
-  const animate = (toValue: number, customConfig = {}) => {
-    return Animated.spring(animatedValue, {
-      toValue,
-      tension: 100,
-      friction: 8,
-      useNativeDriver: true,
+export const useSpringAnimation = (
+  initialValue: number = 0,
+  toValue: number = 1,
+  config: Record<string, unknown> = {},
+  customConfig: Record<string, unknown> = {}
+) => {
+  const animatedValue = useSharedValue(initialValue);
+
+  const animate = () => {
+    animatedValue.value = withSpring(toValue, {
+      stiffness: 100,
+      damping: 8,
       ...config,
       ...customConfig,
     });
@@ -28,475 +36,199 @@ export const useSpringAnimation = (initialValue = 0, config = {}) => {
   return { animatedValue, animate };
 };
 
-export const useSequenceAnimation = () => {
-  const createSequence = (animations: Animated.CompositeAnimation[]) => {
-    return Animated.sequence(animations);
+export const useSequenceAnimation = (
+  animations: (() => void)[] = [],
+  delay: number = 100
+) => {
+  const createSequence = () => {
+    // For react-native-reanimated, we need to handle sequences differently
+    // This is a simplified version
+    return () => {
+      animations.forEach((anim, index) => {
+        setTimeout(anim, index * delay);
+      });
+    };
   };
 
-  const createStagger = (animations: Animated.CompositeAnimation[], delay = 100) => {
-    return Animated.stagger(delay, animations);
+  const createStagger = () => {
+    return createSequence();
   };
 
   return { createSequence, createStagger };
 };
 
-export const usePulseAnimation = (duration = 1000) => {
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+export const usePulseAnimation = (duration: number = 1000) => {
+  const pulseAnim = useSharedValue(1);
 
   useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,
-          duration: duration / 2,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: duration / 2,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulse.start();
+    const startPulse = () => {
+      pulseAnim.value = withRepeat(
+        withSequence(
+          withTiming(1.1, { duration: duration / 2, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: duration / 2, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1, // infinite
+        true // reverse
+      );
+    };
 
-    return () => pulse.stop();
-  }, [duration]);
+    startPulse();
+  }, [duration, pulseAnim]);
 
-  return pulseAnim;
-};
-
-export const useFloatingAnimation = (amplitude = 10, duration = 2000) => {
-  const floatAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const float = Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, {
-          toValue: 1,
-          duration: duration / 2,
-          easing: Easing.inOut(Easing.sine),
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim, {
-          toValue: 0,
-          duration: duration / 2,
-          easing: Easing.inOut(Easing.sine),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    float.start();
-
-    return () => float.stop();
-  }, [duration]);
-
-  const translateY = floatAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -amplitude],
-  });
-
-  return { translateY };
-};
-
-export const useShimmerAnimation = (duration = 1500) => {
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const shimmer = Animated.loop(
-      Animated.timing(shimmerAnim, {
-        toValue: 1,
-        duration,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-    shimmer.start();
-
-    return () => shimmer.stop();
-  }, [duration]);
-
-  const translateX = shimmerAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-screenWidth, screenWidth],
-  });
-
-  return { translateX, shimmerAnim };
-};
-
-export const useParallaxAnimation = () => {
-  const scrollY = useRef(new Animated.Value(0)).current;
-
-  const createParallaxStyle = (speed = 0.5, offset = 0): ViewStyle => ({
-    transform: [
-      {
-        translateY: scrollY.interpolate({
-          inputRange: [0, 1],
-          outputRange: [offset, offset + speed],
-          extrapolate: 'extend',
-        }),
-      },
-    ],
-  });
-
-  return { scrollY, createParallaxStyle };
-};
-
-// Enhanced Animation Components
-
-interface FadeInViewProps {
-  children: React.ReactNode;
-  duration?: number;
-  delay?: number;
-  style?: ViewStyle;
-}
-
-export const FadeInView: React.FC<FadeInViewProps> = ({
-  children,
-  duration = 500,
-  delay = 0,
-  style,
-}) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }).start();
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [duration, delay]);
-
-  return (
-    <Animated.View style={[style, { opacity: fadeAnim }]}>
-      {children}
-    </Animated.View>
-  );
-};
-
-interface SlideInViewProps {
-  children: React.ReactNode;
-  direction?: 'left' | 'right' | 'up' | 'down';
-  duration?: number;
-  delay?: number;
-  distance?: number;
-  style?: ViewStyle;
-}
-
-export const SlideInView: React.FC<SlideInViewProps> = ({
-  children,
-  direction = 'right',
-  duration = 500,
-  delay = 0,
-  distance = 50,
-  style,
-}) => {
-  const slideAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration,
-        easing: Easing.out(Easing.back(1.2)),
-        useNativeDriver: true,
-      }).start();
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [duration, delay]);
-
-  const getTransform = () => {
-    switch (direction) {
-      case 'left':
-        return [{ translateX: slideAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -distance],
-        }) }];
-      case 'right':
-        return [{ translateX: slideAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, distance],
-        }) }];
-      case 'up':
-        return [{ translateY: slideAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -distance],
-        }) }];
-      case 'down':
-        return [{ translateY: slideAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, distance],
-        }) }];
-      default:
-        return [];
-    }
+  const start = () => {
+    pulseAnim.value = 1;
   };
 
-  return (
-    <Animated.View style={[style, { transform: getTransform() }]}>
-      {children}
-    </Animated.View>
-  );
+  const stop = () => {
+    pulseAnim.value = 1; // Reset to stop animation
+  };
+
+  return { pulseAnim, start, stop };
 };
 
-interface ScaleInViewProps {
-  children: React.ReactNode;
-  duration?: number;
-  delay?: number;
-  initialScale?: number;
-  style?: ViewStyle;
-}
-
-export const ScaleInView: React.FC<ScaleInViewProps> = ({
-  children,
-  duration = 500,
-  delay = 0,
-  initialScale = 0.8,
-  style,
-}) => {
-  const scaleAnim = useRef(new Animated.Value(initialScale)).current;
+export const useFloatingAnimation = (duration: number = 2000, amplitude: number = 10) => {
+  const floatAnim = useSharedValue(0);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }).start();
-    }, delay);
+    const startFloat = () => {
+      floatAnim.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: duration / 2, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0, { duration: duration / 2, easing: Easing.inOut(Easing.sin) })
+        ),
+        -1, // infinite
+        true // reverse
+      );
+    };
 
-    return () => clearTimeout(timer);
-  }, [duration, delay, initialScale]);
+    startFloat();
+  }, [duration, floatAnim]);
 
-  return (
-    <Animated.View style={[style, { transform: [{ scale: scaleAnim }] }]}>
-      {children}
-    </Animated.View>
-  );
-};
-
-interface RotateInViewProps {
-  children: React.ReactNode;
-  duration?: number;
-  delay?: number;
-  initialRotation?: string;
-  style?: ViewStyle;
-}
-
-export const RotateInView: React.FC<RotateInViewProps> = ({
-  children,
-  duration = 500,
-  delay = 0,
-  initialRotation = '180deg',
-  style,
-}) => {
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration,
-        easing: Easing.out(Easing.back(1.2)),
-        useNativeDriver: true,
-      }).start();
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [duration, delay]);
-
-  const rotation = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [initialRotation, '0deg'],
+  const animatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(floatAnim.value, [0, 1], [0, -amplitude]);
+    return {
+      transform: [{ translateY }],
+    };
   });
 
-  return (
-    <Animated.View style={[style, { transform: [{ rotate: rotation }] }]}>
-      {children}
-    </Animated.View>
-  );
+  return animatedStyle;
 };
 
-interface TypewriterTextProps {
-  text: string;
-  duration?: number;
-  delay?: number;
-  style?: TextStyle;
-  onComplete?: () => void;
-}
+export const useBounceAnimation = (duration: number = 800) => {
+  const bounceAnim = useSharedValue(0);
 
-export const TypewriterText: React.FC<TypewriterTextProps> = ({
-  text,
-  duration = 1000,
-  delay = 0,
-  style,
-  onComplete,
-}) => {
-  const [displayText, setDisplayText] = React.useState('');
-  const [currentIndex, setCurrentIndex] = React.useState(0);
+  const animate = () => {
+    bounceAnim.value = withSequence(
+      withTiming(1, { duration: duration * 0.3, easing: Easing.out(Easing.ease) }),
+      withTiming(0.8, { duration: duration * 0.2, easing: Easing.out(Easing.ease) }),
+      withTiming(1, { duration: duration * 0.2, easing: Easing.out(Easing.ease) }),
+      withTiming(0.9, { duration: duration * 0.15, easing: Easing.out(Easing.ease) }),
+      withTiming(1, { duration: duration * 0.15, easing: Easing.out(Easing.ease) })
+    );
+  };
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const scale = interpolate(bounceAnim.value, [0, 1], [1, 1.1]);
+    return {
+      transform: [{ scale }],
+    };
+  });
+
+  return { animatedStyle, animate };
+};
+
+export const useFadeInAnimation = (duration: number = 500, delay: number = 0) => {
+  const fadeAnim = useSharedValue(0);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (currentIndex < text.length) {
-        const interval = setInterval(() => {
-          setCurrentIndex(prev => {
-            if (prev >= text.length - 1) {
-              clearInterval(interval);
-              onComplete?.();
-              return prev;
-            }
-            return prev + 1;
-          });
-        }, duration / text.length);
-
-        return () => clearInterval(interval);
-      }
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [text, duration, delay, currentIndex]);
-
-  useEffect(() => {
-    setDisplayText(text.substring(0, currentIndex + 1));
-  }, [currentIndex, text]);
-
-  return (
-    <Animated.Text style={style}>
-      {displayText}
-      {currentIndex < text.length && (
-        <Animated.Text style={[style, { opacity: usePulseAnimation(500) }]}>
-          |
-        </Animated.Text>
-      )}
-    </Animated.Text>
-  );
-};
-
-// Custom Easing Functions
-export const customEasing = {
-  // Bouncy entrance
-  bounceIn: Easing.out(Easing.back(2)),
-  
-  // Smooth elastic
-  elastic: Easing.elastic(2),
-  
-  // Custom bezier curves
-  smoothInOut: Easing.bezier(0.25, 0.46, 0.45, 0.94),
-  quickOut: Easing.bezier(0.25, 0.46, 0.45, 0.94),
-  
-  // Physics-based
-  spring: (tension = 100, friction = 8) => 
-    Easing.out(Easing.poly(tension / 100)),
-};
-
-// Animation Presets
-export const animationPresets = {
-  // Message entrance
-  messageSlideIn: {
-    duration: 300,
-    easing: customEasing.smoothInOut,
-    useNativeDriver: true,
-  },
-  
-  // Button press
-  buttonPress: {
-    duration: 150,
-    easing: Easing.out(Easing.quad),
-    useNativeDriver: true,
-  },
-  
-  // Modal entrance
-  modalSlideUp: {
-    duration: 400,
-    easing: customEasing.bounceIn,
-    useNativeDriver: true,
-  },
-  
-  // Loading spinner
-  loadingSpin: {
-    duration: 1000,
-    easing: Easing.linear,
-    useNativeDriver: true,
-  },
-};
-
-// Gesture-based animations
-export const createSwipeAnimation = (
-  gestureState: any,
-  screenWidth: number,
-  onSwipeComplete?: (direction: 'left' | 'right') => void
-) => {
-  const translateX = new Animated.Value(0);
-  const opacity = new Animated.Value(1);
-
-  const handleSwipe = () => {
-    const { dx, vx } = gestureState;
-    const threshold = screenWidth * 0.3;
-    const velocity = Math.abs(vx) > 0.5;
-
-    if (Math.abs(dx) > threshold || velocity) {
-      const direction = dx > 0 ? 'right' : 'left';
-      const toValue = direction === 'right' ? screenWidth : -screenWidth;
-
-      Animated.parallel([
-        Animated.timing(translateX, {
-          toValue,
-          duration: 200,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        onSwipeComplete?.(direction);
-      });
+    if (delay > 0) {
+      setTimeout(() => {
+        fadeAnim.value = withTiming(1, { duration });
+      }, delay);
     } else {
-      // Snap back
-      Animated.spring(translateX, {
-        toValue: 0,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }).start();
+      fadeAnim.value = withTiming(1, { duration });
     }
-  };
+  }, [duration, delay, fadeAnim]);
 
-  return {
-    translateX,
-    opacity,
-    handleSwipe,
-    style: {
-      transform: [{ translateX }],
-      opacity,
-    },
-  };
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: fadeAnim.value,
+  }));
+
+  return animatedStyle;
 };
 
-export default {
-  useSpringAnimation,
-  useSequenceAnimation,
-  usePulseAnimation,
-  useFloatingAnimation,
-  useShimmerAnimation,
-  useParallaxAnimation,
-  FadeInView,
-  SlideInView,
-  ScaleInView,
-  RotateInView,
-  TypewriterText,
-  customEasing,
-  animationPresets,
-  createSwipeAnimation,
+export const useSlideInAnimation = (
+  direction: 'up' | 'down' | 'left' | 'right' = 'up',
+  distance: number = 50,
+  duration: number = 500,
+  delay: number = 0
+) => {
+  const slideAnim = useSharedValue(0);
+
+  useEffect(() => {
+    const animate = () => {
+      slideAnim.value = withDelay(delay, withTiming(1, { duration, easing: Easing.out(Easing.cubic) }));
+    };
+    animate();
+  }, [duration, delay, slideAnim]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    let translateX = 0;
+    let translateY = 0;
+
+    switch (direction) {
+      case 'up':
+        translateY = interpolate(slideAnim.value, [0, 1], [distance, 0]);
+        break;
+      case 'down':
+        translateY = interpolate(slideAnim.value, [0, 1], [-distance, 0]);
+        break;
+      case 'left':
+        translateX = interpolate(slideAnim.value, [0, 1], [distance, 0]);
+        break;
+      case 'right':
+        translateX = interpolate(slideAnim.value, [0, 1], [-distance, 0]);
+        break;
+    }
+
+    return {
+      transform: [{ translateX }, { translateY }],
+      opacity: slideAnim.value,
+    };
+  });
+
+  return animatedStyle;
+};
+
+export const useParallaxScroll = (scrollY: any, speed: number = 0.5) => {
+  const animatedStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(scrollY.value, [0, 1000], [0, -500 * speed]);
+    return {
+      transform: [{ translateY }],
+    };
+  });
+
+  return animatedStyle;
+};
+
+// Utility functions for creating common animation styles
+export const createSpringConfig = (stiffness: number = 300, damping: number = 30) => ({
+  stiffness,
+  damping,
+});
+
+export const createTimingConfig = (duration: number = 300, easing: any = Easing.out(Easing.cubic)) => ({
+  duration,
+  easing,
+});
+
+// Predefined animation presets
+export const AnimationPresets = {
+  spring: createSpringConfig(),
+  bounce: createSpringConfig(400, 20),
+  slow: createTimingConfig(800),
+  fast: createTimingConfig(200),
+  fadeIn: { duration: 500, easing: Easing.out(Easing.cubic) },
+  slideUp: { distance: 50, duration: 500, direction: 'up' as const },
+  slideDown: { distance: 50, duration: 500, direction: 'down' as const },
 };

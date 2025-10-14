@@ -30,6 +30,21 @@ export interface BadgeProps {
    * Outline style
    */
   outline?: boolean;
+
+  /**
+   * Accessible label for screen readers
+   */
+  'aria-label'?: string;
+
+  /**
+   * ARIA role override
+   */
+  role?: string;
+
+  /**
+   * Tab index for accessibility
+   */
+  tabIndex?: number;
 }
 
 /**
@@ -45,28 +60,29 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const baseClasses = 'inline-flex items-center font-medium rounded-full';
 
+  // Color tokens (add dark: classes for dark mode)
   const variantClasses = {
     default: outline
-      ? 'border border-gray-300 text-gray-700 bg-transparent'
-      : 'bg-gray-100 text-gray-800',
+      ? 'border border-[var(--pm-border)] text-[var(--pm-text)] bg-transparent dark:border-[var(--pm-border-dark)] dark:text-[var(--pm-text-dark)]'
+      : 'bg-[var(--pm-surface)] text-[var(--pm-text)] dark:bg-[var(--pm-surface-dark)] dark:text-[var(--pm-text-dark)]',
     primary: outline
-      ? 'border border-blue-500 text-blue-700 bg-transparent'
-      : 'bg-blue-100 text-blue-800',
+      ? 'border border-[var(--pm-primary)] text-[var(--pm-primary)] bg-transparent dark:border-[var(--pm-primary-dark)] dark:text-[var(--pm-primary-dark)]'
+      : 'bg-[var(--pm-primaryLight)] text-[var(--pm-textInverse)] dark:bg-[var(--pm-primaryDark)] dark:text-[var(--pm-textInverse-dark)]',
     secondary: outline
-      ? 'border border-gray-500 text-gray-700 bg-transparent'
-      : 'bg-gray-100 text-gray-800',
+      ? 'border border-[var(--pm-secondary)] text-[var(--pm-secondary)] bg-transparent dark:border-[var(--pm-secondary)] dark:text-[var(--pm-secondary)]'
+      : 'bg-[var(--pm-secondaryLight)] text-[var(--pm-text)] dark:bg-[var(--pm-secondary)] dark:text-[var(--pm-text-dark)]',
     success: outline
-      ? 'border border-green-500 text-green-700 bg-transparent'
-      : 'bg-green-100 text-green-800',
+      ? 'border border-[var(--pm-success)] text-[var(--pm-success)] bg-transparent dark:border-[var(--pm-successLight)] dark:text-[var(--pm-successLight)]'
+      : 'bg-[var(--pm-successLight)] text-[var(--pm-success)] dark:bg-[var(--pm-success)] dark:text-[var(--pm-successLight)]',
     warning: outline
-      ? 'border border-yellow-500 text-yellow-700 bg-transparent'
-      : 'bg-yellow-100 text-yellow-800',
+      ? 'border border-[var(--pm-warning)] text-[var(--pm-warning)] bg-transparent dark:border-[var(--pm-warningLight)] dark:text-[var(--pm-warningLight)]'
+      : 'bg-[var(--pm-warningLight)] text-[var(--pm-warning)] dark:bg-[var(--pm-warning)] dark:text-[var(--pm-warningLight)]',
     error: outline
-      ? 'border border-red-500 text-red-700 bg-transparent'
-      : 'bg-red-100 text-red-800',
+      ? 'border border-[var(--pm-error)] text-[var(--pm-error)] bg-transparent dark:border-[var(--pm-errorLight)] dark:text-[var(--pm-errorLight)]'
+      : 'bg-[var(--pm-errorLight)] text-[var(--pm-error)] dark:bg-[var(--pm-error)] dark:text-[var(--pm-errorLight)]',
     info: outline
-      ? 'border border-cyan-500 text-cyan-700 bg-transparent'
-      : 'bg-cyan-100 text-cyan-800'
+      ? 'border border-[var(--pm-accent)] text-[var(--pm-accent)] bg-transparent dark:border-[var(--pm-accentLight)] dark:text-[var(--pm-accentLight)]'
+      : 'bg-[var(--pm-accentLight)] text-[var(--pm-accent)] dark:bg-[var(--pm-accent)] dark:text-[var(--pm-accentLight)]',
   };
 
   const sizeClasses = {
@@ -83,6 +99,9 @@ export const Badge: React.FC<BadgeProps> = ({
         ${sizeClasses[size]}
         ${className}
       `}
+      aria-label={props['aria-label']}
+      role={props.role || 'status'}
+      tabIndex={props.tabIndex}
     >
       {!dot && children}
     </span>

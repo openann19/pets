@@ -6,7 +6,7 @@
 describe('Paw Animations - E2E Tests', () => {
   describe('Test Paws Demo Page', () => {
     beforeEach(() => {
-      cy.visit('/test-paws');
+      cy.visit('/dev/test-paws');
     });
 
     it('loads the demo page successfully', () => {
@@ -46,7 +46,7 @@ describe('Paw Animations - E2E Tests', () => {
       cy.get('input[type="email"]').type('test@example.com');
       cy.get('input[type="password"]').type('password123');
       cy.contains('button', 'Sign in').click();
-      
+
       // Should show loading state (paw animations in button)
       cy.get('button[disabled]').should('exist');
     });
@@ -75,27 +75,27 @@ describe('Paw Animations - E2E Tests', () => {
 
   describe('Animation Performance', () => {
     it('maintains 60fps during animations', () => {
-      cy.visit('/test-paws');
-      
+      cy.visit('/dev/test-paws');
+
       // Check that animations don't cause jank
       cy.window().then((win) => {
         let frameCount = 0;
         let lastTime = performance.now();
-        
+
         const checkFPS = () => {
           const currentTime = performance.now();
           frameCount++;
-          
+
           if (currentTime >= lastTime + 1000) {
             // Should be close to 60fps
             expect(frameCount).to.be.greaterThan(50);
             frameCount = 0;
             lastTime = currentTime;
           }
-          
+
           win.requestAnimationFrame(checkFPS);
         };
-        
+
         win.requestAnimationFrame(checkFPS);
       });
     });
@@ -103,11 +103,11 @@ describe('Paw Animations - E2E Tests', () => {
 
   describe('Responsive Behavior', () => {
     const viewports: Cypress.ViewportPreset[] = ['iphone-6', 'ipad-2', 'macbook-15'];
-    
+
     viewports.forEach((viewport) => {
       it(`displays correctly on ${viewport}`, () => {
         cy.viewport(viewport);
-        cy.visit('/test-paws');
+        cy.visit('/dev/test-paws');
         cy.get('svg').should('be.visible');
       });
     });
@@ -115,8 +115,8 @@ describe('Paw Animations - E2E Tests', () => {
 
   describe('Dark Mode Compatibility', () => {
     it('paw animations visible in dark mode', () => {
-      cy.visit('/test-paws');
-      
+      cy.visit('/dev/test-paws');
+
       // Scroll to dark background section
       cy.contains('On Dark Background').scrollIntoView();
       cy.get('svg[fill="#ffffff"]').should('be.visible');
@@ -125,7 +125,7 @@ describe('Paw Animations - E2E Tests', () => {
 
   describe('Accessibility', () => {
     beforeEach(() => {
-      cy.visit('/test-paws');
+      cy.visit('/dev/test-paws');
     });
 
     it('has proper ARIA attributes', () => {
@@ -150,7 +150,7 @@ describe('Paw Animations - E2E Tests', () => {
             });
         },
       });
-      
+
       // Animations should still render but respect user preferences
       cy.get('[data-testid="loading-spinner"]').should('exist');
     });
@@ -158,17 +158,17 @@ describe('Paw Animations - E2E Tests', () => {
 
   describe('Error Handling', () => {
     it('handles missing color prop gracefully', () => {
-      cy.visit('/test-paws');
+      cy.visit('/dev/test-paws');
       // Should still render with default color
       cy.get('svg').should('exist');
     });
 
     it('handles rapid navigation', () => {
-      cy.visit('/test-paws');
+      cy.visit('/dev/test-paws');
       cy.visit('/login');
-      cy.visit('/test-paws');
+      cy.visit('/dev/test-paws');
       cy.visit('/matches');
-      
+
       // Should not crash or show errors
       cy.get('body').should('exist');
     });
@@ -176,23 +176,23 @@ describe('Paw Animations - E2E Tests', () => {
 
   describe('Visual Regression', () => {
     it('matches baseline screenshot for small size', () => {
-      cy.visit('/test-paws');
+      cy.visit('/dev/test-paws');
       cy.contains('Small').parents('div').first().screenshot('paw-small');
       // Visual comparison would be done with Percy or similar tool
     });
 
     it('matches baseline screenshot for medium size', () => {
-      cy.visit('/test-paws');
+      cy.visit('/dev/test-paws');
       cy.contains('Medium').parents('div').first().screenshot('paw-medium');
     });
 
     it('matches baseline screenshot for large size', () => {
-      cy.visit('/test-paws');
+      cy.visit('/dev/test-paws');
       cy.contains('Large').parents('div').first().screenshot('paw-large');
     });
 
     it('matches baseline for button loading state', () => {
-      cy.visit('/test-paws');
+      cy.visit('/dev/test-paws');
       cy.contains('button', 'Test Loading State').click();
       cy.wait(500); // Wait for animation to be visible
       cy.get('button[disabled]').screenshot('button-loading');
@@ -206,7 +206,7 @@ describe('Paw Animations - E2E Tests', () => {
           res.setDelay(2000); // 2 second delay
         });
       });
-      
+
       cy.visit('/analytics');
       cy.get('[data-testid="loading-spinner"]').should('be.visible');
     });
@@ -217,7 +217,7 @@ describe('Paw Animations - E2E Tests', () => {
           cy.stub(win.navigator, 'onLine').value(false);
         },
       });
-      
+
       // Page should still render with paw animations
       cy.get('svg').should('exist');
     });
@@ -226,18 +226,18 @@ describe('Paw Animations - E2E Tests', () => {
   describe('Memory Leak Detection', () => {
     it('cleans up after navigation', () => {
       // Visit page with loading states
-      cy.visit('/test-paws');
-      
+      cy.visit('/dev/test-paws');
+
       // Get initial memory (if available)
       cy.window().then((win: any) => {
         const initialMemory = win.performance?.memory?.usedJSHeapSize;
-        
+
         // Navigate away and back multiple times
         for (let i = 0; i < 5; i++) {
           cy.visit('/login');
-          cy.visit('/test-paws');
+          cy.visit('/dev/test-paws');
         }
-        
+
         // Memory should not grow unbounded
         cy.window().then((finalWin: any) => {
           const finalMemory = finalWin.performance?.memory?.usedJSHeapSize;
@@ -252,8 +252,8 @@ describe('Paw Animations - E2E Tests', () => {
 });
 
 describe('Cross-Browser Testing', () => {
-  const pages = ['/test-paws', '/login', '/analytics'];
-  
+  const pages = ['/dev/test-paws', '/login', '/analytics'];
+
   pages.forEach((page) => {
     it(`renders correctly on ${page} across browsers`, () => {
       cy.visit(page);

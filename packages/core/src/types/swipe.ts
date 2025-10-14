@@ -90,7 +90,7 @@ export interface SwipeCardStyle {
     color?: string;
     lineHeight?: number;
   };
-  [key: string]: any; // Allow additional style properties
+  [key: string]: unknown; // Allow additional style properties
 }
 
 export interface SwipeCardProps {

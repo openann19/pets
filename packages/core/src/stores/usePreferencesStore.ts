@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import type { ZustandSetter } from '../types/advanced';
 
 export interface UserPreferences {
   // Discovery preferences
@@ -91,13 +92,13 @@ const defaultPreferences: UserPreferences = {
  * Global preferences store for user settings
  * Persists to local storage
  */
-export const usePreferencesStore = create<PreferencesState>()(
+export const _usePreferencesStore = create<PreferencesState>()(
   persist(
-    immer((set) => ({
+    immer((set: ZustandSetter<PreferencesState>) => ({
       ...defaultPreferences,
       
       // Update discovery preferences
-      updateDiscoveryPreferences: (preferences) => set((state) => {
+      updateDiscoveryPreferences: (preferences) => set((state: PreferencesState) => {
         state.discovery = {
           ...state.discovery,
           ...preferences,
@@ -106,7 +107,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       }),
       
       // Update notification settings
-      updateNotificationSettings: (settings) => set((state) => {
+      updateNotificationSettings: (settings) => set((state: PreferencesState) => {
         state.notifications = {
           ...state.notifications,
           ...settings,
@@ -115,7 +116,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       }),
       
       // Update appearance settings
-      updateAppearanceSettings: (settings) => set((state) => {
+      updateAppearanceSettings: (settings) => set((state: PreferencesState) => {
         state.appearance = {
           ...state.appearance,
           ...settings,
@@ -124,7 +125,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       }),
       
       // Update privacy settings
-      updatePrivacySettings: (settings) => set((state) => {
+      updatePrivacySettings: (settings) => set((state: PreferencesState) => {
         state.privacy = {
           ...state.privacy,
           ...settings,

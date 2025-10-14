@@ -1,8 +1,11 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 const User = require('../models/User');
 const { generateTokens } = require('../middleware/auth');
 const { sendEmail } = require('../services/emailService');
+const logger = require('../utils/logger');
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -80,7 +83,7 @@ const register = async (req, res) => {
         }
       });
     } catch (emailError) {
-      console.error('Email sending error:', emailError);
+      logger.error('Email sending error', { error: emailError });
       // Don't fail registration if email fails
     }
 
@@ -95,7 +98,7 @@ const register = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error('Registration error', { error });
     res.status(500).json({
       success: false,
       message: 'Registration failed',
@@ -171,7 +174,7 @@ const login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error', { error });
     res.status(500).json({
       success: false,
       message: 'Login failed',
@@ -200,7 +203,7 @@ const logout = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Logout error:', error);
+    logger.error('Logout error', { error });
     res.status(500).json({
       success: false,
       message: 'Logout failed'
@@ -221,7 +224,7 @@ const getMe = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get me error:', error);
+    logger.error('Get me error', { error });
     res.status(500).json({
       success: false,
       message: 'Failed to get user data'
@@ -259,7 +262,7 @@ const verifyEmail = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Email verification error:', error);
+    logger.error('Email verification error', { error });
     res.status(500).json({
       success: false,
       message: 'Email verification failed'
@@ -314,7 +317,7 @@ const forgotPassword = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Forgot password error:', error);
+    logger.error('Forgot password error', { error });
     res.status(500).json({
       success: false,
       message: 'Failed to send password reset email'
@@ -357,10 +360,217 @@ const resetPassword = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Reset password error:', error);
+    logger.error('Reset password error', { error });
     res.status(500).json({
       success: false,
       message: 'Password reset failed'
+    });
+  }
+};
+
+// @desc    Setup 2FA
+// @route   POST /api/auth/2fa/setup
+// @access  Private
+const setup2FA = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (user.twoFactorEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: '2FA is already enabled'
+      });
+    }
+
+    // Generate secret
+    const secret = speakeasy.generateSecret({
+      name: `PawfectMatch (${user.email})`,
+      issuer: 'PawfectMatch',
+      length: 32
+    });
+
+    // Generate QR code
+    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+
+    // Save secret temporarily (not enabled until verified)
+    user.twoFactorSecret = secret.base32;
+    user.twoFactorEnabled = false;
+    await user.save();
+
+    res.json({
+      success: true,
+      secret: secret.base32,
+      qrCode: qrCodeUrl,
+      backupCodes: secret.backup_codes || []
+    });
+
+  } catch (error) {
+    logger.error('2FA setup error', { error });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to setup 2FA'
+    });
+  }
+};
+
+// @desc    Verify and enable 2FA
+// @route   POST /api/auth/2fa/verify
+// @access  Private
+const verify2FA = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const user = await User.findById(req.userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (!user.twoFactorSecret) {
+      return res.status(400).json({
+        success: false,
+        message: '2FA not set up. Please setup 2FA first.'
+      });
+    }
+
+    // Verify the code
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: code,
+      window: 2 // Allow 2 time steps (60 seconds) tolerance
+    });
+
+    if (!verified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification code'
+      });
+    }
+
+    // Enable 2FA
+    user.twoFactorEnabled = true;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: '2FA enabled successfully'
+    });
+
+  } catch (error) {
+    logger.error('2FA verification error', { error });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify 2FA'
+    });
+  }
+};
+
+// @desc    Validate 2FA code during login
+// @route   POST /api/auth/2fa/validate
+// @access  Public
+const validate2FA = async (req, res) => {
+  try {
+    const { userId, code } = req.body;
+    
+    const user = await User.findById(userId);
+    if (!user || !user.twoFactorEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: '2FA not enabled for this user'
+      });
+    }
+
+    // Verify the code
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: code,
+      window: 2
+    });
+
+    if (!verified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification code'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: '2FA verification successful'
+    });
+
+  } catch (error) {
+    logger.error('2FA validation error', { error });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to validate 2FA'
+    });
+  }
+};
+
+// @desc    Disable 2FA
+// @route   POST /api/auth/2fa/disable
+// @access  Private
+const disable2FA = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const user = await User.findById(req.userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (!user.twoFactorEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: '2FA is not enabled'
+      });
+    }
+
+    // Verify the code before disabling
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: code,
+      window: 2
+    });
+
+    if (!verified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification code'
+      });
+    }
+
+    // Disable 2FA
+    user.twoFactorEnabled = false;
+    user.twoFactorSecret = undefined;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: '2FA disabled successfully'
+    });
+
+  } catch (error) {
+    logger.error('2FA disable error', { error });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to disable 2FA'
     });
   }
 };
@@ -372,5 +582,9 @@ module.exports = {
   getMe,
   verifyEmail,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  setup2FA,
+  verify2FA,
+  validate2FA,
+  disable2FA
 };

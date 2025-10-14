@@ -1,0 +1,95 @@
+/**
+ * Usage Tracking Service for PawfectMatch Mobile App
+ * Real implementation matching web platform
+ */
+
+import { logger } from '@pawfectmatch/core';
+import { api } from './api';
+
+interface UsageStats {
+  swipesUsed: number;
+  swipesLimit: number;
+  superLikesUsed: number;
+  superLikesLimit: number;
+  boostsUsed: number;
+  boostsLimit: number;
+  profileViews: number;
+  messagesSent: number;
+  matchRate: number;
+}
+
+export class UsageTrackingService {
+  /**
+   * Track a swipe action
+   */
+  static async trackSwipe(userId: string, petId: string, action: 'like' | 'pass' | 'superlike'): Promise<boolean> {
+    try {
+      const result = await api.request<{ success: boolean }>(`/usage/swipe`, {
+        method: 'POST',
+        body: JSON.stringify({ userId, petId, action }),
+      });
+      return result.success;
+    } catch (error) {
+      if (__DEV__) {
+        logger.error('Failed to track swipe:', { error });
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Track a super like action
+   */
+  static async trackSuperLike(userId: string, petId: string): Promise<boolean> {
+    try {
+      const result = await api.request<{ success: boolean }>(`/usage/superlike`, {
+        method: 'POST',
+        body: JSON.stringify({ userId, petId }),
+      });
+      return result.success;
+    } catch (error) {
+      if (__DEV__) {
+        logger.error('Failed to track super like:', { error });
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Track a boost action
+   */
+  static async trackBoost(userId: string): Promise<boolean> {
+    try {
+      const result = await api.request<{ success: boolean }>(`/usage/boost`, {
+        method: 'POST',
+        body: JSON.stringify({ userId }),
+      });
+      return result.success;
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Failed to track boost:', error);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Get usage stats for user
+   */
+  static async getUsageStats(userId: string): Promise<UsageStats | null> {
+    try {
+      const result = await api.request<{ success: boolean; data?: UsageStats }>(`/usage/stats?userId=${encodeURIComponent(userId)}`);
+      if (result.success && result.data) {
+        return result.data;
+      }
+      return null;
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Failed to get usage stats:', error);
+      }
+      return null;
+    }
+  }
+}
+
+export default UsageTrackingService;

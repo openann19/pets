@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 
 // Generic API response wrapper
 export interface ApiClientResponse<T = unknown> {
@@ -132,7 +133,7 @@ class ApiClient {
 
   // File upload helper with proper typing
   async uploadFile<T = unknown>(
-    url: string, 
+    url: string,
     config: FileUploadConfig
   ): Promise<ApiClientResponse<T>> {
     try {
@@ -150,9 +151,9 @@ class ApiClient {
           'Content-Type': 'multipart/form-data',
         },
       };
-      
+
       if (config.onProgress) {
-        axiosConfig.onUploadProgress = (progressEvent) => {
+        axiosConfig.onUploadProgress = (progressEvent): void => {
           if (progressEvent.total) {
             const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
             config.onProgress!(progress);

@@ -3,24 +3,31 @@
  * Professional implementation with Stripe integration
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
   ActivityIndicator,
+  Alert,
+  Animated,
   Dimensions,
   Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 // Removed gradients for a more refined, solid-color design
+import { useAuthStore } from '@pawfectmatch/core';
+import type { NavigationProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import type { InitPaymentSheetParams, PaymentSheetResult } from '@stripe/stripe-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuthStore } from '@pawfectmatch/core';
+import type { RootStackParamList } from '../navigation/types';
+import { _subscriptionAPI } from '../services/api';
+import { logger } from '../services/logger';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -34,13 +41,10 @@ interface PremiumPlan {
   savings?: string;
 }
 
-interface PremiumScreenProps {
-  navigation: any;
-}
-
-const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
-  const { colors, isDark } = useTheme();
+const PremiumScreen = (): React.JSX.Element => {
   const { user } = useAuthStore();
+  const { colors } = useTheme();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [selectedPlan, setSelectedPlan] = useState<string>('monthly');
   const [isLoading, setIsLoading] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
@@ -111,26 +115,29 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
     },
   ];
 
-  useEffect(() => {
-    checkPremiumStatus();
+  const checkPremiumStatus = useCallback(async (): Promise<void> => {
+    try {
+      const subscription = await _subscriptionAPI.getCurrentSubscription();
+      if (subscription && typeof subscription === 'object' && 'status' in subscription) {
+        setIsPremium(subscription.status === 'active');
+      }
+    } catch (error) {
+      logger.error('Error checking premium status:', { error: error instanceof Error ? error.message : String(error) });
+    }
   }, []);
 
-  const checkPremiumStatus = async () => {
-    try {
-      // Check if user has premium subscription
-      // This would be an API call in real implementation
-      setIsPremium(false); // Default to false for demo
-    } catch (error) {
-      console.error('Error checking premium status:', error);
-    }
-  };
+  useEffect(() => {
+    void checkPremiumStatus();
+  }, [checkPremiumStatus]);
 
-  const handlePlanSelection = (planId: string) => {
+  const handlePlanSelection = (planId: string): void => {
     setSelectedPlan(planId);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch((error) => {
+      logger.warn?.('Haptics impact failed', { error: error instanceof Error ? error.message : String(error) });
+    });
   };
 
-  const startPulse = () => {
+  const startPulse = useCallback((): void => {
     pulseAnim.setValue(0);
     Animated.loop(
       Animated.sequence([
@@ -138,28 +145,59 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
         Animated.timing(pulseAnim, { toValue: 0, duration: 900, useNativeDriver: true }),
       ])
     ).start();
-  };
+  }, [pulseAnim]);
 
   useEffect(() => {
     startPulse();
-  }, []);
+  }, [startPulse]);
 
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (): Promise<void> => {
     if (isLoading) return;
 
     setIsLoading(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      // In real implementation, this would:
-      // 1. Create Stripe payment intent
-      // 2. Present payment sheet
-      // 3. Process payment
-      // 4. Update user subscription status
+      // Create subscription with simplified implementation
+      const checkoutResult = await _subscriptionAPI.createCheckoutSession({
+        priceId: selectedPlan,
+        successUrl: 'pawfectmatch://premium/success',
+        cancelUrl: 'pawfectmatch://premium/cancel'
+      });
 
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (!checkoutResult || typeof checkoutResult !== 'object' || !('sessionId' in checkoutResult)) {
+        throw new Error('Invalid checkout session response');
+      }
 
+      const { initPaymentSheet, presentPaymentSheet } = await import('@stripe/stripe-react-native');
+
+      if (typeof initPaymentSheet !== 'function' || typeof presentPaymentSheet !== 'function') {
+        throw new Error('Stripe payment sheet is unavailable on this device');
+      }
+
+      const initParams: InitPaymentSheetParams = {
+        merchantDisplayName: 'PawfectMatch',
+        paymentIntentClientSecret: checkoutResult.sessionId as string,
+        allowsDelayedPaymentMethods: true,
+        defaultBillingDetails: {
+          name: user ? `${user.firstName} ${user.lastName}` : '',
+          email: user?.email ?? '',
+        },
+      };
+
+      const initResult = await initPaymentSheet(initParams);
+      if (initResult.error) {
+        const paymentError = initResult.error as any;
+        throw new Error(paymentError.message ?? 'Payment initialization failed');
+      }
+
+      const presentResult: PaymentSheetResult = await presentPaymentSheet();
+      if (presentResult.error) {
+        const paymentError = presentResult.error as any;
+        throw new Error(paymentError.message ?? 'Payment presentation failed');
+      }
+
+      setIsPremium(true);
       Alert.alert(
         'Success! 🎉',
         'Welcome to PawfectMatch Premium! Your subscription is now active.',
@@ -167,16 +205,16 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
           {
             text: 'Start Exploring',
             onPress: () => {
-              setIsPremium(true);
               navigation.goBack();
             },
           },
         ]
       );
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       Alert.alert(
         'Payment Failed',
-        'There was an issue processing your payment. Please try again.',
+        `There was an issue processing your payment: ${errorMessage}`,
         [{ text: 'OK' }]
       );
     } finally {
@@ -184,11 +222,12 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleRestorePurchases = async () => {
+  const handleRestorePurchases = async (): Promise<void> => {
     try {
       // Restore purchases logic
+      await Promise.resolve(); // Ensure async behavior
       Alert.alert('Restore Purchases', 'No previous purchases found.');
-    } catch (error) {
+    } catch (_error) {
       Alert.alert('Error', 'Failed to restore purchases.');
     }
   };
@@ -197,7 +236,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.premiumActiveContainer}>
-          <View style={[styles.premiumActiveGradient, { backgroundColor: '#1f2937' }]}> 
+          <View style={[styles.premiumActiveGradient, { backgroundColor: '#1f2937' }]}>
             <Ionicons name="star" size={80} color="#fff" />
             <Text style={styles.premiumActiveTitle}>You're Premium!</Text>
             <Text style={styles.premiumActiveSubtitle}>
@@ -205,7 +244,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
             </Text>
             <TouchableOpacity
               style={styles.manageButton}
-              onPress={() => navigation.navigate('ManageSubscription')}
+              onPress={() => { navigation.navigate('ManageSubscription'); }}
             >
               <Text style={styles.manageButtonText}>Manage Subscription</Text>
             </TouchableOpacity>
@@ -221,7 +260,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
       <View style={[styles.header, styles.headerBlur, { backgroundColor: Platform.OS === 'ios' ? 'rgba(255,255,255,0.08)' : colors.glassDarkMedium }]}>
         <TouchableOpacity
           onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.goBack();
           }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -229,14 +268,14 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
           <Ionicons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.white }]}>Go Premium</Text>
-        <TouchableOpacity onPress={handleRestorePurchases}>
+        <TouchableOpacity onPress={() => { void handleRestorePurchases(); }}>
           <Text style={[styles.restoreText, { color: colors.primary }]}>Restore</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Holographic Hero */}
-        <View style={[styles.heroSection, styles.holographicBg]}> 
+        <View style={[styles.heroSection, styles.holographicBg]}>
           <Ionicons name="star" size={60} color="#fff" />
           <Text style={[styles.heroTitle, styles.holoText]}>Unlock Premium Features</Text>
           <Text style={[styles.heroSubtitle, styles.holoTextSoft]}>
@@ -246,19 +285,19 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
 
         {/* Features Grid */}
         <View style={styles.featuresSection}>
-          <Text style={[styles.sectionTitle, { color: colors.white }]}> 
+          <Text style={[styles.sectionTitle, { color: colors.white }]}>
             What You'll Get
           </Text>
           <View style={styles.featuresGrid}>
             {premiumFeatures.map((feature, index) => (
-              <View key={index} style={[styles.featureCard, { backgroundColor: colors.surface }]}>
-                <View style={[styles.featureIcon, { backgroundColor: feature.color + '20' }]}>
-                  <Ionicons name={feature.icon as any} size={24} color={feature.color} />
+              <View key={index} style={[styles.featureCard, { backgroundColor: colors.card }]}>
+                <View style={[styles.featureIcon, { backgroundColor: `${feature.color}20` }]}>
+                  <Ionicons name={feature.icon} size={24} color={feature.color} />
                 </View>
-                <Text style={[styles.featureTitle, { color: colors.white }]}> 
+                <Text style={[styles.featureTitle, { color: colors.white }]}>
                   {feature.title}
                 </Text>
-                <Text style={[styles.featureDescription, { color: colors.gray300 }]}> 
+                <Text style={[styles.featureDescription, { color: colors.gray300 }]}>
                   {feature.description}
                 </Text>
               </View>
@@ -268,7 +307,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
 
         {/* Pricing Plans */}
         <View style={styles.pricingSection}>
-          <Text style={[styles.sectionTitle, { color: colors.white }]}> 
+          <Text style={[styles.sectionTitle, { color: colors.white }]}>
             Choose Your Plan
           </Text>
           {premiumPlans.map((plan) => (
@@ -280,26 +319,22 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
                 selectedPlan === plan.id && [styles.selectedPlan, { borderColor: colors.accent }],
                 plan.popular && styles.popularPlan,
               ]}
-              onPress={() => handlePlanSelection(plan.id)}
+              onPress={() => { handlePlanSelection(plan.id); }}
               activeOpacity={0.8}
             >
-              {plan.popular && (
-                <View style={[styles.popularBadge, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.popularText}>Most Popular</Text>
-                </View>
-              )}
-              {plan.savings && (
-                <View style={[styles.savingsBadge, { backgroundColor: colors.success }]}>
-                  <Text style={styles.savingsText}>{plan.savings}</Text>
-                </View>
-              )}
+              {plan.popular ? <View style={[styles.popularBadge, { backgroundColor: colors.primary }]}>
+                <Text style={styles.popularText}>Most Popular</Text>
+              </View> : null}
+              {plan.savings ? <View style={[styles.savingsBadge, { backgroundColor: colors.success }]}>
+                <Text style={styles.savingsText}>{plan.savings}</Text>
+              </View> : null}
               <View style={styles.planHeader}>
-                  <Text style={[styles.planName, { color: colors.white }]}>{plan.name}</Text>
+                <Text style={[styles.planName, { color: colors.white }]}>{plan.name}</Text>
                 <View style={styles.planPricing}>
-                  <Text style={[styles.planPrice, { color: colors.white }]}> 
+                  <Text style={[styles.planPrice, { color: colors.white }]}>
                     ${plan.price}
                   </Text>
-                  <Text style={[styles.planDuration, { color: colors.gray400 }]}> 
+                  <Text style={[styles.planDuration, { color: colors.gray400 }]}>
                     /{plan.duration}
                   </Text>
                 </View>
@@ -327,7 +362,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
           <Animated.View style={[
             styles.subscribeButtonGradient,
             styles.neonButton,
-            { opacity: isLoading ? 0.7 : 1, transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] }) }] }
+            { opacity: isLoading ? 0.7 : 1, transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] }) }] } as any
           ]}>
             {isLoading ? (
               <ActivityIndicator color="#fff" size="small" />
@@ -335,21 +370,21 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
               <Ionicons name="star" size={20} color="#fff" />
             )}
             <Text style={styles.subscribeButtonText}>
-              {isLoading ? 'Processing...' : `Start ${premiumPlans.find(p => p.id === selectedPlan)?.name} Plan`}
+              {isLoading ? 'Processing...' : `Start ${premiumPlans.find(p => p.id === selectedPlan)?.name ?? 'Premium'} Plan`}
             </Text>
           </Animated.View>
         </TouchableOpacity>
 
         {/* Terms */}
         <View style={styles.termsSection}>
-          <Text style={[styles.termsText, { color: colors.textTertiary }]}>
+          <Text style={[styles.termsText, { color: colors.textSecondary }]}>
             Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.
           </Text>
           <View style={styles.termsLinks}>
             <TouchableOpacity>
               <Text style={[styles.termsLink, { color: colors.primary }]}>Terms of Service</Text>
             </TouchableOpacity>
-            <Text style={[styles.termsSeparator, { color: colors.textTertiary }]}> • </Text>
+            <Text style={[styles.termsSeparator, { color: colors.textSecondary }]}> • </Text>
             <TouchableOpacity>
               <Text style={[styles.termsLink, { color: colors.primary }]}>Privacy Policy</Text>
             </TouchableOpacity>

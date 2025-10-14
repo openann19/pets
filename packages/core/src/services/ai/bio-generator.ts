@@ -3,7 +3,7 @@
  * AI-powered pet bio generation using Gemini
  */
 
-import { getGeminiClient } from './gemini-client';
+import { _getGeminiClient } from './gemini-client';
 
 export interface BioGenerationRequest {
   petName: string;
@@ -29,7 +29,7 @@ export class BioGeneratorService {
     const prompt = this.buildPrompt(request);
     
     try {
-      const gemini = getGeminiClient();
+      const gemini = _getGeminiClient();
       const response = await gemini.generateContent(prompt);
       
       // Parse response
@@ -135,4 +135,4 @@ export class BioGeneratorService {
 }
 
 // Export singleton
-export const bioGeneratorService = new BioGeneratorService();
+export const _bioGeneratorService = new BioGeneratorService();

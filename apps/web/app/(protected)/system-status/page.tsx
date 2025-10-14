@@ -5,28 +5,29 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import PremiumButton from '@/components/ui/PremiumButton';
+import PremiumCard from '@/components/ui/PremiumCard';
+import { _PREMIUM_VARIANTS as PREMIUM_VARIANTS } from '@/constants/animations';
+import { useEnhancedSocket } from '@/hooks/useEnhancedSocket';
+import { logger } from '@/services/logger';
+import { useAnalytics } from '@/utils/analytics-system';
+import { _createPerformanceMonitor as createPerformanceMonitor } from '@/utils/performance';
 import {
+  ArrowPathIcon,
+  BeakerIcon,
+  BoltIcon,
   ChartBarIcon,
-  CpuChipIcon,
-  CloudIcon,
-  WifiIcon,
-  ExclamationTriangleIcon,
   CheckCircleIcon,
   ClockIcon,
-  BoltIcon,
-  BeakerIcon,
-  ShieldCheckIcon,
-  ArrowPathIcon,
+  CpuChipIcon,
+  ExclamationTriangleIcon,
   EyeIcon,
+  ShieldCheckIcon,
+  // CloudIcon,
+  WifiIcon,
 } from '@heroicons/react/24/outline';
-import { useEnhancedSocket } from '../../../src/hooks/useEnhancedSocket';
-import { useAnalytics } from '../../../src/utils/analytics-system';
-import { createPerformanceMonitor } from '../../../src/utils/performance';
-import PremiumCard from '../../../src/components/UI/PremiumCard';
-import PremiumButton from '../../../src/components/UI/PremiumButton';
-import { PREMIUM_VARIANTS } from '../../../src/constants/animations';
+import { motion } from 'framer-motion';
+import { useCallback, useEffect, useState } from 'react';
 
 interface SystemHealth {
   status: 'healthy' | 'warning' | 'critical';
@@ -45,7 +46,7 @@ interface ServiceStatus {
 }
 
 export default function SystemStatusPage() {
-  const { state: socketState, socket } = useEnhancedSocket();
+  const { state: socketState } = useEnhancedSocket();
   const analytics = useAnalytics();
   const [services, setServices] = useState<ServiceStatus[]>([]);
   const [performanceData, setPerformanceData] = useState<any>(null);
@@ -55,7 +56,7 @@ export default function SystemStatusPage() {
   // Initialize performance monitoring
   useEffect(() => {
     const monitor = createPerformanceMonitor();
-    
+
     const interval = setInterval(() => {
       const report = monitor.generateReport();
       setPerformanceData(report);
@@ -68,18 +69,24 @@ export default function SystemStatusPage() {
   }, []);
 
   // Fetch service statuses
-  const fetchServiceStatuses = async () => {
+  const fetchServiceStatuses = useCallback(async () => {
     setIsRefreshing(true);
-    
+
     try {
       // Backend API Health
-      const backendHealth = await fetch('/api/health').then(r => r.json()).catch(() => null);
-      
-      // AI Service Health  
-      const aiHealth = await fetch(`${process.env.NEXT_PUBLIC_AI_URL}/health`).then(r => r.json()).catch(() => null);
-      
+      const backendHealth = await fetch('/api/health')
+        .then((r) => r.json())
+        .catch(() => null);
+
+      // AI Service Health
+      const aiHealth = await fetch(`${process.env['NEXT_PUBLIC_AI_URL']}/health`)
+        .then((r) => r.json())
+        .catch(() => null);
+
       // AI Routes Health
-      const aiRoutesHealth = await fetch('/api/ai/health').then(r => r.json()).catch(() => null);
+      const aiRoutesHealth = await fetch('/api/ai/health')
+        .then((r) => r.json())
+        .catch(() => null);
 
       const serviceStatuses: ServiceStatus[] = [
         {
@@ -105,7 +112,7 @@ export default function SystemStatusPage() {
             errorRate: 0,
             lastCheck: new Date().toISOString(),
           },
-          endpoint: `${process.env.NEXT_PUBLIC_AI_URL}/health`,
+          endpoint: `${process.env['NEXT_PUBLIC_AI_URL']}/health`,
           features: ['Bio Generation', 'Photo Analysis', 'Compatibility', 'Caching'],
         },
         {
@@ -125,7 +132,11 @@ export default function SystemStatusPage() {
           name: 'Real-time Socket',
           status: socketState.isConnected ? 'online' : 'offline',
           health: {
-            status: socketState.connectionQuality === 'excellent' || socketState.connectionQuality === 'good' ? 'healthy' : 'warning',
+            status:
+              socketState.connectionQuality === 'excellent' ||
+                socketState.connectionQuality === 'good'
+                ? 'healthy'
+                : 'warning',
             uptime: 0,
             responseTime: socketState.latency,
             errorRate: 0,
@@ -137,48 +148,58 @@ export default function SystemStatusPage() {
 
       setServices(serviceStatuses);
       setLastUpdate(new Date());
-      
     } catch (error) {
-      console.error('Failed to fetch service statuses:', error);
+      logger.error('Failed to fetch service statuses', { error });
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [socketState.isConnected, socketState.connectionQuality, socketState.latency]);
 
   useEffect(() => {
     fetchServiceStatuses();
     const interval = setInterval(fetchServiceStatuses, 30000); // Update every 30 seconds
-    
+
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchServiceStatuses]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online':
-      case 'healthy': return 'text-green-600 bg-green-50';
+      case 'healthy':
+        return 'text-green-600 bg-green-50';
       case 'warning':
-      case 'degraded': return 'text-yellow-600 bg-yellow-50';
+      case 'degraded':
+        return 'text-yellow-600 bg-yellow-50';
       case 'offline':
-      case 'critical': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'critical':
+        return 'text-red-600 bg-red-50';
+      default:
+        return 'text-gray-600 bg-gray-50';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'online':
-      case 'healthy': return CheckCircleIcon;
+      case 'healthy':
+        return CheckCircleIcon;
       case 'warning':
-      case 'degraded': return ExclamationTriangleIcon;
+      case 'degraded':
+        return ExclamationTriangleIcon;
       case 'offline':
-      case 'critical': return ExclamationTriangleIcon;
-      default: return ClockIcon;
+      case 'critical':
+        return ExclamationTriangleIcon;
+      default:
+        return ClockIcon;
     }
   };
 
-  const overallSystemHealth = services.length > 0 
-    ? services.every(s => s.status === 'online') ? 'healthy' : 'degraded'
-    : 'unknown';
+  const overallSystemHealth =
+    services.length > 0
+      ? services.every((s) => s.status === 'online')
+        ? 'healthy'
+        : 'degraded'
+      : 'unknown';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6">
@@ -194,7 +215,7 @@ export default function SystemStatusPage() {
             <h1 className="text-4xl font-bold gradient-text mb-2">System Status</h1>
             <p className="text-gray-600">Real-time monitoring of all enhanced systems</p>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <motion.div
               className={`px-4 py-2 rounded-full font-semibold ${getStatusColor(overallSystemHealth)}`}
@@ -203,9 +224,9 @@ export default function SystemStatusPage() {
             >
               Overall: {overallSystemHealth.toUpperCase()}
             </motion.div>
-            
+
             <PremiumButton
-              variant="glass"
+              variant="outline"
               onClick={fetchServiceStatuses}
               loading={isRefreshing}
               icon={<ArrowPathIcon className="w-4 h-4" />}
@@ -217,11 +238,16 @@ export default function SystemStatusPage() {
 
         {/* System Overview */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <PremiumCard variant="glass" hover glow>
+          <PremiumCard
+            variant="glass"
+            hover
+          >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <WifiIcon className="w-8 h-8 text-blue-600" />
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(socketState.connectionQuality)}`}>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(socketState.connectionQuality)}`}
+                >
                   {socketState.connectionQuality.toUpperCase()}
                 </span>
               </div>
@@ -233,7 +259,10 @@ export default function SystemStatusPage() {
             </div>
           </PremiumCard>
 
-          <PremiumCard variant="gradient" hover glow>
+          <PremiumCard
+            variant="gradient"
+            hover
+          >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <BoltIcon className="w-8 h-8 text-white" />
@@ -243,13 +272,14 @@ export default function SystemStatusPage() {
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Performance</h3>
               <p className="text-white/80 text-sm mb-2">App responsiveness</p>
-              <div className="text-2xl font-bold text-white">
-                {performanceData?.score || 0}/100
-              </div>
+              <div className="text-2xl font-bold text-white">{performanceData?.score || 0}/100</div>
             </div>
           </PremiumCard>
 
-          <PremiumCard variant="neon" hover glow>
+          <PremiumCard
+            variant="gradient"
+            hover
+          >
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <BeakerIcon className="w-8 h-8 text-purple-400" />
@@ -260,8 +290,11 @@ export default function SystemStatusPage() {
               <h3 className="text-lg font-bold text-white mb-2">AI Services</h3>
               <p className="text-purple-200 text-sm mb-2">Enhanced intelligence</p>
               <div className="text-2xl font-bold text-purple-400">
-                {services.filter(s => s.name.includes('AI')).filter(s => s.status === 'online').length}/
-                {services.filter(s => s.name.includes('AI')).length} Online
+                {
+                  services.filter((s) => s.name.includes('AI')).filter((s) => s.status === 'online')
+                    .length
+                }
+                /{services.filter((s) => s.name.includes('AI')).length} Online
               </div>
             </div>
           </PremiumCard>
@@ -274,11 +307,11 @@ export default function SystemStatusPage() {
           transition={{ delay: 0.2 }}
         >
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Enhanced Services</h2>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             {services.map((service, index) => {
               const StatusIcon = getStatusIcon(service.status);
-              
+
               return (
                 <motion.div
                   key={service.name}
@@ -286,7 +319,11 @@ export default function SystemStatusPage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <PremiumCard variant="elevated" hover className="p-6">
+                  <PremiumCard
+                    variant="default"
+                    hover
+                    className="p-6"
+                  >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className={`p-2 rounded-lg ${getStatusColor(service.status)}`}>
@@ -297,8 +334,10 @@ export default function SystemStatusPage() {
                           <p className="text-sm text-gray-600">{service.endpoint}</p>
                         </div>
                       </div>
-                      
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(service.status)}`}>
+
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(service.status)}`}
+                      >
                         {service.status.toUpperCase()}
                       </span>
                     </div>
@@ -314,7 +353,9 @@ export default function SystemStatusPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Status</p>
-                        <p className={`font-semibold ${getStatusColor(service.health.status).split(' ')[0]}`}>
+                        <p
+                          className={`font-semibold ${getStatusColor(service.health.status).split(' ')[0]}`}
+                        >
                           {service.health.status}
                         </p>
                       </div>
@@ -323,7 +364,7 @@ export default function SystemStatusPage() {
                     <div className="mb-4">
                       <p className="text-sm font-medium text-gray-700 mb-2">Features:</p>
                       <div className="flex flex-wrap gap-2">
-                        {service.features.map(feature => (
+                        {service.features.map((feature) => (
                           <span
                             key={feature}
                             className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
@@ -348,22 +389,28 @@ export default function SystemStatusPage() {
             className="mb-8"
           >
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Performance Metrics</h2>
-            
+
             <div className="grid md:grid-cols-4 gap-6">
-              {Object.entries(performanceData.metrics).map(([key, value]) => (
-                <PremiumCard key={key} variant="glass" hover>
-                  <div className="p-4">
-                    <h3 className="text-sm font-medium text-gray-600 mb-1">
-                      {key.replace(/_/g, ' ').toUpperCase()}
-                    </h3>
-                    <div className="text-xl font-bold text-gray-900">
-                      {typeof value === 'number' ? value.toFixed(2) : value}
-                      {key.includes('time') ? 'ms' : ''}
-                      {key.includes('percentage') ? '%' : ''}
+              {(Object.entries(performanceData.metrics) as [string, number | string][]).map(
+                ([key, value]) => (
+                  <PremiumCard
+                    key={key}
+                    variant="glass"
+                    hover
+                  >
+                    <div className="p-4">
+                      <h3 className="text-sm font-medium text-gray-600 mb-1">
+                        {key.replace(/_/g, ' ').toUpperCase()}
+                      </h3>
+                      <div className="text-xl font-bold text-gray-900">
+                        {typeof value === 'number' ? value.toFixed(2) : value}
+                        {key.includes('time') ? 'ms' : ''}
+                        {key.includes('percentage') ? '%' : ''}
+                      </div>
                     </div>
-                  </div>
-                </PremiumCard>
-              ))}
+                  </PremiumCard>
+                ),
+              )}
             </div>
 
             {/* Performance Recommendations */}
@@ -374,7 +421,10 @@ export default function SystemStatusPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                <PremiumCard variant="neon" className="p-6">
+                <PremiumCard
+                  variant="gradient"
+                  className="p-6"
+                >
                   <h3 className="text-lg font-bold text-white mb-4 flex items-center">
                     <BoltIcon className="w-5 h-5 mr-2" />
                     Performance Recommendations
@@ -406,9 +456,13 @@ export default function SystemStatusPage() {
           className="mb-8"
         >
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Analytics Overview</h2>
-          
+
           <div className="grid md:grid-cols-3 gap-6">
-            <PremiumCard variant="holographic" hover className="p-6">
+            <PremiumCard
+              variant="gradient"
+              hover
+              className="p-6"
+            >
               <div className="flex items-center justify-between mb-4">
                 <EyeIcon className="w-8 h-8 text-white" />
                 <span className="px-3 py-1 rounded-full text-sm font-medium bg-white/20 text-white">
@@ -418,11 +472,11 @@ export default function SystemStatusPage() {
               <h3 className="text-lg font-bold text-white mb-2">User Behavior</h3>
               <p className="text-white/80 text-sm mb-4">Advanced tracking active</p>
               <PremiumButton
-                variant="glass"
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   const report = analytics.generateReport();
-                  console.log('📊 Analytics Report:', report);
+                  logger.info('Analytics Report generated', { report });
                   alert('Analytics report generated! Check console for details.');
                 }}
               >
@@ -430,7 +484,11 @@ export default function SystemStatusPage() {
               </PremiumButton>
             </PremiumCard>
 
-            <PremiumCard variant="elevated" hover className="p-6">
+            <PremiumCard
+              variant="default"
+              hover
+              className="p-6"
+            >
               <div className="flex items-center justify-between mb-4">
                 <ShieldCheckIcon className="w-8 h-8 text-green-600" />
                 <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-600">
@@ -443,7 +501,11 @@ export default function SystemStatusPage() {
               <p className="text-xs text-gray-500">Uptime target</p>
             </PremiumCard>
 
-            <PremiumCard variant="glass" hover className="p-6">
+            <PremiumCard
+              variant="glass"
+              hover
+              className="p-6"
+            >
               <div className="flex items-center justify-between mb-4">
                 <CpuChipIcon className="w-8 h-8 text-purple-600" />
                 <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-600">
@@ -464,15 +526,45 @@ export default function SystemStatusPage() {
           transition={{ delay: 0.8 }}
         >
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Enhanced Features Status</h2>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { name: 'Premium UI System', status: 'active', features: 7, description: 'Glass morphism, animations, haptics' },
-              { name: 'AI Cache System', status: 'active', features: 3, description: 'Redis caching, intelligent TTL' },
-              { name: 'Advanced Analytics', status: 'active', features: 8, description: 'Behavior tracking, performance monitoring' },
-              { name: 'Error Boundaries', status: 'active', features: 4, description: 'Auto-retry, user-friendly errors' },
-              { name: 'Socket Enhancement', status: 'active', features: 6, description: 'Typing fixes, presence, quality monitoring' },
-              { name: 'Performance Monitor', status: 'active', features: 5, description: 'Real-time metrics, optimization alerts' },
+              {
+                name: 'Premium UI System',
+                status: 'active',
+                features: 7,
+                description: 'Glass morphism, animations, haptics',
+              },
+              {
+                name: 'AI Cache System',
+                status: 'active',
+                features: 3,
+                description: 'Redis caching, intelligent TTL',
+              },
+              {
+                name: 'Advanced Analytics',
+                status: 'active',
+                features: 8,
+                description: 'Behavior tracking, performance monitoring',
+              },
+              {
+                name: 'Error Boundaries',
+                status: 'active',
+                features: 4,
+                description: 'Auto-retry, user-friendly errors',
+              },
+              {
+                name: 'Socket Enhancement',
+                status: 'active',
+                features: 6,
+                description: 'Typing fixes, presence, quality monitoring',
+              },
+              {
+                name: 'Performance Monitor',
+                status: 'active',
+                features: 5,
+                description: 'Real-time metrics, optimization alerts',
+              },
             ].map((feature, index) => (
               <motion.div
                 key={feature.name}
@@ -480,7 +572,11 @@ export default function SystemStatusPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 1 + index * 0.1 }}
               >
-                <PremiumCard variant="default" hover className="p-4">
+                <PremiumCard
+                  variant="default"
+                  hover
+                  className="p-4"
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
@@ -506,8 +602,7 @@ export default function SystemStatusPage() {
           transition={{ delay: 1.2 }}
         >
           <p className="text-sm">
-            Last updated: {lastUpdate.toLocaleTimeString()} | 
-            Auto-refresh every 30 seconds |
+            Last updated: {lastUpdate.toLocaleTimeString()} | Auto-refresh every 30 seconds |
             Enhanced monitoring active
           </p>
         </motion.div>

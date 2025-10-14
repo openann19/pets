@@ -19,14 +19,36 @@ const generateTokens = (userId) => {
   return { accessToken, refreshToken };
 };
 
+// Helper: parse cookies from header (no cookie-parser dependency)
+const getTokenFromCookies = (req) => {
+  try {
+    const cookieHeader = req.headers.cookie;
+    if (!cookieHeader) return null;
+    const map = Object.create(null);
+    for (const part of cookieHeader.split(';')) {
+      const [k, ...v] = part.trim().split('=');
+      if (!k) continue;
+      map[decodeURIComponent(k)] = decodeURIComponent(v.join('='));
+    }
+    return map['accessToken'] || map['access_token'] || map['pm_access'] || null;
+  } catch {
+    return null;
+  }
+};
+
 // Middleware to authenticate JWT tokens
 const authenticateToken = async (req, res, next) => {
   try {
     // Get token from header
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.startsWith('Bearer ') 
-      ? authHeader.substring(7) 
+    let token = authHeader && authHeader.startsWith('Bearer ')
+      ? authHeader.substring(7)
       : null;
+
+    // Fallback to httpOnly cookie if no Authorization header
+    if (!token) {
+      token = getTokenFromCookies(req);
+    }
     
     if (!token) {
       return res.status(401).json({

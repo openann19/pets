@@ -4,7 +4,31 @@
  * Provides utilities for smooth, responsive mobile experience
  */
 
-import { useCallback, useRef, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { logger } from '@pawfectmatch/core';
+;
+
+// Performance API extensions
+interface PerformanceMemory {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
+interface PerformanceWithMemory extends Performance {
+  memory: PerformanceMemory;
+}
+
+interface WindowWithGC extends Window {
+  gc?: () => void;
+}
+
+interface NetworkInformation {
+  effectiveType: string;
+  downlink: number;
+  rtt: number;
+  saveData: boolean;
+}
 
 // Debounce utility for performance
 export const useDebounce = <T>(value: T, delay: number): T => {
@@ -26,7 +50,7 @@ export const useDebounce = <T>(value: T, delay: number): T => {
 // Throttle utility for performance
 export const useThrottle = <T extends (...args: unknown[]) => unknown>(
   callback: T,
-  delay: number
+  delay: number,
 ): T => {
   const lastRun = useRef(Date.now());
 
@@ -37,15 +61,15 @@ export const useThrottle = <T extends (...args: unknown[]) => unknown>(
         lastRun.current = Date.now();
       }
     }) as T,
-    [callback, delay]
+    [callback, delay],
   );
 };
 
 // Intersection Observer for lazy loading
 export const useIntersectionObserver = (
-  elementRef: React.RefObject<Element>,
-  options: IntersectionObserverInit = {}
-) => {
+  elementRef: React.RefObject<HTMLElement>,
+  options?: IntersectionObserverInit,
+): boolean => {
   const [isIntersecting, setIsIntersecting] = useState(false);
 
   useEffect(() => {
@@ -54,13 +78,15 @@ export const useIntersectionObserver = (
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsIntersecting(entry.isIntersecting);
+        if (entry) {
+          setIsIntersecting(entry.isIntersecting);
+        }
       },
       {
         threshold: 0.1,
         rootMargin: '50px',
         ...options,
-      }
+      },
     );
 
     observer.observe(element);
@@ -77,20 +103,19 @@ export const useIntersectionObserver = (
 export const useVirtualScroll = (
   itemCount: number,
   itemHeight: number,
-  containerHeight: number
-) => {
+  containerHeight: number,
+): {
+  visibleItems: number[];
+  totalHeight: number;
+  offsetY: number;
+  setScrollTop: (scrollTop: number) => void;
+} => {
   const [scrollTop, setScrollTop] = useState(0);
 
   const startIndex = Math.floor(scrollTop / itemHeight);
-  const endIndex = Math.min(
-    startIndex + Math.ceil(containerHeight / itemHeight) + 1,
-    itemCount
-  );
+  const endIndex = Math.min(startIndex + Math.ceil(containerHeight / itemHeight) + 1, itemCount);
 
-  const visibleItems = Array.from(
-    { length: endIndex - startIndex },
-    (_, i) => startIndex + i
-  );
+  const visibleItems = Array.from({ length: endIndex - startIndex }, (_, i) => startIndex + i);
 
   const totalHeight = itemCount * itemHeight;
   const offsetY = startIndex * itemHeight;
@@ -104,22 +129,24 @@ export const useVirtualScroll = (
 };
 
 // Image optimization hook
-export const useOptimizedImage = (src: string, options: {
-  width?: number;
-  height?: number;
-  quality?: number;
-  format?: 'webp' | 'jpeg' | 'png';
-} = {}) => {
+export const useOptimizedImage = (
+  src: string,
+  options: {
+    width?: number;
+    height?: number;
+    quality?: number;
+    format?: string;
+  } = {},
+): {
+  src: string;
+  isLoaded: boolean;
+  isError: boolean;
+} => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
   const [optimizedSrc, setOptimizedSrc] = useState<string>('');
 
-  const {
-    width = 400,
-    height = 400,
-    quality = 80,
-    format = 'webp'
-  } = options;
+  const { width = 400, height = 400, quality = 80, format = 'webp' } = options;
 
   useEffect(() => {
     if (!src) return;
@@ -137,8 +164,12 @@ export const useOptimizedImage = (src: string, options: {
 
     // Preload image
     const img = new Image();
-    img.onload = () => setIsLoaded(true);
-    img.onerror = () => setIsError(true);
+    img.onload = () => {
+      setIsLoaded(true);
+    };
+    img.onerror = () => {
+      setIsError(true);
+    };
     img.src = url.toString();
   }, [src, width, height, quality, format]);
 
@@ -150,13 +181,16 @@ export const useOptimizedImage = (src: string, options: {
 };
 
 // Memory management hook
-export const useMemoryOptimization = () => {
+export const useMemoryOptimization = (): {
+  memoryUsage: number;
+  clearCache: () => void;
+} => {
   const [memoryUsage, setMemoryUsage] = useState<number>(0);
 
   useEffect(() => {
-    const updateMemoryUsage = () => {
+    const updateMemoryUsage = (): void => {
       if ('memory' in performance) {
-        const memory = (performance as any).memory;
+        const { memory } = performance as PerformanceWithMemory;
         setMemoryUsage(memory.usedJSHeapSize / memory.jsHeapSizeLimit);
       }
     };
@@ -164,14 +198,16 @@ export const useMemoryOptimization = () => {
     const interval = setInterval(updateMemoryUsage, 5000);
     updateMemoryUsage();
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const clearCache = useCallback(() => {
     // Clear various caches
     if ('caches' in window) {
-      caches.keys().then(names => {
-        names.forEach(name => {
+      caches.keys().then((names) => {
+        names.forEach((name) => {
           caches.delete(name);
         });
       });
@@ -182,7 +218,7 @@ export const useMemoryOptimization = () => {
 
     // Force garbage collection if available
     if ('gc' in window) {
-      (window as any).gc();
+      (window as WindowWithGC).gc?.();
     }
   }, []);
 
@@ -193,7 +229,15 @@ export const useMemoryOptimization = () => {
 };
 
 // Network optimization hook
-export const useNetworkOptimization = () => {
+export const useNetworkOptimization = (): {
+  connection: {
+    effectiveType: string;
+    downlink: number;
+    rtt: number;
+  } | null;
+  isSlowConnection: boolean;
+  shouldReduceQuality: boolean;
+} => {
   const [connection, setConnection] = useState<{
     effectiveType: string;
     downlink: number;
@@ -202,36 +246,48 @@ export const useNetworkOptimization = () => {
 
   useEffect(() => {
     if ('connection' in navigator) {
-      const conn = (navigator as any).connection;
-      setConnection({
-        effectiveType: conn.effectiveType,
-        downlink: conn.downlink,
-        rtt: conn.rtt,
-      });
-
-      const handleChange = () => {
+      const conn = (navigator as Navigator & { connection?: NetworkInformation }).connection;
+      if (conn) {
         setConnection({
           effectiveType: conn.effectiveType,
           downlink: conn.downlink,
           rtt: conn.rtt,
         });
-      };
 
-      conn.addEventListener('change', handleChange);
-      return () => conn.removeEventListener('change', handleChange);
+        const handleChange = (): void => {
+          if (conn) {
+            setConnection({
+              effectiveType: conn.effectiveType,
+              downlink: conn.downlink,
+              rtt: conn.rtt,
+            });
+          }
+        };
+
+        // Use proper event listener types for NetworkInformation
+        const networkConn = conn as NetworkInformation & EventTarget;
+        if ('addEventListener' in networkConn) {
+          networkConn.addEventListener('change', handleChange);
+          return () => {
+            if (networkConn && 'removeEventListener' in networkConn) {
+              networkConn.removeEventListener('change', handleChange);
+            }
+          };
+        }
+      }
     }
+    return undefined;
   }, []);
 
-  const isSlowConnection = connection && (
-    connection.effectiveType === 'slow-2g' ||
-    connection.effectiveType === '2g' ||
-    connection.downlink < 1
-  );
+  const isSlowConnection =
+    connection !== null &&
+    (connection.effectiveType === 'slow-2g' ||
+      connection.effectiveType === '2g' ||
+      connection.downlink < 1);
 
-  const shouldReduceQuality = connection && (
-    connection.effectiveType === 'slow-2g' ||
-    connection.effectiveType === '2g'
-  );
+  const shouldReduceQuality =
+    connection !== null &&
+    (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g');
 
   return {
     connection,
@@ -241,22 +297,25 @@ export const useNetworkOptimization = () => {
 };
 
 // Animation performance hook
-export const useAnimationPerformance = () => {
+export const useAnimationPerformance = (): {
+  fps: number;
+  shouldReduceAnimations: boolean;
+} => {
   const [fps, setFps] = useState(60);
   const frameCount = useRef(0);
   const lastTime = useRef(performance.now());
 
   useEffect(() => {
-    const measureFPS = () => {
+    const measureFPS = (): void => {
       frameCount.current++;
       const currentTime = performance.now();
-      
+
       if (currentTime - lastTime.current >= 1000) {
         setFps(frameCount.current);
         frameCount.current = 0;
         lastTime.current = currentTime;
       }
-      
+
       requestAnimationFrame(measureFPS);
     };
 
@@ -272,7 +331,10 @@ export const useAnimationPerformance = () => {
 };
 
 // Bundle size optimization
-export const useBundleOptimization = () => {
+export const useBundleOptimization = (): {
+  isLoaded: boolean;
+  lazyImport: (moduleName: string) => Promise<unknown>;
+} => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -281,20 +343,25 @@ export const useBundleOptimization = () => {
       setIsLoaded(true);
     }, 100);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
 
-  const lazyImport = useCallback(async (moduleName: string) => {
-    if (!isLoaded) return null;
-    
-    try {
-      const module = await import(moduleName);
-      return module;
-    } catch (error) {
-      console.error(`Failed to load module: ${moduleName}`, error);
-      return null;
-    }
-  }, [isLoaded]);
+  const lazyImport = useCallback(
+    async (moduleName: string): Promise<unknown> => {
+      if (!isLoaded) return null;
+
+      try {
+        const loadedModule = await import(moduleName);
+        return loadedModule;
+      } catch (error) {
+        logger.error(`Failed to load module: ${moduleName}`, { error });
+        return null;
+      }
+    },
+    [isLoaded],
+  );
 
   return {
     isLoaded,
@@ -303,29 +370,37 @@ export const useBundleOptimization = () => {
 };
 
 // Touch optimization for mobile
-export const useTouchOptimization = () => {
+export const useTouchOptimization = (): {
+  handleTouchStart: (e: React.TouchEvent) => void;
+  handleTouchEnd: (e: React.TouchEvent) => void;
+  getSwipeDirection: () => 'left' | 'right' | 'up' | 'down' | null;
+} => {
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
   const [touchEnd, setTouchEnd] = useState<{ x: number; y: number; time: number } | null>(null);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
-    setTouchStart({
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now(),
-    });
+    if (touch) {
+      setTouchStart({
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
+      });
+    }
   }, []);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     const touch = e.changedTouches[0];
-    setTouchEnd({
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now(),
-    });
+    if (touch) {
+      setTouchEnd({
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
+      });
+    }
   }, []);
 
-  const getSwipeDirection = useCallback(() => {
+  const getSwipeDirection = useCallback((): 'left' | 'right' | 'up' | 'down' | null => {
     if (!touchStart || !touchEnd) return null;
 
     const deltaX = touchEnd.x - touchStart.x;
@@ -351,7 +426,13 @@ export const useTouchOptimization = () => {
 };
 
 // Performance monitoring
-export const usePerformanceMonitoring = () => {
+export const usePerformanceMonitoring = (): {
+  loadTime: number;
+  firstContentfulPaint: number;
+  largestContentfulPaint: number;
+  firstInputDelay: number;
+  cumulativeLayoutShift: number;
+} | null => {
   const [metrics, setMetrics] = useState<{
     loadTime: number;
     firstContentfulPaint: number;
@@ -367,7 +448,7 @@ export const usePerformanceMonitoring = () => {
         entries.forEach((entry) => {
           if (entry.entryType === 'navigation') {
             const navEntry = entry as PerformanceNavigationTiming;
-            setMetrics(prev => ({
+            setMetrics((prev) => ({
               loadTime: navEntry.loadEventEnd - navEntry.loadEventStart,
               firstContentfulPaint: prev?.firstContentfulPaint ?? 0,
               largestContentfulPaint: prev?.largestContentfulPaint ?? 0,
@@ -380,8 +461,11 @@ export const usePerformanceMonitoring = () => {
 
       observer.observe({ entryTypes: ['navigation', 'paint', 'largest-contentful-paint'] });
 
-      return () => observer.disconnect();
+      return () => {
+        observer.disconnect();
+      };
     }
+    return undefined;
   }, []);
 
   return metrics;

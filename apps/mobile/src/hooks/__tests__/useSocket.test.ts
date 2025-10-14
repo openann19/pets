@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useSocket, useSocketWithStatus, useSocketEmit } from '../useSocket';
 import { useAuthStore } from '@pawfectmatch/core';
-import { io } from 'socket.io-client';
+import io from 'socket.io-client';
 
 // Mock dependencies
 jest.mock('socket.io-client');
@@ -22,7 +22,7 @@ const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore
 describe('useSocket', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockIo.mockReturnValue(mockSocket as any);
+    mockIo.mockReturnValue(mockSocket as unknown);
     mockUseAuthStore.mockReturnValue({
       user: {
         _id: 'test-user-id',
@@ -31,7 +31,7 @@ describe('useSocket', () => {
         lastName: 'User',
       },
       accessToken: 'test-access-token',
-    } as any);
+    } as unknown);
   });
 
   it('should create socket connection with correct configuration', () => {
@@ -70,7 +70,7 @@ describe('useSocket', () => {
     mockUseAuthStore.mockReturnValue({
       user: null,
       accessToken: null,
-    } as any);
+    } as unknown);
 
     const { result } = renderHook(() => useSocket());
 
@@ -187,7 +187,7 @@ describe('useSocket', () => {
         lastName: 'User',
       },
       accessToken: 'new-access-token',
-    } as any);
+    } as unknown);
 
     rerender();
 
@@ -199,11 +199,11 @@ describe('useSocket', () => {
 describe('useSocketWithStatus', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockIo.mockReturnValue(mockSocket as any);
+    mockIo.mockReturnValue(mockSocket as unknown);
     mockUseAuthStore.mockReturnValue({
       user: { _id: 'test-user-id' },
       accessToken: 'test-access-token',
-    } as any);
+    } as unknown);
   });
 
   it('should return socket with connection status', () => {
@@ -280,11 +280,11 @@ describe('useSocketWithStatus', () => {
 describe('useSocketEmit', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockIo.mockReturnValue(mockSocket as any);
+    mockIo.mockReturnValue(mockSocket as unknown);
     mockUseAuthStore.mockReturnValue({
       user: { _id: 'test-user-id' },
       accessToken: 'test-access-token',
-    } as any);
+    } as unknown);
   });
 
   it('should emit events when socket is connected', () => {

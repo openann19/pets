@@ -10,7 +10,11 @@ const {
   getMe,
   verifyEmail,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  setup2FA,
+  verify2FA,
+  validate2FA,
+  disable2FA
 } = require('../controllers/authController');
 
 const router = express.Router();
@@ -54,6 +58,10 @@ const passwordValidation = [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ];
 
+const twoFactorValidation = [
+  body('code').isLength({ min: 6, max: 6 }).isNumeric().withMessage('Valid 6-digit code is required')
+];
+
 // Routes with rate limiting
 router.post('/register', authLimiter, registerValidation, validate, register);
 router.post('/login', authLimiter, loginValidation, validate, login);
@@ -63,5 +71,11 @@ router.post('/refresh-token', authLimiter, refreshAccessToken);
 router.post('/verify-email/:token', verifyEmail);
 router.post('/forgot-password', passwordResetLimiter, emailValidation, validate, forgotPassword);
 router.post('/reset-password/:token', passwordResetLimiter, passwordValidation, validate, resetPassword);
+
+// 2FA Routes
+router.post('/2fa/setup', authenticateToken, setup2FA);
+router.post('/2fa/verify', authenticateToken, twoFactorValidation, validate, verify2FA);
+router.post('/2fa/validate', twoFactorValidation, validate, validate2FA);
+router.post('/2fa/disable', authenticateToken, twoFactorValidation, validate, disable2FA);
 
 module.exports = router;

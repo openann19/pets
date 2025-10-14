@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { logger, useAuthStore } from '@pawfectmatch/core';
+import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useAuthStore } from '@pawfectmatch/core';
 
 interface UseSocketReturn {
   socket: Socket | null;
@@ -13,6 +13,10 @@ export const useSocket = (): Socket | null => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user, accessToken } = useAuthStore();
+
+  // Suppress unused variable warnings (these are used in event handlers below)
+  void isConnected;
+  void error;
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
 
@@ -21,9 +25,9 @@ export const useSocket = (): Socket | null => {
       return;
     }
 
-    const connectSocket = () => {
+    const connectSocket = (): Socket | null => {
       try {
-        const newSocket = io(process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+        const newSocket = io(process.env['EXPO_PUBLIC_SOCKET_URL'] || 'http://localhost:3001', {
           auth: {
             token: accessToken,
             userId: user._id,
@@ -36,16 +40,16 @@ export const useSocket = (): Socket | null => {
         });
 
         newSocket.on('connect', () => {
-          console.log('Socket connected:', newSocket.id);
+          logger.info(`Socket connected: ${newSocket.id}`);
           setIsConnected(true);
           setError(null);
           reconnectAttempts.current = 0;
         });
 
         newSocket.on('disconnect', (reason) => {
-          console.log('Socket disconnected:', reason);
+          logger.info(`Socket disconnected: ${reason}`);
           setIsConnected(false);
-          
+
           if (reason === 'io server disconnect') {
             // Server disconnected, try to reconnect
             newSocket.connect();
@@ -53,57 +57,58 @@ export const useSocket = (): Socket | null => {
         });
 
         newSocket.on('connect_error', (err) => {
-          console.error('Socket connection error:', err);
+          logger.error(`Socket connection error: ${err.message}`);
           setError(err.message);
           reconnectAttempts.current++;
-          
+
           if (reconnectAttempts.current >= maxReconnectAttempts) {
             setError('Failed to connect after multiple attempts');
           }
         });
 
         newSocket.on('error', (err) => {
-          console.error('Socket error:', err);
+          logger.error(`Socket error: ${err.message}`);
           setError(err.message || 'Socket error occurred');
         });
 
         // Authentication error
         newSocket.on('auth_error', (err) => {
-          console.error('Socket auth error:', err);
+          logger.error(`Socket auth error: ${err.message}`);
           setError('Authentication failed');
           newSocket.disconnect();
         });
 
         // User-specific events
         newSocket.on('user_online', (data) => {
-          console.log('User came online:', data);
+          logger.debug('User came online', { data });
         });
 
         newSocket.on('user_offline', (data) => {
-          console.log('User went offline:', data);
+          logger.debug('User went offline', { data });
         });
 
         // Match events
         newSocket.on('new_match', (data) => {
-          console.log('New match:', data);
+          logger.info('New match received', { data });
           // Handle new match notification
         });
 
         newSocket.on('new_message', (data) => {
-          console.log('New message:', data);
+          logger.info('New message received', { data });
           // Handle new message notification
         });
 
         // Call events (handled by WebRTC service)
         newSocket.on('incoming_call', (data) => {
-          console.log('Incoming call:', data);
+          logger.info('Incoming call received', { data });
         });
 
         setSocket(newSocket);
 
         return newSocket;
-      } catch (err) {
-        console.error('Error creating socket:', err);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        logger.error(`Error creating socket: ${errorMessage}`);
         setError('Failed to create socket connection');
         return null;
       }
@@ -113,7 +118,7 @@ export const useSocket = (): Socket | null => {
 
     return () => {
       if (socketInstance) {
-        console.log('Cleaning up socket connection');
+        logger.debug('Cleaning up socket connection');
         socketInstance.removeAllListeners();
         socketInstance.disconnect();
       }
@@ -138,7 +143,7 @@ export const useSocketWithStatus = (): UseSocketReturn => {
       return;
     }
 
-    const newSocket = io(process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+    const newSocket = io(process.env['EXPO_PUBLIC_SOCKET_URL'] || 'http://localhost:3001', {
       auth: {
         token: accessToken,
         userId: user._id,
@@ -175,15 +180,15 @@ export const useSocketWithStatus = (): UseSocketReturn => {
 };
 
 // Emit helper
-export const useSocketEmit = () => {
+export const useSocketEmit = (event: string, data: unknown): (() => boolean) => {
   const socket = useSocket();
 
-  const emit = (event: string, data?: any) => {
-    if (socket && socket.connected) {
+  const emit = (): boolean => {
+    if (socket?.connected) {
       socket.emit(event, data);
       return true;
     }
-    console.warn('Socket not connected, cannot emit:', event);
+    logger.warn(`Socket not connected, cannot emit: ${event}`);
     return false;
   };
 

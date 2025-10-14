@@ -1,7 +1,7 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { SPRING_CONFIG } from '../../constants/animations';
-import { Message, User } from '../../types';
+import { motion, AnimatePresence } from 'framer-motion';
+import { SPRING_CONFIG, PREMIUM_VARIANTS } from '../../constants/animations';
+import {} from '../../types';
 import MessageBubble from './MessageBubble';
 
 interface VirtualizedMessageListProps {
@@ -15,12 +15,12 @@ interface VirtualizedMessageListProps {
  * A simplified message list component that uses MessageBubble components
  * This is a temporary replacement for a proper virtualized list (react-window)
  */
-const VirtualizedMessageList: React.FC<VirtualizedMessageListProps> = ({
+const VirtualizedMessageList = ({
   messages,
   currentUserId,
   height,
   className = '',
-}) => {
+}: VirtualizedMessageListProps) => {
   // Early return for empty state
   if (!messages.length) {
     return (
@@ -37,7 +37,10 @@ const VirtualizedMessageList: React.FC<VirtualizedMessageListProps> = ({
 
   // Using a simple scrollable div for now until react-window is properly integrated
   return (
-    <div className={`${className} overflow-y-auto px-4`} style={{ height }}>
+    <div
+      className={`${className} overflow-y-auto px-4`}
+      style={{ height }}
+    >
       {messages.map((message, index) => (
         <motion.div
           key={message._id}
@@ -46,10 +49,10 @@ const VirtualizedMessageList: React.FC<VirtualizedMessageListProps> = ({
           transition={{ ...SPRING_CONFIG, delay: index * 0.05 }}
           className="mb-4"
         >
-          <MessageBubble 
-            message={message} 
-            isOwnMessage={message.sender._id === currentUserId} 
-            currentUser={{ 
+          <MessageBubble
+            message={message}
+            isOwnMessage={message.sender._id === currentUserId}
+            currentUser={{
               _id: currentUserId,
               email: '',
               firstName: '',
@@ -58,7 +61,7 @@ const VirtualizedMessageList: React.FC<VirtualizedMessageListProps> = ({
               age: 0,
               location: {
                 type: 'Point',
-                coordinates: [0, 0]
+                coordinates: [0, 0],
               },
               preferences: {
                 maxDistance: 0,
@@ -69,8 +72,8 @@ const VirtualizedMessageList: React.FC<VirtualizedMessageListProps> = ({
                   email: false,
                   push: false,
                   matches: false,
-                  messages: false
-                }
+                  messages: false,
+                },
               },
               premium: {
                 isActive: false,
@@ -79,8 +82,8 @@ const VirtualizedMessageList: React.FC<VirtualizedMessageListProps> = ({
                   unlimitedLikes: false,
                   boostProfile: false,
                   seeWhoLiked: false,
-                  advancedFilters: false
-                }
+                  advancedFilters: false,
+                },
               },
               pets: [],
               analytics: {
@@ -88,12 +91,12 @@ const VirtualizedMessageList: React.FC<VirtualizedMessageListProps> = ({
                 totalLikes: 0,
                 totalMatches: 0,
                 profileViews: 0,
-                lastActive: ''
+                lastActive: '',
               },
               isEmailVerified: false,
               isActive: true,
               createdAt: '',
-              updatedAt: ''
+              updatedAt: '',
             }}
           />
         </motion.div>

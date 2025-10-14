@@ -1,12 +1,5 @@
-// Re-export core types
-export type {
-  User,
-  Pet,
-  Match,
-  Message,
-  SwipeAction,
-  SwipeResult,
-} from '@pawfectmatch/core';
+// Re-export all core types directly
+export type { User, Pet, Match, Message, SwipeAction, SwipeResult } from '@pawfectmatch/core';
 
 // Web-specific type extensions
 export interface UserPreferences {
@@ -135,12 +128,12 @@ export interface SystemNotificationData {
 }
 
 // Union type for all notification data
-export type NotificationData = 
-  | MatchNotificationData 
-  | MessageNotificationData 
-  | LikeNotificationData 
-  | SuperLikeNotificationData 
-  | VisitorNotificationData 
+export type NotificationData =
+  | MatchNotificationData
+  | MessageNotificationData
+  | LikeNotificationData
+  | SuperLikeNotificationData
+  | VisitorNotificationData
   | SystemNotificationData;
 
 export interface Notification {
@@ -242,7 +235,13 @@ export interface AirQuality {
   no2: number;
   so2: number;
   co: number;
-  category: 'good' | 'moderate' | 'unhealthy_sensitive' | 'unhealthy' | 'very_unhealthy' | 'hazardous';
+  category:
+    | 'good'
+    | 'moderate'
+    | 'unhealthy_sensitive'
+    | 'unhealthy'
+    | 'very_unhealthy'
+    | 'hazardous';
 }
 
 export interface PetSafetyInfo {

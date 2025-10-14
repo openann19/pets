@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Alert, AppState, AppStateStatus } from 'react-native';
-import WebRTCService, { CallState, CallData } from '../../services/WebRTCService';
-import IncomingCallScreen from '../../screens/calling/IncomingCallScreen';
-import ActiveCallScreen from '../../screens/calling/ActiveCallScreen';
+import { logger } from '@pawfectmatch/core';
+import React, { useEffect, useState } from 'react';
+import { Alert, AppState, Modal } from 'react-native';
 import { useSocket } from '../../hooks/useSocket';
+import ActiveCallScreen from '../../screens/calling/ActiveCallScreen';
+import IncomingCallScreen from '../../screens/calling/IncomingCallScreen';
+import type { CallState } from '../../services/WebRTCService';
+import WebRTCService from '../../services/WebRTCService';
 
 interface CallManagerProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export default function CallManager({ children }: CallManagerProps) {
@@ -22,9 +24,9 @@ export default function CallManager({ children }: CallManagerProps) {
     }
 
     // Listen for call state changes
-    const handleCallStateChange = (newState: CallState) => {
+    const handleCallStateChange = (newState: CallState): void => {
       setCallState(newState);
-      
+
       if (newState.isActive && newState.isIncoming && !newState.isConnected) {
         // Show incoming call screen
         setShowIncomingCall(true);
@@ -40,33 +42,34 @@ export default function CallManager({ children }: CallManagerProps) {
       }
     };
 
-    const handleCallError = (error: any) => {
+    const handleCallError = (error: Error): void => {
       Alert.alert(
         'Call Error',
         'There was an issue with the call. Please try again.',
         [{ text: 'OK' }]
       );
-      console.error('Call error:', error);
+      logger.error('Call error:', { error });
     };
 
-    // Add event listeners
+    // Add event listeners for WebRTC state changes
     WebRTCService.on('callStateChanged', handleCallStateChange);
     WebRTCService.on('callError', handleCallError);
 
     // Handle app state changes (for background/foreground)
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+    const handleAppStateChange = (nextAppState: string): void => {
       if (nextAppState === 'background' && callState.isActive) {
         // Handle call in background - could implement picture-in-picture
-        console.log('Call moved to background');
+        logger.debug('Call moved to background');
       } else if (nextAppState === 'active' && callState.isActive) {
         // Call returned to foreground
-        console.log('Call returned to foreground');
+        logger.debug('Call returned to foreground');
       }
     };
 
     const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
+      // Remove event listeners on cleanup
       WebRTCService.off('callStateChanged', handleCallStateChange);
       WebRTCService.off('callError', handleCallError);
       appStateSubscription?.remove();
@@ -86,19 +89,19 @@ export default function CallManager({ children }: CallManagerProps) {
     }
   };
 
-  const handleRejectCall = () => {
+  const handleRejectCall = (): void => {
     WebRTCService.rejectCall();
     setShowIncomingCall(false);
   };
 
-  const handleEndCall = () => {
+  const handleEndCall = (): void => {
     Alert.alert(
       'End Call',
       'Are you sure you want to end this call?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'End Call', 
+        {
+          text: 'End Call',
           style: 'destructive',
           onPress: () => {
             WebRTCService.endCall();
@@ -109,26 +112,26 @@ export default function CallManager({ children }: CallManagerProps) {
     );
   };
 
-  const handleToggleMute = () => {
+  const handleToggleMute = (): void => {
     WebRTCService.toggleMute();
   };
 
-  const handleToggleVideo = () => {
+  const handleToggleVideo = (): void => {
     WebRTCService.toggleVideo();
   };
 
-  const handleSwitchCamera = () => {
+  const handleSwitchCamera = (): void => {
     WebRTCService.switchCamera();
   };
 
-  const handleToggleSpeaker = () => {
+  const handleToggleSpeaker = (): void => {
     WebRTCService.toggleSpeaker();
   };
 
   return (
     <>
       {children}
-      
+
       {/* Incoming Call Modal */}
       <Modal
         visible={showIncomingCall}
@@ -136,13 +139,11 @@ export default function CallManager({ children }: CallManagerProps) {
         presentationStyle="fullScreen"
         onRequestClose={handleRejectCall}
       >
-        {callState.callData && (
-          <IncomingCallScreen
-            callData={callState.callData}
-            onAnswer={handleAnswerCall}
-            onReject={handleRejectCall}
-          />
-        )}
+        {callState.callData ? <IncomingCallScreen
+          callData={callState.callData}
+          onAnswer={handleAnswerCall}
+          onReject={handleRejectCall}
+        /> : null}
       </Modal>
 
       {/* Active Call Modal */}
@@ -167,7 +168,7 @@ export default function CallManager({ children }: CallManagerProps) {
 
 // Export hook for easy access to call functionality
 export const useCallManager = () => {
-  const startCall = async (matchId: string, callType: 'voice' | 'video') => {
+  const startCall = async (matchId: string, callType: 'voice' | 'video'): Promise<boolean> => {
     try {
       const success = await WebRTCService.startCall(matchId, callType);
       if (!success) {
@@ -180,17 +181,13 @@ export const useCallManager = () => {
     }
   };
 
-  const endCall = () => {
+  const endCall = (): void => {
     WebRTCService.endCall();
   };
 
-  const isCallActive = () => {
-    return WebRTCService.isCallActive();
-  };
+  const isCallActive = (): boolean => WebRTCService.isCallActive();
 
-  const getCallState = () => {
-    return WebRTCService.getCallState();
-  };
+  const getCallState = (): CallState => WebRTCService.getCallState();
 
   return {
     startCall,

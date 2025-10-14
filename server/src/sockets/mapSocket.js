@@ -15,8 +15,13 @@ class MapSocketServer {
 
     this.activePins = new Map(); // Store active pet locations
     this.userSessions = new Map(); // Track connected users
+    this.demoMode = process.env.MAP_DEMO_MODE === 'true'; // Enable demo pins only if configured
     this.setupSocketHandlers();
-    this.startLocationSimulation();
+    
+    if (this.demoMode) {
+      console.log('⚠️ Map demo mode is enabled - simulated pins will be generated');
+      this.startLocationSimulation();
+    }
   }
 
   setupSocketHandlers() {
@@ -168,9 +173,18 @@ class MapSocketServer {
   }
 
   startLocationSimulation() {
-    // Simulate pet activities for demo purposes
+    // DEMO MODE ONLY: Simulate pet activities for demonstration purposes
+    // This should only be enabled in development/demo environments
+    // Set MAP_DEMO_MODE=true in .env to enable
+    if (!this.demoMode) return;
+    
+    console.log('⚠️ Starting location simulation - DEMO MODE ONLY');
+    
     setInterval(() => {
-      if (this.userSessions.size === 0) return;
+      if (this.userSessions.size === 0 && this.activePins.size > 0) {
+        // Clean up demo pins if no users connected
+        return;
+      }
 
       const activities = ['walking', 'playing', 'grooming', 'vet', 'park', 'other'];
       const messages = [
@@ -184,8 +198,9 @@ class MapSocketServer {
         'Enjoying the sunshine'
       ];
 
-      // Create random activity pins
-      for (let i = 0; i < Math.floor(Math.random() * 3) + 1; i++) {
+      // Create fewer random activity pins in demo mode
+      const numPins = Math.min(Math.floor(Math.random() * 2) + 1, 2);
+      for (let i = 0; i < numPins; i++) {
         const activity = activities[Math.floor(Math.random() * activities.length)];
         const message = Math.random() > 0.4 ? messages[Math.floor(Math.random() * messages.length)] : null;
         
@@ -200,6 +215,7 @@ class MapSocketServer {
           coordinates: [baseLng, baseLat],
           activity,
           message,
+          isDemoPin: true, // Mark as demo pin
           createdAt: new Date().toISOString(),
           expiresAt: new Date(Date.now() + 20 * 60 * 1000).toISOString() // 20 minutes
         };
@@ -219,10 +235,10 @@ class MapSocketServer {
       });
 
       if (expiredPins.length > 0) {
-        console.log(`🧹 Cleaned up ${expiredPins.length} expired pins`);
+        console.log(`🧹 [DEMO] Cleaned up ${expiredPins.length} expired pins`);
       }
 
-    }, 8000); // Every 8 seconds
+    }, 15000); // Every 15 seconds in demo mode
 
     // Send heatmap data every 30 seconds
     setInterval(() => {

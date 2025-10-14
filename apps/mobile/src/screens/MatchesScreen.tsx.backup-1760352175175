@@ -1,0 +1,307 @@
+import { Ionicons } from '@expo/vector-icons';
+import type { Match, PetFilters } from '@pawfectmatch/core';
+import { useAuthStore } from '@pawfectmatch/core';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import * as Haptics from 'expo-haptics';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Dimensions,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import Modal from 'react-native-modal';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Toast } from '../components/feedback/Toast';
+import { AdvancedPetFilters } from '../components/filters/AdvancedPetFilters';
+import Footer from '../components/Footer';
+import { EmptyState } from '../components/matches/EmptyState';
+import { ErrorState } from '../components/matches/ErrorState';
+import { MatchCard } from '../components/matches/MatchCard';
+import type { TabParamList } from '../navigation/types';
+import { _matchesAPI } from '../services/api';
+import { useFilterStore } from '../store/filterStore';
+
+// Use shared Match type from core
+
+type MatchesScreenProps = BottomTabScreenProps<TabParamList, 'Matches'>;
+
+const { width: _screenWidth } = Dimensions.get('window');
+
+const MatchesScreen: React.FC<MatchesScreenProps> = () => {
+  const { user: _user } = useAuthStore();
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [selectedTab, setSelectedTab] = useState<'matches' | 'likedYou'>('matches');
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
+  const filters = useFilterStore(s => s.filters);
+  const setFilters = useFilterStore(s => s.setFilters);
+  const resetFilters = useFilterStore(s => s.resetFilters);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    loadMatches();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
+
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  }, []);
+
+  const loadMatches = useCallback(async () => {
+    try {
+      setError(null);
+      // TODO: Pass filters to API
+      const fetchedMatches = await _matchesAPI.getMatches(filters);
+      setMatches(fetchedMatches);
+      if (fetchedMatches.length === 0) {
+        showToast('No matches found with current filters', 'info');
+      }
+    } catch (err) {
+      setError('Failed to load matches');
+      showToast('Failed to load matches', 'error');
+    }
+  }, [filters, showToast]);
+
+  const onRefresh = async (): Promise<void> => {
+    setRefreshing(true);
+    await loadMatches();
+    setRefreshing(false);
+  };
+
+  const handleFilterChange = (newFilters: PetFilters) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setFilters(newFilters);
+    }, 400);
+  };
+
+  const handleFilterApply = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setFilters(filters);
+    setModalVisible(false);
+    showToast('Filters applied successfully', 'success');
+  };
+
+  const handleFilterReset = () => {
+    resetFilters();
+  };
+
+  const renderMatch = ({ item }: { item: Match }) => (
+    <MatchCard match={item} />
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Matches</Text>
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(console.error);
+            setModalVisible(true);
+          }}
+          accessibilityLabel="Open advanced filters"
+        >
+          <Ionicons name="filter" size={24} color="#ec4899" />
+        </TouchableOpacity>
+      </View>
+
+      <Modal
+        isVisible={modalVisible}
+        onBackdropPress={() => setModalVisible(false)}
+        style={{ justifyContent: 'flex-end', margin: 0 }}
+        backdropOpacity={0.3}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+      >
+        <AdvancedPetFilters
+          value={filters}
+          onChange={handleFilterChange}
+          onReset={handleFilterReset}
+          onApply={handleFilterApply}
+        />
+      </Modal>
+
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            selectedTab === 'matches' && styles.activeTab
+          ]}
+          onPress={() => { setSelectedTab('matches'); }}
+        >
+          <Text style={[
+            styles.tabText,
+            selectedTab === 'matches' && styles.activeTabText
+          ]}>
+            Matches
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            selectedTab === 'likedYou' && styles.activeTab
+          ]}
+          onPress={() => { setSelectedTab('likedYou'); }}
+        >
+          <Text style={[
+            styles.tabText,
+            selectedTab === 'likedYou' && styles.activeTabText
+          ]}>
+            Liked You
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {error ? (
+        <ErrorState onRetry={loadMatches} />
+      ) : matches.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <FlatList
+          data={selectedTab === 'matches' ? matches : []}
+          renderItem={renderMatch}
+          keyExtractor={item => item._id}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#ec4899"
+            />
+          }
+        />
+      )}
+
+      {/* Professional Footer */}
+      <Footer
+        showCopyright
+        showLegal
+        showVersion={false}
+        showSupport
+        variant="minimal"
+      />
+
+      <Toast
+        message={toastMessage}
+        visible={toastVisible}
+        type={toastType}
+        onHide={() => setToastVisible(false)}
+      />
+    </SafeAreaView>
+  );
+};
+
+export default MatchesScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#ec4899',
+  },
+  tabText: {
+    fontSize: 16,
+    color: '#6c757d',
+    fontWeight: '500',
+  },
+  activeTabText: {
+    color: '#ec4899',
+    fontWeight: 'bold',
+  },
+  list: {
+    flex: 1,
+  },
+  listContent: {
+    padding: 16,
+  },
+  matchCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  matchPhoto: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  matchInfo: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
+  },
+  matchHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  matchName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  matchMessage: {
+    fontSize: 14,
+    color: '#6c757d',
+  },
+  unreadBadge: {
+    backgroundColor: '#ec4899',
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  unreadText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+});

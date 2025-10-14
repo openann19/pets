@@ -160,12 +160,18 @@ const petSchema = new mongoose.Schema({
   
   // AI Enhancement
   aiData: {
+    personalityArchetype: {
+      primary: String,
+      secondary: String,
+      confidence: Number
+    },
     personalityScore: {
       friendliness: { type: Number, min: 0, max: 10 },
       energy: { type: Number, min: 0, max: 10 },
       trainability: { type: Number, min: 0, max: 10 },
       socialness: { type: Number, min: 0, max: 10 },
-      aggression: { type: Number, min: 0, max: 10 }
+      aggression: { type: Number, min: 0, max: 10 },
+      independence: { type: Number, min: 0, max: 10 }
     },
     compatibilityTags: [String],
     breedCharacteristics: {
@@ -189,9 +195,19 @@ const petSchema = new mongoose.Schema({
   analytics: {
     views: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },
+    superLikes: { type: Number, default: 0 },
     matches: { type: Number, default: 0 },
     messages: { type: Number, default: 0 },
-    lastViewed: Date
+    lastViewed: Date,
+    events: [{
+      type: String,
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      timestamp: { type: Date, default: Date.now },
+      metadata: Object
+    }]
   },
   
   // Status

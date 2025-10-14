@@ -1,13 +1,13 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import {  } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Button } from '../Button/Button';
-import { Card } from '../Card/Card';
-import { Input } from '../Input/Input';
-import { Textarea } from '../Textarea/Textarea';
-import { Badge } from '../Badge/Badge';
-import { Avatar } from '../Avatar/Avatar';
-import { Dialog } from '../Dialog/Dialog';
+import {  } from '../Button/Button';
+import {  } from '../Card/Card';
+import {  } from '../Input/Input';
+import {  } from '../Textarea/Textarea';
+import {  } from '../Badge/Badge';
+import {  } from '../Avatar/Avatar';
+import {  } from '../Dialog/Dialog';
 
 describe('UI Components', () => {
   describe('Button', () => {
@@ -376,7 +376,7 @@ describe('UI Components', () => {
     it('renders when open', () => {
       render(
         <Dialog
-          isOpen={true}
+          isOpen
           onClose={() => {}}
           title="Test Dialog"
         >
@@ -407,9 +407,9 @@ describe('UI Components', () => {
 
       render(
         <Dialog
-          isOpen={true}
+          isOpen
           onClose={handleClose}
-          isDismissable={true}
+          isDismissable
         >
           <p>Dialog content</p>
         </Dialog>
@@ -423,7 +423,7 @@ describe('UI Components', () => {
     it('applies different sizes', () => {
       const { rerender } = render(
         <Dialog
-          isOpen={true}
+          isOpen
           onClose={() => {}}
           size="small"
         >
@@ -436,7 +436,7 @@ describe('UI Components', () => {
 
       rerender(
         <Dialog
-          isOpen={true}
+          isOpen
           onClose={() => {}}
           size="large"
         >

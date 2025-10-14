@@ -4,18 +4,18 @@
  */
 
 'use client';
-
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import LoadingSpinner from '../UI/LoadingSpinner';
+import { useVideoCall } from '@/hooks/useVideoCall';
 import {
-  VideoCameraIcon,
-  VideoCameraSlashIcon,
+  ArrowsPointingOutIcon,
   MicrophoneIcon,
   PhoneXMarkIcon,
-  XMarkIcon,
+  VideoCameraIcon,
+  VideoCameraSlashIcon,
 } from '@heroicons/react/24/solid';
-import { useVideoCall } from '../../hooks/premium-hooks';
+import { logger } from '@pawfectmatch/core';
+import { motion } from 'framer-motion';
+import { useEffect, useRef, type JSX } from 'react';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 
 interface VideoCallRoomProps {
   roomId: string;
@@ -24,15 +24,20 @@ interface VideoCallRoomProps {
   onLeave: () => void;
 }
 
-export default function VideoCallRoom({ roomId, userId, userName, onLeave }: VideoCallRoomProps) {
+export default function VideoCallRoom({
+  roomId,
+  userId,
+  userName,
+  onLeave,
+}: VideoCallRoomProps): JSX.Element {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  
+
   const {
     localStream,
     isConnected,
     isVideoEnabled,
-    isAudioEnabled,
+    isMuted,
     isScreenSharing,
     error,
     startCall,
@@ -43,18 +48,12 @@ export default function VideoCallRoom({ roomId, userId, userName, onLeave }: Vid
     stopScreenShare,
   } = useVideoCall(roomId, userId);
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const isAudioEnabled = !isMuted;
 
   // Initialize call on mount
   useEffect(() => {
-    startCall({
-      userName,
-      isHost: true,
-      videoEnabled: true,
-      audioEnabled: true,
-      screenSharingEnabled: false,
-    });
-  }, []);
+    startCall();
+  }, [startCall]);
 
   // Attach local stream to video element
   useEffect(() => {
@@ -63,27 +62,35 @@ export default function VideoCallRoom({ roomId, userId, userName, onLeave }: Vid
     }
   }, [localStream]);
 
-  const handleLeave = () => {
+  const handleLeave = (): void => {
     endCall();
     onLeave();
   };
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = (): void => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-      setIsFullscreen(true);
+      document.documentElement
+        .requestFullscreen()
+        .then(() => { })
+        .catch((err) => {
+          logger.error('Failed to enter fullscreen:', { error: err });
+        });
     } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
+      document
+        .exitFullscreen()
+        .then(() => { })
+        .catch((err) => {
+          logger.error('Failed to exit fullscreen:', { error: err });
+        });
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-gray-900">
       {/* Error Message */}
-      {error && (
+      {error !== null && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-10">
-          {error}
+          {error instanceof Error ? error.message : String(error)}
         </div>
       )}
 
@@ -125,11 +132,8 @@ export default function VideoCallRoom({ roomId, userId, userName, onLeave }: Vid
           {/* Toggle Video */}
           <button
             onClick={toggleVideo}
-            className={`p-4 rounded-full transition-all ${
-              isVideoEnabled
-                ? 'bg-gray-700 hover:bg-gray-600'
-                : 'bg-red-500 hover:bg-red-600'
-            }`}
+            className={`p-4 rounded-full transition-all ${isVideoEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'
+              }`}
             title={isVideoEnabled ? 'Turn off camera' : 'Turn on camera'}
           >
             {isVideoEnabled ? (
@@ -142,11 +146,8 @@ export default function VideoCallRoom({ roomId, userId, userName, onLeave }: Vid
           {/* Toggle Audio */}
           <button
             onClick={toggleAudio}
-            className={`p-4 rounded-full transition-all ${
-              isAudioEnabled
-                ? 'bg-gray-700 hover:bg-gray-600'
-                : 'bg-red-500 hover:bg-red-600'
-            }`}
+            className={`p-4 rounded-full transition-all ${isAudioEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'
+              }`}
             title={isAudioEnabled ? 'Mute microphone' : 'Unmute microphone'}
           >
             <MicrophoneIcon className="w-6 h-6 text-white" />
@@ -155,11 +156,10 @@ export default function VideoCallRoom({ roomId, userId, userName, onLeave }: Vid
           {/* Screen Share */}
           <button
             onClick={isScreenSharing ? stopScreenShare : startScreenShare}
-            className={`p-4 rounded-full transition-all ${
-              isScreenSharing
-                ? 'bg-purple-500 hover:bg-purple-600'
-                : 'bg-gray-700 hover:bg-gray-600'
-            }`}
+            className={`p-4 rounded-full transition-all ${isScreenSharing
+              ? 'bg-purple-500 hover:bg-purple-600'
+              : 'bg-gray-700 hover:bg-gray-600'
+              }`}
             title={isScreenSharing ? 'Stop sharing' : 'Share screen'}
           >
             <ArrowsPointingOutIcon className="w-6 h-6 text-white" />
@@ -187,7 +187,9 @@ export default function VideoCallRoom({ roomId, userId, userName, onLeave }: Vid
         {/* Connection Status */}
         {!isConnected && (
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-            <LoadingSpinner size="large" color="#ffffff" className="mx-auto mb-4" />
+            <LoadingSpinner
+              size="lg"
+            />
             <p className="text-white text-lg">Connecting to call...</p>
           </div>
         )}

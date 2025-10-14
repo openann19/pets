@@ -1,0 +1,44 @@
+import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { logger } from '@pawfectmatch/core';
+;
+
+// Create a JWK set from the auth service
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env['NEXT_PUBLIC_API_URL']}/.well-known/jwks.json`),
+);
+
+export interface JwtPayload {
+  userId: string;
+  email: string;
+  exp: number;
+  iat: number;
+}
+
+export async function validateToken(token: string): Promise<JwtPayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+
+    // Verify token is not expired
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      return null;
+    }
+
+    // Verify required claims
+    if (!payload['userId'] || !payload['email']) {
+      return null;
+    }
+
+    // Type assertion with proper checking
+    const validatedPayload = {
+      userId: payload['userId'] as string,
+      email: payload['email'] as string,
+      exp: payload.exp as number,
+      iat: payload.iat as number,
+    };
+
+    return validatedPayload;
+  } catch (error) {
+    logger.error('Token validation error:', { error });
+    return null;
+  }
+}

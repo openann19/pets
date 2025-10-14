@@ -1,32 +1,30 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-  Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { logger } from '@pawfectmatch/core';
+import Slider from '@react-native-community/slider';
+import { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import Slider from '@react-native-community/slider';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { SPECIES_OPTIONS, INTENT_OPTIONS } from '@pawfectmatch/core';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { OnboardingScreenProps } from '../../navigation/types';
 
-type OnboardingStackParamList = {
-  UserIntent: undefined;
-  PetProfileSetup: { userIntent: string };
-  PreferencesSetup: { userIntent: string };
-  Welcome: undefined;
-};
+const SPECIES_OPTIONS = [
+  { label: 'Dog', value: 'dog' },
+  { label: 'Cat', value: 'cat' },
+  { label: 'Bird', value: 'bird' },
+  { label: 'Small & Furry', value: 'small_furry' },
+];
 
-type PreferencesSetupScreenProps = NativeStackScreenProps<OnboardingStackParamList, 'PreferencesSetup'>;
+const INTENT_OPTIONS = [
+  { label: 'Adoption', value: 'adoption' },
+  { label: 'Foster', value: 'foster' },
+  { label: 'Playdate', value: 'playdate' },
+];
+
+type PreferencesSetupScreenProps = OnboardingScreenProps<'PreferencesSetup'>;
 
 interface PreferencesData {
   maxDistance: number;
@@ -50,7 +48,7 @@ const SPRING_CONFIG = {
   mass: 1,
 };
 
-const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenProps) => {
+const PreferencesSetupScreen: React.FC<PreferencesSetupScreenProps> = ({ navigation, route }) => {
   const { userIntent } = route.params;
   const [preferences, setPreferences] = useState<PreferencesData>({
     maxDistance: 25,
@@ -71,7 +69,7 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
   const scaleValue = useSharedValue(1);
   const opacity = useSharedValue(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
     opacity.value = withTiming(1, { duration: 800 });
   }, []);
 
@@ -80,14 +78,14 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
     transform: [{ scale: scaleValue.value }],
   }));
 
-  const updatePreferences = (field: string, value: any) => {
+  const updatePreferences = (field: keyof PreferencesData, value: any): void => {
     setPreferences(prev => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const updateNotifications = (field: string, value: boolean) => {
+  const updateNotifications = (field: string, value: boolean): void => {
     setPreferences(prev => ({
       ...prev,
       notifications: {
@@ -97,7 +95,7 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
     }));
   };
 
-  const toggleSpecies = (species: string) => {
+  const toggleSpecies = (species: string): void => {
     setPreferences(prev => ({
       ...prev,
       species: prev.species.includes(species)
@@ -106,7 +104,7 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
     }));
   };
 
-  const toggleIntent = (intent: string) => {
+  const toggleIntent = (intent: string): void => {
     setPreferences(prev => ({
       ...prev,
       intents: prev.intents.includes(intent)
@@ -128,12 +126,13 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
 
     try {
       // Save preferences to backend
-      console.log('Saving preferences:', preferences);
-      
+      logger.info('Saving preferences:', { preferences });
+
       // Animate completion
-      scaleValue.value = withSpring(0.95, SPRING_CONFIG, () => {
+      scaleValue.value = withSpring(0.95, SPRING_CONFIG);
+      setTimeout(() => {
         scaleValue.value = withSpring(1, SPRING_CONFIG);
-      });
+      }, 150);
 
       // Navigate to welcome screen
       setTimeout(() => {
@@ -171,7 +170,7 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
                 onValueChange={(value) => updatePreferences('maxDistance', Math.round(value))}
                 minimumTrackTintColor="#ec4899"
                 maximumTrackTintColor="#e5e7eb"
-                thumbStyle={styles.sliderThumb}
+                thumbTintColor="#ec4899"
               />
               <View style={styles.sliderLabels}>
                 <Text style={styles.sliderLabel}>5 mi</Text>
@@ -317,7 +316,7 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
           <Text style={styles.completeButtonText}>Complete Setup</Text>
         </TouchableOpacity>

@@ -20,8 +20,8 @@ const uploadToCloudinary = (fileBuffer, folder = 'pawfectmatch', options = {}) =
       folder,
       resource_type: 'auto',
       transformation: [
-        { width: 800, height: 800, crop: 'limit', quality: 'auto:good' },
-        { format: 'webp' }
+        { width: 800, height: 800, crop: 'limit', quality: 'auto:good', dpr: 'auto' },
+        { fetch_format: 'auto' }
       ],
       ...options
     };
@@ -70,7 +70,8 @@ const getOptimizedImageUrl = (publicId, transformations = {}) => {
     height: 400,
     crop: 'fill',
     quality: 'auto:good',
-    format: 'webp'
+    fetch_format: 'auto',
+    dpr: 'auto'
   };
 
   return cloudinary.url(publicId, {

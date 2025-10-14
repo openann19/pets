@@ -107,11 +107,31 @@ router.get('/', async (req, res) => {
 
     // 6. Check AI Service (if configured)
     if (process.env.AI_SERVICE_URL) {
-      health.checks.aiService = {
-        status: 'unknown',
-        url: process.env.AI_SERVICE_URL,
-        message: 'Not implemented - add ping to AI service'
-      };
+      try {
+        const axios = require('axios');
+        const aiServiceStart = Date.now();
+        const aiResponse = await axios.get(`${process.env.AI_SERVICE_URL}/health`, {
+          timeout: 5000
+        });
+        
+        health.checks.aiService = {
+          status: aiResponse.data?.status === 'healthy' ? 'up' : 'warning',
+          responseTime: `${Date.now() - aiServiceStart}ms`,
+          version: aiResponse.data?.version || 'unknown',
+          url: process.env.AI_SERVICE_URL
+        };
+        
+        if (aiResponse.data?.status !== 'healthy') {
+          health.status = 'degraded';
+        }
+      } catch (error) {
+        health.checks.aiService = {
+          status: 'down',
+          error: error.message,
+          url: process.env.AI_SERVICE_URL
+        };
+        health.status = 'degraded';
+      }
     }
 
     // 7. Overall response time

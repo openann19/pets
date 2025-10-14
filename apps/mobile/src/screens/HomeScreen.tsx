@@ -1,24 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  RefreshControl,
-  Dimensions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@pawfectmatch/core';
-import * as Haptics from 'expo-haptics';
+import { logger, useAuthStore } from '@pawfectmatch/core';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
+import { Dimensions, Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AnimatedButton from '../components/AnimatedButton';
+import Footer from '../components/Footer';
+import { QuickActions } from '../components/shortcuts/QuickActions';
+import { EventWidget } from '../components/widgets/EventWidget';
+import { MatchWidget } from '../components/widgets/MatchWidget';
+import { SwipeWidget } from '../components/widgets/SwipeWidget';
+import { useTheme } from '../contexts/ThemeContext';
+import type { TabScreenProps } from '../navigation/types';
+import { haptics } from '../utils/haptics';
+;
 
 const { width: screenWidth } = Dimensions.get('window');
 
-export default function HomeScreen() {
+type HomeScreenProps = TabScreenProps<'Home'>;
+
+export default function HomeScreen({ navigation }: HomeScreenProps): React.JSX.Element {
   const { user } = useAuthStore();
+  const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(3); // Mock data
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -29,14 +34,43 @@ export default function HomeScreen() {
   };
 
   const handleQuickAction = (action: string) => {
-    if (Haptics) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    void haptics.medium();
+    switch (action) {
+      case 'profile':
+        navigation.navigate('Profile');
+        break;
+      case 'swipe':
+        navigation.navigate('Swipe');
+        break;
+      case 'matches':
+        navigation.navigate('Matches');
+        break;
+      case 'messages':
+        navigation.navigate('Matches'); // For now, redirect to matches
+        break;
+      case 'events':
+        // TODO: Navigate to events screen when implemented
+        logger.info('Events feature coming soon!');
+        break;
+      case 'community':
+        // TODO: Navigate to community feed when implemented
+        logger.info('Community feed feature coming soon!');
+        break;
+      case 'adoption':
+        // TODO: Navigate to adoption center when implemented
+        logger.info('Adoption center feature coming soon!');
+        break;
+      default:
+        logger.info(`Quick action not implemented: ${action}`);
     }
-    console.log(`Quick action: ${action}`);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <LinearGradient
+        colors={[`${colors.gradientSecondary[0]}`, `${colors.gradientSecondary[1]}`, `${colors.gradientSecondary[2]}`]}
+        style={StyleSheet.absoluteFillObject}
+      />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -44,121 +78,247 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#ec4899"
+            tintColor={colors.secondary}
           />
         }
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <View>
-            <Text style={styles.greeting}>Good morning!</Text>
-            <Text style={styles.userName}>{user?.name || 'Pet Lover'}</Text>
+            <Text style={[styles.greeting, { color: colors.textSecondary }]}>Good morning!</Text>
+            <Text style={[styles.userName, { color: colors.text }]}>{user?.firstName || 'Pet Lover'}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => handleQuickAction('profile')}
-          >
-            <Image
-              source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100' }}
-              style={styles.profileImage}
-            />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            {/* Notifications Bell */}
+            <TouchableOpacity
+              style={styles.notificationButton}
+              onPress={() => {
+                void haptics.light();
+                // TODO: Navigate to notifications screen
+                setNotificationCount(0); // Clear badge for now
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`Notifications. ${notificationCount} unread notifications`}
+            >
+              <Ionicons name="notifications" size={24} color={colors.text} />
+              {notificationCount > 0 && (
+                <View style={[styles.notificationBadge, { backgroundColor: colors.error }]}>
+                  <Text style={styles.notificationBadgeText}>
+                    {notificationCount > 99 ? '99+' : notificationCount.toString()}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Search/Discover Button */}
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={() => {
+                void haptics.light();
+                // TODO: Navigate to search/discover screen
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Search and discover pets"
+            >
+              <Ionicons name="search" size={24} color={colors.text} />
+            </TouchableOpacity>
+
+            {/* Profile Button */}
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={() => handleQuickAction('profile')}
+              accessibilityRole="button"
+              accessibilityLabel="Open profile settings"
+              accessibilityHint="Navigates to your profile page"
+            >
+              <Image
+                source={{ uri: (user as { avatar?: string })?.avatar || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100' }}
+                style={styles.profileImage}
+                accessibilityIgnoresInvertColors
+              />
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Quick Swipe Widget */}
+        <SwipeWidget
+          pet={{
+            id: '1',
+            name: 'Buddy',
+            age: 3,
+            breed: 'Golden Retriever',
+            photos: ['https://images.unsplash.com/photo-1552053831-71594a27632d?w=300']
+          }}
+          onSwipe={(direction) => {
+            logger.info(`Swiped ${direction}`);
+            void haptics.medium();
+          }}
+          onViewProfile={() => {
+            logger.info('View profile');
+          }}
+        />
+
+        {/* Recent Matches Widget */}
+        <MatchWidget
+          matches={[
+            {
+              id: '1',
+              name: 'Sarah',
+              petName: 'Luna',
+              petPhoto: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=100',
+              lastMessage: 'Hey! How is Buddy doing?',
+              timestamp: '2m ago',
+              unreadCount: 2
+            },
+            {
+              id: '2',
+              name: 'Mike',
+              petName: 'Max',
+              petPhoto: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=100',
+              lastMessage: 'Thanks for the playdate!',
+              timestamp: '1h ago',
+              unreadCount: 0
+            }
+          ]}
+          onMatchPress={(matchId) => {
+            logger.info('Open match:', { matchId });
+          }}
+          onViewAll={() => {
+            logger.info('View all matches');
+          }}
+        />
+
+        {/* Upcoming Event Widget */}
+        <EventWidget
+          event={{
+            id: '1',
+            title: 'Puppy Playdate at Central Park',
+            date: 'Tomorrow',
+            time: '10:00 AM',
+            location: 'Central Park',
+            attendees: 12,
+            maxAttendees: 20,
+            category: 'playdate',
+            image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=300'
+          }}
+          onEventPress={() => {
+            logger.info('View event details');
+          }}
+          onJoinEvent={() => {
+            logger.info('Join event');
+          }}
+        />
 
         {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.actionsGrid}>
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => handleQuickAction('swipe')}
-            >
-              <View style={[styles.actionIcon, { backgroundColor: '#ec4899' }]}>
-                <Ionicons name="heart" size={24} color="#fff" />
-              </View>
-              <Text style={styles.actionText}>Swipe</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => handleQuickAction('matches')}
-            >
-              <View style={[styles.actionIcon, { backgroundColor: '#10b981' }]}>
-                <Ionicons name="people" size={24} color="#fff" />
-              </View>
-              <Text style={styles.actionText}>Matches</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => handleQuickAction('messages')}
-            >
-              <View style={[styles.actionIcon, { backgroundColor: '#3b82f6' }]}>
-                <Ionicons name="chatbubbles" size={24} color="#fff" />
-              </View>
-              <Text style={styles.actionText}>Messages</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => handleQuickAction('profile')}
-            >
-              <View style={[styles.actionIcon, { backgroundColor: '#8b5cf6' }]}>
-                <Ionicons name="person" size={24} color="#fff" />
-              </View>
-              <Text style={styles.actionText}>Profile</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <QuickActions
+          actions={[
+            {
+              id: 'swipe',
+              title: 'Swipe',
+              icon: 'heart',
+              color: '#ec4899',
+              onPress: () => handleQuickAction('swipe')
+            },
+            {
+              id: 'matches',
+              title: 'Matches',
+              icon: 'people',
+              color: '#10b981',
+              onPress: () => handleQuickAction('matches')
+            },
+            {
+              id: 'messages',
+              title: 'Messages',
+              icon: 'chatbubbles',
+              color: '#3b82f6',
+              onPress: () => handleQuickAction('messages')
+            },
+            {
+              id: 'events',
+              title: 'Events',
+              icon: 'calendar',
+              color: '#f59e0b',
+              onPress: () => handleQuickAction('events')
+            },
+            {
+              id: 'community',
+              title: 'Community',
+              icon: 'newspaper',
+              color: '#8b5cf6',
+              onPress: () => handleQuickAction('community')
+            },
+            {
+              id: 'adoption',
+              title: 'Adoption',
+              icon: 'home',
+              color: '#06b6d4',
+              onPress: () => handleQuickAction('adoption')
+            }
+          ]}
+        />
 
         {/* Recent Activity */}
         <View style={styles.recentActivity}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <View style={styles.activityCard}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Activity</Text>
+          <View style={[styles.activityCard, { backgroundColor: colors.card }]}>
             <View style={styles.activityItem}>
               <View style={styles.activityIcon}>
-                <Ionicons name="heart" size={20} color="#ec4899" />
+                <Ionicons name="heart" size={20} color={colors.secondary} />
               </View>
               <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>New Match!</Text>
-                <Text style={styles.activitySubtitle}>You and Buddy liked each other</Text>
+                <Text style={[styles.activityTitle, { color: colors.text }]}>New Match!</Text>
+                <Text style={[styles.activitySubtitle, { color: colors.textSecondary }]}>You and Buddy liked each other</Text>
               </View>
-              <Text style={styles.activityTime}>2m ago</Text>
+              <Text style={[styles.activityTime, { color: colors.gray500 }]}>
+                2m ago
+              </Text>
             </View>
 
             <View style={styles.activityItem}>
               <View style={styles.activityIcon}>
-                <Ionicons name="chatbubble" size={20} color="#3b82f6" />
+                <Ionicons name="chatbubble" size={20} color={colors.accent} />
               </View>
               <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>New Message</Text>
-                <Text style={styles.activitySubtitle}>From Luna: "Hey there! 🐾"</Text>
+                <Text style={[styles.activityTitle, { color: colors.text }]}>New Message</Text>
+                <Text style={[styles.activitySubtitle, { color: colors.textSecondary }]}>From Luna: "Hey there! 🐾"</Text>
               </View>
-              <Text style={styles.activityTime}>5m ago</Text>
+              <Text style={[styles.activityTime, { color: colors.gray500 }]}>5m ago</Text>
             </View>
           </View>
         </View>
 
         {/* Premium Features */}
         <View style={styles.premiumSection}>
-          <Text style={styles.sectionTitle}>Premium Features</Text>
-          <View style={styles.premiumCard}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Premium Features</Text>
+          <View style={[styles.premiumCard, { backgroundColor: colors.card }]}>
             <View style={styles.premiumHeader}>
-              <Ionicons name="diamond" size={24} color="#fbbf24" />
-              <Text style={styles.premiumTitle}>PawfectMatch Premium</Text>
+              <Ionicons name="diamond" size={24} color={colors.warning} />
+              <Text style={[styles.premiumTitle, { color: colors.text }]}>PawfectMatch Premium</Text>
             </View>
-            <Text style={styles.premiumDescription}>
+            <Text style={[styles.premiumDescription, { color: colors.textSecondary }]}>
               Unlock unlimited swipes, see who liked you, and get priority in search results.
             </Text>
-            <TouchableOpacity
-              style={styles.premiumButton}
+            <AnimatedButton
               onPress={() => handleQuickAction('premium')}
+              variant="primary"
+              accessibilityRole="button"
+              accessibilityLabel="Upgrade to premium"
+              accessibilityHint="Opens premium subscription options with additional features"
             >
-              <Text style={styles.premiumButtonText}>Upgrade Now</Text>
-            </TouchableOpacity>
+              Upgrade Now
+            </AnimatedButton>
           </View>
         </View>
       </ScrollView>
+
+      {/* Professional Footer */}
+      <Footer
+        showCopyright
+        showLegal
+        showVersion
+        showSupport
+        variant="default"
+      />
     </SafeAreaView>
   );
 }
@@ -328,5 +488,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  notificationButton: {
+    position: 'relative',
+    padding: 8,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  searchButton: {
+    padding: 8,
   },
 });

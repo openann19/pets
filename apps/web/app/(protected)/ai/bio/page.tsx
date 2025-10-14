@@ -5,7 +5,7 @@ import { BioGenerator } from '../../../../src/components/AI/BioGenerator';
 import { motion } from 'framer-motion';
 import { ArrowLeftIcon, SparklesIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import { SPRING_CONFIG, PREMIUM_VARIANTS } from '../../../../src/constants/animations';
+import { SPRING_CONFIG, _PREMIUM_VARIANTS } from '../../../../src/constants/animations';
 
 export default function AiBioPage() {
   return (
@@ -31,23 +31,23 @@ export default function AiBioPage() {
                 Back to Dashboard
               </Link>
             </motion.div>
-            
+
             <div className="flex items-center gap-4">
               <motion.div
                 className="flex items-center gap-2 bg-white/20 backdrop-blur text-white px-4 py-2 rounded-full text-sm font-semibold"
-                animate={{ 
+                animate={{
                   boxShadow: [
-                    "0 0 20px rgba(255, 255, 255, 0.3)",
-                    "0 0 30px rgba(255, 255, 255, 0.5)",
-                    "0 0 20px rgba(255, 255, 255, 0.3)"
-                  ]
+                    '0 0 20px rgba(255, 255, 255, 0.3)',
+                    '0 0 30px rgba(255, 255, 255, 0.5)',
+                    '0 0 20px rgba(255, 255, 255, 0.3)',
+                  ],
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 <BeakerIcon className="h-4 w-4" />
                 AI-Powered Feature
               </motion.div>
-              
+
               <motion.div
                 className="flex items-center gap-2 bg-yellow-400/90 text-yellow-900 px-4 py-2 rounded-full text-sm font-bold"
                 animate={{ scale: [1, 1.05, 1] }}
@@ -62,9 +62,9 @@ export default function AiBioPage() {
       </motion.div>
 
       {/* Enhanced Content */}
-      <motion.div 
+      <motion.div
         className="py-12"
-        variants={PREMIUM_VARIANTS.fadeInUp}
+        variants={_PREMIUM_VARIANTS.fadeInUp}
         initial="initial"
         animate="animate"
       >
@@ -83,7 +83,8 @@ export default function AiBioPage() {
             <div className="text-4xl mb-3">🎯</div>
             <h3 className="font-bold text-lg mb-2">Match Optimization</h3>
             <p className="text-gray-600 text-sm">
-              AI-generated bios increase match rates by up to 73% based on our analysis of successful profiles.
+              AI-generated bios increase match rates by up to 73% based on our analysis of
+              successful profiles.
             </p>
           </div>
 
@@ -91,7 +92,8 @@ export default function AiBioPage() {
             <div className="text-4xl mb-3">🧠</div>
             <h3 className="font-bold text-lg mb-2">Smart Suggestions</h3>
             <p className="text-gray-600 text-sm">
-              Our AI learns from millions of pet profiles to suggest the perfect words for your furry friend.
+              Our AI learns from millions of pet profiles to suggest the perfect words for your
+              furry friend.
             </p>
           </div>
 

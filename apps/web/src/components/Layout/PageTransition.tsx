@@ -10,28 +10,28 @@ const pageVariants = {
   initial: {
     opacity: 0,
     y: 20,
-    scale: 0.98
+    scale: 0.98,
   },
   in: {
     opacity: 1,
     y: 0,
-    scale: 1
+    scale: 1,
   },
   out: {
     opacity: 0,
     y: -20,
-    scale: 1.02
-  }
+    scale: 1.02,
+  },
 };
 
 const pageTransition = {
-  type: "spring" as const,
+  type: 'spring' as const,
   stiffness: 400,
   damping: 30,
-  mass: 0.8
+  mass: 0.8,
 };
 
-const PageTransition: React.FC<PageTransitionProps> = ({ children }) => {
+const PageTransition = ({ children }: PageTransitionProps) => {
   const pathname = usePathname();
 
   return (

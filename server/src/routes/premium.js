@@ -4,14 +4,22 @@ const {
   cancelSubscription,
   getPremiumFeatures,
   boostProfile,
-  getSuperLikes
+  getSuperLikes,
+  getSubscription,
+  getUsage,
+  reactivateSubscription,
 } = require('../controllers/premiumController');
 
 const router = express.Router();
 
-// Routes
+// Subscription management routes
 router.post('/subscribe', subscribeToPremium);
 router.post('/cancel', cancelSubscription);
+router.post('/reactivate', reactivateSubscription);
+router.get('/subscription', getSubscription);
+router.get('/usage', getUsage);
+
+// Premium features routes
 router.get('/features', getPremiumFeatures);
 router.post('/boost/:petId', boostProfile);
 router.get('/super-likes', getSuperLikes);

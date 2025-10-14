@@ -9,7 +9,9 @@ const {
   updateLocation,
   getUserStats,
   uploadAvatar,
-  deleteAccount
+  deleteAccount,
+  updatePrivacy,
+  updateFilters
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -51,5 +53,7 @@ router.put('/location', locationValidation, validate, updateLocation);
 router.get('/stats', getUserStats);
 router.post('/avatar', upload.single('avatar'), uploadAvatar);
 router.delete('/account', deleteAccount);
+router.put('/privacy', updatePrivacy);
+router.put('/filters', updateFilters);
 
 module.exports = router;

@@ -1,18 +1,15 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TypingIndicatorProps {
   isVisible: boolean;
   userNames: string[];
 }
 
-const TypingIndicator: React.FC<TypingIndicatorProps> = ({
-  isVisible,
-  userNames,
-}) => {
+const TypingIndicator = ({ isVisible, userNames }: TypingIndicatorProps) => {
   if (!isVisible || userNames.length === 0) return null;
 
-  const getTypingText = () => {
+  const getTypingText = (): Promise<unknown> => {
     if (userNames.length === 1) {
       return `${userNames[0]} is typing...`;
     } else if (userNames.length === 2) {
@@ -50,7 +47,7 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({
                 duration: 1.2,
                 repeat: Infinity,
                 delay: i * 0.2,
-                ease: "easeInOut",
+                ease: 'easeInOut',
               }}
             />
           ))}
@@ -58,9 +55,7 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({
       </div>
 
       {/* Typing text */}
-      <span className="text-xs text-gray-500 italic">
-        {getTypingText()}
-      </span>
+      <span className="text-xs text-gray-500 italic">{getTypingText()}</span>
     </motion.div>
   );
 };

@@ -1,20 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
   FlatList,
-  TouchableOpacity,
   Image,
   RefreshControl,
-  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@pawfectmatch/core';
-import * as Haptics from 'expo-haptics';
 
-const { width: screenWidth } = Dimensions.get('window');
+// const { width: screenWidth } = Dimensions.get('window');
 
 interface Match {
   _id: string;
@@ -38,27 +36,26 @@ interface MatchesScreenProps {
 }
 
 export default function MatchesScreen({ navigation }: MatchesScreenProps) {
-  const { user } = useAuthStore();
+  // const { user } = useAuthStore();
   const [matches, setMatches] = useState<Match[]>([]);
-  const [likedYou, setLikedYou] = useState<Array<{
-    id: string;
-    petId: string;
-    petName: string;
-    petPhoto: string;
-    userId: string;
-    userName: string;
-    timestamp: string;
-  }>>([]);
-  const [selectedTab, setSelectedTab] = useState<'matches' | 'likedYou'>('matches');
+  // const [likedYou, setLikedYou] = useState<Array<{
+  //   id: string;
+  //   petId: string;
+  //   petName: string;
+  //   petPhoto: string;
+  //   userId: string;
+  //   userName: string;
+  //   timestamp: string;
+  // }>>([]);
+  const [_selectedTab, setSelectedTab] = useState<'matches'>('matches');
   const [refreshing, setRefreshing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     loadMatches();
   }, []);
 
   const loadMatches = async () => {
-    setIsLoading(true);
     try {
       // Mock data for now
       const mockMatches: Match[] = [
@@ -82,8 +79,6 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
       setMatches(mockMatches);
     } catch (error) {
       console.error('Failed to load matches:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -100,9 +95,9 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
         if (Haptics) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-        navigation.navigate('Chat', { 
-          matchId: item._id, 
-          petName: item.petName 
+        navigation.navigate('Chat', {
+          matchId: item._id,
+          petName: item.petName
         });
       }}
     >
@@ -142,18 +137,19 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
         <TouchableOpacity
           style={[
             styles.tab,
-            selectedTab === 'matches' && styles.activeTab
+            styles.activeTab
           ]}
           onPress={() => setSelectedTab('matches')}
         >
           <Text style={[
             styles.tabText,
-            selectedTab === 'matches' && styles.activeTabText
+            styles.activeTabText
           ]}>
             Matches
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity
+        {/* Liked You tab disabled until its data matches Match type */}
+        {/* <TouchableOpacity
           style={[
             styles.tab,
             selectedTab === 'likedYou' && styles.activeTab
@@ -166,11 +162,11 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
           ]}>
             Liked You
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <FlatList
-        data={selectedTab === 'matches' ? matches : likedYou}
+        data={matches}
         renderItem={renderMatch}
         keyExtractor={item => item._id}
         style={styles.list}

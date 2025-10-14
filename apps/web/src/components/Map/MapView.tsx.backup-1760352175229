@@ -1,0 +1,202 @@
+'use client';
+
+import React, { useEffect, useRef, useState } from 'react';
+
+// Leaflet types (will be loaded dynamically)
+type LatLngExpression = [number, number] | { lat: number; lng: number };
+
+interface MapMarker {
+  position: LatLngExpression;
+  popup?: string;
+  icon?: string;
+}
+
+interface MapFilters {
+  showMyPets?: boolean;
+  showMatches?: boolean;
+  showNearby?: boolean;
+  activityTypes?: string[];
+  radius?: number;
+}
+
+interface MapViewProps {
+  center?: LatLngExpression;
+  zoom?: number;
+  markers?: MapMarker[];
+  className?: string;
+  onMapClick?: (lat: number, lng: number) => void;
+  enableUserLocation?: boolean;
+  filters?: MapFilters;
+}
+
+const MapView = ({
+  center = [37.7749, -122.4194], // Default to San Francisco
+  zoom = 13,
+  markers = [],
+  className = 'w-full h-96',
+  onMapClick,
+  enableUserLocation = false,
+}: MapViewProps): React.JSX.Element => {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<LatLngExpression | null>(null);
+
+  // Get user location if enabled
+  useEffect(() => {
+    if (!enableUserLocation) return;
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+        },
+        (err) => {
+          console.warn('Geolocation error:', err.message);
+        }
+      );
+    }
+  }, [enableUserLocation]);
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    let isMounted = true;
+
+    // Dynamically import Leaflet (only on client side)
+    const initializeMap = async () => {
+      try {
+        setIsLoading(true);
+
+        // Dynamic import of Leaflet
+        const L = await import('leaflet');
+
+        // Import Leaflet CSS (dynamic import with type assertion for CSS module)
+        await import('leaflet/dist/leaflet.css' as unknown as string);
+
+        if (!isMounted || !mapContainerRef.current) return;
+
+        // Fix default marker icon issue with webpack
+        interface IconPrototype {
+          _getIconUrl?: unknown;
+        }
+        delete (L.Icon.Default.prototype as unknown as IconPrototype)._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        });
+
+        // Initialize map
+        const map = L.map(mapContainerRef.current).setView(
+          Array.isArray(center) ? center : [center.lat, center.lng],
+          zoom
+        );
+
+        mapRef.current = map;
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19,
+        }).addTo(map);
+
+        // Add markers
+        markers.forEach((marker) => {
+          const position = Array.isArray(marker.position)
+            ? marker.position
+            : [marker.position.lat, marker.position.lng];
+
+          const leafletMarker = L.marker(position as [number, number]).addTo(map);
+
+          if (marker.popup) {
+            leafletMarker.bindPopup(marker.popup);
+          }
+        });
+
+        // Add user location marker if available
+        if (userLocation) {
+          const userPos = Array.isArray(userLocation)
+            ? userLocation
+            : [userLocation.lat, userLocation.lng];
+
+          L.circle(userPos as [number, number], {
+            color: '#3B82F6',
+            fillColor: '#3B82F6',
+            fillOpacity: 0.2,
+            radius: 500,
+          }).addTo(map);
+
+          L.marker(userPos as [number, number], {
+            icon: L.divIcon({
+              className: 'user-location-marker',
+              html: '<div style="background: #3B82F6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+              iconSize: [20, 20],
+            }),
+          }).addTo(map);
+        }
+
+        // Handle map clicks
+        if (onMapClick) {
+          interface LeafletMouseEvent {
+            latlng: { lat: number; lng: number };
+          }
+          map.on('click', (e: LeafletMouseEvent) => {
+            onMapClick(e.latlng.lat, e.latlng.lng);
+          });
+        }
+
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Failed to load map:', err);
+        setError('Map could not be loaded. Please ensure Leaflet is installed: npm install leaflet @types/leaflet');
+        setIsLoading(false);
+      }
+    };
+
+    initializeMap();
+
+    // Cleanup
+    return () => {
+      isMounted = false;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [center, zoom, markers, userLocation, onMapClick]);
+
+  if (error) {
+    return (
+      <div className={`${className} bg-gray-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300`}>
+        <div className="text-center p-6 max-w-md">
+          <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          <h3 className="text-sm font-medium text-gray-900 mb-1">Map Not Available</h3>
+          <p className="text-xs text-gray-500">{error}</p>
+          <code className="block mt-3 text-xs text-left bg-gray-800 text-green-400 p-2 rounded">
+            npm install leaflet @types/leaflet
+          </code>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <div ref={mapContainerRef} className={className} />
+      {isLoading && (
+        <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded-lg">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+            <p className="mt-2 text-sm text-gray-600">Loading map...</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MapView;

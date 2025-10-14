@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions, Platform } from 'react-native';
+import { Dimensions, Platform, StyleSheet } from 'react-native';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -54,6 +54,14 @@ export const Colors = {
   gradientSuccess: ['#ecfdf5', '#d1fae5', '#a7f3d0'],
   gradientWarning: ['#fffbeb', '#fef3c7', '#fde68a'],
   gradientError: ['#fef2f2', '#fecaca', '#fca5a5'],
+  
+  // UI Component Colors
+  text: '#111827', // Default text color (gray900)
+  textSecondary: '#4b5563', // Secondary text color (gray600)
+  card: '#ffffff', // Card background color
+  background: '#f9fafb', // Background color (gray50)
+  border: '#e5e7eb', // Border color (gray200)
+  inputBackground: '#f9fafb', // Input background color (gray50)
 };
 
 export const Typography = {
@@ -607,7 +615,7 @@ export const GlobalStyles = StyleSheet.create({
 });
 
 // === ANIMATION CONFIGS ===
-export const AnimationConfigs = {
+export const _AnimationConfigs = {
   spring: {
     damping: 20,
     stiffness: 400,
@@ -625,20 +633,20 @@ export const AnimationConfigs = {
   },
   timing: {
     duration: 600,
-    easing: 'bezier(0.4, 0, 0.2, 1)' as any,
+    easing: 'bezier(0.4, 0, 0.2, 1)' as const,
   },
   timingFast: {
     duration: 300,
-    easing: 'bezier(0.4, 0, 0.2, 1)' as any,
+    easing: 'bezier(0.4, 0, 0.2, 1)' as const,
   },
   timingSlow: {
     duration: 800,
-    easing: 'bezier(0.4, 0, 0.2, 1)' as any,
+    easing: 'bezier(0.4, 0, 0.2, 1)' as const,
   },
 };
 
 // === DEVICE UTILITIES ===
-export const Device = {
+export const _Device = {
   width: screenWidth,
   height: screenHeight,
   isSmall: screenWidth < 375,

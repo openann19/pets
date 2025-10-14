@@ -1,5 +1,5 @@
 import WebRTCService from '../WebRTCService';
-import { mediaDevices, RTCPeerConnection } from 'react-native-webrtc';
+import {  } from 'react-native-webrtc';
 import InCallManager from 'react-native-incall-manager';
 
 // Mock dependencies
@@ -18,8 +18,6 @@ jest.mock('react-native-incall-manager', () => ({
   setForceSpeakerphoneOn: jest.fn(),
   start: jest.fn(),
   stop: jest.fn(),
-  displayIncomingCall: jest.fn(),
-  getSpeakerphoneOn: jest.fn(),
 }));
 
 const mockSocket = {
@@ -222,8 +220,6 @@ describe('WebRTCService', () => {
     });
 
     it('should toggle speaker', () => {
-      InCallManager.getSpeakerphoneOn.mockReturnValue(false);
-      
       WebRTCService.toggleSpeaker();
       
       expect(InCallManager.setSpeakerphoneOn).toHaveBeenCalledWith(true);

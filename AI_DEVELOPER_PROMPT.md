@@ -4,13 +4,17 @@
 
 ## 📋 **Implementation Instructions**
 
-You are tasked with implementing the complete PawfectMatch Premium platform following the Tinder pixel-perfect workflow document. This is a step-by-step implementation guide that requires you to:
+You are tasked with implementing the complete PawfectMatch Premium platform, strictly following the latest monorepo architecture, design specs, and engineering mandates. All features must be delivered with ultra-premium, pixel-perfect fidelity, as defined in `TINDER_PIXEL_PERFECT_WORKFLOW.md`, `rules.md`, and referenced blueprints.
 
-1. **Follow the exact specifications** from `TINDER_PIXEL_PERFECT_WORKFLOW.md`
-2. **Implement each feature** with pixel-perfect precision
-3. **Show actual results** after each implementation
-4. **Verify UI functionality** before moving to the next step
-5. **Use the existing codebase** as foundation and enhance it
+**Key Directives:**
+- Use Nx or Turborepo with pnpm workspaces.
+- Shared configs (tsconfig, ESLint) must enforce strict type safety and code consistency.
+- All code must integrate with live services—no mocks or placeholder content.
+- Animation: Framer Motion (Web) and Reanimated (Mobile) with spring physics (`stiffness: 300, damping: 30`).
+- Forms: React Hook Form + Zod schemas from `core`.
+- State: React Query for server state, Zustand for client/global state.
+- Accessibility: WCAG 2.1 AA, full keyboard navigation, screen reader support.
+- Testing: Jest (unit), Playwright/Detox (E2E), real dependencies only.
 
 ---
 
@@ -22,19 +26,19 @@ You are tasked with implementing the complete PawfectMatch Premium platform foll
 #### **Step 1.1: Environment Setup**
 ```bash
 # Verify all services are running
-cd server && npm start          # Backend API (port 5001)
-cd ai-service && python3 deepseek_app.py  # AI Service (port 8000)  
-cd apps/web && npm run dev      # Web App (port 3000)
+pnpm --filter server dev          # Backend API (port 3001)
+pnpm --filter ai-service dev      # AI Service (port 8000)
+pnpm --filter pawfectmatch-web dev # Web App (port 3000)
+pnpm --filter @pawfectmatch/mobile start # Mobile App (Expo)
 ```
 
 **Verification Requirements:**
-- [ ] All three services start without errors
-- [ ] Backend API responds at `http://localhost:5001/api/health`
-- [ ] AI Service responds at `http://localhost:8000/health`
-- [ ] Web app loads at `http://localhost:3000`
-- [ ] No console errors in browser
+- [ ] All services pass health checks (`/api/health`)
+- [ ] No TypeScript errors (`pnpm type-check`)
+- [ ] No ESLint errors (`pnpm lint`)
+- [ ] Web and mobile apps load with zero console errors
 
-**Show Result:** Screenshot of all three services running + browser console clean
+**Show Result:** Screenshots of all services running, health check responses, and clean browser/mobile consoles.
 
 ---
 
@@ -43,29 +47,27 @@ cd apps/web && npm run dev      # Web App (port 3000)
 
 **Requirements:**
 - Hero section with value proposition
-- Call-to-action buttons (Login/Register) with premium styling
-- Feature highlights with animations
-- Premium branding with gradient backgrounds
-- Smooth page transitions
+- Premium branding (gradient backgrounds, micro-interactions)
+- Animated feature highlights (Framer Motion, spring physics)
+- CTA buttons (Login/Register) with tactile feedback
+- Responsive, accessible layout
 
 **Implementation:**
 ```typescript
-// Add to landing page
-- Gradient hero background
-- Animated feature cards
-- Premium button styling
-- Smooth scroll animations
-- Mobile-responsive design
+// Use shared UI components from @pawfectmatch/ui
+// AnimatePresence for transitions
+// Premium button styling from design-tokens
+// Responsive with Tailwind CSS
 ```
 
 **Verification:**
-- [ ] Page loads with premium styling
-- [ ] Buttons have hover effects
-- [ ] Animations are smooth
+- [ ] Pixel-perfect layout matches design spec
+- [ ] Animations are smooth (spring physics)
+- [ ] Buttons have tactile feedback
 - [ ] Mobile responsive
-- [ ] No layout shifts
+- [ ] Accessibility checks pass
 
-**Show Result:** Screenshot of enhanced landing page + mobile view
+**Show Result:** Screenshots of enhanced landing page (desktop + mobile).
 
 ---
 
@@ -76,31 +78,27 @@ cd apps/web && npm run dev      # Web App (port 3000)
 **File:** `apps/web/app/(auth)/register/page.tsx`
 
 **Requirements:**
-- All form fields from specification
-- Real-time validation
-- Premium styling with animations
+- All form fields per Zod schema (`core/schemas`)
+- Real-time validation (React Hook Form + zodResolver)
+- Premium styling, animated transitions
 - Email verification flow
 - 18+ age validation
 
 **Implementation:**
 ```typescript
-// Enhanced registration form
-- Email validation with real-time feedback
-- Password strength indicator
-- Date of birth picker with 18+ validation
-- Location auto-detection
-- Premium form styling
-- Loading states with animations
+// Use shared form components from @pawfectmatch/ui
+// Integrate zodResolver for validation
+// Animate loading/error states
+// Accessibility: labels, error messages, keyboard navigation
 ```
 
 **Verification:**
-- [ ] All fields work correctly
-- [ ] Validation messages appear
+- [ ] All fields validate in real-time
 - [ ] Form submits successfully
-- [ ] Loading states show
-- [ ] Error handling works
+- [ ] Loading/error states animate smoothly
+- [ ] Accessibility checks pass
 
-**Show Result:** Screenshot of registration form + validation states
+**Show Result:** Screenshots of registration form, validation, and submission states.
 
 ---
 
@@ -112,31 +110,28 @@ cd apps/web && npm run dev      # Web App (port 3000)
 - `apps/mobile/src/screens/onboarding/WelcomeScreen.tsx`
 
 **Requirements:**
-- 4-step onboarding process
-- Animated selection cards
-- Multi-step pet profile form
-- Progress indicators
-- Haptic feedback
-- Celebration animations
+- 4-step onboarding (navigation types fixed, see MOBILE_TYPESCRIPT_COMPREHENSIVE_ANALYSIS.md)
+- Animated selection cards (Reanimated, spring physics)
+- Multi-step pet profile form (Zod validation)
+- Progress indicators, haptic feedback
+- Celebration animation (Lottie/Reanimated)
 
 **Implementation:**
 ```typescript
-// Mobile onboarding screens
-- UserIntentScreen: Animated intent selection
-- PetProfileSetupScreen: 4-step form with validation
-- PreferencesSetupScreen: Distance, age, species preferences
-- WelcomeScreen: Celebration animation + feature overview
+// Use shared hooks and types from core
+// Animate transitions with Reanimated
+// Haptic feedback for all primary interactions
+// Accessibility: screen reader support
 ```
 
 **Verification:**
-- [ ] All 4 screens work correctly
-- [ ] Animations are smooth
+- [ ] All screens function and animate smoothly
 - [ ] Form validation works
 - [ ] Progress indicators update
 - [ ] Haptic feedback triggers
-- [ ] Navigation between screens works
+- [ ] Navigation is seamless
 
-**Show Result:** Screenshots of all 4 onboarding screens + navigation flow
+**Show Result:** Screenshots of onboarding flow, progress, and celebration animation.
 
 ---
 
@@ -149,32 +144,26 @@ cd apps/web && npm run dev      # Web App (port 3000)
 - `apps/mobile/src/screens/PetProfileScreen.tsx`
 
 **Requirements:**
-- All required and optional fields
-- Photo upload with drag-and-drop
-- Personality tags selection
-- Health information
-- AI-powered features integration
+- All fields per Zod schema
+- Photo upload (Cloudinary integration, drag-and-drop)
+- Personality tags (animated selection)
+- Health info toggles
+- AI-powered bio generation (API integration)
 
 **Implementation:**
 ```typescript
-// Pet profile system
-- Complete form with all fields
-- Photo upload with preview
-- Personality tag selection
-- Health information toggles
-- AI integration for bio generation
-- Breed detection from photos
+// Use shared form logic from core
+// Animate photo upload preview
+// Integrate AI service for bio generation
+// Accessibility: alt text, keyboard navigation
 ```
 
 **Verification:**
-- [ ] All form fields work
-- [ ] Photo upload functions
-- [ ] Tags can be selected
-- [ ] Health info toggles work
-- [ ] AI features integrate
+- [ ] All fields and uploads work
+- [ ] AI features integrate and respond
 - [ ] Form saves successfully
 
-**Show Result:** Screenshots of pet profile form + photo upload + AI features
+**Show Result:** Screenshots of pet profile form, photo upload, and AI features.
 
 ---
 
@@ -188,33 +177,26 @@ cd apps/web && npm run dev      # Web App (port 3000)
 - `apps/mobile/src/screens/SwipeScreen.tsx`
 
 **Requirements:**
-- 3D perspective cards
-- Smooth swipe animations
-- Gesture recognition
-- Haptic feedback
-- Spring physics
-- Visual feedback overlays
+- 3D perspective cards (Framer Motion/Reanimated)
+- Smooth swipe gestures (spring physics)
+- Haptic feedback (mobile)
+- Visual overlays (Like/Pass/Superlike)
+- Card stack management
 
 **Implementation:**
 ```typescript
-// Swipe interface
-- 3D card perspective
-- Swipe gestures (left/right/up)
-- Like/Pass/Superlike overlays
-- Smooth animations with spring physics
-- Haptic feedback
-- Card stack management
+// Use AnimatePresence for card transitions
+// Hardware-accelerated transforms
+// Haptic feedback for swipe actions
+// Accessibility: ARIA roles, keyboard support
 ```
 
 **Verification:**
-- [ ] Cards have 3D perspective
-- [ ] Swipe gestures work smoothly
-- [ ] Overlays appear correctly
+- [ ] Swipe gestures and overlays work
 - [ ] Animations are fluid
-- [ ] Haptic feedback triggers
-- [ ] Card stack updates properly
+- [ ] Card stack updates correctly
 
-**Show Result:** Screenshots of swipe interface + gesture demonstration + animations
+**Show Result:** Screenshots of swipe interface and gesture overlays.
 
 ---
 
@@ -224,30 +206,23 @@ cd apps/web && npm run dev      # Web App (port 3000)
 - `apps/mobile/src/components/MatchModal.tsx`
 
 **Requirements:**
-- Real-time match detection
-- Celebration animation
-- Confetti effects
-- Match information display
-- Action buttons
+- Real-time match detection (Socket.io)
+- Celebration animation (confetti)
+- Modal with match info and actions
 
 **Implementation:**
 ```typescript
-// Match system
-- Real-time match detection
-- Celebration animation with confetti
-- Match modal with pet photos
-- Compatibility score display
-- Action buttons (Keep Swiping/Send Message)
+// Integrate with backend match events
+// Animate modal with spring physics
+// Accessibility: focus management, ARIA labels
 ```
 
 **Verification:**
-- [ ] Matches detect correctly
+- [ ] Match detection triggers modal
 - [ ] Celebration animation plays
-- [ ] Modal displays match info
-- [ ] Buttons work correctly
-- [ ] Navigation to chat works
+- [ ] Modal actions work
 
-**Show Result:** Screenshots of match detection + celebration animation + modal
+**Show Result:** Screenshots of match modal and celebration.
 
 ---
 
@@ -260,34 +235,24 @@ cd apps/web && npm run dev      # Web App (port 3000)
 - `apps/mobile/src/screens/ChatScreen.tsx`
 
 **Requirements:**
-- WebSocket real-time messaging
-- Typing indicators
-- Read receipts
-- Message status
+- WebSocket messaging (Socket.io)
+- Typing indicators, read receipts
 - Photo sharing
 - AI conversation starters
 
 **Implementation:**
 ```typescript
-// Chat system
-- WebSocket connection
-- Real-time message sending/receiving
-- Typing indicators
-- Read receipts
-- Message status icons
-- Photo sharing
-- AI conversation starters
+// Use Zustand for chat state
+// Animate message transitions
+// Accessibility: live region, keyboard navigation
 ```
 
 **Verification:**
-- [ ] Messages send/receive in real-time
-- [ ] Typing indicators work
-- [ ] Read receipts update
+- [ ] Real-time messaging works
+- [ ] Typing/read indicators update
 - [ ] Photo sharing functions
-- [ ] AI starters appear
-- [ ] Chat history persists
 
-**Show Result:** Screenshots of chat interface + real-time messaging + AI features
+**Show Result:** Screenshots of chat interface and features.
 
 ---
 
@@ -300,32 +265,21 @@ cd apps/web && npm run dev      # Web App (port 3000)
 - `apps/web/src/components/Premium/SubscriptionManager.tsx`
 
 **Requirements:**
-- 4-tier subscription model
-- Stripe integration
+- 4-tier subscription (Stripe integration)
 - Feature gating
 - Usage tracking
-- Premium UI components
 
 **Implementation:**
 ```typescript
-// Premium system
-- 4 subscription tiers
-- Stripe checkout integration
-- Feature gating based on tier
-- Usage tracking
-- Premium UI components
-- Subscription management
+// Use Stripe API for checkout
+// Gate features by tier (Zod schemas)
 ```
 
 **Verification:**
-- [ ] All 4 tiers display correctly
+- [ ] Tiers display and gate features
 - [ ] Stripe checkout works
-- [ ] Feature gating functions
-- [ ] Usage tracking works
-- [ ] Premium UI components render
-- [ ] Subscription management works
 
-**Show Result:** Screenshots of premium page + subscription tiers + feature gating
+**Show Result:** Screenshots of premium page and subscription tiers.
 
 ---
 
@@ -339,32 +293,19 @@ cd apps/web && npm run dev      # Web App (port 3000)
 - `apps/web/app/(protected)/ai/compatibility/page.tsx`
 
 **Requirements:**
-- Bio generator with multiple tones
-- Photo analyzer with breed detection
-- Compatibility analyzer with 5 categories
-- AI service integration
+- Bio generator, photo analyzer, compatibility analyzer (FastAPI service)
 - Real-time processing
 
 **Implementation:**
 ```typescript
-// AI features
-- Bio generator with tone selection
-- Photo analyzer with breed detection
-- Compatibility analyzer
-- AI service integration
-- Real-time processing
-- Results display
+// Use React Query for async AI calls
+// Display results with premium UI
 ```
 
 **Verification:**
-- [ ] Bio generator works
-- [ ] Photo analyzer functions
-- [ ] Compatibility analyzer processes
-- [ ] AI service responds
-- [ ] Results display correctly
-- [ ] Integration works
+- [ ] AI features process and display results
 
-**Show Result:** Screenshots of AI features + processing + results
+**Show Result:** Screenshots of AI features and results.
 
 ---
 
@@ -377,106 +318,49 @@ cd apps/web && npm run dev      # Web App (port 3000)
 - `apps/mobile/src/components/calling/CallManager.tsx`
 
 **Requirements:**
-- WebRTC integration
-- HD video calls
-- Screen sharing
-- Call management
-- Mobile support
+- WebRTC HD video calls, screen sharing, call management
 
 **Implementation:**
 ```typescript
-// Video calling
-- WebRTC integration
-- HD video quality
-- Screen sharing
-- Call management
-- Mobile support
-- Call history
+// Integrate WebRTC APIs
+// Animate call transitions
 ```
 
 **Verification:**
-- [ ] Video calls connect
-- [ ] HD quality works
-- [ ] Screen sharing functions
-- [ ] Call management works
-- [ ] Mobile support functions
-- [ ] Call history tracks
+- [ ] Video calls connect and manage
 
-**Show Result:** Screenshots of video calling interface + call management
+**Show Result:** Screenshots of video call interface.
 
 ---
 
 ## 🔧 **Implementation Guidelines**
 
-### **Code Quality Standards**
-- **TypeScript**: All code must be typed
-- **Error Handling**: Comprehensive error handling
-- **Loading States**: All async operations have loading states
-- **Animations**: Use Framer Motion with spring physics
-- **Responsive Design**: Mobile-first approach
-- **Accessibility**: WCAG 2.1 compliance
-
-### **Animation Standards**
-- **Spring Physics**: Use `{ stiffness: 300, damping: 30 }`
-- **Duration**: Keep animations under 300ms
-- **Easing**: Use natural easing curves
-- **Haptic Feedback**: Implement for all interactions
-- **Skeleton Loaders**: Prevent layout shifts
-
-### **Testing Requirements**
-- **Unit Tests**: Test all components
-- **Integration Tests**: Test API integrations
-- **E2E Tests**: Test complete user flows
-- **Performance Tests**: Ensure smooth animations
-- **Accessibility Tests**: Verify WCAG compliance
+- **TypeScript**: Strict mode, no suppressions
+- **Error Handling**: Precise, user-friendly messages
+- **Animations**: Spring physics only, AnimatePresence
+- **Accessibility**: WCAG 2.1 AA, tested on all major browsers/devices
+- **Testing**: Jest, Playwright/Detox, no mocks except unavoidable external services
+- **Documentation**: Update guides for every new capability
 
 ---
 
 ## 📊 **Progress Tracking**
 
 ### **Completion Checklist**
-- [ ] Phase 1: Foundation & Setup
-- [ ] Phase 2: Authentication & Onboarding
-- [ ] Phase 3: Pet Profile System
-- [ ] Phase 4: Swipe Interface
-- [ ] Phase 5: Chat System
-- [ ] Phase 6: Premium Features
-- [ ] Phase 7: AI Features
-- [ ] Phase 8: Advanced Features
-
-### **Quality Gates**
-- [ ] All features work as specified
-- [ ] Animations are smooth and performant
-- [ ] Mobile responsive design
-- [ ] Error handling implemented
-- [ ] Loading states present
-- [ ] Accessibility compliant
-- [ ] Code is typed and documented
+- [ ] All phases implemented per spec
+- [ ] Zero TypeScript/ESLint errors
+- [ ] All features verified with screenshots
+- [ ] Accessibility and performance gates passed
 
 ---
 
 ## 🎯 **Success Criteria**
 
-### **Technical Requirements**
-- **Performance**: < 3s initial load time
-- **Animations**: 60fps smooth animations
-- **Responsiveness**: Works on all screen sizes
-- **Accessibility**: WCAG 2.1 AA compliance
-- **Browser Support**: Chrome, Firefox, Safari, Edge
-
-### **User Experience Requirements**
-- **Intuitive Navigation**: Easy to use interface
-- **Smooth Interactions**: Responsive to user input
-- **Visual Feedback**: Clear feedback for all actions
-- **Error Recovery**: Graceful error handling
-- **Loading States**: Clear loading indicators
-
-### **Business Requirements**
-- **Subscription Flow**: Seamless upgrade process
-- **Feature Gating**: Proper tier-based access
-- **Analytics**: Track user engagement
-- **Retention**: Encourage user return
-- **Conversion**: Optimize for premium upgrades
+- **Performance**: <3s FMP (web), <16ms frame (mobile)
+- **Animations**: 60fps, spring physics
+- **Responsiveness**: All screen sizes
+- **Accessibility**: WCAG 2.1 AA
+- **Business**: Seamless subscription, analytics, retention
 
 ---
 
@@ -485,11 +369,11 @@ cd apps/web && npm run dev      # Web App (port 3000)
 1. **Start with Phase 1** and complete each step
 2. **Show actual results** after each implementation
 3. **Verify functionality** before moving to next phase
-4. **Document any issues** or deviations
-5. **Request feedback** after each phase completion
+4. **Document any issues or deviations**
+5. **Request feedback after each phase completion**
 
 ---
 
-**Remember:** This is a pixel-perfect implementation. Every detail matters. Take your time, implement each feature correctly, and show the actual working results before proceeding to the next step.
+**Relentlessly follow all architectural and design mandates. Every detail matters. Deliver a flawless, premium PawfectMatch experience—immediately deployable.**
 
 **🐾 Let's build something amazing! ✨**

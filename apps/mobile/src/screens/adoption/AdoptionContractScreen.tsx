@@ -1,26 +1,29 @@
-import React, { useState } from 'react';
+import { logger } from '@pawfectmatch/core';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
   Alert,
+  ScrollView,
+  StyleSheet,
   Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type AdoptionStackParamList = {
-  AdoptionContract: { 
-    applicationId: string; 
-    petName: string; 
-    applicantName: string; 
+  AdoptionContract: {
+    applicationId: string;
+    petName: string;
+    applicantName: string;
   };
 };
 
 type Props = NativeStackScreenProps<AdoptionStackParamList, 'AdoptionContract'>;
+
+type BooleanContractKeys = 'spayNeuterRequired' | 'vaccinationRequired' | 'microchipRequired' | 'returnPolicy' | 'homeVisitRequired' | 'followUpRequired';
 
 interface ContractTerms {
   adoptionFee: string;
@@ -38,8 +41,8 @@ interface ContractTerms {
   };
 }
 
-const AdoptionContractScreen = ({ navigation, route }: Props) => {
-  const { applicationId, petName, applicantName } = route.params;
+const AdoptionContractScreen = ({ route, navigation }: Props) => {
+  const { petName, applicantName } = route.params;
   const [contractTerms, setContractTerms] = useState<ContractTerms>({
     adoptionFee: '0',
     spayNeuterRequired: true,
@@ -58,12 +61,16 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
 
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const updateContractTerms = (field: string, value: any) => {
-    setContractTerms(prev => ({ ...prev, [field]: value }));
+  const updateContractTerms = (field: keyof Omit<ContractTerms, 'emergencyContact'>, value: string | boolean): void => {
+    setContractTerms((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updateEmergencyContact = (field: string, value: string) => {
-    setContractTerms(prev => ({
+  const updateBooleanTerms = (field: BooleanContractKeys, value: boolean): void => {
+    updateContractTerms(field, value);
+  };
+
+  const updateEmergencyContact = (field: keyof ContractTerms['emergencyContact'], value: string): void => {
+    setContractTerms((prev) => ({
       ...prev,
       emergencyContact: { ...prev.emergencyContact, [field]: value },
     }));
@@ -73,28 +80,29 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
     setIsGenerating(true);
     try {
       // Simulate contract generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       Alert.alert(
         'Contract Generated',
         'The adoption contract has been generated and sent to both parties for review and signature.',
         [
-          { text: 'View Contract', onPress: () => console.log('View contract') },
+          { text: 'View Contract', onPress: () => logger.info('View contract') },
           { text: 'Send for Signature', onPress: () => handleSendForSignature() },
-        ]
+        ],
       );
     } catch (error) {
+      logger.error('Failed to generate contract', { error });
       Alert.alert('Error', 'Failed to generate contract. Please try again.');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleSendForSignature = () => {
+  const handleSendForSignature = (): void => {
     Alert.alert(
       'Contract Sent',
       `The adoption contract for ${petName} has been sent to ${applicantName} for digital signature. You will be notified when it's signed.`,
-      [{ text: 'OK', onPress: () => navigation.goBack() }]
+      [{ text: 'OK', onPress: () => navigation.goBack() }],
     );
   };
 
@@ -138,22 +146,24 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
         {/* Medical Requirements */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🏥 Medical Requirements</Text>
-          
-          {[
-            { key: 'spayNeuterRequired', label: 'Spay/Neuter Required', description: 'Pet must be spayed/neutered within 6 months' },
-            { key: 'vaccinationRequired', label: 'Vaccination Updates Required', description: 'Keep vaccinations current per vet schedule' },
-            { key: 'microchipRequired', label: 'Microchip Required', description: 'Pet must be microchipped for identification' },
-          ].map((item) => (
+
+          {(
+            [
+              { key: 'spayNeuterRequired' as BooleanContractKeys, label: 'Spay/Neuter Required', description: 'Pet must be spayed/neutered within 6 months' },
+              { key: 'vaccinationRequired' as BooleanContractKeys, label: 'Vaccination Updates Required', description: 'Keep vaccinations current per vet schedule' },
+              { key: 'microchipRequired' as BooleanContractKeys, label: 'Microchip Required', description: 'Pet must be microchipped for identification' },
+            ] as const
+          ).map((item) => (
             <View key={item.key} style={styles.switchContainer}>
               <View style={styles.switchInfo}>
                 <Text style={styles.switchLabel}>{item.label}</Text>
                 <Text style={styles.switchDescription}>{item.description}</Text>
               </View>
               <Switch
-                value={contractTerms[item.key as keyof ContractTerms] as boolean}
-                onValueChange={(value) => updateContractTerms(item.key, value)}
+                value={contractTerms[item.key]}
+                onValueChange={(value) => updateBooleanTerms(item.key, value)}
                 trackColor={{ false: '#e5e7eb', true: '#fce7f3' }}
-                thumbColor={contractTerms[item.key as keyof ContractTerms] ? '#ec4899' : '#9ca3af'}
+                thumbColor={contractTerms[item.key] ? '#ec4899' : '#9ca3af'}
               />
             </View>
           ))}
@@ -162,22 +172,24 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
         {/* Adoption Policies */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📋 Adoption Policies</Text>
-          
-          {[
-            { key: 'returnPolicy', label: 'Return Policy Agreement', description: 'Pet must be returned to original owner if unable to care for it' },
-            { key: 'homeVisitRequired', label: 'Home Visit Required', description: 'Allow home visit before/after adoption' },
-            { key: 'followUpRequired', label: 'Follow-up Check Required', description: 'Allow follow-up contact within first year' },
-          ].map((item) => (
+
+          {(
+            [
+              { key: 'returnPolicy' as BooleanContractKeys, label: 'Return Policy Agreement', description: 'Pet must be returned to original owner if unable to care for it' },
+              { key: 'homeVisitRequired' as BooleanContractKeys, label: 'Home Visit Required', description: 'Allow home visit before/after adoption' },
+              { key: 'followUpRequired' as BooleanContractKeys, label: 'Follow-up Check Required', description: 'Allow follow-up contact within first year' },
+            ] as const
+          ).map((item) => (
             <View key={item.key} style={styles.switchContainer}>
               <View style={styles.switchInfo}>
                 <Text style={styles.switchLabel}>{item.label}</Text>
                 <Text style={styles.switchDescription}>{item.description}</Text>
               </View>
               <Switch
-                value={contractTerms[item.key as keyof ContractTerms] as boolean}
-                onValueChange={(value) => updateContractTerms(item.key, value)}
+                value={contractTerms[item.key]}
+                onValueChange={(value) => updateBooleanTerms(item.key, value)}
                 trackColor={{ false: '#e5e7eb', true: '#fce7f3' }}
-                thumbColor={contractTerms[item.key as keyof ContractTerms] ? '#ec4899' : '#9ca3af'}
+                thumbColor={contractTerms[item.key] ? '#ec4899' : '#9ca3af'}
               />
             </View>
           ))}
@@ -189,7 +201,7 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
           <Text style={styles.sectionSubtitle}>
             Backup contact in case adopter cannot be reached
           </Text>
-          
+
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Contact Name</Text>
             <TextInput
@@ -228,7 +240,7 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
           <Text style={styles.sectionSubtitle}>
             Any additional terms or conditions specific to this adoption
           </Text>
-          
+
           <TextInput
             style={styles.textArea}
             value={contractTerms.specialConditions}
@@ -243,8 +255,8 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
         <View style={styles.legalNotice}>
           <Text style={styles.legalTitle}>⚖️ Legal Notice</Text>
           <Text style={styles.legalText}>
-            This contract is legally binding. Both parties agree to the terms outlined above. 
-            The adopter acknowledges responsibility for the pet's welfare, medical care, and safety. 
+            This contract is legally binding. Both parties agree to the terms outlined above.
+            The adopter acknowledges responsibility for the pet's welfare, medical care, and safety.
             Violation of terms may result in return of the pet to the original owner.
           </Text>
         </View>
@@ -252,7 +264,7 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.generateButton, isGenerating && styles.disabledButton]}
           onPress={generateContract}
           disabled={isGenerating}

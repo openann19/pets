@@ -1,0 +1,50 @@
+{
+  "name": "@pawfectmatch/ai",
+  "version": "1.0.0",
+  "description": "AI-powered pet matching and analysis for PawfectMatch",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "lint": "eslint src",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "ai",
+    "pet",
+    "matching",
+    "deepseek",
+    "computer-vision",
+    "machine-learning"
+  ],
+  "author": "PawfectMatch Team",
+  "license": "MIT",
+  "dependencies": {
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pawfectmatch/pawfectmatch.git",
+    "directory": "packages/ai"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}

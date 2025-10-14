@@ -5,12 +5,44 @@
 
 'use client';
 
-import React from 'react';
 import { logger } from '../services/logger';
+
+/**
+ * Secure token retrieval for analytics
+ * This should be replaced with proper token management from your auth system
+ */
+async function getSecureAuthToken(): Promise<string | null> {
+  // TODO: Replace with secure token retrieval from auth context/store
+  // For now, use a more secure approach than direct localStorage access
+  try {
+    // Check if we have a token in memory first (from auth context)
+    // This is a placeholder - should be replaced with proper auth integration
+    if (typeof window !== 'undefined') {
+      // Try to get from sessionStorage first (more secure than localStorage)
+      const sessionToken = sessionStorage.getItem('auth_token');
+      if (sessionToken) {
+        return sessionToken;
+      }
+
+      // Fallback to localStorage only if necessary (less secure)
+      const localToken = localStorage.getItem('auth_token');
+      if (localToken) {
+        // Move to sessionStorage for better security
+        sessionStorage.setItem('auth_token', localToken);
+        localStorage.removeItem('auth_token');
+        return localToken;
+      }
+    }
+  } catch (error) {
+    logger.warn('Failed to retrieve auth token securely', { error });
+  }
+
+  return null;
+}
 
 interface AnalyticsEvent {
   name: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   timestamp?: number;
   userId?: string;
   sessionId?: string;
@@ -30,10 +62,13 @@ interface PerformanceMetrics {
   memoryUsage: number[];
 }
 
-class AdvancedAnalytics {
-  private sessionId: string;
+export class AdvancedAnalytics {
   private userId: string | null = null;
-  private pageStartTime: number = Date.now();
+  private sessionId: string;
+  private pageStartTime: number;
+  private isOnline: boolean;
+  private queue: AnalyticsEvent[] = [];
+  private performanceInterval: NodeJS.Timeout | null = null;
   private userBehavior: UserBehavior = {
     swipes: [],
     messages: [],
@@ -46,11 +81,11 @@ class AdvancedAnalytics {
     errors: [],
     memoryUsage: [],
   };
-  private queue: AnalyticsEvent[] = [];
-  private isOnline: boolean = true;
 
   constructor() {
     this.sessionId = this.generateSessionId();
+    this.pageStartTime = Date.now();
+    this.isOnline = true;
     this.initializeTracking();
     this.startPerformanceMonitoring();
   }
@@ -94,20 +129,30 @@ class AdvancedAnalytics {
   private startPerformanceMonitoring() {
     if (typeof window === 'undefined') return;
 
-    // Monitor memory usage
-    setInterval(() => {
-      // @ts-ignore
-      if (performance.memory) {
-        // @ts-ignore
-        const memory = performance.memory;
-        this.performanceMetrics.memoryUsage.push(memory.usedJSHeapSize);
-        
-        // Keep only last 20 measurements
-        if (this.performanceMetrics.memoryUsage.length > 20) {
-          this.performanceMetrics.memoryUsage.shift();
+    // Monitor memory usage with proper cleanup tracking
+    this.performanceInterval = setInterval(() => {
+      // Feature detection for Chrome performance.memory API
+      try {
+        const perfMemory = (performance as { memory?: { usedJSHeapSize: number } }).memory;
+        if (perfMemory?.usedJSHeapSize !== undefined && typeof perfMemory.usedJSHeapSize === 'number') {
+          this.performanceMetrics.memoryUsage.push(perfMemory.usedJSHeapSize);
+
+          // Keep only last 20 measurements
+          if (this.performanceMetrics.memoryUsage.length > 20) {
+            this.performanceMetrics.memoryUsage.shift();
+          }
         }
+      } catch {
+        // Memory API not supported or access denied
       }
     }, 10000); // Every 10 seconds
+  }
+
+  destroy() {
+    if (this.performanceInterval) {
+      clearInterval(this.performanceInterval);
+      this.performanceInterval = null;
+    }
   }
 
   // ====== PUBLIC METHODS ======
@@ -145,8 +190,8 @@ class AdvancedAnalytics {
   }
 
   trackPageView(page: string, duration?: number) {
-    const finalDuration = duration || (Date.now() - this.pageStartTime);
-    
+    const finalDuration = duration || Date.now() - this.pageStartTime;
+
     this.userBehavior.pageViews.push({
       page,
       duration: finalDuration,
@@ -160,7 +205,7 @@ class AdvancedAnalytics {
     });
   }
 
-  trackInteraction(element: string, action: string, metadata?: Record<string, any>) {
+  trackInteraction(element: string, action: string, metadata?: Record<string, unknown>) {
     this.userBehavior.interactions.push({
       element,
       action,
@@ -175,7 +220,12 @@ class AdvancedAnalytics {
     });
   }
 
-  trackAIUsage(feature: string, success: boolean, duration?: number, metadata?: Record<string, any>) {
+  trackAIUsage(
+    feature: string,
+    success: boolean,
+    duration?: number,
+    metadata?: Record<string, unknown>,
+  ) {
     this.track('ai_feature_used', {
       feature,
       success,
@@ -196,7 +246,7 @@ class AdvancedAnalytics {
     this.track('match_created', {
       matchId,
       compatibilityScore,
-      sessionMatches: this.userBehavior.swipes.filter(s => s.direction === 'like').length,
+      sessionMatches: this.userBehavior.swipes.filter((s) => s.direction === 'like').length,
     });
   }
 
@@ -224,12 +274,15 @@ class AdvancedAnalytics {
     }
   }
 
-  trackError(error: Error, context?: Record<string, any>) {
-    this.performanceMetrics.errors.push({
+  trackError(error: Error, context?: Record<string, unknown>) {
+    const errorEntry: { message: string; stack?: string; timestamp: number } = {
       message: error.message,
-      stack: error.stack,
       timestamp: Date.now(),
-    });
+    };
+    if (error.stack) {
+      errorEntry.stack = error.stack;
+    }
+    this.performanceMetrics.errors.push(errorEntry);
 
     this.track('error_occurred', {
       message: error.message,
@@ -240,7 +293,7 @@ class AdvancedAnalytics {
   }
 
   // ====== CORE TRACKING METHOD ======
-  private track(eventName: string, properties?: Record<string, any>) {
+  private track(eventName: string, properties?: Record<string, unknown>) {
     const event: AnalyticsEvent = {
       name: eventName,
       properties: {
@@ -248,15 +301,20 @@ class AdvancedAnalytics {
         page: typeof window !== 'undefined' ? window.location.pathname : undefined,
         referrer: typeof document !== 'undefined' ? document.referrer : undefined,
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
-        screenResolution: typeof window !== 'undefined' 
-          ? `${window.screen.width}x${window.screen.height}` 
-          : undefined,
+        screenResolution:
+          typeof window !== 'undefined'
+            ? `${window.screen.width}x${window.screen.height}`
+            : undefined,
         connectionType: this.getConnectionType(),
       },
       timestamp: Date.now(),
-      userId: this.userId ?? undefined,
       sessionId: this.sessionId,
     };
+
+    // Only add userId if it exists (for exactOptionalPropertyTypes)
+    if (this.userId) {
+      event.userId = this.userId;
+    }
 
     if (this.isOnline) {
       this.sendEvent(event);
@@ -267,15 +325,34 @@ class AdvancedAnalytics {
 
   private async sendEvent(event: AnalyticsEvent) {
     try {
-      await fetch('/api/analytics', {
+      // Map client event to server analytics batch schema
+      const props = (event.properties ?? {}) as Record<string, unknown>;
+      const mapped = {
+        userId: event.userId,
+        eventType: event.name,
+        entityType: props['entityType'] as string | undefined,
+        entityId: props['entityId'] as string | undefined,
+        durationMs: props['duration'] as number | undefined,
+        success: props['success'] as boolean | undefined,
+        errorCode: props['errorCode'] as string | undefined,
+        metadata: props,
+        createdAt: event.timestamp ? new Date(event.timestamp).toISOString() : new Date().toISOString(),
+      } as Record<string, unknown>;
+
+      // Use a secure token retrieval method instead of direct localStorage access
+      const authToken = await getSecureAuthToken();
+      await fetch('/api/analytics/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
-        body: JSON.stringify(event),
+        body: JSON.stringify({ events: [mapped] }),
       });
     } catch (error) {
-      logger.warn('Failed to send analytics event', error);
+      logger.warn('Failed to send analytics event', {
+        error: error instanceof Error ? error : new Error(String(error)),
+      });
       this.queue.push(event);
     }
   }
@@ -290,10 +367,14 @@ class AdvancedAnalytics {
   }
 
   private getConnectionType(): string {
-    // @ts-ignore
-    if (navigator.connection) {
-      // @ts-ignore
-      return navigator.connection.effectiveType || 'unknown';
+    // Feature detection for Network Information API
+    try {
+      const navConnection = (navigator as { connection?: { effectiveType?: string } }).connection;
+      if (navConnection?.effectiveType) {
+        return navConnection.effectiveType;
+      }
+    } catch {
+      // Network API not supported
     }
     return 'unknown';
   }
@@ -301,11 +382,11 @@ class AdvancedAnalytics {
   // ====== REPORTING METHODS ======
   generateUserBehaviorReport() {
     const now = Date.now();
-    const last24h = now - (24 * 60 * 60 * 1000);
+    const last24h = now - 24 * 60 * 60 * 1000;
 
-    const recentSwipes = this.userBehavior.swipes.filter(s => s.timestamp > last24h);
-    const recentMessages = this.userBehavior.messages.filter(m => m.timestamp > last24h);
-    const recentPageViews = this.userBehavior.pageViews.filter(p => p.timestamp > last24h);
+    const recentSwipes = this.userBehavior.swipes.filter((s) => s.timestamp > last24h);
+    const recentMessages = this.userBehavior.messages.filter((m) => m.timestamp > last24h);
+    const recentPageViews = this.userBehavior.pageViews.filter((p) => p.timestamp > last24h);
 
     return {
       session: {
@@ -316,13 +397,14 @@ class AdvancedAnalytics {
       last24Hours: {
         swipes: {
           total: recentSwipes.length,
-          likes: recentSwipes.filter(s => s.direction === 'like').length,
-          passes: recentSwipes.filter(s => s.direction === 'pass').length,
-          superLikes: recentSwipes.filter(s => s.direction === 'superlike').length,
+          likes: recentSwipes.filter((s) => s.direction === 'like').length,
+          passes: recentSwipes.filter((s) => s.direction === 'pass').length,
+          superLikes: recentSwipes.filter((s) => s.direction === 'superlike').length,
         },
         messages: recentMessages.length,
         pageViews: recentPageViews.length,
-        averageSessionTime: recentPageViews.reduce((sum, pv) => sum + pv.duration, 0) / recentPageViews.length || 0,
+        averageSessionTime:
+          recentPageViews.reduce((sum, pv) => sum + pv.duration, 0) / recentPageViews.length || 0,
       },
       engagement: {
         swipeRate: recentSwipes.length / Math.max(recentPageViews.length, 1),
@@ -340,7 +422,8 @@ class AdvancedAnalytics {
         averageApiResponseTime: this.calculateAverageApiTime(),
         errorRate: this.calculateErrorRate(),
         memoryTrend: this.calculateMemoryTrend(),
-        slowRequests: this.performanceMetrics.apiCalls.filter(call => call.duration > 2000).length,
+        slowRequests: this.performanceMetrics.apiCalls.filter((call) => call.duration > 2000)
+          .length,
       },
       recommendations: this.generatePerformanceRecommendations(),
     };
@@ -350,21 +433,21 @@ class AdvancedAnalytics {
     const totalInteractions = this.userBehavior.interactions.length;
     const sessionDuration = Date.now() - this.pageStartTime;
     const engagementRate = totalInteractions / (sessionDuration / 60000); // Interactions per minute
-    
+
     return Math.min(100, engagementRate * 10);
   }
 
   private calculateAverageApiTime(): number {
     const calls = this.performanceMetrics.apiCalls;
     if (calls.length === 0) return 0;
-    
+
     return calls.reduce((sum, call) => sum + call.duration, 0) / calls.length;
   }
 
   private calculateErrorRate(): number {
     const totalApiCalls = this.performanceMetrics.apiCalls.length;
-    const errorCalls = this.performanceMetrics.apiCalls.filter(call => call.status >= 400).length;
-    
+    const errorCalls = this.performanceMetrics.apiCalls.filter((call) => call.status >= 400).length;
+
     if (totalApiCalls === 0) return 0;
     return (errorCalls / totalApiCalls) * 100;
   }
@@ -372,28 +455,33 @@ class AdvancedAnalytics {
   private calculateMemoryTrend(): 'increasing' | 'stable' | 'decreasing' {
     const recent = this.performanceMetrics.memoryUsage.slice(-5);
     if (recent.length < 3) return 'stable';
-    
-    const trend = recent[recent.length - 1] - recent[0];
-    if (trend > recent[0] * 0.1) return 'increasing';
-    if (trend < -recent[0] * 0.1) return 'decreasing';
+
+    const first = recent[0];
+    const last = recent[recent.length - 1];
+
+    if (first === undefined || last === undefined) return 'stable';
+
+    const trend = last - first;
+    if (trend > first * 0.1) return 'increasing';
+    if (trend < -first * 0.1) return 'decreasing';
     return 'stable';
   }
 
   private generatePerformanceRecommendations(): string[] {
     const recommendations: string[] = [];
-    
+
     if (this.calculateAverageApiTime() > 1000) {
       recommendations.push('API response times are slow - consider caching optimization');
     }
-    
+
     if (this.calculateErrorRate() > 5) {
       recommendations.push('High error rate detected - review error handling');
     }
-    
+
     if (this.calculateMemoryTrend() === 'increasing') {
       recommendations.push('Memory usage is increasing - check for memory leaks');
     }
-    
+
     return recommendations;
   }
 }
@@ -412,40 +500,38 @@ export const getAnalytics = (): AdvancedAnalytics => {
 export const useAnalytics = () => {
   const analytics = getAnalytics();
 
-  const trackSwipe = (direction: 'like' | 'pass' | 'superlike', petId: string) => {
+  const trackSwipe = (direction: 'like' | 'pass' | 'superlike', petId: string): void => {
     analytics.trackSwipe(direction, petId);
   };
 
-  const trackMessage = (matchId: string, messageLength: number) => {
+  const trackMessage = (matchId: string, messageLength: number): void => {
     analytics.trackMessage(matchId, messageLength);
   };
 
-  const trackInteraction = (element: string, action: string, metadata?: Record<string, any>) => {
+  const trackInteraction = (element: string, action: string, metadata?: Record<string, unknown>): void => {
     analytics.trackInteraction(element, action, metadata);
   };
 
-  const trackAIUsage = (feature: string, success: boolean, duration?: number, metadata?: Record<string, any>) => {
+  const trackAIUsage = (feature: string, success: boolean, duration: number, metadata?: Record<string, unknown>): void => {
     analytics.trackAIUsage(feature, success, duration, metadata);
   };
 
-  const trackPremiumFeatureAttempt = (feature: string, hasAccess: boolean) => {
+  const trackPremiumFeatureAttempt = (feature: string, hasAccess: boolean): void => {
     analytics.trackPremiumFeatureAttempt(feature, hasAccess);
   };
 
-  const trackMatchSuccess = (matchId: string, compatibilityScore?: number) => {
+  const trackMatchSuccess = (matchId: string, compatibilityScore: number): void => {
     analytics.trackMatchSuccess(matchId, compatibilityScore);
   };
 
-  const trackApiCall = (endpoint: string, duration: number, status: number) => {
+  const trackApiCall = (endpoint: string, duration: number, status: number): void => {
     analytics.trackApiCall(endpoint, duration, status);
   };
 
-  const generateReport = () => {
-    return {
-      behavior: analytics.generateUserBehaviorReport(),
-      performance: analytics.generatePerformanceReport(),
-    };
-  };
+  const generateReport = (): object => ({
+    behavior: analytics.generateUserBehaviorReport(),
+    performance: analytics.generatePerformanceReport(),
+  });
 
   return {
     trackSwipe,
@@ -468,7 +554,7 @@ export function withAnalytics<P extends object>(
   Component: React.ComponentType<P>,
   componentName: string
 ) {
-  const WrappedComponent = (props: P) => {
+  const WrappedComponent = (): JSX.Element => {
     const analytics = useAnalytics();
 
     React.useEffect(() => {
@@ -488,7 +574,8 @@ export function withAnalytics<P extends object>(
 */
 
 // ====== PERFORMANCE TRACKING UTILITIES ======
-export const trackAPIPerformance = (originalFetch: typeof fetch) => {
+export const _trackAPIPerformance = () => {
+  const originalFetch = window.fetch;
   return async (input: RequestInfo | URL, init?: RequestInit) => {
     const start = Date.now();
     const endpoint = typeof input === 'string' ? input : input.toString();
@@ -497,9 +584,9 @@ export const trackAPIPerformance = (originalFetch: typeof fetch) => {
     try {
       const response = await originalFetch(input, init);
       const duration = Date.now() - start;
-      
+
       analytics.trackApiCall(endpoint, duration, response.status);
-      
+
       return response;
     } catch (error) {
       const duration = Date.now() - start;
@@ -511,5 +598,4 @@ export const trackAPIPerformance = (originalFetch: typeof fetch) => {
 };
 
 // ====== EXPORTS ======
-export { AdvancedAnalytics };
 export default getAnalytics;

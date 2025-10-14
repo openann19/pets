@@ -4,8 +4,35 @@
  * Consistent across web and mobile platforms
  */
 
-import { Variants, Transition } from 'framer-motion';
-import { MOTION_CONFIG, TIMING } from '../theme/design-system';
+import type { Variants, Transition } from 'framer-motion';
+
+// Motion configuration constants
+const MOTION_CONFIG = {
+  spring: { type: 'spring' as const, stiffness: 300, damping: 25, mass: 1 },
+  micro: { type: 'spring' as const, stiffness: 400, damping: 30, mass: 0.8 },
+  smooth: { type: 'tween' as const, duration: 0.4, ease: 'easeInOut' as const },
+  bouncy: { type: 'spring' as const, stiffness: 200, damping: 15, mass: 1.2 },
+  layout: { type: 'spring' as const, stiffness: 350, damping: 28, mass: 1 },
+};
+
+// Timing constants
+const TIMING = {
+  instant: 0.1,
+  fast: 0.2,
+  normal: 0.3,
+  slow: 0.5,
+  verySlow: 0.8,
+  stagger: {
+    fast: 0.1,
+    normal: 0.15,
+    slow: 0.2,
+  },
+  duration: {
+    fast: 0.2,
+    normal: 0.3,
+    slow: 0.5,
+  },
+};
 
 // ====== CORE TRANSITIONS ======
 export const transitions = {
@@ -183,7 +210,7 @@ export const entranceVariants: Record<string, Variants> = {
 };
 
 // ====== HOVER ANIMATIONS ======
-export const hoverVariants: Record<string, any> = {
+export const hoverVariants: Record<string, unknown> = {
   // Standard lift
   lift: {
     scale: 1.02,
@@ -242,7 +269,7 @@ export const hoverVariants: Record<string, any> = {
 };
 
 // ====== TAP ANIMATIONS ======
-export const tapVariants: Record<string, any> = {
+export const tapVariants: Record<string, unknown> = {
   // Standard press
   press: {
     scale: 0.95,
@@ -611,7 +638,7 @@ export const notificationVariants: Record<string, Variants> = {
 };
 
 // ====== UTILITY FUNCTIONS ======
-export const motionUtils = {
+export const _motionUtils = {
   // Create custom spring transition
   createSpring: (config: Partial<typeof MOTION_CONFIG.spring>): Transition => ({
     ...MOTION_CONFIG.spring,
@@ -621,7 +648,7 @@ export const motionUtils = {
   // Create stagger container
   createStagger: (
     staggerDelay: number = TIMING.stagger.normal,
-    delayChildren: number = 0.1
+    delayChildren = 0.1
   ): Variants => ({
     animate: {
       transition: {

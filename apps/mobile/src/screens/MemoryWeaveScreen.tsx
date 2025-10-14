@@ -1,23 +1,26 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  Animated,
-  PanResponder,
-  StatusBar,
-  Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '@pawfectmatch/core';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  Dimensions,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
+import type { AIScreenProps } from '../navigation/types';
+
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -34,69 +37,15 @@ interface MemoryNode {
   };
 }
 
-interface MemoryWeaveScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      matchId: string;
-      petName: string;
-      memories?: MemoryNode[];
-    };
-  };
-}
+const MemoryWeaveScreen: React.FC<AIScreenProps> = ({ navigation }) => {
+  // Mock data for demo purposes
+  const matchId = 'demo-match-id';
+  const petName = 'Demo Pet';
+  const initialMemories: MemoryNode[] = useMemo(() => [], []);
+  const { isDark } = useTheme();
 
-export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScreenProps) {
-  const { matchId, petName, memories: initialMemories } = route.params;
-  const { isDark, colors } = useTheme();
-  
-  const [memories, setMemories] = useState<MemoryNode[]>(initialMemories || [
-    {
-      id: 'memory_1',
-      type: 'text',
-      content: 'First time we met at the dog park! Buddy was so excited to meet Luna 🐕💕',
-      title: 'First Meeting',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
-      metadata: {
-        location: 'Elm Street Dog Park',
-        participants: ['Buddy', 'Luna'],
-        emotion: 'excited'
-      }
-    },
-    {
-      id: 'memory_2',
-      type: 'image',
-      content: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400',
-      title: 'Perfect Playdate',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-      metadata: {
-        location: 'Central Park',
-        participants: ['Buddy', 'Luna'],
-        emotion: 'playful'
-      }
-    },
-    {
-      id: 'memory_3',
-      type: 'text',
-      content: 'They\'ve become inseparable! Best friends forever 🌟',
-      title: 'Best Friends',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-      metadata: {
-        emotion: 'love'
-      }
-    },
-    {
-      id: 'memory_4',
-      type: 'image',
-      content: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400',
-      title: 'Adventure Time',
-      timestamp: new Date().toISOString(),
-      metadata: {
-        location: 'Beach Walk',
-        participants: ['Buddy', 'Luna'],
-        emotion: 'happy'
-      }
-    }
-  ]);
+  const [memories, setMemories] = useState<MemoryNode[]>(initialMemories);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -104,11 +53,68 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
+  // Load memories from API
+  const loadMemories = useCallback(async (): Promise<void> => {
+    try {
+      setIsLoading(true);
+
+      // If memories were passed as params, use those
+      if (initialMemories.length > 0) {
+        setMemories(initialMemories);
+        setIsLoading(false);
+        // continue below
+      }
+
+      // Otherwise fetch from API
+      const api = (process.env as Record<string, string | undefined>)['EXPO_PUBLIC_API_URL'] || 'http://localhost:3001/api';
+
+      // Get token from AsyncStorage
+      let token: string | null = null;
+      try {
+        token = await AsyncStorage.getItem('authToken');
+      } catch (error) {
+        logger.warn('Failed to get token from storage', { error });
+      }
+
+      const response = await fetch(`${api}/memories/${matchId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token ?? ''}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status.toString()}`);
+      }
+
+      const data = await response.json() as { memories: MemoryNode[]; match: any };
+      setMemories(data.memories);
+
+      // Update pet name from API response (names available if needed later)
+      if (data.match?.pet1 && data.match?.pet2) {
+        // data.match.pet1.name, data.match.pet2.name
+      }
+    } catch (error) {
+      logger.error('Failed to load memories:', { error });
+      Alert.alert(
+        'Connection Error',
+        'Failed to load memories. Please check your connection and try again.',
+        [{ text: 'Retry', onPress: () => { loadMemories().catch(logger.error); } }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [initialMemories, matchId]);
+
   useEffect(() => {
     StatusBar.setBarStyle('light-content');
-    
+
+    // Load memories
+    loadMemories().catch(logger.error);
+
     // Entrance animation
-    Animated.parallel([
+    (Animated as any).parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 800,
@@ -125,30 +131,30 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
     return () => {
       StatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content');
     };
-  }, []);
+  }, [matchId, fadeAnim, scaleAnim, isDark, loadMemories]);
 
-  const handleScroll = useCallback((event: any) => {
+  const handleScroll = useCallback((event: { nativeEvent: { contentOffset: { x: number } } }) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / screenWidth);
-    
+
     if (index !== currentIndex && index >= 0 && index < memories.length) {
       setCurrentIndex(index);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(logger.error);
     }
   }, [currentIndex, memories.length]);
 
   const scrollToIndex = useCallback((index: number) => {
-    if (scrollViewRef.current && index >= 0 && index < memories.length) {
+    if (scrollViewRef.current !== null && index >= 0 && index < memories.length) {
       scrollViewRef.current.scrollTo({
         x: index * screenWidth,
         animated: true,
       });
       setCurrentIndex(index);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(logger.error);
     }
   }, [memories.length]);
 
-  const getEmotionColor = (emotion?: string) => {
+  const getEmotionColor = (emotion?: string): string => {
     switch (emotion) {
       case 'happy': return '#FFD700';
       case 'excited': return '#FF6B6B';
@@ -158,7 +164,7 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
     }
   };
 
-  const getEmotionEmoji = (emotion?: string) => {
+  const getEmotionEmoji = (emotion?: string): string => {
     switch (emotion) {
       case 'happy': return '😊';
       case 'excited': return '🎉';
@@ -168,18 +174,18 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
     }
   };
 
-  const formatTimestamp = (timestamp: string) => {
+  const formatTimestamp = (timestamp: string): string => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffInDays === 0) return 'Today';
     if (diffInDays === 1) return 'Yesterday';
-    if (diffInDays < 7) return `${diffInDays} days ago`;
+    if (diffInDays < 7) return `${diffInDays.toString()} days ago`;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const renderMemoryCard = (memory: MemoryNode, index: number) => {
+  const renderMemoryCard = (memory: MemoryNode, index: number): React.JSX.Element => {
     const inputRange = [
       (index - 1) * screenWidth,
       index * screenWidth,
@@ -211,12 +217,12 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
           styles.memoryCard,
           {
             transform: [
-              { scale },
-              { perspective: 1000 },
-              { rotateY },
-            ],
-            opacity,
-          },
+              { scale: scale as any },
+              { perspective: 1000 as any },
+              { rotateY: rotateY as any },
+            ] as any,
+            opacity: opacity as any,
+          } as any,
         ]}
       >
         <LinearGradient
@@ -234,7 +240,7 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
               </View>
               <View style={[
                 styles.emotionBadge,
-                { backgroundColor: getEmotionColor(memory.metadata?.emotion) + '30' }
+                { backgroundColor: `${getEmotionColor(memory.metadata?.emotion)}30` }
               ]}>
                 <Text style={styles.emotionEmoji}>
                   {getEmotionEmoji(memory.metadata?.emotion)}
@@ -264,15 +270,15 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
             </View>
 
             {/* Memory Metadata */}
-            {memory.metadata && (
+            {memory.metadata !== undefined && (
               <View style={styles.memoryMetadata}>
-                {memory.metadata.location && (
+                {memory.metadata.location !== undefined && (
                   <View style={styles.metadataItem}>
                     <Ionicons name="location-outline" size={14} color="#fff" />
                     <Text style={styles.metadataText}>{memory.metadata.location}</Text>
                   </View>
                 )}
-                {memory.metadata.participants && (
+                {memory.metadata.participants !== undefined && (
                   <View style={styles.metadataItem}>
                     <Ionicons name="people-outline" size={14} color="#fff" />
                     <Text style={styles.metadataText}>
@@ -288,7 +294,7 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
     );
   };
 
-  const renderConnectionPath = () => {
+  const renderConnectionPath = (): React.JSX.Element => {
     const pathPoints = memories.map((_, index) => {
       const x = (index / (memories.length - 1)) * (screenWidth - 80) + 40;
       const y = screenHeight * 0.85;
@@ -299,8 +305,10 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
       <View style={styles.connectionPath}>
         {pathPoints.map((point, index) => {
           if (index === pathPoints.length - 1) return null;
-          
+
           const nextPoint = pathPoints[index + 1];
+          if (nextPoint === undefined) return null;
+
           const distance = Math.sqrt(
             Math.pow(nextPoint.x - point.x, 2) + Math.pow(nextPoint.y - point.y, 2)
           );
@@ -315,14 +323,14 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
                   left: point.x,
                   top: point.y,
                   width: distance,
-                  transform: [{ rotate: `${angle}deg` }],
+                  transform: [{ rotate: `${angle.toString()}deg` }],
                   opacity: index <= currentIndex ? 1 : 0.3,
                 },
               ]}
             />
           );
         })}
-        
+
         {pathPoints.map((point, index) => (
           <TouchableOpacity
             key={`dot-${index}`}
@@ -335,12 +343,37 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
                 transform: [{ scale: index === currentIndex ? 1.2 : 1 }],
               },
             ]}
-            onPress={() => scrollToIndex(index)}
+            onPress={() => { scrollToIndex(index); }}
           />
         ))}
       </View>
     );
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#1a1a2e', '#16213e', '#0f3460']}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={styles.loadingContainer}>
+          <Animated.View
+            style={{
+              // Animated style typing workaround
+              transform: [
+                { scale: scaleAnim as any }
+              ] as any
+            }}
+          >
+            <BlurView intensity={20} style={styles.loadingBlur}>
+              <Text style={styles.loadingText}>Loading memories...</Text>
+            </BlurView>
+          </Animated.View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -352,11 +385,11 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
 
       {/* Header */}
       <SafeAreaView style={styles.header}>
-        <Animated.View style={[styles.headerContent, { opacity: fadeAnim }]}>
+        <Animated.View style={[styles.headerContent, { opacity: fadeAnim as any }]}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(logger.error);
               navigation.goBack();
             }}
           >
@@ -364,7 +397,7 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
               <Ionicons name="arrow-back" size={24} color="#fff" />
             </BlurView>
           </TouchableOpacity>
-          
+
           <View style={styles.headerInfo}>
             <Text style={styles.headerTitle}>Memory Weave</Text>
             <Text style={styles.headerSubtitle}>{petName}</Text>
@@ -373,7 +406,7 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
           <TouchableOpacity
             style={styles.shareButton}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(logger.error);
               // Share functionality
             }}
           >
@@ -385,12 +418,12 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
       </SafeAreaView>
 
       {/* Memory Cards */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.cardsContainer,
-          { 
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }]
+          {
+            opacity: fadeAnim as any,
+            transform: [{ scale: scaleAnim as any }] as any
           }
         ]}
       >
@@ -399,9 +432,9 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          onScroll={Animated.event(
+          onScroll={(Animated as any).event(
             [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-            { 
+            {
               useNativeDriver: false,
               listener: handleScroll,
             }
@@ -416,12 +449,12 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
       </Animated.View>
 
       {/* Connection Path */}
-      <Animated.View style={[styles.pathContainer, { opacity: fadeAnim }]}>
+      <Animated.View style={[styles.pathContainer, { opacity: fadeAnim as any }]}>
         {renderConnectionPath()}
       </Animated.View>
 
       {/* Memory Counter */}
-      <Animated.View style={[styles.counterContainer, { opacity: fadeAnim }]}>
+      <Animated.View style={[styles.counterContainer, { opacity: fadeAnim as any }]}>
         <BlurView intensity={20} style={styles.counterBlur}>
           <Text style={styles.counterText}>
             {currentIndex + 1} of {memories.length}
@@ -430,7 +463,9 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
       </Animated.View>
     </View>
   );
-}
+};
+
+export default MemoryWeaveScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -618,6 +653,22 @@ const styles = StyleSheet.create({
   counterText: {
     fontSize: 14,
     color: '#fff',
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  loadingBlur: {
+    paddingHorizontal: 30,
+    paddingVertical: 20,
+    borderRadius: 16,
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 18,
     fontWeight: '600',
   },
 });

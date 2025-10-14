@@ -383,7 +383,7 @@ export const BREAKPOINTS = {
 } as const;
 
 // ====== Z-INDEX LAYERS ======
-export const Z_INDEX = {
+export const _Z_INDEX = {
   hide: -1,
   auto: 'auto',
   base: 0,
@@ -464,7 +464,7 @@ export const VARIANTS = {
 } as const;
 
 // ====== UTILITY FUNCTIONS ======
-export const utils = {
+export const _utils = {
   // Get color with opacity
   withOpacity: (color: string, opacity: number) => `${color}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
 

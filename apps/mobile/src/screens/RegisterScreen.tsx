@@ -1,16 +1,9 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  StyleSheet, 
-  TouchableOpacity, 
-  KeyboardAvoidingView, 
-  Platform,
-  ScrollView 
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { logger } from '@pawfectmatch/core';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React, { useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+;
 
 // Define the navigation props type
 type RootStackParamList = {
@@ -21,7 +14,7 @@ type RootStackParamList = {
 
 type RegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
-const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
+const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -30,70 +23,77 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
     lastName: '',
     dateOfBirth: '',
   });
-  
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  
-  const validateForm = () => {
+
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+    firstName?: string;
+    lastName?: string;
+    dateOfBirth?: string;
+  }>({});
+
+  const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     // Email validation
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors['email'] = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email format is invalid';
+      newErrors['email'] = 'Email format is invalid';
     }
-    
+
     // Password validation
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors['password'] = 'Password is required';
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors['password'] = 'Password must be at least 8 characters';
     }
-    
+
     // Confirm password validation
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors['confirmPassword'] = 'Passwords do not match';
     }
-    
+
     // First name validation
     if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
+      newErrors['firstName'] = 'First name is required';
     }
-    
+
     // Last name validation
     if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
+      newErrors['lastName'] = 'Last name is required';
     }
-    
+
     // Date of birth validation
     if (!formData.dateOfBirth.trim()) {
-      newErrors.dateOfBirth = 'Date of birth is required';
+      newErrors['dateOfBirth'] = 'Date of birth is required';
     } else if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.dateOfBirth)) {
-      newErrors.dateOfBirth = 'Date format should be YYYY-MM-DD';
+      newErrors['dateOfBirth'] = 'Date format should be YYYY-MM-DD';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
-  const handleRegister = () => {
+
+  const handleRegister = (): void => {
     if (validateForm()) {
       // Handle registration logic here
-      console.log('Register with:', formData);
-      
+      logger.info('Register with:', { formData });
+
       // For demo purposes, navigate to Login
       // In a real app, you would register first
       navigation.navigate('Login');
     }
   };
-  
-  const updateFormField = (field: string, value: string) => {
+
+  const updateFormField = (field: string, value: string): void => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -101,20 +101,20 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
         style={styles.keyboardView}
       >
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.navigate('Login')}
           >
             <Text style={styles.backButtonText}>← Back to Login</Text>
           </TouchableOpacity>
-          
+
           <View style={styles.header}>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>
               Join PawfectMatch to find matches for your pets
             </Text>
           </View>
-          
+
           <View style={styles.form}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email</Text>
@@ -127,9 +127,9 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
                 keyboardType="email-address"
                 autoCorrect={false}
               />
-              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+              {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
             </View>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>First Name</Text>
               <TextInput
@@ -138,9 +138,9 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
                 onChangeText={(text) => updateFormField('firstName', text)}
                 placeholder="John"
               />
-              {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
+              {errors.firstName ? <Text style={styles.errorText}>{errors.firstName}</Text> : null}
             </View>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Last Name</Text>
               <TextInput
@@ -149,9 +149,9 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
                 onChangeText={(text) => updateFormField('lastName', text)}
                 placeholder="Doe"
               />
-              {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
+              {errors.lastName ? <Text style={styles.errorText}>{errors.lastName}</Text> : null}
             </View>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Date of Birth (YYYY-MM-DD)</Text>
               <TextInput
@@ -161,9 +161,9 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
                 placeholder="1990-01-01"
                 keyboardType="numbers-and-punctuation"
               />
-              {errors.dateOfBirth && <Text style={styles.errorText}>{errors.dateOfBirth}</Text>}
+              {errors.dateOfBirth ? <Text style={styles.errorText}>{errors.dateOfBirth}</Text> : null}
             </View>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Password</Text>
               <TextInput
@@ -173,9 +173,9 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
                 placeholder="********"
                 secureTextEntry
               />
-              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+              {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
             </View>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Confirm Password</Text>
               <TextInput
@@ -185,13 +185,13 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
                 placeholder="********"
                 secureTextEntry
               />
-              {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+              {errors.confirmPassword ? <Text style={styles.errorText}>{errors.confirmPassword}</Text> : null}
             </View>
-            
+
             <TouchableOpacity style={styles.button} onPress={handleRegister}>
               <Text style={styles.buttonText}>Create Account</Text>
             </TouchableOpacity>
-            
+
             <View style={styles.termsContainer}>
               <Text style={styles.termsText}>
                 By signing up, you agree to our Terms of Service and Privacy Policy

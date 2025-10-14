@@ -1,14 +1,15 @@
+import * as Haptics from 'expo-haptics';
 import { useCallback } from 'react';
-import { useTheme, ThemeMode } from '../contexts/ThemeContext';
-import { Haptics } from 'expo-haptics';
 import { Alert } from 'react-native';
+import type { ThemeColors, ThemeMode, ThemeShadows, ThemeStyles } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export interface UseThemeToggleReturn {
   isDark: boolean;
   themeMode: ThemeMode;
-  colors: any;
-  styles: any;
-  shadows: any;
+  colors: ThemeColors;
+  styles: ThemeStyles;
+  shadows: ThemeShadows;
   toggleTheme: () => void;
   setLightTheme: () => void;
   setDarkTheme: () => void;
@@ -17,14 +18,14 @@ export interface UseThemeToggleReturn {
 }
 
 export const useThemeToggle = (): UseThemeToggleReturn => {
-  const { 
-    isDark, 
-    themeMode, 
-    colors, 
-    styles, 
-    shadows, 
-    setThemeMode, 
-    toggleTheme: contextToggleTheme 
+  const {
+    isDark,
+    themeMode,
+    colors,
+    styles,
+    shadows,
+    setThemeMode,
+    toggleTheme: contextToggleTheme
   } = useTheme();
 
   // Enhanced toggle with haptic feedback
@@ -84,7 +85,7 @@ export const useThemeToggle = (): UseThemeToggleReturn => {
           style: 'cancel',
         },
       ],
-      { 
+      {
         cancelable: true,
         userInterfaceStyle: isDark ? 'dark' : 'light'
       }

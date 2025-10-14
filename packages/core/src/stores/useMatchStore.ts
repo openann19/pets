@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { Pet, Match } from '../types';
+import type { Pet, Match } from '../types/models';
 
 export interface MatchState {
   // Current pet being viewed in swipe
@@ -48,101 +48,113 @@ export interface MatchState {
  */
 export const useMatchStore = create<MatchState>()(
   immer((set) => ({
-    currentPet: null,
-    swipePets: [],
-    matches: [],
-    activeMatchId: null,
+    currentPet: null as string | null,
+    swipePets: [] as Pet[],
+    matches: [] as Match[],
+    activeMatchId: null as string | null,
     paginationInfo: {
-      page: 1,
-      hasMore: true,
-      isLoading: false,
+      page: 1 as number,
+      hasMore: true as boolean,
+      isLoading: false as boolean,
     },
     swipeHistory: {
-      likes: [],
-      passes: [],
-      superlikes: [],
+      likes: [] as string[],
+      passes: [] as string[],
+      superlikes: [] as string[],
     },
 
-    // Set the current pet being viewed
-    setCurrentPet: (petId: string | null) => set((state) => {
-      state.currentPet = petId;
-      return state;
-    }),
+    // Set current pet being viewed
+    setCurrentPet: (petId: string | null) => {
+      set((state) => ({
+        ...state,
+        currentPet: petId,
+      }));
+    },
 
-    // Replace all swipe pets
-    setSwipePets: (pets: Pet[]) => set((state) => {
-      state.swipePets = pets;
-      return state;
-    }),
+    // Set swipe pets
+    setSwipePets: (pets: Pet[]) => {
+      set((state) => {
+        state.swipePets = pets;
+      });
+    },
 
-    // Add more pets to swipe deck
-    addSwipePets: (pets: Pet[]) => set((state) => {
-      state.swipePets = [...state.swipePets, ...pets];
-      return state;
-    }),
+    // Add pets to swipe queue
+    addSwipePets: (pets: Pet[]) => {
+      set((state) => {
+        state.swipePets = [...state.swipePets, ...pets];
+      });
+    },
 
     // Set all matches
-    setMatches: (matches: Match[]) => set((state) => {
-      state.matches = matches;
-      return state;
-    }),
+    setMatches: (matches: Match[]) => {
+      set((state) => {
+        state.matches = matches;
+      });
+    },
 
     // Add a new match
-    addMatch: (match: Match) => set((state) => {
-      state.matches.unshift(match);
-      return state;
-    }),
+    addMatch: (match: Match) => {
+      set((state) => {
+        state.matches.unshift(match);
+      });
+    },
 
     // Update an existing match
-    updateMatch: (matchId: string, data: Partial<Match>) => set((state) => {
-      const index = state.matches.findIndex(match => match._id === matchId);
-      if (index !== -1) {
-        const existing = state.matches[index];
-        if (existing) {
-          Object.assign(existing, data);
+    updateMatch: (matchId: string, data: Partial<Match>) => {
+      set((state) => {
+        const index = state.matches.findIndex(match => match._id === matchId);
+        if (index !== -1) {
+          const existing = state.matches[index];
+          if (existing !== undefined) {
+            Object.assign(existing, data);
+          }
         }
-      }
-      return state;
-    }),
+      });
+    },
 
     // Remove a match
-    removeMatch: (matchId: string) => set((state) => {
-      state.matches = state.matches.filter(match => match._id !== matchId);
-      return state;
-    }),
+    removeMatch: (matchId: string) => {
+      set((state) => {
+        state.matches = state.matches.filter(match => match._id !== matchId);
+      });
+    },
 
     // Set active match for chat
-    setActiveMatchId: (matchId: string | null) => set((state) => {
-      state.activeMatchId = matchId;
-      return state;
-    }),
+    setActiveMatchId: (matchId: string | null) => {
+      set((state) => {
+        state.activeMatchId = matchId;
+      });
+    },
 
     // Update pagination info
-    setPaginationInfo: (info: Partial<MatchState['paginationInfo']>) => set((state) => {
-      state.paginationInfo = { ...state.paginationInfo, ...info };
-      return state;
-    }),
+    setPaginationInfo: (info: Partial<MatchState['paginationInfo']>) => {
+      set((state) => {
+        state.paginationInfo = { ...state.paginationInfo, ...info };
+      });
+    },
 
     // Add to swipe history
-    addToSwipeHistory: (petId: string, action: 'like' | 'pass' | 'superlike') => set((state) => {
-      if (action === 'like') {
-        state.swipeHistory.likes.push(petId);
-      } else if (action === 'pass') {
-        state.swipeHistory.passes.push(petId);
-      } else if (action === 'superlike') {
-        state.swipeHistory.superlikes.push(petId);
-      }
-      return state;
-    }),
+    addToSwipeHistory: (petId: string, action: 'like' | 'pass' | 'superlike') => {
+      set((state) => {
+        if (action === 'like') {
+          state.swipeHistory.likes.push(petId);
+        } else if (action === 'pass') {
+          state.swipeHistory.passes.push(petId);
+        } else {
+          state.swipeHistory.superlikes.push(petId);
+        }
+      });
+    },
 
     // Clear swipe history
-    clearSwipeHistory: () => set((state) => {
-      state.swipeHistory = {
-        likes: [],
-        passes: [],
-        superlikes: [],
-      };
-      return state;
-    }),
+    clearSwipeHistory: () => {
+      set((state) => {
+        state.swipeHistory = {
+          likes: [],
+          passes: [],
+          superlikes: [],
+        };
+      });
+    },
   }))
 );

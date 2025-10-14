@@ -1,28 +1,27 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
-  Alert,
-  Platform,
-  StatusBar,
-  Animated,
-  PanResponder,
-} from 'react-native';
-import MapView, { Marker, Circle, PROVIDER_GOOGLE, Region } from 'react-native-maps';
-import Geolocation from '@react-native-community/geolocation';
-import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { logger } from '@pawfectmatch/core';
 import { BlurView } from '@react-native-community/blur';
-import LinearGradient from 'react-native-linear-gradient';
-import { useAuthStore } from '@pawfectmatch/core';
-import { PulsePin } from '@pawfectmatch/core';
-import io, { Socket } from 'socket.io-client';
+import Geolocation from '@react-native-community/geolocation';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Animated, Dimensions, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import type { Region } from 'react-native-maps';
+import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { PERMISSIONS, request, RESULTS } from 'react-native-permissions';
+// import { useAuthStore } from '@pawfectmatch/core';
+import type { Socket } from 'socket.io-client';
+import io from 'socket.io-client';
+import type { TabScreenProps } from '../navigation/types';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+
+interface PulsePin {
+  _id: string;
+  coordinates: [number, number];
+  activity: string;
+  message?: string;
+  createdAt: string;
+  userId: string;
+}
 
 interface MapFilters {
   showMyPets: boolean;
@@ -39,15 +38,17 @@ interface MapStats {
   recentActivity: number;
 }
 
-const MapScreen: React.FC = () => {
-  const { user } = useAuthStore();
+type MapScreenProps = TabScreenProps<'Map'>;
+
+const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
+  // const { user } = useAuthStore(); // Currently unused
   const [region, setRegion] = useState<Region>({
     latitude: 40.7589,
     longitude: -73.9851,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
-  
+
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [pins, setPins] = useState<PulsePin[]>([]);
   const [selectedPin, setSelectedPin] = useState<PulsePin | null>(null);
@@ -85,12 +86,12 @@ const MapScreen: React.FC = () => {
   // Request location permissions
   const requestLocationPermission = useCallback(async () => {
     try {
-      const permission = Platform.OS === 'ios' 
-        ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE 
+      const permission = Platform.OS === 'ios'
+        ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
         : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
 
       const result = await request(permission);
-      
+
       if (result === RESULTS.GRANTED) {
         getCurrentLocation();
       } else {
@@ -101,7 +102,7 @@ const MapScreen: React.FC = () => {
         );
       }
     } catch (error) {
-      console.warn('Location permission error:', error);
+      logger.warn('Location permission error:', { error });
     }
   }, []);
 
@@ -119,7 +120,7 @@ const MapScreen: React.FC = () => {
         });
       },
       (error) => {
-        console.warn('Geolocation error:', error);
+        logger.warn('Geolocation error:', { error });
         Alert.alert('Location Error', 'Unable to get your current location.');
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
@@ -128,21 +129,22 @@ const MapScreen: React.FC = () => {
 
   // Initialize socket connection
   useEffect(() => {
-    const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
+    const socketUrl = process.env['REACT_APP_SOCKET_URL'] || 'http://localhost:5000';
     const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       upgrade: true,
     });
 
     newSocket.on('connect', () => {
-      console.log('📱 Mobile map connected to socket');
-      if (user?.token) {
-        newSocket.emit('authenticate', user.token);
-      }
+      logger.info('📱 Mobile map connected to socket');
+      // Note: Authentication token access would need to be added to useAuthStore
+      // if (user?.token) {
+      //   newSocket.emit('authenticate', user.token);
+      // }
     });
 
     newSocket.on('authenticated', () => {
-      console.log('✅ Mobile map authenticated');
+      logger.info('✅ Mobile map authenticated');
       newSocket.emit('request:initial-pins', { radius: filters.radius });
     });
 
@@ -166,7 +168,7 @@ const MapScreen: React.FC = () => {
     return () => {
       newSocket.disconnect();
     };
-  }, [user?.token, filters.radius]);
+  }, [filters.radius]); // Removed user?.token since it's not available
 
   // Request location permission on mount
   useEffect(() => {
@@ -190,33 +192,31 @@ const MapScreen: React.FC = () => {
   }, [pins.length]);
 
   // Filter pins based on current filters
-  const filteredPins = useMemo(() => {
-    return pins.filter(pin => {
-      if (!filters.activityTypes.includes(pin.activity)) return false;
-      // Add distance filtering if user location is available
-      if (userLocation && filters.radius) {
-        const distance = calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          pin.coordinates[1],
-          pin.coordinates[0]
-        );
-        return distance <= filters.radius;
-      }
-      return true;
-    });
-  }, [pins, filters, userLocation]);
+  const filteredPins = useMemo(() => pins.filter(pin => {
+    if (!filters.activityTypes.includes(pin.activity)) return false;
+    // Add distance filtering if user location is available
+    if (userLocation && filters.radius) {
+      const distance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        pin.coordinates[1],
+        pin.coordinates[0]
+      );
+      return distance <= filters.radius;
+    }
+    return true;
+  }), [pins, filters, userLocation]);
 
   // Calculate distance between two points
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371; // Earth's radius in kilometers
     const dLat = toRadians(lat2 - lat1);
     const dLon = toRadians(lon2 - lon1);
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
@@ -231,7 +231,7 @@ const MapScreen: React.FC = () => {
   const toggleFilters = useCallback(() => {
     const toValue = showFilters ? 0 : 300;
     setShowFilters(!showFilters);
-    
+
     Animated.spring(filterPanelHeight, {
       toValue,
       useNativeDriver: false,
@@ -272,7 +272,7 @@ const MapScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1F2937" />
-      
+
       {/* Header */}
       <LinearGradient
         colors={['#1F2937', '#374151']}
@@ -288,7 +288,7 @@ const MapScreen: React.FC = () => {
               <Text style={styles.headerSubtitle}>Real-time locations</Text>
             </View>
           </View>
-          
+
           <TouchableOpacity
             style={styles.filterButton}
             onPress={toggleFilters}
@@ -298,7 +298,7 @@ const MapScreen: React.FC = () => {
         </View>
 
         {/* Stats Bar */}
-        <Animated.View style={[styles.statsContainer, { opacity: statsOpacity }]}>
+        <Animated.View style={[styles.statsContainer, { opacity: statsOpacity } as any]}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{stats.activePets}</Text>
             <Text style={styles.statLabel}>Active</Text>
@@ -320,24 +320,22 @@ const MapScreen: React.FC = () => {
         style={styles.map}
         region={region}
         onRegionChangeComplete={setRegion}
-        showsUserLocation={true}
+        showsUserLocation
         showsMyLocationButton={false}
-        loadingEnabled={true}
+        loadingEnabled
       >
         {/* User location marker */}
-        {userLocation && (
-          <Marker
-            coordinate={userLocation}
-            title="Your Location"
-            pinColor="#EC4899"
-          />
-        )}
+        {userLocation ? <Marker
+          coordinate={userLocation}
+          title="Your Location"
+          pinColor="#EC4899"
+        /> : null}
 
         {/* Pet activity markers */}
         {filteredPins.map((pin) => {
           const isMatch = Math.random() > 0.7; // Simulate matches
           return (
-            <React.Fragment key={pin._id}>
+            <Fragment key={pin._id}>
               <Marker
                 coordinate={{
                   latitude: pin.coordinates[1],
@@ -348,7 +346,7 @@ const MapScreen: React.FC = () => {
                 pinColor={getMarkerColor(pin.activity, isMatch)}
                 onPress={() => handleMarkerPress(pin)}
               />
-              
+
               {/* Activity radius circle */}
               <Circle
                 center={{
@@ -360,13 +358,13 @@ const MapScreen: React.FC = () => {
                 fillColor={`${getMarkerColor(pin.activity, isMatch)}20`}
                 strokeWidth={2}
               />
-            </React.Fragment>
+            </Fragment>
           );
         })}
       </MapView>
 
       {/* Filter Panel */}
-      <Animated.View style={[styles.filterPanel, { height: filterPanelHeight }]}>
+      <Animated.View style={[styles.filterPanel, { height: filterPanelHeight } as any]}>
         <BlurView
           style={styles.filterBlur}
           blurType="light"
@@ -374,7 +372,7 @@ const MapScreen: React.FC = () => {
         >
           <ScrollView style={styles.filterContent}>
             <Text style={styles.filterTitle}>Map Filters</Text>
-            
+
             {/* Activity Types */}
             <Text style={styles.filterSectionTitle}>Activity Types</Text>
             <View style={styles.activityGrid}>
@@ -413,7 +411,7 @@ const MapScreen: React.FC = () => {
             <View style={styles.sliderContainer}>
               {/* Simple slider implementation */}
               <View style={styles.sliderTrack}>
-                <View 
+                <View
                   style={[
                     styles.sliderThumb,
                     { left: `${(filters.radius / 50) * 100}%` }
@@ -438,14 +436,14 @@ const MapScreen: React.FC = () => {
         >
           <Text style={styles.fabIcon}>👁️</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={[styles.fab, styles.locationFab]}
           onPress={getCurrentLocation}
         >
           <Text style={styles.fabIcon}>📍</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={[styles.fab, styles.updateFab]}
           onPress={updateUserLocation}
@@ -457,50 +455,46 @@ const MapScreen: React.FC = () => {
       {/* Pin Detail Modal */}
       <Modal
         visible={!!selectedPin}
-        transparent={true}
+        transparent
         animationType="slide"
         onRequestClose={() => setSelectedPin(null)}
       >
         <View style={styles.modalOverlay}>
           <BlurView style={styles.modalBlur} blurType="dark" blurAmount={10}>
             <View style={styles.modalContent}>
-              {selectedPin && (
-                <>
-                  <Text style={styles.modalTitle}>
-                    {activityTypes.find(a => a.id === selectedPin.activity)?.emoji} {' '}
-                    {selectedPin.activity.charAt(0).toUpperCase() + selectedPin.activity.slice(1)}
-                  </Text>
-                  
-                  {selectedPin.message && (
-                    <Text style={styles.modalMessage}>{selectedPin.message}</Text>
-                  )}
-                  
-                  <Text style={styles.modalTime}>
-                    {new Date(selectedPin.createdAt).toLocaleTimeString()}
-                  </Text>
-                  
-                  <View style={styles.modalActions}>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.likeButton]}
-                    >
-                      <Text style={styles.modalButtonText}>❤️ Like</Text>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.chatButton]}
-                    >
-                      <Text style={styles.modalButtonText}>💬 Chat</Text>
-                    </TouchableOpacity>
-                  </View>
-                  
+              {selectedPin ? <>
+                <Text style={styles.modalTitle}>
+                  {activityTypes.find(a => a.id === selectedPin.activity)?.emoji} {' '}
+                  {selectedPin.activity.charAt(0).toUpperCase() + selectedPin.activity.slice(1)}
+                </Text>
+
+                {selectedPin.message ? <Text style={styles.modalMessage}>{selectedPin.message}</Text> : null}
+
+                <Text style={styles.modalTime}>
+                  {new Date(selectedPin.createdAt).toLocaleTimeString()}
+                </Text>
+
+                <View style={styles.modalActions}>
                   <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setSelectedPin(null)}
+                    style={[styles.modalButton, styles.likeButton]}
                   >
-                    <Text style={styles.closeButtonText}>Close</Text>
+                    <Text style={styles.modalButtonText}>❤️ Like</Text>
                   </TouchableOpacity>
-                </>
-              )}
+
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.chatButton]}
+                  >
+                    <Text style={styles.modalButtonText}>💬 Chat</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setSelectedPin(null)}
+                >
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </> : null}
             </View>
           </BlurView>
         </View>

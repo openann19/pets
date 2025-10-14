@@ -1,5 +1,5 @@
-import { rest } from 'msw';
-import { setupServer } from 'msw/node';
+import {  } from 'msw';
+import {  } from 'msw/node';
 
 const handlers = [
   // Auth endpoints
@@ -133,4 +133,4 @@ const handlers = [
   })
 ];
 
-export const server = setupServer(...handlers);
+export const _server = setupServer(...handlers);

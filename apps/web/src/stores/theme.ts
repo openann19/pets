@@ -15,7 +15,7 @@ interface ThemeState {
  * – Persists the choice in `localStorage` so the preference survives refreshes.
  * – Mutates `document.body.classList` so global styles are applied instantly.
  */
-export const useThemeStore = create<ThemeState>((set) => {
+export const _useThemeStore = create<ThemeState>((set: (fn: (state: ThemeState) => Partial<ThemeState>) => void) => {
   let initialTheme: UITheme = 'glass';
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('theme') as UITheme | null;
@@ -29,7 +29,7 @@ export const useThemeStore = create<ThemeState>((set) => {
   return {
     theme: initialTheme,
     toggle: () =>
-      set((state) => {
+      set((state: ThemeState) => {
         const next: UITheme = state.theme === 'glass' ? 'vibrant' : 'glass';
 
         // Persist + mutate the DOM

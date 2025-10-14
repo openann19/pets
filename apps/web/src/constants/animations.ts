@@ -5,35 +5,35 @@
 
 // ====== PREMIUM MOTION CONFIGS ======
 export const SPRING_CONFIG = {
-  type: "spring" as const,
+  type: 'spring' as const,
   stiffness: 300,
   damping: 30,
   mass: 1,
 };
 
 export const MICRO_CONFIG = {
-  type: "spring" as const,
+  type: 'spring' as const,
   stiffness: 400,
   damping: 25,
   mass: 0.8,
 };
 
 export const SMOOTH_CONFIG = {
-  type: "spring" as const,
+  type: 'spring' as const,
   stiffness: 200,
   damping: 35,
   mass: 1.2,
 };
 
 export const BOUNCY_CONFIG = {
-  type: "spring" as const,
+  type: 'spring' as const,
   stiffness: 600,
   damping: 15,
   mass: 0.6,
 };
 
 // ====== STAGGER ANIMATIONS ======
-export const STAGGER_CONFIG = {
+export const _STAGGER_CONFIG = {
   animate: {
     transition: {
       staggerChildren: 0.1,
@@ -42,7 +42,7 @@ export const STAGGER_CONFIG = {
   },
 };
 
-export const FAST_STAGGER_CONFIG = {
+export const _FAST_STAGGER_CONFIG = {
   animate: {
     transition: {
       staggerChildren: 0.05,
@@ -52,21 +52,21 @@ export const FAST_STAGGER_CONFIG = {
 };
 
 // ====== PREMIUM ANIMATION VARIANTS ======
-export const PREMIUM_VARIANTS = {
+export const _PREMIUM_VARIANTS = {
   fadeInUp: {
     initial: { opacity: 0, y: 24, scale: 0.95 },
     animate: { opacity: 1, y: 0, scale: 1 },
     exit: { opacity: 0, y: -12, scale: 1.02 },
     transition: SPRING_CONFIG,
   },
-  
+
   scaleIn: {
     initial: { opacity: 0, scale: 0.8 },
     animate: { opacity: 1, scale: 1 },
     exit: { opacity: 0, scale: 0.9 },
     transition: BOUNCY_CONFIG,
   },
-  
+
   slideInLeft: {
     initial: { opacity: 0, x: -100 },
     animate: { opacity: 1, x: 0 },
@@ -118,7 +118,7 @@ export const PREMIUM_VARIANTS = {
 };
 
 // ====== PREMIUM HOVER EFFECTS ======
-export const HOVER_VARIANTS = {
+export const _HOVER_VARIANTS = {
   lift: {
     scale: 1.02,
     y: -4,
@@ -140,7 +140,7 @@ export const HOVER_VARIANTS = {
   glow: {
     scale: 1.02,
     y: -2,
-    boxShadow: "0 20px 40px -12px rgba(236, 72, 153, 0.5)",
+    boxShadow: '0 20px 40px -12px rgba(236, 72, 153, 0.5)',
     transition: MICRO_CONFIG,
   },
 
@@ -152,7 +152,7 @@ export const HOVER_VARIANTS = {
 };
 
 // ====== PREMIUM TAP EFFECTS ======
-export const TAP_VARIANTS = {
+export const _TAP_VARIANTS = {
   press: {
     scale: 0.95,
     transition: MICRO_CONFIG,
@@ -170,14 +170,14 @@ export const TAP_VARIANTS = {
 };
 
 // ====== ENHANCED ANIMATIONS ======
-export const CARD_HOVER_ANIMATION = {
+export const _CARD_HOVER_ANIMATION = {
   scale: 1.02,
   rotateY: 2,
   y: -4,
   transition: MICRO_CONFIG,
 };
 
-export const PAGE_TRANSITION = {
+export const _PAGE_TRANSITION = {
   initial: { opacity: 0, y: 20, scale: 0.98 },
   animate: { opacity: 1, y: 0, scale: 1 },
   exit: { opacity: 0, y: -20, scale: 1.02 },

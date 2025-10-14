@@ -1,12 +1,21 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  content: ['./src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx}",
-    "./src/components/**/*.{js,ts,jsx,tsx}",
-    "./src/app/**/*.{js,ts,jsx,tsx}",
-    "./app/**/*.{js,ts,jsx,tsx}",
-    "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
+    './src/pages/**/*.{js,ts,jsx,tsx}',
+    './src/components/**/*.{js,ts,jsx,tsx}',
+    './src/app/**/*.{js,ts,jsx,tsx}',
+    './app/**/*.{js,ts,jsx,tsx}',
+    '../../packages/ui/src/**/*.{js,ts,jsx,tsx}',
   ],
+  darkMode: 'class', // Enable class-based dark mode
   theme: {
     extend: {
       // Enhanced color system from unified design system
@@ -89,6 +98,48 @@ module.exports = {
           900: '#7f1d1d',
           950: '#450a0a',
         },
+        // Enhanced neutral colors for dark mode
+        neutral: {
+          0: '#ffffff',
+          50: '#fafafa',
+          100: '#f5f5f5',
+          200: '#e5e5e5',
+          300: '#d4d4d4',
+          400: '#a3a3a3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
+          950: '#0a0a0a',
+        },
+        // Dark mode specific colors
+        dark: {
+          bg: {
+            primary: '#0a0a0a',
+            secondary: '#111111',
+            tertiary: '#1a1a1a',
+            elevated: '#262626',
+            surface: '#1e1e1e',
+            overlay: 'rgba(0, 0, 0, 0.8)',
+          },
+          text: {
+            primary: '#ffffff',
+            secondary: '#d4d4d4',
+            tertiary: '#a3a3a3',
+            inverse: '#0a0a0a',
+          },
+          border: {
+            primary: '#262626',
+            secondary: '#404040',
+            accent: '#525252',
+          },
+          glass: {
+            bg: 'rgba(255, 255, 255, 0.05)',
+            border: 'rgba(255, 255, 255, 0.1)',
+            backdrop: 'rgba(0, 0, 0, 0.3)',
+          },
+        },
       },
 
       // Enhanced typography
@@ -148,7 +199,7 @@ module.exports = {
         },
       },
 
-      // Enhanced shadows
+      // Enhanced shadows with dark mode variants
       boxShadow: {
         'premium': '0 20px 40px -12px rgba(0, 0, 0, 0.25)',
         'premium-lg': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
@@ -157,6 +208,13 @@ module.exports = {
         'glow-secondary': '0 20px 40px -12px rgba(14, 165, 233, 0.4)',
         'glow-purple': '0 20px 40px -12px rgba(168, 85, 247, 0.4)',
         'neon': '0 0 20px currentColor',
+        // Dark mode specific shadows
+        'dark-premium': '0 20px 40px -12px rgba(0, 0, 0, 0.6)',
+        'dark-glass': '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
+        'dark-glow-primary': '0 20px 40px -12px rgba(236, 72, 153, 0.3)',
+        'dark-glow-secondary': '0 20px 40px -12px rgba(14, 165, 233, 0.3)',
+        'dark-elevated': '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+        'dark-surface': '0 8px 16px -4px rgba(0, 0, 0, 0.4)',
       },
 
       // Backdrop filters
@@ -168,9 +226,9 @@ module.exports = {
 
       // Enhanced spacing
       spacing: {
-        '18': '4.5rem',
-        '88': '22rem',
-        '128': '32rem',
+        18: '4.5rem',
+        88: '22rem',
+        128: '32rem',
       },
 
       // Premium border radius
@@ -188,7 +246,7 @@ module.exports = {
   },
   plugins: [
     // Custom utilities for premium effects
-    function({ addUtilities }) {
+    function ({ addUtilities }) {
       const newUtilities = {
         '.glass-morphism': {
           background: 'rgba(255, 255, 255, 0.1)',
@@ -204,13 +262,15 @@ module.exports = {
           background: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)',
         },
         '.mesh-gradient': {
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
+          background:
+            'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
           backgroundSize: '400% 400%',
           animation: 'holographic 4s ease infinite',
         },
         // Subtle pastel gradient for a sleeker colourful theme
         '.smooth-gradient': {
-          background: 'linear-gradient(135deg, hsl(215,100%,97%) 0%, hsl(203,100%,95%) 35%, hsl(192,100%,93%) 65%, hsl(180,100%,91%) 100%)',
+          background:
+            'linear-gradient(135deg, hsl(215,100%,97%) 0%, hsl(203,100%,95%) 35%, hsl(192,100%,93%) 65%, hsl(180,100%,91%) 100%)',
           backgroundSize: '300% 300%',
           animation: 'holographic 20s ease-in-out infinite',
         },
@@ -220,8 +280,50 @@ module.exports = {
         '.border-sleek': {
           border: '1px solid rgba(255, 255, 255, 0.25)',
         },
+        // Dark mode utilities
+        '.dark-glass': {
+          background: 'rgba(0, 0, 0, 0.3)',
+          backdropFilter: 'blur(16px) saturate(180%)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        },
+        '.dark-surface': {
+          background: 'rgb(var(--neutral-100))',
+          border: '1px solid rgb(var(--neutral-200))',
+        },
+        '.dark-elevated': {
+          background: 'rgb(var(--neutral-50))',
+          border: '1px solid rgb(var(--neutral-200))',
+          boxShadow: 'var(--shadow-premium)',
+        },
+        // Accessibility utilities
+        '.sr-only': {
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          padding: '0',
+          margin: '-1px',
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          border: '0',
+        },
+        '.focus-visible': {
+          outline: '2px solid rgb(var(--primary-500))',
+          outlineOffset: '2px',
+        },
+        '.keyboard-navigation *:focus': {
+          outline: '2px solid rgb(var(--primary-500))',
+          outlineOffset: '2px',
+        },
+        // High contrast mode
+        '.high-contrast': {
+          filter: 'contrast(150%) brightness(110%)',
+        },
+        '.high-contrast *': {
+          borderColor: 'currentColor !important',
+        },
       };
-      
+
       addUtilities(newUtilities);
     },
   ],

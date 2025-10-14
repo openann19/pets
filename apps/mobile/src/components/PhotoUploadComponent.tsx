@@ -1,18 +1,9 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Alert,
-  ScrollView,
-  Dimensions,
-} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import React, { useState } from 'react';
+import { Alert, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
 
@@ -143,7 +134,7 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
     }
   };
 
-  const showImageOptions = () => {
+  const showImageOptions = (): void => {
     Alert.alert(
       'Add Photo',
       'Choose how you want to add a photo',
@@ -155,7 +146,7 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
     );
   };
 
-  const removePhoto = (photoId: string) => {
+  const removePhoto = (photoId: string): void => {
     Alert.alert(
       'Remove Photo',
       'Are you sure you want to remove this photo?',
@@ -168,7 +159,7 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
             const updatedPhotos = photos.filter(p => p.id !== photoId);
             // If we removed the primary photo, make the first remaining photo primary
             if (updatedPhotos.length > 0 && !updatedPhotos.some(p => p.isPrimary)) {
-              updatedPhotos[0].isPrimary = true;
+              updatedPhotos[0]!.isPrimary = true;
             }
             onPhotosChange(updatedPhotos);
           },
@@ -177,7 +168,7 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
     );
   };
 
-  const setPrimaryPhoto = (photoId: string) => {
+  const setPrimaryPhoto = (photoId: string): void => {
     const updatedPhotos = photos.map(photo => ({
       ...photo,
       isPrimary: photo.id === photoId,
@@ -187,16 +178,14 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
 
   const renderPhotoGrid = () => (
     <View style={styles.photoGrid}>
-      {photos.map((photo, index) => (
+      {photos.map((photo) => (
         <View key={photo.id} style={styles.photoContainer}>
           <Image source={{ uri: photo.uri }} style={styles.photo} />
-          
+
           {/* Primary Badge */}
-          {photo.isPrimary && (
-            <View style={styles.primaryBadge}>
-              <Text style={styles.primaryBadgeText}>Primary</Text>
-            </View>
-          )}
+          {photo.isPrimary ? <View style={styles.primaryBadge}>
+            <Text style={styles.primaryBadgeText}>Primary</Text>
+          </View> : null}
 
           {/* Photo Actions */}
           <View style={styles.photoActions}>

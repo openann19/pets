@@ -1,57 +1,80 @@
-import React, { useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Dimensions,
-  Haptics,
-  StatusBar,
-  InteractionManager,
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { logger } from '@pawfectmatch/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect } from 'react';
+import {
+  InteractionManager,
+  SafeAreaView,
+  StatusBar,
+  Text,
+  View
+} from 'react-native';
 import Animated, {
-  useSharedValue,
+  Easing,
   useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
   withSpring,
   withTiming,
-  withSequence,
-  withDelay,
-  runOnJS,
-  Easing,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { 
-  EliteContainer, 
-  ElitePageHeader, 
-  EliteButton 
-} from '../../components/EliteComponents';
-import { Spacing, AnimationConfigs } from '../../styles/GlobalStyles';
+import { EliteButton } from '../../components/EliteComponents';
 import { useTheme } from '../../contexts/ThemeContext';
 
-const { width, height } = Dimensions.get('window');
-
-type OnboardingStackParamList = {
-  UserIntent: undefined;
-  PetProfileSetup: { userIntent: string };
-  PreferencesSetup: { userIntent: string };
-  Welcome: undefined;
+// Constants for styling
+const Colors = {
+  success: '#10b981',
+  warning: '#f59e0b',
+  primary: '#3b82f6',
+  secondary: '#ec4899',
+  gray800: '#1f2937',
+  gray700: '#374151',
+  gray600: '#4b5563',
+  gray500: '#6b7280',
+  glassWhiteLight: 'rgba(255, 255, 255, 0.1)',
+  glassWhiteDark: 'rgba(255, 255, 255, 0.2)',
 };
 
-type WelcomeScreenProps = NativeStackScreenProps<OnboardingStackParamList, 'Welcome'>;
-
-const SPRING_CONFIG = {
-  damping: 15,
-  stiffness: 300,
-  mass: 1,
+const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  '2xl': 24,
+  '3xl': 32,
+  '4xl': 40,
+  '5xl': 48,
+  '6xl': 64,
 };
 
-const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
+// Animation configurations for consistent animations across the app
+const AnimationConfigs = {
+  spring: {
+    damping: 15,
+    stiffness: 300,
+    mass: 1,
+    overshootClamping: false,
+  } as const,
+  springBouncy: {
+    damping: 10,
+    stiffness: 180,
+    mass: 1,
+    overshootClamping: false,
+  } as const,
+  timing: {
+    duration: 400,
+    easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+  } as const,
+} as const;
+
+const WelcomeScreen = () => {
   // Theme context
-  const { colors, styles } = useTheme();
-  
+  const { colors, isDark } = useTheme();
+
   // Animation values
   const logoScale = useSharedValue(0);
   const logoOpacity = useSharedValue(0);
@@ -67,36 +90,36 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
 
   useEffect(() => {
     StatusBar.setBarStyle('dark-content');
-    
+
     // Elite staggered entrance animations
     InteractionManager.runAfterInteractions(() => {
       // Logo entrance with bounce
       logoScale.value = withSpring(1, AnimationConfigs.springBouncy);
       logoOpacity.value = withTiming(1, AnimationConfigs.timing);
-      
+
       // Title with elegant slide-up
       titleOpacity.value = withDelay(300, withTiming(1, AnimationConfigs.timing));
       titleTranslateY.value = withDelay(300, withSpring(0, AnimationConfigs.spring));
-      
+
       // Subtitle follows smoothly
       subtitleOpacity.value = withDelay(600, withTiming(1, AnimationConfigs.timing));
       subtitleTranslateY.value = withDelay(600, withSpring(0, AnimationConfigs.spring));
-      
+
       // Features with subtle delay
       featuresOpacity.value = withDelay(900, withTiming(1, AnimationConfigs.timing));
       featuresTranslateY.value = withDelay(900, withSpring(0, AnimationConfigs.spring));
-      
+
       // Button with satisfying scale
       buttonOpacity.value = withDelay(1200, withTiming(1, AnimationConfigs.timing));
       buttonScale.value = withDelay(1200, withSpring(1, AnimationConfigs.springBouncy));
-      
+
       // Confetti celebration
       confettiScale.value = withDelay(500, withSequence(
         withSpring(1.3, AnimationConfigs.springBouncy),
         withSpring(1, AnimationConfigs.spring)
       ));
     });
-  }, []);
+  }, [buttonOpacity, buttonScale, confettiScale, featuresOpacity, featuresTranslateY, logoOpacity, logoScale, subtitleOpacity, subtitleTranslateY, titleOpacity, titleTranslateY]);
 
   const logoAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: logoScale.value }],
@@ -127,37 +150,48 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
     transform: [{ scale: confettiScale.value }],
   }));
 
-  const triggerHaptic = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-  };
-
   const handleGetStarted = async () => {
     try {
       // Elite haptic feedback
-      runOnJS(triggerHaptic)();
-      
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
       // Mark onboarding as complete
       await AsyncStorage.setItem('onboarding_complete', 'true');
-      
+
       // Celebration animation before navigation
       confettiScale.value = withSequence(
         withSpring(1.5, AnimationConfigs.springBouncy),
         withSpring(1, AnimationConfigs.spring)
       );
-      
-      console.log('🎉 Onboarding completed! Welcome to PawfectMatch!');
-      
+
+      logger.info('🎉 Onboarding completed! Welcome to PawfectMatch!');
+
       // Navigate to main app after celebration
       setTimeout(() => {
-        require('react-native').DevSettings?.reload?.();
+        // Type-safe reload for development
+        if (__DEV__ && require('react-native').DevSettings?.reload) {
+          require('react-native').DevSettings.reload();
+        }
       }, 800);
     } catch (error) {
-      console.error('Error saving onboarding status:', error);
+      logger.error('Error saving onboarding status', { error });
     }
   };
 
+  // Custom EliteContainer component
+  const EliteContainer = ({ children }: { children: React.ReactNode }) => (
+    <LinearGradient
+      colors={isDark ? ['#1e40af', '#3b82f6'] : ['#10b981', '#059669']}
+      style={{ flex: 1, backgroundColor: isDark ? '#1e40af' : '#10b981' }}
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        {children}
+      </SafeAreaView>
+    </LinearGradient>
+  );
+
   return (
-    <EliteContainer gradient={isDark ? "gradientPrimary" : "gradientSuccess"} style={{ backgroundColor: colors.gray100 }}>
+    <EliteContainer>
       {/* Elite Confetti Background */}
       <Animated.View style={[localStyles.eliteConfettiContainer, confettiAnimatedStyle]}>
         <Text style={[localStyles.eliteConfetti, { top: '10%', left: '20%' }]}>🎉</Text>
@@ -175,7 +209,7 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
         <Animated.View style={[localStyles.eliteLogoContainer, logoAnimatedStyle]}>
           <BlurView intensity={30} style={localStyles.eliteLogoBlur}>
             <LinearGradient
-              colors={[colors.success, colors.success + 'DD']}
+              colors={[colors.success, `${colors.success}DD`]}
               style={localStyles.eliteLogoGradient}
             >
               <Text style={localStyles.eliteLogo}>🐾</Text>
@@ -185,13 +219,13 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
 
         {/* Elite Title */}
         <Animated.View style={titleAnimatedStyle}>
-          <Text style={styles.title}>You're All Set!</Text>
+          <Text style={localStyles.title}>You're All Set!</Text>
           <View style={localStyles.eliteTitleAccent} />
         </Animated.View>
 
         {/* Elite Subtitle */}
         <Animated.View style={subtitleAnimatedStyle}>
-          <Text style={[styles.subtitle, localStyles.eliteSubtitle, { color: colors.gray600 }]}>
+          <Text style={[localStyles.subtitle, localStyles.eliteSubtitle, { color: colors.gray600 }]}>
             Welcome to the PawfectMatch community! Your profile is ready and we're excited to help you find amazing connections.
           </Text>
         </Animated.View>
@@ -201,10 +235,10 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
           <BlurView intensity={20} style={localStyles.eliteFeaturesBlur}>
             <View style={localStyles.eliteFeature}>
               <LinearGradient
-                colors={[colors.secondary, colors.secondaryLight]}
+                colors={[colors.secondary || '#ec4899', `${colors.secondary || '#ec4899'}DD`]}
                 style={localStyles.eliteFeatureIconContainer}
               >
-                <Ionicons name="heart" size={24} color={colors.white} />
+                <Ionicons name="heart" size={24} color={colors.white || '#ffffff'} />
               </LinearGradient>
               <View style={localStyles.eliteFeatureText}>
                 <Text style={[localStyles.eliteFeatureTitle, { color: colors.gray800 }]}>Smart Matching</Text>
@@ -212,66 +246,66 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
               </View>
             </View>
 
-            <View style={styles.eliteFeature}>
+            <View style={localStyles.eliteFeature}>
               <LinearGradient
-                colors={[colors.primary, colors.primaryLight]}
-                style={styles.eliteFeatureIconContainer}
+                colors={[colors.primary || '#3b82f6', `${colors.primary || '#3b82f6'}DD`]}
+                style={localStyles.eliteFeatureIconContainer}
               >
-                <Ionicons name="chatbubbles" size={24} color={colors.white} />
+                <Ionicons name="chatbubbles" size={24} color={colors.white || '#ffffff'} />
               </LinearGradient>
-              <View style={styles.eliteFeatureText}>
-                <Text style={[styles.eliteFeatureTitle, { color: colors.gray800 }]}>Safe Messaging</Text>
-                <Text style={[styles.eliteFeatureDescription, { color: colors.gray600 }]}>Connect securely with other pet lovers</Text>
+              <View style={localStyles.eliteFeatureText}>
+                <Text style={[localStyles.eliteFeatureTitle, { color: colors.gray800 }]}>Safe Messaging</Text>
+                <Text style={[localStyles.eliteFeatureDescription, { color: colors.gray600 }]}>Connect securely with other pet lovers</Text>
               </View>
             </View>
 
-            <View style={styles.eliteFeature}>
+            <View style={localStyles.eliteFeature}>
               <LinearGradient
-                colors={[colors.accent, colors.accentLight]}
-                style={styles.eliteFeatureIconContainer}
+                colors={[colors.accent || '#f59e0b', `${colors.accent || '#f59e0b'}DD`]}
+                style={localStyles.eliteFeatureIconContainer}
               >
-                <Ionicons name="location" size={24} color={colors.white} />
+                <Ionicons name="location" size={24} color={colors.white || '#ffffff'} />
               </LinearGradient>
-              <View style={styles.eliteFeatureText}>
-                <Text style={[styles.eliteFeatureTitle, { color: colors.gray800 }]}>Local Connections</Text>
-                <Text style={[styles.eliteFeatureDescription, { color: colors.gray600 }]}>Find pets and owners in your area</Text>
+              <View style={localStyles.eliteFeatureText}>
+                <Text style={[localStyles.eliteFeatureTitle, { color: colors.gray800 }]}>Local Connections</Text>
+                <Text style={[localStyles.eliteFeatureDescription, { color: colors.gray600 }]}>Find pets and owners in your area</Text>
               </View>
             </View>
 
-            <View style={styles.eliteFeature}>
+            <View style={localStyles.eliteFeature}>
               <LinearGradient
-                colors={[colors.warning, colors.warning + 'DD']}
-                style={styles.eliteFeatureIconContainer}
+                colors={[colors.warning, `${colors.warning}DD`]}
+                style={localStyles.eliteFeatureIconContainer}
               >
                 <Ionicons name="shield-checkmark" size={24} color={colors.white} />
               </LinearGradient>
-              <View style={styles.eliteFeatureText}>
-                <Text style={[styles.eliteFeatureTitle, { color: colors.gray800 }]}>Verified Profiles</Text>
-                <Text style={[styles.eliteFeatureDescription, { color: colors.gray600 }]}>Trust and safety are our top priorities</Text>
+              <View style={localStyles.eliteFeatureText}>
+                <Text style={[localStyles.eliteFeatureTitle, { color: colors.gray800 }]}>Verified Profiles</Text>
+                <Text style={[localStyles.eliteFeatureDescription, { color: colors.gray600 }]}>Trust and safety are our top priorities</Text>
               </View>
             </View>
           </BlurView>
         </Animated.View>
 
         {/* Elite Pro Tips */}
-        <View style={styles.eliteTipsContainer}>
-          <BlurView intensity={15} style={styles.eliteTipsBlur}>
-            <View style={styles.eliteTipsHeader}>
+        <View style={localStyles.eliteTipsContainer}>
+          <BlurView intensity={15} style={localStyles.eliteTipsBlur}>
+            <View style={localStyles.eliteTipsHeader}>
               <Ionicons name="bulb" size={20} color={colors.warning} />
-              <Text style={[styles.eliteTipsTitle, { color: colors.gray800 }]}>Pro Tips</Text>
+              <Text style={[localStyles.eliteTipsTitle, { color: colors.gray800 }]}>Pro Tips</Text>
             </View>
-            <View style={styles.eliteTipsList}>
-              <View style={styles.eliteTip}>
+            <View style={localStyles.eliteTipsList}>
+              <View style={localStyles.eliteTip}>
                 <Ionicons name="camera" size={16} color={colors.success} />
-                <Text style={[styles.eliteTipText, { color: colors.gray700 }]}>Add photos to get 3x more matches</Text>
+                <Text style={[localStyles.eliteTipText, { color: colors.gray700 }]}>Add photos to get 3x more matches</Text>
               </View>
-              <View style={styles.eliteTip}>
+              <View style={localStyles.eliteTip}>
                 <Ionicons name="heart" size={16} color={colors.secondary} />
-                <Text style={[styles.eliteTipText, { color: colors.gray700 }]}>Be honest about your pet's personality</Text>
+                <Text style={[localStyles.eliteTipText, { color: colors.gray700 }]}>Be honest about your pet's personality</Text>
               </View>
-              <View style={styles.eliteTip}>
+              <View style={localStyles.eliteTip}>
                 <Ionicons name="time" size={16} color={colors.primary} />
-                <Text style={[styles.eliteTipText, { color: colors.gray700 }]}>Respond to messages within 24 hours</Text>
+                <Text style={[localStyles.eliteTipText, { color: colors.gray700 }]}>Respond to messages within 24 hours</Text>
               </View>
             </View>
           </BlurView>
@@ -279,17 +313,17 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
       </View>
 
       {/* Elite Get Started Button */}
-      <Animated.View style={[styles.eliteButtonContainer, buttonAnimatedStyle]}>
+      <Animated.View style={[localStyles.eliteButtonContainer, buttonAnimatedStyle]}>
         <EliteButton
           title="Start Matching! 🚀"
           size="large"
           icon="rocket"
           onPress={handleGetStarted}
-          gradient={[colors.success, colors.success + 'DD']}
-          style={styles.eliteGetStartedButton}
+          gradient={[colors.success, `${colors.success}DD`]}
+          style={localStyles.eliteGetStartedButton}
         />
-        
-        <Text style={[styles.eliteFooterText, { color: colors.gray500 }]}>
+
+        <Text style={[localStyles.eliteFooterText, { color: colors.gray500 }]}>
           You can update your preferences anytime in settings
         </Text>
       </Animated.View>
@@ -298,6 +332,18 @@ const WelcomeScreen = ({ navigation }: WelcomeScreenProps) => {
 };
 
 const localStyles = {
+  title: {
+    fontSize: 40,
+    fontWeight: 'bold' as const,
+    color: '#fff',
+    textAlign: 'center' as const,
+    marginBottom: Spacing.sm,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: '#f0f0f0',
+    textAlign: 'center' as const,
+  },
   // === ELITE WELCOME STYLES ===
   eliteContent: {
     flex: 1,
@@ -305,7 +351,7 @@ const localStyles = {
     paddingHorizontal: Spacing['2xl'],
     paddingVertical: Spacing['4xl'],
   },
-  
+
   // === ELITE CONFETTI ===
   eliteConfettiContainer: {
     position: 'absolute' as const,
@@ -320,7 +366,7 @@ const localStyles = {
     fontSize: 32,
     opacity: 0.8,
   },
-  
+
   // === ELITE LOGO ===
   eliteLogoContainer: {
     alignItems: 'center' as const,
@@ -341,7 +387,7 @@ const localStyles = {
   eliteLogo: {
     fontSize: 40,
   },
-  
+
   // === ELITE TITLE ===
   eliteTitleAccent: {
     width: 60,
@@ -354,7 +400,7 @@ const localStyles = {
   eliteSubtitle: {
     marginBottom: Spacing['5xl'],
   },
-  
+
   // === ELITE FEATURES ===
   eliteFeaturesContainer: {
     marginBottom: Spacing['5xl'],
@@ -394,7 +440,7 @@ const localStyles = {
     color: Colors.gray600,
     lineHeight: 20,
   },
-  
+
   // === ELITE TIPS ===
   eliteTipsContainer: {
     marginBottom: Spacing['5xl'],
@@ -432,7 +478,7 @@ const localStyles = {
     marginLeft: Spacing.md,
     flex: 1,
   },
-  
+
   // === ELITE BUTTON ===
   eliteButtonContainer: {
     paddingHorizontal: Spacing['2xl'],

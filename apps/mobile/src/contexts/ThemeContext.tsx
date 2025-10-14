@@ -1,8 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Appearance, ColorSchemeName } from 'react-native';
-import { Colors, GlobalStyles, Shadows } from '../styles/GlobalStyles';
-import { ColorsDark, GlobalStylesDark, ShadowsDark } from '../styles/DarkTheme';
+import { Appearance } from 'react-native';
+import type { ColorSchemeName } from 'react-native';
+import { logger } from '@pawfectmatch/core';
+import { GlobalStyles, Colors, Shadows } from '../styles/GlobalStyles';
+import { GlobalStylesDark, ColorsDark, ShadowsDark } from '../styles/DarkTheme';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -44,14 +47,40 @@ export interface ThemeColors {
   gradientSuccess: string[];
   gradientWarning: string[];
   gradientError: string[];
+  // Additional properties for UI components
+  text: string;
+  textSecondary: string;
+  card: string;
+  background: string;
+  border: string;
+  inputBackground: string;
+}
+
+export interface ThemeStyles {
+  container: Record<string, unknown>;
+  backgroundGradient: Record<string, unknown>;
+  safeArea: Record<string, unknown>;
+  headerBlur: Record<string, unknown>;
+  headerContent: Record<string, unknown>;
+  heading2: Record<string, unknown>;
+  bodySmall: Record<string, unknown>;
+  scrollContainer: Record<string, unknown>;
+  [key: string]: Record<string, unknown>;
+}
+
+export interface ThemeShadows {
+  small: Record<string, unknown>;
+  medium: Record<string, unknown>;
+  large: Record<string, unknown>;
+  [key: string]: Record<string, unknown>;
 }
 
 export interface ThemeContextType {
   isDark: boolean;
   themeMode: ThemeMode;
   colors: ThemeColors;
-  styles: any;
-  shadows: any;
+  styles: ThemeStyles;
+  shadows: ThemeShadows;
   setThemeMode: (mode: ThemeMode) => void;
   toggleTheme: () => void;
 }
@@ -81,7 +110,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   // Get current theme colors and styles
   const colors = isDark ? ColorsDark : Colors;
   const styles = isDark ? GlobalStylesDark : GlobalStyles;
-  const shadows = isDark ? ShadowsDark : Shadows;
+  const baseShadows = isDark ? ShadowsDark : Shadows;
+  const bs = baseShadows as unknown as Record<string, Record<string, unknown>>;
+  const themeShadows: ThemeShadows = {
+    small: bs['sm'] ?? {},
+    medium: bs['md'] ?? {},
+    large: bs['lg'] ?? {},
+    ...bs,
+  };
 
   // Load theme preference from storage
   useEffect(() => {
@@ -92,7 +128,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           setThemeModeState(savedTheme as ThemeMode);
         }
       } catch (error) {
-        console.warn('Failed to load theme preference:', error);
+        logger.warn('Failed to load theme preference:', { error });
       }
     };
 
@@ -105,7 +141,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       setSystemColorScheme(colorScheme);
     });
 
-    return () => subscription?.remove();
+    return () => { subscription?.remove(); };
   }, []);
 
   // Save theme preference to storage
@@ -114,12 +150,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       setThemeModeState(mode);
       await AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
     } catch (error) {
-      console.warn('Failed to save theme preference:', error);
+      logger.warn('Failed to save theme preference:', { error });
     }
   };
 
   // Toggle between light and dark (skip system)
-  const toggleTheme = () => {
+  const toggleTheme = (): void => {
     const newMode = isDark ? 'light' : 'dark';
     setThemeMode(newMode);
   };
@@ -129,7 +165,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     themeMode,
     colors,
     styles,
-    shadows,
+    shadows: themeShadows,
     setThemeMode,
     toggleTheme,
   };

@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import LoadingSpinner from './UI/LoadingSpinner';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 
-export default function HydrationBoundary({ children }: { children: React.ReactNode }) {
+export default function HydrationBoundary({
+  children,
+}: {
+  children: React.ReactNode;
+}): JSX.Element {
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
@@ -15,7 +19,11 @@ export default function HydrationBoundary({ children }: { children: React.ReactN
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50">
         <div className="text-center">
-          <LoadingSpinner size="lg" color="#9333EA" className="mx-auto mb-4" />
+          <LoadingSpinner
+            size="lg"
+            color="#9333EA"
+            className="mx-auto mb-4"
+          />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>

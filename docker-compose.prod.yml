@@ -8,13 +8,19 @@ services:
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
       MONGO_INITDB_DATABASE: pawfectmatch
-    ports:
-      - "27017:27017"
+    # Don't expose MongoDB to host in production unless needed
+    # Use internal network communication only
     volumes:
       - mongodb_data:/data/db
       - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')", "--quiet"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - pawfectmatch-network
 
@@ -23,10 +29,17 @@ services:
     image: redis:7.2-alpine
     container_name: pawfectmatch-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # Don't expose Redis to host in production
+    # Use internal network communication only
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     networks:
       - pawfectmatch-network
 
@@ -40,17 +53,31 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5000
-      MONGODB_URI: mongodb://admin:password123@mongodb:27017/pawfectmatch?authSource=admin
-      REDIS_URL: redis://redis:6379
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/pawfectmatch?authSource=admin
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
       JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_EXPIRY: ${JWT_ACCESS_EXPIRY:-1h}
+      JWT_REFRESH_EXPIRY: ${JWT_REFRESH_EXPIRY:-30d}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
       CLIENT_URL: https://pawfectmatch.com
+      AI_SERVICE_URL: http://ai-service:8000
+      SENTRY_DSN: ${SENTRY_DSN}
+      LOG_LEVEL: error
     ports:
       - "5000:5000"
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     networks:
       - pawfectmatch-network
 
@@ -63,11 +90,21 @@ services:
     restart: unless-stopped
     environment:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
-      REDIS_URL: redis://redis:6379
-    ports:
-      - "8000:8000"
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/pawfectmatch?authSource=admin
+    # Only expose to internal network in production
+    # External access via backend API
+    expose:
+      - "8000"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     networks:
       - pawfectmatch-network
 
@@ -82,10 +119,21 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://api.pawfectmatch.com
       NEXT_PUBLIC_WS_URL: wss://api.pawfectmatch.com
-    ports:
-      - "3000:3000"
+      SENTRY_DSN: ${SENTRY_DSN}
+      NEXT_PUBLIC_GA_ID: ${GA_TRACKING_ID}
+    # Only expose to internal network in production
+    # External access via nginx
+    expose:
+      - "3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - pawfectmatch-network
 
@@ -100,9 +148,18 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/certbot:/etc/nginx/certbot:ro
+      - ./nginx/.well-known:/var/www/html/.well-known:ro
     depends_on:
-      - web
-      - backend
+      web:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - pawfectmatch-network
 

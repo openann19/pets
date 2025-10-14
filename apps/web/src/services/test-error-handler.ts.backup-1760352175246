@@ -1,0 +1,76 @@
+/**
+ * Test script for Error Handler implementation
+ * This can be run to verify the error handling system works correctly
+ */
+
+import { errorHandler } from './errorHandler';
+
+// Test basic error handling
+console.log('Testing Error Handler...');
+
+// Test 1: Basic error handling
+try {
+  errorHandler.handleError(
+    new Error('Test error message'),
+    {
+      component: 'TestService',
+      action: 'testAction',
+      userId: 'test-user-123',
+      metadata: { testData: 'sample' },
+    },
+    {
+      showNotification: true,
+      logError: true,
+      severity: 'medium',
+    },
+  );
+  console.log('✅ Basic error handling test passed');
+} catch (error) {
+  console.error('❌ Basic error handling test failed:', error);
+}
+
+// Test 2: API error handling
+try {
+  errorHandler.handleApiError(
+    new Error('API request failed'),
+    {
+      component: 'TestService',
+      action: 'testApiCall',
+      userId: 'test-user-123',
+    },
+    {
+      endpoint: '/api/test',
+      method: 'POST',
+      statusCode: 500,
+      showNotification: true,
+    },
+  );
+  console.log('✅ API error handling test passed');
+} catch (error) {
+  console.error('❌ API error handling test failed:', error);
+}
+
+// Test 3: Network error handling
+try {
+  errorHandler.handleNetworkError(
+    new Error('Network connection failed'),
+    {
+      component: 'TestService',
+      action: 'testNetworkCall',
+    },
+    {
+      showNotification: true,
+      retryable: true,
+    },
+  );
+  console.log('✅ Network error handling test passed');
+} catch (error) {
+  console.error('❌ Network error handling test failed:', error);
+}
+
+console.log('Error Handler testing completed!');
+
+export default function testErrorHandler() {
+  console.log('Error Handler is working correctly');
+  return true;
+}

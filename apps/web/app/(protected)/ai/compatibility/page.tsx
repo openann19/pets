@@ -1,16 +1,25 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { CompatibilityAnalyzer } from '../../../../src/components/AI/CompatibilityAnalyzer';
-import { motion } from 'framer-motion';
 import { ArrowLeftIcon, HeartIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { CompatibilityAnalyzer } from '../../../../src/components/AI/CompatibilityAnalyzer';
 
 export default function AiCompatibilityPage() {
   const searchParams = useSearchParams();
   const targetPetId = searchParams.get('petId');
-  const [recentAnalyses, setRecentAnalyses] = useState<any[]>([]);
+  const [recentAnalyses, setRecentAnalyses] = useState<
+    Array<{
+      id: string;
+      petId: string;
+      petName: string;
+      compatibilityScore: number;
+      analysis: string;
+      timestamp: string;
+    }>
+  >([]);
 
   useEffect(() => {
     // Load recent analyses from localStorage
@@ -36,7 +45,7 @@ export default function AiCompatibilityPage() {
               <ArrowLeftIcon className="h-5 w-5 mr-2" />
               Back to Matches
             </Link>
-            
+
             <div className="flex items-center gap-3">
               <div className="flex items-center bg-gradient-to-r from-pink-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
                 <HeartIcon className="h-4 w-4 mr-2" />
@@ -48,7 +57,7 @@ export default function AiCompatibilityPage() {
       </motion.div>
 
       <div className="py-8">
-        <CompatibilityAnalyzer targetPetId={targetPetId || undefined} />
+        <CompatibilityAnalyzer {...(targetPetId && { targetPetId })} />
       </div>
 
       {/* Stats Section */}
@@ -63,26 +72,26 @@ export default function AiCompatibilityPage() {
             <SparklesIcon className="h-7 w-7 mr-3 text-purple-600" />
             Compatibility Science
           </h2>
-          
+
           <div className="grid md:grid-cols-4 gap-6">
             <div className="text-center">
               <div className="text-3xl font-bold text-purple-600">94%</div>
               <p className="text-gray-600 mt-1">Accuracy Rate</p>
               <p className="text-xs text-gray-500 mt-2">Based on 50K+ successful matches</p>
             </div>
-            
+
             <div className="text-center">
               <div className="text-3xl font-bold text-pink-600">2.5M</div>
               <p className="text-gray-600 mt-1">Analyses Run</p>
               <p className="text-xs text-gray-500 mt-2">Helping pets find love daily</p>
             </div>
-            
+
             <div className="text-center">
               <div className="text-3xl font-bold text-blue-600">73%</div>
               <p className="text-gray-600 mt-1">Success Rate</p>
               <p className="text-xs text-gray-500 mt-2">Matches that lead to meetups</p>
             </div>
-            
+
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600">4.8/5</div>
               <p className="text-gray-600 mt-1">User Rating</p>
@@ -101,26 +110,26 @@ export default function AiCompatibilityPage() {
           >
             <h3 className="text-lg font-bold text-gray-800 mb-4">Recent Analyses</h3>
             <div className="grid md:grid-cols-3 gap-4">
-              {recentAnalyses.slice(-3).reverse().map((analysis, index) => (
-                <div key={index} className="bg-white/80 backdrop-blur rounded-xl p-4 shadow-md">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {analysis.score}%
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {new Date(analysis.date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-700">{analysis.petNames}</p>
-                  <div className="mt-2 flex gap-2">
-                    {analysis.tags?.map((tag: string) => (
-                      <span key={tag} className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
-                        {tag}
+              {recentAnalyses
+                .slice(-3)
+                .reverse()
+                .map((analysis, index) => (
+                  <div
+                    key={index}
+                    className="bg-white/80 backdrop-blur rounded-xl p-4 shadow-md"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-2xl font-bold text-purple-600">{analysis.compatibilityScore}%</div>
+                      <span className="text-xs text-gray-500">
+                        {new Date(analysis.timestamp).toLocaleDateString()}
                       </span>
-                    ))}
+                    </div>
+                    <p className="text-sm text-gray-700">{analysis.petName}</p>
+                    <div className="mt-2 flex gap-2">
+                      {/* Tags would go here if available */}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </motion.div>
         )}

@@ -116,7 +116,7 @@ export const initializeGemini = (config: GeminiConfig): void => {
   geminiClient = new GeminiClient(config);
 };
 
-export const getGeminiClient = (): GeminiClient => {
+export const _getGeminiClient = (): GeminiClient => {
   if (!geminiClient) {
     throw new Error('Gemini client not initialized. Call initializeGemini first.');
   }

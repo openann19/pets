@@ -1,31 +1,129 @@
 {
   "name": "pawfectmatch-premium",
   "version": "1.0.1-rc.0",
-  "description": "PawfectMatch Premium - AI-powered pet matching platform",
+  "type": "module",
+  "description": "Premium pet matching platform with advanced features",
   "private": true,
-  "scripts": {
-    "dev": "./dev.sh",
-    "build": "turbo build",
-    "test": "turbo test",
-    "test:watch": "turbo test:watch",
-    "test:coverage": "turbo test:coverage",
-    "lint": "turbo lint",
-    "type-check": "turbo type-check",
-    "clean": "turbo clean && rm -rf node_modules",
-    "deploy": "./scripts/deploy-production.sh",
-    "health-check": "./scripts/health-check.sh"
-  },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-  "devDependencies": {
-    "@types/node": "^24.7.1",
-    "turbo": "^2.5.8"
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "lint:check": "turbo run lint:check",
+    "lint:fix": "turbo run lint:fix",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "test:ci": "turbo run test:ci",
+    "test:critical": "turbo run test:critical",
+    "test:coverage": "turbo run test:coverage",
+    "test:e2e": "turbo run test:e2e",
+    "test:a11y": "turbo run test:a11y",
+    "format": "turbo run format",
+    "format:check": "turbo run format:check",
+    "quality:gate": "node scripts/quality-gate.js",
+    "quality:report": "node scripts/quality-gate.js --report",
+    "bundle:check": "turbo run bundle:check",
+    "perf:check": "turbo run perf:check",
+    "test:smoke": "turbo run test:smoke",
+    "test:integration": "turbo run test:integration",
+    "test:performance": "turbo run test:performance",
+    "test:accessibility": "turbo run test:accessibility",
+    "test:visual": "turbo run test:visual",
+    "test:security": "turbo run test:security",
+    "lighthouse": "lhci autorun",
+    "bundle:analyze": "turbo run bundle:analyze",
+    "bundle:compare": "node scripts/bundle-compare.js",
+    "deps:audit": "pnpm audit",
+    "deps:update": "pnpm update --latest",
+    "code:quality": "pnpm run lint && pnpm run type-check && pnpm run format:check",
+    "test:all": "pnpm run test:ci && pnpm run test:integration && pnpm run test:e2e",
+    "security:audit": "pnpm audit --audit-level=moderate",
+    "ci:full": "pnpm run code:quality && pnpm run test:all && pnpm run security:audit && pnpm run lighthouse"
   },
-  "packageManager": "pnpm@8.15.0",
+  "devDependencies": {
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.18.9",
+    "@types/validator": "^13.15.3",
+    "@typescript-eslint/eslint-plugin": "^8.46.0",
+    "@typescript-eslint/parser": "^8.46.0",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.0.0",
+    "globals": "^16.4.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^16.2.4",
+    "msw": "^1.2.0",
+    "prettier": "^3.6.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.46.0",
+    "whatwg-fetch": "^3.6.20"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.1",
+      "@types/react-dom": "19.2.1"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/pawfectmatch-premium.git"
+  },
+  "keywords": [
+    "pet",
+    "matching",
+    "premium",
+    "typescript",
+    "react",
+    "mobile",
+    "web"
+  ],
+  "author": "Your Organization",
+  "license": "MIT",
+  "quality-gate": {
+    "enabled": true,
+    "checks": [
+      "type-check",
+      "lint-check",
+      "format-check",
+      "test-check",
+      "security-check",
+      "bundle-check",
+      "performance-check",
+      "accessibility-check",
+      "dependency-check",
+      "complexity-check"
+    ],
+    "thresholds": {
+      "test-coverage": 80,
+      "bundle-size": "2MB",
+      "performance-score": 90,
+      "accessibility-score": 95
+    }
+  },
   "dependencies": {
-    "eslint-config-prettier": "^10.1.8",
-    "lucide-react": "^0.544.0"
+    "@simplewebauthn/server": "^13.2.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --max-warnings 0",
+      "prettier --write"
+    ],
+    "*.{js,jsx}": [
+      "eslint --fix --max-warnings 0",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }

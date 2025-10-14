@@ -1,5 +1,8 @@
-import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
-import { apiClient, ApiClientResponse } from './client';
+import type { UseMutationOptions, UseQueryOptions } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { BlockPayload, MutePayload, ReportPayload } from '../types';
+import type { ApiClientResponse } from './client';
+import { apiClient } from './client';
 
 // Query hook factory
 export function useApiQuery<TData = unknown, TError = Error>(
@@ -28,12 +31,14 @@ export function useApiMutation<TData = unknown, TVariables = void, TError = Erro
       }
       return apiClient.post<TData>(endpoint, variables);
     },
-    onSuccess: (data, variables, context, mutationContext) => {
+    onSuccess: (...args) => {
       // Invalidate related queries
       queryClient.invalidateQueries();
 
       // Call the original onSuccess if provided
-      options?.onSuccess?.(data, variables, context, mutationContext);
+      if (options?.onSuccess) {
+        (options.onSuccess as (...args: unknown[]) => void)(...args);
+      }
     },
     ...options,
   });
@@ -42,9 +47,14 @@ export function useApiMutation<TData = unknown, TVariables = void, TError = Erro
 // Specific hooks for common operations
 
 // Auth hooks
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export function useLogin() {
-  return useApiMutation('/auth/login', {
-    onSuccess: (data: any) => {
+  return useApiMutation<LoginResponse>('/auth/login', {
+    onSuccess: (data: ApiClientResponse<LoginResponse>) => {
       if (data.success && data.data) {
         const { accessToken, refreshToken } = data.data;
         localStorage.setItem('accessToken', accessToken);
@@ -54,9 +64,14 @@ export function useLogin() {
   });
 }
 
+interface RegisterResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export function useRegister() {
-  return useApiMutation('/auth/register', {
-    onSuccess: (data: any) => {
+  return useApiMutation<RegisterResponse>('/auth/register', {
+    onSuccess: (data: ApiClientResponse<RegisterResponse>) => {
       if (data.success && data.data) {
         const { accessToken, refreshToken } = data.data;
         localStorage.setItem('accessToken', accessToken);
@@ -97,9 +112,26 @@ export function useUpdateUser() {
 }
 
 // Pet hooks
-export function usePets(filters?: Record<string, any>) {
+interface PetFilters {
+  species?: string;
+  intent?: string;
+  maxDistance?: number;
+  minAge?: number;
+  maxAge?: number;
+  size?: string;
+  gender?: string;
+  breed?: string;
+}
+
+export function usePets(filters?: PetFilters) {
   const queryKey = ['pets', JSON.stringify(filters || {})];
-  const queryString = filters ? `?${new URLSearchParams(filters).toString()}` : '';
+  const queryString = filters
+    ? `?${new URLSearchParams(
+      Object.fromEntries(
+        Object.entries(filters).map(([k, v]) => [k, String(v as string | number | boolean)])
+      )
+    ).toString()}`
+    : '';
 
   return useApiQuery(queryKey, `/pets${queryString}`);
 }
@@ -178,4 +210,201 @@ export function useCompatibilityAnalysis() {
 
 export function useApplicationAssistance() {
   return useApiMutation('/ai/assist-application');
+}
+
+// Analytics hooks
+export function useTrackUserEvent() {
+  return useApiMutation<{ success: boolean }>('/analytics/user');
+}
+
+export function useTrackPetEvent() {
+  return useApiMutation<{ success: boolean }>('/analytics/pet');
+}
+
+export function useTrackMatchEvent() {
+  return useApiMutation<{ success: boolean }>('/analytics/match');
+}
+
+export function useUserAnalytics() {
+  return useApiQuery<{ data: unknown }>(['analytics', 'user'], '/analytics/user');
+}
+
+export function usePetAnalytics(petId: string) {
+  return useApiQuery<{ data: unknown }>(['analytics', 'pet', petId], `/analytics/pet/${petId}`);
+}
+
+export function useMatchAnalytics(matchId: string) {
+  return useApiQuery<{ data: unknown }>(['analytics', 'match', matchId], `/analytics/match/${matchId}`);
+}
+
+// Moderation hooks with optimistic updates
+export function useReportUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation<ApiClientResponse<{ id: string }>, Error, ReportPayload>({
+    mutationFn: async (payload) => {
+      return await apiClient.post<{ id: string }>('/user/moderation/report', payload);
+    },
+    onSuccess: () => {
+      // Invalidate admin reports list
+      queryClient.invalidateQueries({ queryKey: ['admin', 'moderation', 'reports'] });
+    },
+  });
+}
+
+export function useBlockUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation<ApiClientResponse<{ id: string }>, Error, BlockPayload, { previousState: unknown }>({
+    mutationFn: async (payload) => {
+      return await apiClient.post<{ id: string }>('/user/moderation/block', payload);
+    },
+    onMutate: async (variables) => {
+      // Cancel outgoing queries
+      await queryClient.cancelQueries({ queryKey: ['moderation', 'state'] });
+
+      // Snapshot previous value
+      const previousState = queryClient.getQueryData(['moderation', 'state']);
+
+      // Optimistically update
+      queryClient.setQueryData(['moderation', 'state'], (old: any) => ({
+        ...old,
+        blocks: [...(old?.blocks || []), { blockedUserId: variables.blockedUserId }],
+      }));
+
+      return { previousState };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousState) {
+        queryClient.setQueryData(['moderation', 'state'], context.previousState);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
+    },
+  });
+}
+
+export function useUnblockUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean }, Error, { blockedUserId: string }, { previousState: unknown }>({
+    mutationFn: async (vars) => {
+      const res = await apiClient.delete<{ success: boolean }>(`/user/moderation/block/${vars.blockedUserId}`);
+      return res;
+    },
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: ['moderation', 'state'] });
+      const previousState = queryClient.getQueryData(['moderation', 'state']);
+
+      queryClient.setQueryData(['moderation', 'state'], (old: any) => ({
+        ...old,
+        blocks: (old?.blocks || []).filter((b: any) => b.blockedUserId !== variables.blockedUserId),
+      }));
+
+      return { previousState };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousState) {
+        queryClient.setQueryData(['moderation', 'state'], context.previousState);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
+    },
+  });
+}
+
+export function useMuteUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation<ApiClientResponse<{ id: string; expiresAt: string }>, Error, MutePayload, { previousState: unknown }>({
+    mutationFn: async (payload) => {
+      return await apiClient.post<{ id: string; expiresAt: string }>('/user/moderation/mute', payload);
+    },
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: ['moderation', 'state'] });
+      const previousState = queryClient.getQueryData(['moderation', 'state']);
+
+      queryClient.setQueryData(['moderation', 'state'], (old: any) => ({
+        ...old,
+        mutes: [...(old?.mutes || []), { mutedUserId: variables.mutedUserId, durationMinutes: variables.durationMinutes }],
+      }));
+
+      return { previousState };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousState) {
+        queryClient.setQueryData(['moderation', 'state'], context.previousState);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
+    },
+  });
+}
+// Admin moderation hooks
+type AdminListReportsParams = {
+  status?: string;
+  priority?: string;
+  category?: string;
+  type?: string;
+  search?: string;
+  limit?: number;
+  skip?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+};
+
+export function useAdminListReports(params: AdminListReportsParams = {}) {
+  const query = new URLSearchParams(
+    Object.fromEntries(
+      Object.entries(params)
+        .filter(([, v]) => v !== undefined && v !== null)
+        .map(([k, v]) => [k, String(v)])
+    )
+  ).toString();
+
+  const path = `/admin/moderation/reports${query ? `?${query}` : ''}`;
+  return useApiQuery<{ data: { items: unknown[]; total: number } }>(['admin', 'moderation', 'reports', query], path);
+}
+
+export function useAdminUpdateReport() {
+  return useMutation<ApiClientResponse<{ id: string }>, Error, { id: string; updates: Record<string, unknown> }>({
+    mutationFn: async ({ id, updates }) => {
+      const res = await apiClient.patch<{ id: string }>(`/admin/moderation/reports/${id}`, updates);
+      return res as ApiClientResponse<{ id: string }>;
+    },
+  });
+}
+
+export function useUnmuteUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean }, Error, { mutedUserId: string }, { previousState: unknown }>({
+    mutationFn: async (vars) => {
+      const res = await apiClient.delete<{ success: boolean }>(`/user/moderation/mute/${vars.mutedUserId}`);
+      return res;
+    },
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: ['moderation', 'state'] });
+      const previousState = queryClient.getQueryData(['moderation', 'state']);
+
+      queryClient.setQueryData(['moderation', 'state'], (old: any) => ({
+        ...old,
+        mutes: (old?.mutes || []).filter((m: any) => m.mutedUserId !== variables.mutedUserId),
+      }));
+
+      return { previousState };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousState) {
+        queryClient.setQueryData(['moderation', 'state'], context.previousState);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
+    },
+  });
 }

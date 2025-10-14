@@ -163,6 +163,40 @@ const getUserStats = async (req, res) => {
     }
 };
 
+// @desc    Update user privacy settings
+// @route   PUT /api/users/privacy
+// @access  Private
+const updatePrivacy = async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        user.privacySettings = { ...user.privacySettings, ...req.body };
+        await user.save();
+        res.json({ success: true, message: 'Privacy settings updated', data: { privacySettings: user.privacySettings } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// @desc    Update user advanced filters
+// @route   PUT /api/users/filters
+// @access  Private
+const updateFilters = async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        user.advancedFilters = { ...user.advancedFilters, ...req.body };
+        await user.save();
+        res.json({ success: true, message: 'Filters updated', data: { advancedFilters: user.advancedFilters } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -170,5 +204,7 @@ module.exports = {
   deleteAccount,
   updatePreferences,
   updateLocation,
-  getUserStats
+  getUserStats,
+  updatePrivacy,
+  updateFilters
 };

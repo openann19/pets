@@ -20,6 +20,16 @@ export interface ButtonProps extends AriaButtonProps {
    * The size of the button
    */
   size?: 'small' | 'medium' | 'large';
+
+  /**
+   * Accessible label for screen readers
+   */
+  'aria-label'?: string;
+
+  /**
+   * Whether the button is disabled for accessibility
+   */
+  'aria-disabled'?: boolean;
 }
 
 /**
@@ -47,12 +57,16 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         {...mergeProps(buttonProps, focusProps, hoverProps)}
         ref={ref}
+        aria-label={props['aria-label']}
+        aria-disabled={props['aria-disabled']}
+        tabIndex={0}
         data-pressed={isPressed || undefined}
         data-focused={isFocused || undefined}
         data-hovered={isHovered || undefined}
         data-variant={variant}
         data-size={size}
         className={className}
+        style={{ outline: isFocused ? '2px solid var(--pm-primary)' : undefined }}
       >
         {children}
       </button>

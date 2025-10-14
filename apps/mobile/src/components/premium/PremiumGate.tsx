@@ -3,23 +3,16 @@
  * Controls access to premium features with elegant upgrade prompts
  */
 
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Dimensions,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface PremiumGateProps {
   feature: string;
@@ -38,21 +31,21 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
   onClose,
   onUpgrade,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const navigation = useNavigation();
 
-  const handleUpgrade = () => {
+  const handleUpgrade = (): void => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onClose();
     if (onUpgrade) {
       onUpgrade();
     } else {
       // Navigate to premium screen
-      (navigation as any).navigate('Premium');
+      (navigation as any).navigate?.('Premium');
     }
   };
 
-  const handleClose = () => {
+  const handleClose = (): void => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onClose();
   };
@@ -71,8 +64,8 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
             activeOpacity={1}
             onPress={handleClose}
           />
-          
-          <View style={[styles.modal, { backgroundColor: colors.surface }]}>
+
+          <View style={[styles.modal, { backgroundColor: (colors as any).surface ?? colors.background }]}>
             {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity
@@ -83,7 +76,6 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
-
             {/* Content */}
             <View style={styles.content}>
               {/* Premium Icon */}
@@ -95,7 +87,7 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
               </LinearGradient>
 
               {/* Feature Icon */}
-              <View style={[styles.featureIcon, { backgroundColor: colors.primary + '20' }]}>
+              <View style={[styles.featureIcon, { backgroundColor: `${colors.primary}20` }]}>
                 <Ionicons name={icon as any} size={40} color={colors.primary} />
               </View>
 
@@ -103,7 +95,7 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
               <Text style={[styles.title, { color: colors.text }]}>
                 Unlock {feature}
               </Text>
-              
+
               <Text style={[styles.description, { color: colors.textSecondary }]}>
                 {description}
               </Text>
@@ -165,7 +157,11 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
 };
 
 // Hook for easy premium gate usage
-export const usePremiumGate = () => {
+export const usePremiumGate = (): {
+  showPremiumGate: (config: { feature: string; description: string; icon?: string }) => void;
+  hidePremiumGate: () => void;
+  PremiumGateComponent: React.FC;
+} => {
   const [gateConfig, setGateConfig] = React.useState<{
     visible: boolean;
     feature: string;
@@ -178,20 +174,21 @@ export const usePremiumGate = () => {
     icon: 'star',
   });
 
-  const showPremiumGate = (feature: string, description: string, icon: string = 'star') => {
-    setGateConfig({
+  const showPremiumGate = (config: { feature: string; description: string; icon?: string }): void => {
+    setGateConfig(prev => ({
+      ...prev,
       visible: true,
-      feature,
-      description,
-      icon,
-    });
+      feature: config.feature,
+      description: config.description,
+      icon: config.icon ?? 'star',
+    }));
   };
 
-  const hidePremiumGate = () => {
+  const hidePremiumGate = (): void => {
     setGateConfig(prev => ({ ...prev, visible: false }));
   };
 
-  const PremiumGateComponent = () => (
+  const PremiumGateComponent: React.FC = () => (
     <PremiumGate
       visible={gateConfig.visible}
       feature={gateConfig.feature}

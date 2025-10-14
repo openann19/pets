@@ -1,9 +1,9 @@
-import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
-import MatchesScreen from '../MatchesScreen';
-import { useCallManager } from '../../components/calling/CallManager';
 import { useAuthStore } from '@pawfectmatch/core';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import React from 'react';
+import { Alert } from 'react-native';
+import { useCallManager } from '../../components/calling/CallManager';
+import MatchesScreen from '../MatchesScreen';
 
 // Mock dependencies
 jest.mock('../../components/calling/CallManager');
@@ -19,12 +19,18 @@ jest.mock('react-native', () => ({
   },
 }));
 
-const mockUseCallManager = useCallManager as jest.MockedFunction<typeof useCallManager>;
-const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
+const mockUseCallManager = useCallManager as jest.Mock;
+const mockUseAuthStore = useAuthStore as unknown as jest.Mock;
 
 const mockNavigation = {
   navigate: jest.fn(),
   goBack: jest.fn(),
+};
+
+const mockRoute = {
+  key: 'MatchesScreen',
+  name: 'MatchesScreen' as const,
+  params: undefined,
 };
 
 const mockMatches = [
@@ -66,7 +72,7 @@ describe('MatchesScreen - Calling Features', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockUseCallManager.mockReturnValue({
       startCall: mockStartCall,
       endCall: jest.fn(),
@@ -80,7 +86,7 @@ describe('MatchesScreen - Calling Features', () => {
         firstName: 'Test',
         lastName: 'User',
       },
-    } as any);
+    });
 
     mockIsCallActive.mockReturnValue(false);
   });
@@ -93,7 +99,7 @@ describe('MatchesScreen - Calling Features', () => {
     await waitFor(() => {
       const voiceButtons = getAllByTestId('voice-call-button');
       const videoButtons = getAllByTestId('video-call-button');
-      
+
       expect(voiceButtons).toHaveLength(mockMatches.length);
       expect(videoButtons).toHaveLength(mockMatches.length);
     });
@@ -101,7 +107,7 @@ describe('MatchesScreen - Calling Features', () => {
 
   it('should start voice call when voice button is pressed', async () => {
     mockStartCall.mockResolvedValue(true);
-    
+
     const { getAllByTestId } = render(
       <MatchesScreen navigation={mockNavigation} />
     );
@@ -123,8 +129,8 @@ describe('MatchesScreen - Calling Features', () => {
 
     // Simulate user confirming the call
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-    const confirmButton = alertCall[2].find((button: any) => button.text === 'Call');
-    
+    const confirmButton = alertCall[2].find((button: { text: string }) => button.text === 'Call');
+
     await confirmButton.onPress();
 
     expect(mockStartCall).toHaveBeenCalledWith('match-1', 'voice');
@@ -132,7 +138,7 @@ describe('MatchesScreen - Calling Features', () => {
 
   it('should start video call when video button is pressed', async () => {
     mockStartCall.mockResolvedValue(true);
-    
+
     const { getAllByTestId } = render(
       <MatchesScreen navigation={mockNavigation} />
     );
@@ -154,8 +160,8 @@ describe('MatchesScreen - Calling Features', () => {
 
     // Simulate user confirming the call
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-    const confirmButton = alertCall[2].find((button: any) => button.text === 'Call');
-    
+    const confirmButton = alertCall[2].find((button: { text: string }) => button.text === 'Call');
+
     await confirmButton.onPress();
 
     expect(mockStartCall).toHaveBeenCalledWith('match-1', 'video');
@@ -177,7 +183,7 @@ describe('MatchesScreen - Calling Features', () => {
 
   it('should show error when call fails to start', async () => {
     mockStartCall.mockResolvedValue(false);
-    
+
     const { getAllByTestId } = render(
       <MatchesScreen navigation={mockNavigation} />
     );
@@ -189,8 +195,8 @@ describe('MatchesScreen - Calling Features', () => {
 
     // Confirm the call
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-    const confirmButton = alertCall[2].find((button: any) => button.text === 'Call');
-    
+    const confirmButton = alertCall[2].find((button: { text: string }) => button.text === 'Call');
+
     await confirmButton.onPress();
 
     // Should show error alert
@@ -202,7 +208,7 @@ describe('MatchesScreen - Calling Features', () => {
 
   it('should prevent starting call when another call is active', async () => {
     mockIsCallActive.mockReturnValue(true);
-    
+
     const { getAllByTestId } = render(
       <MatchesScreen navigation={mockNavigation} />
     );
@@ -224,7 +230,7 @@ describe('MatchesScreen - Calling Features', () => {
 
   it('should handle different matches correctly', async () => {
     mockStartCall.mockResolvedValue(true);
-    
+
     const { getAllByTestId } = render(
       <MatchesScreen navigation={mockNavigation} />
     );
@@ -243,8 +249,8 @@ describe('MatchesScreen - Calling Features', () => {
 
     // Confirm the call
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-    const confirmButton = alertCall[2].find((button: any) => button.text === 'Call');
-    
+    const confirmButton = alertCall[2].find((button: { text: string }) => button.text === 'Call');
+
     await confirmButton.onPress();
 
     expect(mockStartCall).toHaveBeenCalledWith('match-2', 'voice');
@@ -258,7 +264,7 @@ describe('MatchesScreen - Calling Features', () => {
     await waitFor(() => {
       const voiceButtons = getAllByTestId('voice-call-button');
       const videoButtons = getAllByTestId('video-call-button');
-      
+
       voiceButtons.forEach(button => {
         expect(button).toHaveStyle({
           width: 36,
@@ -287,7 +293,7 @@ describe('MatchesScreen - Calling Features', () => {
     await waitFor(() => {
       const voiceButtons = getAllByTestId('voice-call-button');
       const videoButtons = getAllByTestId('video-call-button');
-      
+
       // Voice buttons should contain call icon
       voiceButtons.forEach(button => {
         expect(button).toBeTruthy();
@@ -329,8 +335,8 @@ describe('MatchesScreen - Calling Features', () => {
 
     // Simulate user canceling the call
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-    const cancelButton = alertCall[2].find((button: any) => button.text === 'Cancel');
-    
+    const cancelButton = alertCall[2].find((button: { text: string }) => button.text === 'Cancel');
+
     if (cancelButton.onPress) {
       cancelButton.onPress();
     }
@@ -357,7 +363,7 @@ describe('MatchesScreen - Calling Features', () => {
 
   it('should handle call manager errors gracefully', async () => {
     mockStartCall.mockRejectedValue(new Error('Call manager error'));
-    
+
     const { getAllByTestId } = render(
       <MatchesScreen navigation={mockNavigation} />
     );
@@ -369,8 +375,8 @@ describe('MatchesScreen - Calling Features', () => {
 
     // Confirm the call
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-    const confirmButton = alertCall[2].find((button: any) => button.text === 'Call');
-    
+    const confirmButton = alertCall[2].find((button: { text: string }) => button.text === 'Call');
+
     await confirmButton.onPress();
 
     // Should show error alert for failed call
@@ -389,11 +395,11 @@ describe('MatchesScreen - Calling Features', () => {
       // Should render match information
       expect(getByTestId('match-name-0')).toHaveTextContent('Buddy');
       expect(getByTestId('match-owner-0')).toHaveTextContent('with John Doe');
-      
+
       // Should render call buttons alongside other match info
       expect(getAllByTestId('voice-call-button')).toHaveLength(2);
       expect(getAllByTestId('video-call-button')).toHaveLength(2);
-      
+
       // Should still show chevron for navigation
       expect(getByTestId('match-chevron-0')).toBeTruthy();
     });

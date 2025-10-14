@@ -5,10 +5,9 @@
 
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { COLORS, GRADIENTS, SHADOWS, RADIUS, BACKDROP } from '../../theme/design-system';
-import { transitions } from '../../animations/premium-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useRef, useState } from 'react';
+import { COLORS, GRADIENTS, transitions } from '../../theme/design-system';
 
 interface PremiumInputProps {
   label: string;
@@ -30,7 +29,7 @@ interface PremiumInputProps {
   glow?: boolean;
 }
 
-export function PremiumInput({
+export const PremiumInput = ({
   label,
   placeholder,
   type = 'text',
@@ -48,28 +47,28 @@ export function PremiumInput({
   autoComplete,
   maxLength,
   glow = false,
-}: PremiumInputProps) {
+}: PremiumInputProps): JSX.Element => {
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const isFloating = isFocused || value.length > 0;
+  const isFloating = isFocused ?? value.length > 0;
   const hasError = !!error;
 
   // Focus management
-  const handleFocus = () => {
+  const handleFocus = (): void => {
     setIsFocused(true);
     if (inputRef.current) {
       inputRef.current.focus();
     }
   };
 
-  const handleBlur = () => {
+  const handleBlur = (): void => {
     setIsFocused(false);
   };
 
   // Get variant styles
-  const getVariantStyles = () => {
+  const getVariantStyles = (): Record<string, string | number> => {
     const variants = {
       default: {
         background: COLORS.neutral[0],
@@ -118,7 +117,7 @@ export function PremiumInput({
   };
 
   // Get size styles
-  const getSizeStyles = () => {
+  const getSizeStyles = (): Record<string, string | number> => {
     const sizes = {
       sm: {
         height: '40px',
@@ -149,8 +148,8 @@ export function PremiumInput({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={transitions.spring}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => { setIsHovered(true); }}
+      onMouseLeave={() => { setIsHovered(false); }}
     >
       {/* Input Container */}
       <motion.div
@@ -167,7 +166,7 @@ export function PremiumInput({
         transition={transitions.micro}
       >
         {/* Left Icon */}
-        {icon && (
+        {icon !== undefined &&  (
           <motion.div
             className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
             animate={{
@@ -204,7 +203,7 @@ export function PremiumInput({
           onClick={handleFocus}
         >
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required !== undefined &&  <span className="text-red-500 ml-1">*</span>}
         </motion.label>
 
         {/* Input Field */}
@@ -212,7 +211,7 @@ export function PremiumInput({
           ref={inputRef}
           type={type}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => { onChange(e.target.value); }}
           onFocus={handleFocus}
           onBlur={handleBlur}
           disabled={disabled}
@@ -233,7 +232,7 @@ export function PremiumInput({
         />
 
         {/* Right Icon */}
-        {rightIcon && (
+        {rightIcon !== undefined &&  (
           <motion.div
             className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
             animate={{
@@ -249,7 +248,7 @@ export function PremiumInput({
         )}
 
         {/* Character Count */}
-        {maxLength && value.length > 0 && (
+        {maxLength !== undefined &&  value.length > 0 && (
           <motion.div
             className="absolute bottom-1 right-3 text-xs"
             initial={{ opacity: 0 }}
@@ -265,7 +264,7 @@ export function PremiumInput({
         )}
 
         {/* Focus ring */}
-        {isFocused && !hasError && (
+        {isFocused !== undefined &&  !hasError && (
           <motion.div
             className="absolute inset-0 rounded-inherit pointer-events-none"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -281,7 +280,7 @@ export function PremiumInput({
         )}
 
         {/* Error ring */}
-        {hasError && (
+        {hasError !== undefined &&  (
           <motion.div
             className="absolute inset-0 rounded-inherit pointer-events-none"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -294,8 +293,7 @@ export function PremiumInput({
         )}
 
         {/* Glow effect */}
-        {glow && isFocused && !hasError && (
-          <motion.div
+        {glow !== undefined &&  isFocused && !hasError ? <motion.div
             className="absolute inset-0 rounded-inherit pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -307,14 +305,12 @@ export function PremiumInput({
               transform: 'scale(1.05)',
             }}
             transition={transitions.micro}
-          />
-        )}
+          /> : null}
       </motion.div>
 
       {/* Helper Text */}
       <AnimatePresence>
-        {(helperText || error) && (
-          <motion.div
+        {(helperText || error) ? <motion.div
             className="mt-2 px-1"
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
@@ -329,8 +325,7 @@ export function PremiumInput({
             >
               {error || helperText}
             </p>
-          </motion.div>
-        )}
+          </motion.div> : null}
       </AnimatePresence>
 
     </motion.div>

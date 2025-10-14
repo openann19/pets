@@ -1,8 +1,8 @@
 import React from 'react';
-import { useTextField } from '@react-aria/textfield';
-import { useFocusRing } from '@react-aria/focus';
-import { mergeProps } from '@react-aria/utils';
-import { AriaTextFieldProps } from '@react-types/textfield';
+import {  } from '@react-aria/textfield';
+import {  } from '@react-aria/focus';
+import {  } from '@react-aria/utils';
+import {  } from '@react-types/textfield';
 
 export interface InputProps extends AriaTextFieldProps {
   /**
@@ -64,8 +64,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     } = props;
 
     const ref = React.useRef<HTMLInputElement>(null);
-    const { inputProps, labelProps, descriptionProps, errorMessageProps } = useTextField(otherProps, ref);
-    const { focusProps, isFocused } = useFocusRing();
+    const { inputProps } = useTextField(otherProps, ref);
+    const { focusProps } = useFocusRing();
 
     // Merge the refs
     React.useImperativeHandle(forwardedRef, () => ref.current!);
@@ -92,7 +92,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <div className="relative">
-        {leftIcon && (
+        {leftIcon !== undefined &&  (
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
             {leftIcon}
           </div>
@@ -111,7 +111,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ${className}
           `}
         />
-        {rightIcon && (
+        {rightIcon !== undefined &&  (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
             {rightIcon}
           </div>

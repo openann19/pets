@@ -1,5 +1,5 @@
-import { renderHook, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {  } from '@testing-library/react';
+import {  } from '@tanstack/react-query';
 import React, { ReactNode } from 'react';
 
 // Simple test for basic functionality

@@ -21,6 +21,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.pawfectmatch.premium",
       "buildNumber": "1",
+      "jsEngine": "hermes",
       "infoPlist": {
         "NSCameraUsageDescription": "PawfectMatch uses the camera for pet photo uploads and AR discovery features",
         "NSLocationWhenInUseUsageDescription": "PawfectMatch uses your location to find compatible pets nearby",
@@ -38,6 +39,7 @@
       "versionCode": 1,
       "compileSdkVersion": 34,
       "targetSdkVersion": 34,
+      "jsEngine": "hermes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ec4899"
@@ -83,7 +85,7 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow PawfectMatch to use your location to find pets near you and suggest nearby meetup locations."
         }
-      ],
+      ]
     ],
     "extra": {
       "eas": {

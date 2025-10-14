@@ -1,16 +1,12 @@
 'use client';
 
-import { useAuthStore } from '../../src/stores/auth-store';
+import { _useAuthStore } from '../../src/stores/auth-store';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import LoadingSpinner from '../../src/components/UI/LoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-export default function ProtectedLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = _useAuthStore();
   const router = useRouter();
 
   useEffect(() => {

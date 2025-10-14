@@ -34,7 +34,7 @@ class FeedbackService {
       this.isInitialized = true;
       logger.info('Feedback service initialized');
     } catch (error) {
-      logger.error('Failed to initialize feedback service', error);
+      logger.error('Failed to initialize feedback service', { error });
     }
   }
 
@@ -50,11 +50,11 @@ class FeedbackService {
         success: [523.25, 659.25, 783.99], // C5, E5, G5
         error: [220, 196], // A3, G3
         warning: [440, 330], // A4, E4
-        info: [440] // A4
+        info: [440], // A4
       };
 
       const frequency = frequencies[type][0];
-      oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(frequency ?? 440, this.audioContext.currentTime);
       oscillator.type = 'sine';
 
       // Configure volume
@@ -67,7 +67,7 @@ class FeedbackService {
       oscillator.start();
       oscillator.stop(this.audioContext.currentTime + 0.2);
     } catch (error) {
-      logger.error('Failed to play sound', error);
+      logger.error('Failed to play sound', { error });
     }
   }
 
@@ -77,7 +77,7 @@ class FeedbackService {
     try {
       navigator.vibrate(pattern);
     } catch (error) {
-      logger.error('Failed to vibrate', error);
+      logger.error('Failed to vibrate', { error });
     }
   }
 
@@ -91,7 +91,7 @@ class FeedbackService {
     const patterns = {
       light: 50,
       medium: 100,
-      strong: [100, 50, 100]
+      strong: [100, 50, 100],
     };
 
     this.vibrate(patterns[intensity]);
@@ -138,4 +138,4 @@ class FeedbackService {
   }
 }
 
-export const feedbackService = new FeedbackService();
+export const _feedbackService = new FeedbackService();

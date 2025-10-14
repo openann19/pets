@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import type { ZustandSetter, ZustandGetter } from '../types/advanced';
 
 export interface WeatherData {
   weather: Array<{
@@ -47,18 +48,18 @@ export interface WeatherState {
 /**
  * Weather store for managing ambient weather effects
  */
-export const useWeatherStore = create<WeatherState>()(
-  immer((set, get) => ({
-    data: null,
-    isLoading: false,
-    error: null,
+export const _useWeatherStore = create<WeatherState>()(
+  immer((set: ZustandSetter<WeatherState>, get: ZustandGetter<WeatherState>) => ({
+    data: null as WeatherData | null,
+    isLoading: false as boolean,
+    error: null as string | null,
     location: {
-      latitude: null,
-      longitude: null,
+      latitude: null as number | null,
+      longitude: null as number | null,
     },
     
     // Set weather data
-    setWeatherData: (data) => set((state) => {
+    setWeatherData: (data) => set((state: WeatherState) => {
       state.data = {
         ...data,
         lastUpdated: new Date().toISOString(),
@@ -68,25 +69,25 @@ export const useWeatherStore = create<WeatherState>()(
     }),
     
     // Set loading state
-    setIsLoading: (isLoading) => set((state) => {
+    setIsLoading: (isLoading: boolean) => set((state: WeatherState) => {
       state.isLoading = isLoading;
       return state;
     }),
     
     // Set error
-    setError: (error) => set((state) => {
+    setError: (error: string | null) => set((state: WeatherState) => {
       state.error = error;
       return state;
     }),
     
     // Set user location
-    setLocation: (latitude, longitude) => set((state) => {
+    setLocation: (latitude: number, longitude: number) => set((state: WeatherState) => {
       state.location = { latitude, longitude };
       return state;
     }),
     
     // Calculate and update time of day based on current time and sunrise/sunset
-    calculateTimeOfDay: () => set((state) => {
+    calculateTimeOfDay: () => set((state: WeatherState) => {
       const data = get().data;
       if (!data || !data.sys) return state;
       

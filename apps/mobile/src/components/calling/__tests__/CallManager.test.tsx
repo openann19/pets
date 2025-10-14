@@ -1,9 +1,9 @@
 import React from 'react';
-import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import {  } from '@testing-library/react-native';
+import {  } from 'react-native';
 import CallManager, { useCallManager } from '../CallManager';
 import WebRTCService from '../../../services/WebRTCService';
-import { useSocket } from '../../../hooks/useSocket';
+import {  } from '../../../hooks/useSocket';
 
 // Mock dependencies
 jest.mock('../../../services/WebRTCService');
@@ -25,12 +25,12 @@ const mockSocket = {
 };
 
 const mockWebRTCService = WebRTCService as jest.Mocked<typeof WebRTCService>;
-const mockUseSocket = useSocket as jest.MockedFunction<typeof useSocket>;
+const mockUseSocket = useSocket;
 
 describe('CallManager', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseSocket.mockReturnValue(mockSocket as any);
+    mockUseSocket.mockReturnValue(mockSocket as unknown);
     mockWebRTCService.getCallState.mockReturnValue({
       isActive: false,
       isConnected: false,
@@ -167,7 +167,7 @@ describe('CallManager', () => {
 });
 
 describe('useCallManager hook', () => {
-  const TestComponent = () => {
+  const TestComponent = (): JSX.Element => {
     const { startCall, endCall, isCallActive, getCallState } = useCallManager();
     
     return (

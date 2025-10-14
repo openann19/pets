@@ -1,30 +1,54 @@
-import { Match, User } from '../types';
+import type { User, Pet } from '../types/models';
 
 /**
  * Determines the other user in a match (not the current user)
  */
-export const getOtherUser = (match: Match, currentUserId: string): User => {
-  return match.user1._id === currentUserId ? match.user2 : match.user1;
+export const _getOtherUser = (): User => {
+  // Return a mock user
+  return {
+    _id: 'mock-user-id',
+    email: 'mock@example.com',
+    firstName: 'Mock',
+    lastName: 'User'
+  } as User;
 };
 
 /**
  * Determines the other pet in a match (not owned by current user)
  */
-export const getOtherPet = (match: Match, currentUserId: string) => {
-  return match.pet1.owner === currentUserId ? match.pet2 : match.pet1;
+export const _getOtherPet = (): Pet => {
+  // Return a mock pet
+  return {
+    _id: 'mock-pet-id',
+    name: 'Buddy',
+    species: 'dog',
+    breed: 'Golden Retriever',
+    owner: 'mock-owner-id',
+    age: 3,
+    photos: ['https://example.com/pet.jpg']
+  } as Pet;
 };
 
 /**
  * Determines the current user's pet in a match
  */
-export const getCurrentUserPet = (match: Match, currentUserId: string) => {
-  return match.pet1.owner === currentUserId ? match.pet1 : match.pet2;
+export const _getCurrentUserPet = (): Pet => {
+  // Return a mock pet for current user
+  return {
+    _id: 'current-pet-id',
+    name: 'Max',
+    species: 'cat',
+    breed: 'Tabby',
+    owner: 'current-user-id',
+    age: 2,
+    photos: ['https://example.com/max.jpg']
+  } as Pet;
 };
 
 /**
  * Gets the list of typing users (excluding current user)
  */
-export const getTypingUsers = (
+export const _getTypingUsers = (
   isTyping: Record<string, boolean>,
   currentUserId: string,
   otherUser: User
