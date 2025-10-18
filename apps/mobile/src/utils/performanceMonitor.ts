@@ -32,7 +32,6 @@ interface InteractionTiming {
 
 class PerformanceMonitor {
   private isEnabled: boolean = __DEV__;
-  private fpsCounter: number = 0;
   private lastFrameTime: number = 0;
   private frameCount: number = 0;
   private currentFPS: number = 60;
