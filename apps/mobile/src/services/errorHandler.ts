@@ -83,7 +83,6 @@ class ErrorHandler {
     const {
       showNotification = true,
       logToService = true,
-      fallbackMessage = 'An error occurred',
     } = options;
 
     if (logToService) {
@@ -92,7 +91,7 @@ class ErrorHandler {
 
     if (showNotification) {
       const userMessage = this.getUserFriendlyMessage(error);
-      this.showUserNotification('Error', userMessage || fallbackMessage);
+      this.showUserNotification('Error', userMessage);
     }
   }
 
@@ -186,7 +185,7 @@ class ErrorHandler {
    */
   createError(message: string, code?: string): Error {
     const error = new Error(message);
-    if (code) {
+    if (code !== undefined && code !== '') {
       (error as Error & { code?: string }).code = code;
     }
     return error;

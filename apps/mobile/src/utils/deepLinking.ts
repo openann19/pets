@@ -96,6 +96,14 @@ export class DeepLinkingService {
 
   handleUrl(url: string): DeepLinkData | null {
     try {
+      // Validate and rate-limit to prevent abuse
+      if (!this.validateDeepLinkUrl(url)) {
+        logger.warn('Invalid deep link URL format', { url });
+        return null;
+      }
+      if (!this.checkDeepLinkRateLimit()) {
+        return null;
+      }
       logger.info('Handling deep link URL:', { url });
 
       const parsedData = this.parseUrl(url);
@@ -141,8 +149,9 @@ export class DeepLinkingService {
     const id = (parts[1] !== undefined && parts[1] !== '') ? parts[1] : '';
     const action = (parts[2] !== undefined && parts[2] !== '') ? parts[2] : undefined;
     const params = this.extractParams(url);
+    const safeParams = this.sanitizeDeepLinkParams(params);
 
-    return { type, id, action, params };
+    return { type, id, action, params: safeParams };
   }
 
   private parseWebUrl(url: string): DeepLinkData | null {
@@ -167,19 +176,22 @@ export class DeepLinkingService {
         'subscription': 'premium'
       };
 
-      const pathKey = parts[0] ?? '';
-      const _id = (parts[1] !== undefined && parts[1] !== '') ? parts[1] : '';
+    const pathKey = parts[0] ?? '';
 
       // Convert URLSearchParams to object manually
       const params: Record<string, string> = {};
       urlObj.searchParams.forEach((value, key) => {
         params[key] = value;
       });
+      const safeParams = this.sanitizeDeepLinkParams(params);
 
-      if (pathKey in pathMap) {
-        const type = pathMap[pathKey];
+      if (Object.prototype.hasOwnProperty.call(pathMap, pathKey)) {
+        const type = pathMap[pathKey as keyof typeof pathMap];
+        if (type === undefined) {
+          return null;
+        }
         const id = (parts[1] !== undefined && parts[1] !== '') ? parts[1] : '';
-        return { type, id, params };
+        return { type, id, params: safeParams };
       }
 
       return null;
@@ -187,7 +199,6 @@ export class DeepLinkingService {
       logger.error('Error parsing web URL:', { error: error instanceof Error ? error.message : String(error), url });
       return null;
     }
-  }
   }
 
   private extractParams(url: string): Record<string, string> {
@@ -332,8 +343,7 @@ export class DeepLinkingService {
       // Only allow http, https, or custom scheme
       const allowedSchemes = ['http:', 'https:', 'pawfectmatch:'];
       const urlObj = new URL(url);
-      
-      return allowedSchemes.some(scheme => url.startsWith(scheme));
+      return allowedSchemes.includes(urlObj.protocol);
     } catch {
       return false;
     }

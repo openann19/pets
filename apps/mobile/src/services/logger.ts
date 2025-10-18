@@ -312,10 +312,19 @@ class MobileLogger {
 
   /**
    * Sanitize log message to prevent injection
+   * Removes control characters that could cause issues in logs
    */
   private sanitizeLogMessage(message: string): string {
-    // Remove potentially dangerous characters and limit length
-    return message.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').substring(0, 1000);
+    // Remove control characters (ASCII 0-31, 127-159) to prevent log injection
+    // Using a simpler approach: replace any non-printable characters
+    const sanitized = message
+      .split('')
+      .filter(char => {
+        const code = char.charCodeAt(0);
+        return code >= 32 && code < 127;
+      })
+      .join('');
+    return sanitized.substring(0, 1000);
   }
 
   /**

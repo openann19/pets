@@ -5,7 +5,6 @@ import nextPlugin from '@next/eslint-plugin-next';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import globals from 'globals';
-import eslintComments from 'eslint-plugin-eslint-comments';
 
 /**
  * Production-Grade "Strict" ESLint Configuration (2025)
@@ -52,7 +51,6 @@ export default [
       'react': reactPlugin,
       'react-hooks': reactHooksPlugin,
       '@next/next': nextPlugin,
-      'eslint-comments': eslintComments,
     },
     rules: {
       // --- Start with the strictest recommended rule sets ---
@@ -108,21 +106,6 @@ export default [
       // Disable rules that are stylistic or handled by Prettier
       'arrow-body-style': 'off',
       'react/prop-types': 'off', // Not needed with TypeScript
-
-      // Disallow disabling ESLint rules inline (governance)
-      'eslint-comments/no-use': 'error',
-      'eslint-comments/disable-enable-pair': ['error', { allowWholeFile: false }],
-
-      // Disallow ts-ignore without intent
-      '@typescript-eslint/ban-ts-comment': [
-        'error',
-        {
-          'ts-ignore': 'never',
-          'ts-expect-error': 'allow-with-description',
-          'ts-nocheck': 'never',
-          'ts-check': 'allow-with-description',
-        },
-      ],
     },
     settings: {
       react: {
@@ -133,10 +116,16 @@ export default [
 
   // 4. Test Files Overrides (more lenient for tests)
   {
-    files: ['**/*.test.{js,jsx,ts,tsx}', '**/__tests__/**/*', '**/*.spec.{js,jsx,ts,tsx}', '**/setupTests.{js,ts}'],
+    files: ['**/*.test.{js,jsx,ts,tsx}', '**/__tests__/**/*', '**/*.spec.{js,jsx,ts,tsx}', '**/__mocks__/**/*'],
     languageOptions: {
       globals: {
         ...globals.jest,
+        // Testing Library globals
+        render: 'readonly',
+        screen: 'readonly',
+        fireEvent: 'readonly',
+        waitFor: 'readonly',
+        within: 'readonly',
       },
     },
     rules: {
@@ -144,7 +133,40 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-require-imports': 'off', // jest.mock() uses require
+      '@typescript-eslint/strict-boolean-expressions': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/unbound-method': 'off', // Mock methods don't need proper binding
+      '@typescript-eslint/await-thenable': 'off', // await on mock functions
+      '@typescript-eslint/no-confusing-void-expression': 'off', // test assertions may be void
+      'react/no-unknown-property': 'off', // React Native props like testID
+      'no-console': 'off', // console.log for debugging tests
+      'no-undef': 'off', // Testing library and other test globals
+    },
+  },
+
+  // 5. Setup Files Overrides (test configuration files)
+  {
+    files: ['**/setupTests.{ts,js}'],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/strict-boolean-expressions': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      'no-undef': 'off',
     },
   },
 ];

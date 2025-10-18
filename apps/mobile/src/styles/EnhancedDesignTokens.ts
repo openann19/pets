@@ -151,7 +151,8 @@ export const getResponsiveSpacing = (size: keyof typeof SPACING): string => {
     const baseValue = SPACING[size];
     if (typeof baseValue === 'string' && baseValue.endsWith('rem')) {
       const numValue = parseFloat(baseValue.replace('rem', ''));
-      return `${numValue * scale}rem`;
+      const scaled = numValue * scale;
+      return `${scaled.toString()}rem`;
     }
   }
   return SPACING[size];

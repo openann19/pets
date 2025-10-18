@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    // RN specific
+    "lib": ["ES2023", "DOM", "WebWorker"],
     "types": ["jest", "react-native"],
     "typeRoots": ["./src/types", "./node_modules/@types"]
   },
@@ -11,15 +11,7 @@
     "App.tsx",
     "app.config.cjs",
     "babel.config.cjs",
-    "metro.config.cjs",
-    "../../eslint.config.js"
+    "metro.config.cjs"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "coverage",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/__tests__/**"
-  ]
+  "exclude": ["node_modules", "dist", "coverage"]
 }

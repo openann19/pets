@@ -231,7 +231,7 @@ class ImageCompressionService {
   }
 
   /**
-   * Format file size for logging
+   * Format file size in human readable format
    */
   private formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 B';
@@ -239,8 +239,9 @@ class ImageCompressionService {
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const sizeUnit = sizes[Math.min(i, sizes.length - 1)] ?? 'B';
 
-    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizeUnit}`;
   }
 
   /**

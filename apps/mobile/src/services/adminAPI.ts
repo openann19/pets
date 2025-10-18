@@ -153,7 +153,7 @@ class AdminAPIService {
     if (params.role !== null && params.role !== undefined && params.role !== '') queryParams.append('role', params.role);
     if (params.verified !== null && params.verified !== undefined && params.verified !== '') queryParams.append('verified', params.verified);
 
-    return await this.request(`/admin/users?${queryParams}`);
+    return await this.request(`/admin/users?${queryParams.toString()}`);
   }
 
   async getUserDetails(userId: string): Promise<AdminAPIResponse<{
@@ -203,7 +203,7 @@ class AdminAPIService {
     if (params.limit !== null && params.limit !== undefined) queryParams.append('limit', String(params.limit));
     if (params.status !== null && params.status !== undefined && params.status !== '') queryParams.append('status', params.status);
 
-    return await this.request(`/admin/chats?${queryParams}`);
+    return await this.request(`/admin/chats?${queryParams.toString()}`);
   }
 
   async getChatDetails(chatId: string): Promise<AdminAPIResponse<{
@@ -260,7 +260,7 @@ class AdminAPIService {
     if (params.limit !== null && params.limit !== undefined) queryParams.append('limit', String(params.limit));
     if (params.status !== null && params.status !== undefined && params.status !== '') queryParams.append('status', params.status);
 
-    return await this.request(`/admin/uploads?${queryParams}`);
+    return await this.request(`/admin/uploads?${queryParams.toString()}`);
   }
 
   async getUploadDetails(uploadId: string): Promise<AdminAPIResponse<{
@@ -305,7 +305,7 @@ class AdminAPIService {
     if (params.limit !== null && params.limit !== undefined) queryParams.append('limit', String(params.limit));
     if (params.status !== null && params.status !== undefined && params.status !== '') queryParams.append('status', params.status);
 
-    return await this.request(`/admin/verifications/pending?${queryParams}`);
+    return await this.request(`/admin/verifications/pending?${queryParams.toString()}`);
   }
 
   async getVerificationDetails(verificationId: string): Promise<AdminAPIResponse<{
@@ -389,7 +389,7 @@ class AdminAPIService {
     if (params.page !== null && params.page !== undefined) queryParams.append('page', String(params.page));
     if (params.limit !== null && params.limit !== undefined) queryParams.append('limit', String(params.limit));
 
-    return await this.request(`/admin/security/audit-logs?${queryParams}`);
+    return await this.request(`/admin/security/audit-logs?${queryParams.toString()}`);
   }
 
   // Security & Monitoring
@@ -434,7 +434,7 @@ class AdminAPIService {
     if (params.filter !== undefined && params.filter !== '') queryParams.append('filter', params.filter);
     if (params.search !== undefined && params.search !== '') queryParams.append('search', params.search);
 
-    return await this.request(`/admin/chat-messages?${queryParams}`);
+    return await this.request(`/admin/chat-messages?${queryParams.toString()}`);
   }
 
   // Billing & Subscriptions

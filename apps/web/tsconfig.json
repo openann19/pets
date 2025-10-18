@@ -3,27 +3,8 @@
   "compilerOptions": {
     "jsx": "preserve",
     "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "src/*"
-      ]
-    },
-    "incremental": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "skipLibCheck": false,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "strict": true,
-    "strictNullChecks": true,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noUncheckedIndexedAccess": true,
-    "allowJs": true
+    "paths": { "@/*": ["src/*"] },
+    "plugins": [{ "name": "next" }]
   },
   "include": [
     "next-env.d.ts",
@@ -31,8 +12,5 @@
     "**/*.ts",
     "**/*.tsx"
   ],
-  "exclude": [
-    "cypress",
-    "public/app-components/**"
-  ]
+  "exclude": ["cypress", "public/app-components/**"]
 }

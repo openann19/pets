@@ -1,4 +1,4 @@
-import {  } from '../deepLinking';
+import { parseDeepLink } from '../deepLinking';
 
 describe('Deep Linking Utils', () => {
   describe('parseDeepLink', () => {

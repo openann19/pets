@@ -104,9 +104,9 @@ class PushNotificationService {
   private async requestPermission(): Promise<boolean> {
     try {
       const authStatus = await messaging().requestPermission();
-      const enabled =
-        authStatus === AuthorizationStatus.AUTHORIZED ||
-        authStatus === AuthorizationStatus.PROVISIONAL;
+      const enabled
+        = (authStatus as AuthorizationStatus) === AuthorizationStatus.AUTHORIZED
+        || (authStatus as AuthorizationStatus) === AuthorizationStatus.PROVISIONAL;
 
       if (enabled) {
         logger.info('Notification permission granted');

@@ -1,5 +1,8 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
+const base = require('../../jest.config.base.js');
+
+/** @type {import('jest').Config} */
 module.exports = {
+  ...base,
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   moduleNameMapper: {
@@ -12,36 +15,5 @@ module.exports = {
     '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
     '^@/types/(.*)$': '<rootDir>/src/types/$1',
     '^@pawfectmatch/core$': '<rootDir>/../../packages/core/src'
-  },
-  transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: {
-        jsx: 'react-jsx',
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-        module: 'esnext',
-        target: 'es2017',
-        lib: ['dom', 'dom.iterable', 'es6'],
-        allowJs: true,
-        skipLibCheck: true,
-        strict: false,
-        forceConsistentCasingInFileNames: true,
-        noEmit: true,
-        resolveJsonModule: true,
-        isolatedModules: true,
-        noImplicitAny: false,
-      }
-    }],
-    '^.+\\.(js|jsx)$': 'babel-jest',
-  },
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  testPathIgnorePatterns: ['/node_modules/', '/.next/', '<rootDir>/tests/playwright/'],
-  transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$|@testing-library|@emotion|@plaiceholder|sharp))',
-  ],
-  globals: {
-    'ts-jest': {
-      isolatedModules: true
-    }
   },
 };

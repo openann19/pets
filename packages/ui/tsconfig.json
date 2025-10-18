@@ -5,18 +5,8 @@
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "rootDir": "./src",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": ["node", "jest"],
-    "typeRoots": ["./node_modules/@types", "./src/types"],
-    "noEmit": false
+    "types": ["node", "jest"]
   },
   "include": ["src/**/*", "src/types/**/*"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "src/__tests__/**/*",
-    "src/setupTests.ts",
-    "src/test-utils/**/*"
-  ]
+  "exclude": ["node_modules", "dist"]
 }

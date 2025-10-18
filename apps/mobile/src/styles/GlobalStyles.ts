@@ -3,9 +3,7 @@ import {
   COLORS,
   SPACING,
   TYPOGRAPHY,
-  SHADOWS,
   RADIUS,
-  Z_INDEX,
 } from '@pawfectmatch/design-tokens';
 
 // Lazy load dimensions to avoid issues in test environment
@@ -661,5 +659,8 @@ export const Device = {
   isIOS: (Platform.OS === 'ios'),
   isAndroid: (Platform.OS === 'android'),
 };
+
+// Export utility objects for use by other files (e.g., DarkTheme.ts)
+export { Typography, Spacing, BorderRadius, Shadows };
 
 export default GlobalStyles;

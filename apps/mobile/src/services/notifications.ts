@@ -46,12 +46,12 @@ class NotificationService {
       let finalStatus = existingStatus;
 
       // Request permission if not granted
-      if (existingStatus !== 'granted') {
+      if ((existingStatus as string) !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
-      if (finalStatus !== 'granted') {
+      if ((finalStatus as string) !== 'granted') {
         logger.warn('Failed to get push token for push notification!');
         return null;
       }
