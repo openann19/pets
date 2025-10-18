@@ -46,7 +46,6 @@ export default [
           './packages/tsconfig.json',
           './packages/*/tsconfig.json',
         ],
-        tsconfigRootDir: '.',
       },
       globals: {
         ...globals.browser,
