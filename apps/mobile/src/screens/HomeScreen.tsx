@@ -151,12 +151,12 @@ export default function HomeScreen() {
     }
   };
 
-  const handleProfilePress = () => handleQuickAction('profile');
-  const handleSettingsPress = () => handleQuickAction('settings');
-  const handleSwipePress = () => handleQuickAction('swipe');
-  const handleMatchesPress = () => handleQuickAction('matches');
-  const handleMessagesPress = () => handleQuickAction('messages');
-  const handleAdoptionPress = () => handleQuickAction('adoption');
+  const handleProfilePress = () => { handleQuickAction('profile'); };
+  const handleSettingsPress = () => { handleQuickAction('settings'); };
+  const handleSwipePress = () => { handleQuickAction('swipe'); };
+  const handleMatchesPress = () => { handleQuickAction('matches'); };
+  const handleMessagesPress = () => { handleQuickAction('messages'); };
+  const handleAdoptionPress = () => { handleQuickAction('adoption'); };
 
   return (
     <EliteContainer gradient="primary">
@@ -275,7 +275,7 @@ export default function HomeScreen() {
                   magnetic={true}
                   shimmer={true}
                   entrance="scaleIn"
-                  onPress={() => handleQuickAction('profile')}
+                  onPress={() => { handleQuickAction('profile'); }}
                   style={styles.actionCard}
                 >
                   <GlowContainer color="purple" intensity="medium" animated={true}>
@@ -391,7 +391,7 @@ export default function HomeScreen() {
                       ripple={true}
                       glow={true}
                       shimmer={true}
-                      onPress={() => handleQuickAction('premium')}
+                      onPress={() => { handleQuickAction('premium'); }}
                     />
                   </View>
                 </View>

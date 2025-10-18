@@ -113,7 +113,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       setSystemColorScheme(colorScheme);
     });
 
-    return () => subscription?.remove();
+    return () => { subscription?.remove(); };
   }, []);
 
   // Save theme preference to storage

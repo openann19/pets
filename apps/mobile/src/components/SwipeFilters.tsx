@@ -82,7 +82,7 @@ const SwipeFilters: React.FC<SwipeFiltersProps> = ({
               <Text style={[styles.switchLabel, { color: colors.text }]}>Verified Profiles Only</Text>
               <Switch
                 value={filters.onlyVerified}
-                onValueChange={(value) => onFiltersChange({ ...filters, onlyVerified: value })}
+                onValueChange={(value) => { onFiltersChange({ ...filters, onlyVerified: value }); }}
                 trackColor={{ false: colors.border, true: colors.primary }}
                 thumbColor={filters.onlyVerified ? 'white' : '#f4f3f4'}
               />

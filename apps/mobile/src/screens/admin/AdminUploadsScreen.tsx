@@ -167,7 +167,7 @@ const AdminUploadsScreen: React.FC<AdminUploadsScreenProps> = ({ navigation }) =
   const renderUpload = useCallback(({ item }: { item: Upload }) => (
     <TouchableOpacity
       style={[styles.uploadCard, { backgroundColor: colors.card }]}
-      onPress={() => setSelectedUpload(item)}
+      onPress={() => { setSelectedUpload(item); }}
     >
       <Image
         source={{ uri: item.thumbnailUrl || item.url }}
@@ -211,7 +211,7 @@ const AdminUploadsScreen: React.FC<AdminUploadsScreenProps> = ({ navigation }) =
         styles.filterButton,
         { backgroundColor: filter === filterType ? colors.primary : colors.card },
       ]}
-      onPress={() => setFilter(filterType)}
+      onPress={() => { setFilter(filterType); }}
     >
       <Text
         style={[
@@ -232,7 +232,7 @@ const AdminUploadsScreen: React.FC<AdminUploadsScreenProps> = ({ navigation }) =
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Upload Details</Text>
-            <TouchableOpacity onPress={() => setSelectedUpload(null)}>
+            <TouchableOpacity onPress={() => { setSelectedUpload(null); }}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
@@ -285,7 +285,7 @@ const AdminUploadsScreen: React.FC<AdminUploadsScreenProps> = ({ navigation }) =
 
               <TouchableOpacity
                 style={[styles.actionButton, styles.rejectButton]}
-                onPress={() => handleRejectWithReason(selectedUpload)}
+                onPress={() => { handleRejectWithReason(selectedUpload); }}
               >
                 <Ionicons name="close" size={20} color="white" />
                 <Text style={styles.actionButtonText}>Reject</Text>
@@ -301,7 +301,7 @@ const AdminUploadsScreen: React.FC<AdminUploadsScreenProps> = ({ navigation }) =
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => { navigation.goBack(); }} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Upload Management</Text>

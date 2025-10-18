@@ -203,7 +203,7 @@ export default function MyPetsScreen({ navigation }: MyPetsScreenProps) {
 
           <TouchableOpacity
             style={[styles.actionButton, styles.deleteButton]}
-            onPress={useCallback(() => handleDeletePet(item._id), [item._id])}
+            onPress={useCallback(() => { handleDeletePet(item._id); }, [item._id])}
           >
             <Ionicons name="trash" size={16} color="#FFFFFF" />
           </TouchableOpacity>

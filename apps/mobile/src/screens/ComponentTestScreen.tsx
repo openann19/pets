@@ -28,7 +28,7 @@ export default function ComponentTestScreen() {
           title="Test Button"
           variant="primary"
           size="md"
-          onPress={() => console.log('Button pressed!')}
+          onPress={() => { console.log('Button pressed!'); }}
         />
       </View>
       

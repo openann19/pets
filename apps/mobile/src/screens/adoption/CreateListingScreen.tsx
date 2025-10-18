@@ -175,7 +175,7 @@ const CreateListingScreen = ({ navigation }: CreateListingScreenProps) => {
               <TextInput
                 style={styles.textInput}
                 value={formData.name}
-                onChangeText={(value) => handleInputChange('name', value)}
+                onChangeText={(value) => { handleInputChange('name', value); }}
                 placeholder="Enter pet's name"
                 placeholderTextColor="#9ca3af"
               />
@@ -192,7 +192,7 @@ const CreateListingScreen = ({ navigation }: CreateListingScreenProps) => {
                         styles.radioButton,
                         formData.species === species && styles.radioButtonActive,
                       ]}
-                      onPress={() => handleInputChange('species', species)}
+                      onPress={() => { handleInputChange('species', species); }}
                     >
                       <Text style={[
                         styles.radioText,
@@ -215,7 +215,7 @@ const CreateListingScreen = ({ navigation }: CreateListingScreenProps) => {
                         styles.radioButton,
                         formData.gender === gender && styles.radioButtonActive,
                       ]}
-                      onPress={() => handleInputChange('gender', gender)}
+                      onPress={() => { handleInputChange('gender', gender); }}
                     >
                       <Text style={[
                         styles.radioText,
@@ -234,7 +234,7 @@ const CreateListingScreen = ({ navigation }: CreateListingScreenProps) => {
               <TextInput
                 style={styles.textInput}
                 value={formData.breed}
-                onChangeText={(value) => handleInputChange('breed', value)}
+                onChangeText={(value) => { handleInputChange('breed', value); }}
                 placeholder="Enter breed"
                 placeholderTextColor="#9ca3af"
               />
@@ -246,7 +246,7 @@ const CreateListingScreen = ({ navigation }: CreateListingScreenProps) => {
                 <TextInput
                   style={styles.textInput}
                   value={formData.age}
-                  onChangeText={(value) => handleInputChange('age', value)}
+                  onChangeText={(value) => { handleInputChange('age', value); }}
                   placeholder="e.g., 2 years"
                   placeholderTextColor="#9ca3af"
                   keyboardType="numeric"
@@ -263,7 +263,7 @@ const CreateListingScreen = ({ navigation }: CreateListingScreenProps) => {
                         styles.radioButton,
                         formData.size === size && styles.radioButtonActive,
                       ]}
-                      onPress={() => handleInputChange('size', size)}
+                      onPress={() => { handleInputChange('size', size); }}
                     >
                       <Text style={[
                         styles.radioText,
@@ -286,7 +286,7 @@ const CreateListingScreen = ({ navigation }: CreateListingScreenProps) => {
             <TextInput
               style={[styles.textInput, styles.textArea]}
               value={formData.description}
-              onChangeText={(value) => handleInputChange('description', value)}
+              onChangeText={(value) => { handleInputChange('description', value); }}
               placeholder="Tell potential adopters about your pet's personality, habits, and what makes them special..."
               placeholderTextColor="#9ca3af"
               multiline
@@ -309,7 +309,7 @@ const CreateListingScreen = ({ navigation }: CreateListingScreenProps) => {
                     styles.tag,
                     formData.personalityTags.includes(tag) && styles.tagActive,
                   ]}
-                  onPress={() => handlePersonalityToggle(tag)}
+                  onPress={() => { handlePersonalityToggle(tag); }}
                 >
                   <Text style={[
                     styles.tagText,
@@ -332,7 +332,7 @@ const CreateListingScreen = ({ navigation }: CreateListingScreenProps) => {
                 <TouchableOpacity
                   key={key}
                   style={styles.healthItem}
-                  onPress={() => handleHealthToggle(key as keyof typeof formData.healthInfo)}
+                  onPress={() => { handleHealthToggle(key as keyof typeof formData.healthInfo); }}
                 >
                   <View style={[
                     styles.healthCheckbox,

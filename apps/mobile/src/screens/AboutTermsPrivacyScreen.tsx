@@ -35,28 +35,28 @@ const AboutTermsPrivacyScreen: React.FC<AboutTermsPrivacyScreenProps> = ({ navig
       title: 'Terms of Service',
       description: 'Rules and guidelines for using PawfectMatch',
       icon: 'document-text-outline',
-      action: () => Alert.alert('Terms of Service', 'Terms document coming soon!'),
+      action: () => { Alert.alert('Terms of Service', 'Terms document coming soon!'); },
     },
     {
       id: 'privacy',
       title: 'Privacy Policy',
       description: 'How we collect and use your data',
       icon: 'lock-closed-outline',
-      action: () => Alert.alert('Privacy Policy', 'Privacy policy document coming soon!'),
+      action: () => { Alert.alert('Privacy Policy', 'Privacy policy document coming soon!'); },
     },
     {
       id: 'gdpr',
       title: 'GDPR Rights',
       description: 'Your data protection rights under GDPR',
       icon: 'shield-checkmark-outline',
-      action: () => Alert.alert('GDPR Rights', 'GDPR information coming soon!'),
+      action: () => { Alert.alert('GDPR Rights', 'GDPR information coming soon!'); },
     },
     {
       id: 'cookies',
       title: 'Cookie Policy',
       description: 'Information about our use of cookies',
       icon: 'book-outline',
-      action: () => Alert.alert('Cookie Policy', 'Cookie policy coming soon!'),
+      action: () => { Alert.alert('Cookie Policy', 'Cookie policy coming soon!'); },
     },
   ];
 
@@ -140,7 +140,7 @@ const AboutTermsPrivacyScreen: React.FC<AboutTermsPrivacyScreenProps> = ({ navig
             <TouchableOpacity
               key={document.id}
               style={styles.documentCard}
-              onPress={() => handleDocument(document)}
+              onPress={() => { handleDocument(document); }}
             >
               <BlurView intensity={20} style={styles.documentBlur}>
                 <View style={styles.documentContent}>

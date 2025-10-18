@@ -202,14 +202,14 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
             {!photo.isPrimary && (
               <TouchableOpacity
                 style={styles.actionButton}
-                onPress={() => setPrimaryPhoto(photo.id)}
+                onPress={() => { setPrimaryPhoto(photo.id); }}
               >
                 <Text style={styles.actionButtonText}>⭐</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
               style={[styles.actionButton, styles.removeButton]}
-              onPress={() => removePhoto(photo.id)}
+              onPress={() => { removePhoto(photo.id); }}
             >
               <Text style={styles.removeButtonText}>✕</Text>
             </TouchableOpacity>

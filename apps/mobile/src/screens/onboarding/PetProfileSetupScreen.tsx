@@ -182,7 +182,7 @@ const PetProfileSetupScreen = ({ navigation, route }: PetProfileSetupScreenProps
         <TextInput
           style={styles.input}
           value={formData.name}
-          onChangeText={(text) => updateFormData('name', text)}
+          onChangeText={(text) => { updateFormData('name', text); }}
           placeholder="e.g., Buddy, Luna, Max"
         />
       </View>
@@ -197,7 +197,7 @@ const PetProfileSetupScreen = ({ navigation, route }: PetProfileSetupScreenProps
                 styles.optionButton,
                 formData.species === option.value && styles.selectedOption,
               ]}
-              onPress={() => updateFormData('species', option.value)}
+              onPress={() => { updateFormData('species', option.value); }}
             >
               <Text style={[
                 styles.optionText,
@@ -215,7 +215,7 @@ const PetProfileSetupScreen = ({ navigation, route }: PetProfileSetupScreenProps
         <TextInput
           style={styles.input}
           value={formData.breed}
-          onChangeText={(text) => updateFormData('breed', text)}
+          onChangeText={(text) => { updateFormData('breed', text); }}
           placeholder="e.g., Golden Retriever, Persian Cat"
         />
       </View>
@@ -232,7 +232,7 @@ const PetProfileSetupScreen = ({ navigation, route }: PetProfileSetupScreenProps
         <TextInput
           style={styles.input}
           value={formData.age}
-          onChangeText={(text) => updateFormData('age', text)}
+          onChangeText={(text) => { updateFormData('age', text); }}
           placeholder="e.g., 2"
           keyboardType="numeric"
         />
@@ -248,7 +248,7 @@ const PetProfileSetupScreen = ({ navigation, route }: PetProfileSetupScreenProps
                 styles.optionButton,
                 formData.gender === gender && styles.selectedOption,
               ]}
-              onPress={() => updateFormData('gender', gender)}
+              onPress={() => { updateFormData('gender', gender); }}
             >
               <Text style={[
                 styles.optionText,
@@ -271,7 +271,7 @@ const PetProfileSetupScreen = ({ navigation, route }: PetProfileSetupScreenProps
                 styles.optionButton,
                 formData.size === option.value && styles.selectedOption,
               ]}
-              onPress={() => updateFormData('size', option.value)}
+              onPress={() => { updateFormData('size', option.value); }}
             >
               <Text style={[
                 styles.optionText,
@@ -301,7 +301,7 @@ const PetProfileSetupScreen = ({ navigation, route }: PetProfileSetupScreenProps
                 styles.optionButton,
                 formData.intent === option.value && styles.selectedOption,
               ]}
-              onPress={() => updateFormData('intent', option.value)}
+              onPress={() => { updateFormData('intent', option.value); }}
             >
               <Text style={[
                 styles.optionText,
@@ -324,7 +324,7 @@ const PetProfileSetupScreen = ({ navigation, route }: PetProfileSetupScreenProps
                 styles.tagButton,
                 formData.personalityTags.includes(tag) && styles.selectedTag,
               ]}
-              onPress={() => togglePersonalityTag(tag)}
+              onPress={() => { togglePersonalityTag(tag); }}
             >
               <Text style={[
                 styles.tagText,
@@ -342,7 +342,7 @@ const PetProfileSetupScreen = ({ navigation, route }: PetProfileSetupScreenProps
         <TextInput
           style={[styles.input, styles.textArea]}
           value={formData.description}
-          onChangeText={(text) => updateFormData('description', text)}
+          onChangeText={(text) => { updateFormData('description', text); }}
           placeholder="Tell us more about your pet's personality, habits, or special needs..."
           multiline
           numberOfLines={4}
@@ -368,7 +368,7 @@ const PetProfileSetupScreen = ({ navigation, route }: PetProfileSetupScreenProps
               styles.healthOption,
               formData.healthInfo[option.key as keyof typeof formData.healthInfo] && styles.selectedHealthOption,
             ]}
-            onPress={() => updateHealthInfo(option.key, !formData.healthInfo[option.key as keyof typeof formData.healthInfo])}
+            onPress={() => { updateHealthInfo(option.key, !formData.healthInfo[option.key as keyof typeof formData.healthInfo]); }}
           >
             <Text style={styles.healthIcon}>{option.icon}</Text>
             <Text style={[

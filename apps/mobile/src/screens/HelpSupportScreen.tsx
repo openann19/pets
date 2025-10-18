@@ -44,28 +44,28 @@ const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ navigation }) => 
       title: 'FAQ',
       description: 'Frequently asked questions',
       icon: 'help-circle-outline',
-      action: () => Alert.alert('FAQ', 'FAQ section coming soon!'),
+      action: () => { Alert.alert('FAQ', 'FAQ section coming soon!'); },
     },
     {
       id: 'contact',
       title: 'Contact Support',
       description: 'Get help from our support team',
       icon: 'chatbubble-outline',
-      action: () => Alert.alert('Contact Support', 'Support chat coming soon!'),
+      action: () => { Alert.alert('Contact Support', 'Support chat coming soon!'); },
     },
     {
       id: 'report-bug',
       title: 'Report a Bug',
       description: 'Help us improve by reporting issues',
       icon: 'bug-outline',
-      action: () => Alert.alert('Report Bug', 'Bug reporting feature coming soon!'),
+      action: () => { Alert.alert('Report Bug', 'Bug reporting feature coming soon!'); },
     },
     {
       id: 'safety',
       title: 'Safety Center',
       description: 'Safety tips and reporting tools',
       icon: 'shield-checkmark-outline',
-      action: () => navigation.goBack(),
+      action: () => { navigation.goBack(); },
     },
   ];
 
@@ -178,7 +178,7 @@ const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ navigation }) => 
               key={option.id}
               style={[styles.optionCard, animatedStyles[index] || animatedStyles[0]]}
             >
-              <TouchableOpacity onPress={() => handleHelpOption(option)}>
+              <TouchableOpacity onPress={() => { handleHelpOption(option); }}>
                 <BlurView intensity={20} style={styles.optionBlur}>
                   <View style={styles.optionContent}>
                     <View style={[styles.optionIcon, { backgroundColor: '#3B82F6' }]}>

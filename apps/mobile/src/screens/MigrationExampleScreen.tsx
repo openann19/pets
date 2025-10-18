@@ -65,7 +65,7 @@ export default function MigrationExampleScreen() {
             <EliteButtonPresets.premium
               title="Premium Button"
               leftIcon="star"
-              onPress={() => console.log('Premium pressed')}
+              onPress={() => { console.log('Premium pressed'); }}
             />
           </View>
           
@@ -73,7 +73,7 @@ export default function MigrationExampleScreen() {
             <EliteButtonPresets.holographic
               title="Holographic"
               leftIcon="sparkles"
-              onPress={() => console.log('Holographic pressed')}
+              onPress={() => { console.log('Holographic pressed'); }}
             />
           </View>
           
@@ -81,7 +81,7 @@ export default function MigrationExampleScreen() {
             <EliteButtonPresets.magnetic
               title="Magnetic"
               leftIcon="magnet"
-              onPress={() => console.log('Magnetic pressed')}
+              onPress={() => { console.log('Magnetic pressed'); }}
             />
           </View>
         </View>
@@ -97,7 +97,7 @@ export default function MigrationExampleScreen() {
               magnetic={true}
               ripple={true}
               glow={true}
-              onPress={() => console.log('Legacy premium pressed')}
+              onPress={() => { console.log('Legacy premium pressed'); }}
             />
           </View>
           
@@ -111,7 +111,7 @@ export default function MigrationExampleScreen() {
               ripple={true}
               glow={true}
               shimmer={true}
-              onPress={() => console.log('Legacy holographic pressed')}
+              onPress={() => { console.log('Legacy holographic pressed'); }}
             />
           </View>
           
@@ -124,7 +124,7 @@ export default function MigrationExampleScreen() {
               magnetic={true}
               ripple={true}
               glow={true}
-              onPress={() => console.log('Legacy magnetic pressed')}
+              onPress={() => { console.log('Legacy magnetic pressed'); }}
             />
           </View>
         </View>
@@ -257,7 +257,7 @@ export default function MigrationExampleScreen() {
             variant="outline"
             size="sm"
             leftIcon={useNewArchitecture ? "arrow-back" : "arrow-forward"}
-            onPress={() => setUseNewArchitecture(!useNewArchitecture)}
+            onPress={() => { setUseNewArchitecture(!useNewArchitecture); }}
           />
         }
       />
@@ -277,13 +277,13 @@ export default function MigrationExampleScreen() {
                 title="Legacy"
                 variant={!useNewArchitecture ? "primary" : "outline"}
                 size="sm"
-                onPress={() => setUseNewArchitecture(false)}
+                onPress={() => { setUseNewArchitecture(false); }}
               />
               <EliteButton
                 title="New Architecture"
                 variant={useNewArchitecture ? "primary" : "outline"}
                 size="sm"
-                onPress={() => setUseNewArchitecture(true)}
+                onPress={() => { setUseNewArchitecture(true); }}
               />
             </View>
           </FXContainerPresets.glass>
@@ -303,7 +303,7 @@ export default function MigrationExampleScreen() {
                 variant={selectedExample === key ? "primary" : "outline"}
                 size="sm"
                 leftIcon={icon as any}
-                onPress={() => setSelectedExample(key as any)}
+                onPress={() => { setSelectedExample(key as any); }}
               />
             ))}
           </View>

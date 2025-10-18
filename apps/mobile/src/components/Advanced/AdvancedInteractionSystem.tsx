@@ -525,8 +525,8 @@ export const AdvancedButton: React.FC<AdvancedButtonProps> = ({
       <TouchableOpacity
         onPress={handlePress}
         onLongPress={handleLongPress}
-        onPressIn={() => animatePress(true)}
-        onPressOut={() => animatePress(false)}
+        onPressIn={() => { animatePress(true); }}
+        onPressOut={() => { animatePress(false); }}
         disabled={disabled || loading || isLoading}
         activeOpacity={0.9}
         {...(interactions.includes('tilt') ? panResponder.panHandlers : {})}
@@ -552,7 +552,7 @@ export const AdvancedButton: React.FC<AdvancedButtonProps> = ({
       );
       rotationAnimation.start();
       
-      return () => rotationAnimation.stop();
+      return () => { rotationAnimation.stop(); };
     }
   }, [loading, isLoading, rotation]);
 

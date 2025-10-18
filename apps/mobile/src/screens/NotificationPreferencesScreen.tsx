@@ -134,12 +134,12 @@ const NotificationPreferencesScreen: React.FC<NotificationPreferencesScreenProps
       <View key={category} style={styles.categorySection}>
         <TouchableOpacity
           style={styles.categoryHeader}
-          onPress={() => toggleCategory(category)}
+          onPress={() => { toggleCategory(category); }}
         >
           <Text style={styles.categoryTitle}>{title}</Text>
           <Switch
             value={categoryEnabled}
-            onValueChange={() => toggleCategory(category)}
+            onValueChange={() => { toggleCategory(category); }}
             trackColor={{ false: '#767577', true: '#3B82F6' }}
             thumbColor={categoryEnabled ? '#FFFFFF' : '#f4f3f4'}
           />
@@ -154,7 +154,7 @@ const NotificationPreferencesScreen: React.FC<NotificationPreferencesScreenProps
               </View>
               <Switch
                 value={setting.enabled}
-                onValueChange={() => toggleSetting(setting.id)}
+                onValueChange={() => { toggleSetting(setting.id); }}
                 trackColor={{ false: '#767577', true: '#3B82F6' }}
                 thumbColor={setting.enabled ? '#FFFFFF' : '#f4f3f4'}
               />

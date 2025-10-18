@@ -113,7 +113,7 @@ const PrivacySettingsScreen: React.FC<PrivacySettingsScreenProps> = ({ navigatio
             styles.pickerOption,
             value === option.value && { backgroundColor: colors.primary, borderColor: colors.primary }
           ]}
-          onPress={() => onChange(option.value)}
+          onPress={() => { onChange(option.value); }}
         >
           <Text style={[
             styles.pickerOptionText,

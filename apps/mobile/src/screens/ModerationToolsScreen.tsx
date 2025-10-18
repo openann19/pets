@@ -42,7 +42,7 @@ const ModerationToolsScreen: React.FC<ModerationToolsScreenProps> = ({ navigatio
       icon: 'flag-outline',
       color: '#EF4444',
       badge: pendingReports.toString(),
-      action: () => Alert.alert('User Reports', 'Reports moderation coming soon!'),
+      action: () => { Alert.alert('User Reports', 'Reports moderation coming soon!'); },
     },
     {
       id: 'content',
@@ -50,7 +50,7 @@ const ModerationToolsScreen: React.FC<ModerationToolsScreenProps> = ({ navigatio
       description: 'Review photos and profiles for violations',
       icon: 'images-outline',
       color: '#F59E0B',
-      action: () => Alert.alert('Content Moderation', 'Content moderation coming soon!'),
+      action: () => { Alert.alert('Content Moderation', 'Content moderation coming soon!'); },
     },
     {
       id: 'messages',
@@ -58,7 +58,7 @@ const ModerationToolsScreen: React.FC<ModerationToolsScreenProps> = ({ navigatio
       description: 'Monitor chat messages for inappropriate content',
       icon: 'chatbubble-ellipses-outline',
       color: '#8B5CF6',
-      action: () => navigation.goBack(), // Navigate back to admin chats
+      action: () => { navigation.goBack(); }, // Navigate back to admin chats
     },
     {
       id: 'users',
@@ -66,7 +66,7 @@ const ModerationToolsScreen: React.FC<ModerationToolsScreenProps> = ({ navigatio
       description: 'Manage user accounts and permissions',
       icon: 'people-outline',
       color: '#10B981',
-      action: () => Alert.alert('User Management', 'User management coming soon!'),
+      action: () => { Alert.alert('User Management', 'User management coming soon!'); },
     },
     {
       id: 'analytics',
@@ -74,7 +74,7 @@ const ModerationToolsScreen: React.FC<ModerationToolsScreenProps> = ({ navigatio
       description: 'View moderation statistics and reports',
       icon: 'bar-chart-outline',
       color: '#06B6D4',
-      action: () => Alert.alert('Analytics', 'Moderation analytics coming soon!'),
+      action: () => { Alert.alert('Analytics', 'Moderation analytics coming soon!'); },
     },
     {
       id: 'settings',
@@ -82,7 +82,7 @@ const ModerationToolsScreen: React.FC<ModerationToolsScreenProps> = ({ navigatio
       description: 'Configure moderation rules and thresholds',
       icon: 'settings-outline',
       color: '#EC4899',
-      action: () => Alert.alert('Settings', 'Moderation settings coming soon!'),
+      action: () => { Alert.alert('Settings', 'Moderation settings coming soon!'); },
     },
   ];
 
@@ -157,7 +157,7 @@ const ModerationToolsScreen: React.FC<ModerationToolsScreenProps> = ({ navigatio
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.toolCard}
-              onPress={() => handleToolPress(item)}
+              onPress={() => { handleToolPress(item); }}
             >
               <BlurView intensity={20} style={styles.toolBlur}>
                 <View style={styles.toolContent}>
@@ -194,7 +194,7 @@ const ModerationToolsScreen: React.FC<ModerationToolsScreenProps> = ({ navigatio
         <BlurView intensity={15} style={styles.quickActions}>
           <TouchableOpacity
             style={styles.quickActionButton}
-            onPress={() => Alert.alert('Emergency', 'Emergency moderation mode coming soon!')}
+            onPress={() => { Alert.alert('Emergency', 'Emergency moderation mode coming soon!'); }}
           >
             <Ionicons name="warning-outline" size={20} color="#EF4444" />
             <Text style={styles.quickActionText}>Emergency Mode</Text>
@@ -202,7 +202,7 @@ const ModerationToolsScreen: React.FC<ModerationToolsScreenProps> = ({ navigatio
 
           <TouchableOpacity
             style={styles.quickActionButton}
-            onPress={() => Alert.alert('Guidelines', 'Community guidelines coming soon!')}
+            onPress={() => { Alert.alert('Guidelines', 'Community guidelines coming soon!'); }}
           >
             <Ionicons name="document-text-outline" size={20} color="#3B82F6" />
             <Text style={styles.quickActionText}>Guidelines</Text>
@@ -210,7 +210,7 @@ const ModerationToolsScreen: React.FC<ModerationToolsScreenProps> = ({ navigatio
 
           <TouchableOpacity
             style={styles.quickActionButton}
-            onPress={() => Alert.alert('Training', 'Moderator training coming soon!')}
+            onPress={() => { Alert.alert('Training', 'Moderator training coming soon!'); }}
           >
             <Ionicons name="school-outline" size={20} color="#10B981" />
             <Text style={styles.quickActionText}>Training</Text>

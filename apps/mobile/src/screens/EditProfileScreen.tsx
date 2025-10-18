@@ -112,7 +112,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => 
       Alert.alert('Success', 'Profile updated successfully!', [
         {
           text: 'OK',
-          onPress: () => navigation.goBack()
+          onPress: () => { navigation.goBack(); }
         }
       ]);
 
@@ -132,7 +132,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => 
         'Are you sure you want to discard your changes?',
         [
           { text: 'Keep Editing', style: 'cancel' },
-          { text: 'Discard', style: 'destructive', onPress: () => navigation.goBack() },
+          { text: 'Discard', style: 'destructive', onPress: () => { navigation.goBack(); } },
         ]
       );
     } else {
@@ -209,7 +209,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => 
                     <TextInput
                       style={styles.input}
                       value={profileData.firstName}
-                      onChangeText={(value) => updateField('firstName', value)}
+                      onChangeText={(value) => { updateField('firstName', value); }}
                       placeholder="Enter first name"
                       placeholderTextColor="rgba(255,255,255,0.4)"
                     />
@@ -221,7 +221,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => 
                     <TextInput
                       style={styles.input}
                       value={profileData.lastName}
-                      onChangeText={(value) => updateField('lastName', value)}
+                      onChangeText={(value) => { updateField('lastName', value); }}
                       placeholder="Enter last name"
                       placeholderTextColor="rgba(255,255,255,0.4)"
                     />
@@ -234,7 +234,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => 
                 <TextInput
                   style={styles.input}
                   value={profileData.email}
-                  onChangeText={(value) => updateField('email', value)}
+                  onChangeText={(value) => { updateField('email', value); }}
                   placeholder="Enter email"
                   placeholderTextColor="rgba(255,255,255,0.4)"
                   keyboardType="email-address"
@@ -247,7 +247,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => 
                 <TextInput
                   style={styles.input}
                   value={profileData.phone}
-                  onChangeText={(value) => updateField('phone', value)}
+                  onChangeText={(value) => { updateField('phone', value); }}
                   placeholder="Enter phone number"
                   placeholderTextColor="rgba(255,255,255,0.4)"
                   keyboardType="phone-pad"
@@ -259,7 +259,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => 
                 <TextInput
                   style={styles.input}
                   value={profileData.location}
-                  onChangeText={(value) => updateField('location', value)}
+                  onChangeText={(value) => { updateField('location', value); }}
                   placeholder="Enter your location"
                   placeholderTextColor="rgba(255,255,255,0.4)"
                 />
@@ -273,7 +273,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => 
                 <TextInput
                   style={styles.bioInput}
                   value={profileData.bio}
-                  onChangeText={(value) => updateField('bio', value)}
+                  onChangeText={(value) => { updateField('bio', value); }}
                   placeholder="Tell us about yourself and what you're looking for in a pet match..."
                   placeholderTextColor="rgba(255,255,255,0.4)"
                   multiline

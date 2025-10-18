@@ -257,7 +257,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
               <TextInput
                 style={[styles.input, errors.name && styles.inputError]}
                 value={formData.name}
-                onChangeText={(value) => updateFormData('name', value)}
+                onChangeText={(value) => { updateFormData('name', value); }}
                 placeholder="Enter your pet's name"
                 placeholderTextColor="#9CA3AF"
               />
@@ -274,7 +274,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
                       styles.optionButton,
                       formData.species === option.value && styles.optionButtonSelected
                     ]}
-                    onPress={() => updateFormData('species', option.value)}
+                    onPress={() => { updateFormData('species', option.value); }}
                   >
                     <Text style={styles.optionEmoji}>{option.emoji}</Text>
                     <Text style={[
@@ -294,7 +294,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
               <TextInput
                 style={[styles.input, errors.breed && styles.inputError]}
                 value={formData.breed}
-                onChangeText={(value) => updateFormData('breed', value)}
+                onChangeText={(value) => { updateFormData('breed', value); }}
                 placeholder="e.g., Golden Retriever, Siamese"
                 placeholderTextColor="#9CA3AF"
               />
@@ -307,7 +307,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
                 <TextInput
                   style={[styles.input, errors.age && styles.inputError]}
                   value={formData.age}
-                  onChangeText={(value) => updateFormData('age', value)}
+                  onChangeText={(value) => { updateFormData('age', value); }}
                   placeholder="0-30"
                   keyboardType="numeric"
                   placeholderTextColor="#9CA3AF"
@@ -328,7 +328,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
                         styles.genderButton,
                         formData.gender === option.value && styles.genderButtonSelected
                       ]}
-                      onPress={() => updateFormData('gender', option.value)}
+                      onPress={() => { updateFormData('gender', option.value); }}
                     >
                       <Text style={styles.genderEmoji}>{option.emoji}</Text>
                       <Text style={[
@@ -354,7 +354,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
                       styles.sizeButton,
                       formData.size === option.value && styles.sizeButtonSelected
                     ]}
-                    onPress={() => updateFormData('size', option.value)}
+                    onPress={() => { updateFormData('size', option.value); }}
                   >
                     <Text style={[
                       styles.sizeLabel,
@@ -379,7 +379,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
               <TextInput
                 style={[styles.textArea]}
                 value={formData.description}
-                onChangeText={(value) => updateFormData('description', value)}
+                onChangeText={(value) => { updateFormData('description', value); }}
                 placeholder="Tell us about your pet's personality, habits, and what makes them special..."
                 placeholderTextColor="#9CA3AF"
                 multiline
@@ -402,7 +402,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
                     styles.tag,
                     formData.personalityTags.includes(tag) && styles.tagSelected
                   ]}
-                  onPress={() => togglePersonalityTag(tag)}
+                  onPress={() => { togglePersonalityTag(tag); }}
                 >
                   <Text style={[
                     styles.tagText,
@@ -429,7 +429,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
                       styles.intentButton,
                       formData.intent === option.value && styles.intentButtonSelected
                     ]}
-                    onPress={() => updateFormData('intent', option.value)}
+                    onPress={() => { updateFormData('intent', option.value); }}
                   >
                     <Text style={styles.intentEmoji}>{option.emoji}</Text>
                     <Text style={[
@@ -456,7 +456,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
                   <TouchableOpacity
                     key={item.key}
                     style={styles.checkboxContainer}
-                    onPress={() => updateFormData(`healthInfo.${item.key}`, !formData.healthInfo[item.key as keyof typeof formData.healthInfo])}
+                    onPress={() => { updateFormData(`healthInfo.${item.key}`, !formData.healthInfo[item.key as keyof typeof formData.healthInfo]); }}
                   >
                     <View style={[
                       styles.checkbox,
@@ -506,7 +506,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
                       {!photo.isPrimary && (
                         <TouchableOpacity
                           style={styles.photoActionButton}
-                          onPress={() => setPrimaryPhoto(index)}
+                          onPress={() => { setPrimaryPhoto(index); }}
                         >
                           <Ionicons name="star" size={16} color="#FFFFFF" />
                         </TouchableOpacity>
@@ -514,7 +514,7 @@ export default function CreatePetScreen({ navigation }: CreatePetScreenProps) {
 
                       <TouchableOpacity
                         style={[styles.photoActionButton, styles.deleteButton]}
-                        onPress={() => removePhoto(index)}
+                        onPress={() => { removePhoto(index); }}
                       >
                         <Ionicons name="trash" size={16} color="#FFFFFF" />
                       </TouchableOpacity>

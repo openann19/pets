@@ -549,7 +549,7 @@ export const AdvancedCard: React.FC<AdvancedCardProps> = ({
       );
       shimmerAnimation.start();
       
-      return () => shimmerAnimation.stop();
+      return () => { shimmerAnimation.stop(); };
     }
   }, [loading, isLoading, shimmer]);
 
@@ -633,8 +633,8 @@ export const AdvancedCard: React.FC<AdvancedCardProps> = ({
       <TouchableOpacity
         onPress={handlePress}
         onLongPress={handleLongPress}
-        onPressIn={() => animatePress(true)}
-        onPressOut={() => animatePress(false)}
+        onPressIn={() => { animatePress(true); }}
+        onPressOut={() => { animatePress(false); }}
         disabled={disabled || loading || isLoading}
         activeOpacity={0.9}
         style={styles.touchable}

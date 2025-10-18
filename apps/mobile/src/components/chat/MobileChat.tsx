@@ -95,7 +95,7 @@ export const MobileChat: React.FC<MobileChatProps> = ({
 
           <TouchableOpacity
             style={[styles.voiceButton, { backgroundColor: colors.primary }]}
-            onPress={() => setShowVoiceRecorder(true)}
+            onPress={() => { setShowVoiceRecorder(true); }}
           >
             <Ionicons name="mic" size={20} color="white" />
           </TouchableOpacity>
@@ -115,7 +115,7 @@ export const MobileChat: React.FC<MobileChatProps> = ({
       {/* Voice Recorder Modal */}
       {showVoiceRecorder ? <MobileVoiceRecorder
         onSend={handleVoiceMessage}
-        onCancel={() => setShowVoiceRecorder(false)}
+        onCancel={() => { setShowVoiceRecorder(false); }}
       /> : null}
     </View>
   );

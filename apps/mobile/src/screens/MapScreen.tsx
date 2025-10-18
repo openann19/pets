@@ -205,7 +205,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ navigation: _navProp }) => {
 
     updateStats();
     const interval = setInterval(updateStats, 15000);
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); };
   }, [pins.length]);
 
   // Filter pins based on current filters
@@ -365,7 +365,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ navigation: _navProp }) => {
                 title={pin.activity}
                 description={pin.message || 'Pet activity'}
                 pinColor={getMarkerColor(pin.activity, isMatch)}
-                onPress={() => handleMarkerPress(pin)}
+                onPress={() => { handleMarkerPress(pin); }}
               />
               
               {/* Activity radius circle */}
@@ -408,7 +408,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ navigation: _navProp }) => {
                         : '#F3F4F6'
                     }
                   ]}
-                  onPress={() => toggleActivity(activity.id)}
+                  onPress={() => { toggleActivity(activity.id); }}
                 >
                   <Text style={styles.activityEmoji}>{activity.emoji}</Text>
                   <Text style={[
@@ -478,7 +478,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ navigation: _navProp }) => {
         visible={!!selectedPin}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setSelectedPin(null)}
+        onRequestClose={() => { setSelectedPin(null); }}
       >
         <View style={styles.modalOverlay}>
           <BlurView style={styles.modalBlur} intensity={80} tint="dark">
@@ -514,7 +514,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ navigation: _navProp }) => {
                   
                   <TouchableOpacity
                     style={styles.closeButton}
-                    onPress={() => setSelectedPin(null)}
+                    onPress={() => { setSelectedPin(null); }}
                   >
                     <Text style={styles.closeButtonText}>Close</Text>
                   </TouchableOpacity>

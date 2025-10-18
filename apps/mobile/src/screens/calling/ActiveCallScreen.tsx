@@ -47,7 +47,7 @@ export default function ActiveCallScreen({
       }
     }, 5000);
 
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); };
   }, [controlsVisible, callState.callData?.callType]);
 
   // Pan responder for draggable local video

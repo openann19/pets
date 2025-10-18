@@ -292,7 +292,7 @@ const PetDetailsScreen = ({ navigation, route }: PetDetailsScreenProps) => {
 
             <TouchableOpacity 
               style={styles.actionButton}
-              onPress={() => Alert.alert('Edit', 'Edit pet details coming soon!')}
+              onPress={() => { Alert.alert('Edit', 'Edit pet details coming soon!'); }}
             >
               <LinearGradient
                 colors={['#10b981', '#047857']}
@@ -317,7 +317,7 @@ const PetDetailsScreen = ({ navigation, route }: PetDetailsScreenProps) => {
                     styles.statusOption,
                     pet.status === status && styles.statusOptionActive
                   ]}
-                  onPress={() => handleStatusChange(status)}
+                  onPress={() => { handleStatusChange(status); }}
                 >
                   <Text style={[
                     styles.statusOptionText,

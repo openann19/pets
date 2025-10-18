@@ -168,7 +168,7 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
                 minimumValue={5}
                 maximumValue={100}
                 value={preferences.maxDistance}
-                onValueChange={(value) => updatePreferences('maxDistance', Math.round(value))}
+                onValueChange={(value) => { updatePreferences('maxDistance', Math.round(value)); }}
                 minimumTrackTintColor="#ec4899"
                 maximumTrackTintColor="#e5e7eb"
               />
@@ -193,10 +193,10 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
                   minimumValue={0}
                   maximumValue={15}
                   value={preferences.ageRange.min}
-                  onValueChange={(value) => updatePreferences('ageRange', {
+                  onValueChange={(value) => { updatePreferences('ageRange', {
                     ...preferences.ageRange,
                     min: Math.round(value)
-                  })}
+                  }); }}
                   minimumTrackTintColor="#ec4899"
                   maximumTrackTintColor="#e5e7eb"
                 />
@@ -208,10 +208,10 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
                   minimumValue={preferences.ageRange.min}
                   maximumValue={20}
                   value={preferences.ageRange.max}
-                  onValueChange={(value) => updatePreferences('ageRange', {
+                  onValueChange={(value) => { updatePreferences('ageRange', {
                     ...preferences.ageRange,
                     max: Math.round(value)
-                  })}
+                  }); }}
                   minimumTrackTintColor="#ec4899"
                   maximumTrackTintColor="#e5e7eb"
                 />
@@ -233,7 +233,7 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
                     styles.optionButton,
                     preferences.species.includes(option.value) && styles.selectedOption,
                   ]}
-                  onPress={() => toggleSpecies(option.value)}
+                  onPress={() => { toggleSpecies(option.value); }}
                 >
                   <Text style={[
                     styles.optionText,
@@ -260,7 +260,7 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
                     styles.optionButton,
                     preferences.intents.includes(option.value) && styles.selectedOption,
                   ]}
-                  onPress={() => toggleIntent(option.value)}
+                  onPress={() => { toggleIntent(option.value); }}
                 >
                   <Text style={[
                     styles.optionText,
@@ -293,7 +293,7 @@ const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenPro
                   </View>
                   <Switch
                     value={preferences.notifications[option.key as keyof typeof preferences.notifications]}
-                    onValueChange={(value) => updateNotifications(option.key, value)}
+                    onValueChange={(value) => { updateNotifications(option.key, value); }}
                     trackColor={{ false: '#e5e7eb', true: '#fce7f3' }}
                     thumbColor={preferences.notifications[option.key as keyof typeof preferences.notifications] ? '#ec4899' : '#9ca3af'}
                   />

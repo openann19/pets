@@ -170,19 +170,19 @@ export default function ComponentShowcaseScreen({ navigation }: ComponentShowcas
                   title="Primary"
                   variant="primary"
                   size="md"
-                  onPress={() => handleButtonPress('Primary')}
+                  onPress={() => { handleButtonPress('Primary'); }}
                 />
                 <EliteButton
                   title="Secondary"
                   variant="secondary"
                   size="md"
-                  onPress={() => handleButtonPress('Secondary')}
+                  onPress={() => { handleButtonPress('Secondary'); }}
                 />
                 <EliteButton
                   title="Outline"
                   variant="outline"
                   size="md"
-                  onPress={() => handleButtonPress('Outline')}
+                  onPress={() => { handleButtonPress('Outline'); }}
                 />
               </View>
 
@@ -194,21 +194,21 @@ export default function ComponentShowcaseScreen({ navigation }: ComponentShowcas
                   variant="primary"
                   size="md"
                   glowEffect={true}
-                  onPress={() => handleButtonPress('Glow Effect')}
+                  onPress={() => { handleButtonPress('Glow Effect'); }}
                 />
                 <EliteButton
                   title="Magnetic"
                   variant="secondary"
                   size="md"
                   magneticEffect={true}
-                  onPress={() => handleButtonPress('Magnetic')}
+                  onPress={() => { handleButtonPress('Magnetic'); }}
                 />
                 <EliteButton
                   title="Shimmer"
                   variant="primary"
                   size="md"
                   shimmerEffect={true}
-                  onPress={() => handleButtonPress('Shimmer')}
+                  onPress={() => { handleButtonPress('Shimmer'); }}
                 />
               </View>
 
@@ -218,12 +218,12 @@ export default function ComponentShowcaseScreen({ navigation }: ComponentShowcas
                 <EliteButtonPresets.holographic
                   title="Holographic"
                   size="md"
-                  onPress={() => handleButtonPress('Holographic')}
+                  onPress={() => { handleButtonPress('Holographic'); }}
                 />
                 <EliteButtonPresets.glass
                   title="Glass Morphism"
                   size="md"
-                  onPress={() => handleButtonPress('Glass Morphism')}
+                  onPress={() => { handleButtonPress('Glass Morphism'); }}
                 />
                 <EliteButton
                   title="Loading Test"

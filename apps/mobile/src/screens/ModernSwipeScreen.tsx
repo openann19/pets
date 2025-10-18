@@ -278,7 +278,7 @@ export default function ModernSwipeScreen({ navigation }: SwipeScreenProps) {
               title="Filter"
               size="sm"
               leftIcon="options-outline"
-              onPress={() => setShowFilters(!showFilters)}
+              onPress={() => { setShowFilters(!showFilters); }}
             />
             <EliteButtonPresets.glass
               title=""
@@ -306,11 +306,11 @@ export default function ModernSwipeScreen({ navigation }: SwipeScreenProps) {
                     title={breed}
                     variant={filters.breed === breed ? "primary" : "outline"}
                     size="sm"
-                    onPress={() => setFilters(prev => ({
+                    onPress={() => { setFilters(prev => ({
                       ...prev,
                       breed: prev.breed === breed ? '' : breed,
                       species: 'dog'
-                    }))}
+                    })); }}
                   />
                 ))}
               </View>
@@ -326,10 +326,10 @@ export default function ModernSwipeScreen({ navigation }: SwipeScreenProps) {
                     title={species}
                     variant={(species === 'All' ? '' : species.toLowerCase()) === filters.species ? "secondary" : "outline"}
                     size="sm"
-                    onPress={() => setFilters(prev => ({
+                    onPress={() => { setFilters(prev => ({
                       ...prev,
                       species: species === 'All' ? '' : species.toLowerCase()
-                    }))}
+                    })); }}
                   />
                 ))}
               </View>
@@ -383,7 +383,7 @@ export default function ModernSwipeScreen({ navigation }: SwipeScreenProps) {
             title=""
             size="xl"
             leftIcon="close"
-            onPress={() => handleButtonSwipe('pass')}
+            onPress={() => { handleButtonSwipe('pass'); }}
             style={styles.actionButton}
           />
         </View>
@@ -393,7 +393,7 @@ export default function ModernSwipeScreen({ navigation }: SwipeScreenProps) {
             title=""
             size="lg"
             leftIcon="star"
-            onPress={() => handleButtonSwipe('superlike')}
+            onPress={() => { handleButtonSwipe('superlike'); }}
             style={styles.actionButton}
           />
         </View>
@@ -403,7 +403,7 @@ export default function ModernSwipeScreen({ navigation }: SwipeScreenProps) {
             title=""
             size="xl"
             leftIcon="heart"
-            onPress={() => handleButtonSwipe('like')}
+            onPress={() => { handleButtonSwipe('like'); }}
             style={styles.actionButton}
           />
         </View>
@@ -430,7 +430,7 @@ export default function ModernSwipeScreen({ navigation }: SwipeScreenProps) {
             <View style={styles.matchButtons}>
               <EliteButtonPresets.glass
                 title="Keep Swiping"
-                onPress={() => setShowMatchModal(false)}
+                onPress={() => { setShowMatchModal(false); }}
               />
               <EliteButtonPresets.holographic
                 title="Send Message"

@@ -336,7 +336,7 @@ export default function MemoryWeaveScreen({ navigation, route }: MemoryWeaveScre
                 transform: [{ scale: index === currentIndex ? 1.2 : 1 }],
               },
             ]}
-            onPress={() => scrollToIndex(index)}
+            onPress={() => { scrollToIndex(index); }}
           />
         ))}
       </View>

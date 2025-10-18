@@ -184,7 +184,7 @@ export const useSwipeGesture = (
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(1);
 
-  const gestureHandler = useAnimatedGestureHandler<PanGestureHandlerGestureEvent>({
+  const gestureHandler = useAnimatedGestureHandler({
     onStart: () => {
       // Optional: Add haptic feedback on start
     },
@@ -310,7 +310,7 @@ export const useGlowAnimation = (
     const interval = setInterval(animate, duration);
     animate(); // Start immediately
 
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); };
   }, [glowIntensity, intensity, duration]);
 
   const animatedStyle = useAnimatedStyle(() => ({

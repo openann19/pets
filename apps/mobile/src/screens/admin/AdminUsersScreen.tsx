@@ -29,7 +29,7 @@ const AdminUsersScreen = ({ navigation }: AdminScreenProps<'AdminUsers'>) => {
 
   const filterHandlers = useMemo(() => {
     return filters.reduce<Record<string, () => void>>((acc, filter) => {
-      acc[filter.value] = () => onStatusChange(filter.value);
+      acc[filter.value] = () => { onStatusChange(filter.value); };
       return acc;
     }, {});
   }, [filters, onStatusChange]);

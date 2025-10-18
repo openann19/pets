@@ -218,7 +218,7 @@ const AdminVerificationsScreen: React.FC<AdminVerificationsScreenProps> = ({ nav
   const renderVerification = useCallback(({ item }: { item: Verification }) => (
     <TouchableOpacity
       style={[styles.verificationCard, { backgroundColor: colors.card }]}
-      onPress={() => setSelectedVerification(item)}
+      onPress={() => { setSelectedVerification(item); }}
     >
       <View style={styles.cardHeader}>
         <View style={styles.userInfo}>
@@ -274,14 +274,14 @@ const AdminVerificationsScreen: React.FC<AdminVerificationsScreenProps> = ({ nav
 
           <TouchableOpacity
             style={[styles.quickActionButton, styles.infoButton]}
-            onPress={() => handleRequestInfo(item)}
+            onPress={() => { handleRequestInfo(item); }}
           >
             <Ionicons name="information" size={16} color="white" />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.quickActionButton, styles.rejectButton]}
-            onPress={() => handleRejectWithReason(item)}
+            onPress={() => { handleRejectWithReason(item); }}
           >
             <Ionicons name="close" size={16} color="white" />
           </TouchableOpacity>
@@ -296,7 +296,7 @@ const AdminVerificationsScreen: React.FC<AdminVerificationsScreenProps> = ({ nav
         styles.filterButton,
         { backgroundColor: filter === filterType ? colors.primary : colors.card },
       ]}
-      onPress={() => setFilter(filterType)}
+      onPress={() => { setFilter(filterType); }}
     >
       <Text
         style={[
@@ -317,7 +317,7 @@ const AdminVerificationsScreen: React.FC<AdminVerificationsScreenProps> = ({ nav
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Verification Details</Text>
-            <TouchableOpacity onPress={() => setSelectedVerification(null)}>
+            <TouchableOpacity onPress={() => { setSelectedVerification(null); }}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
@@ -381,7 +381,7 @@ const AdminVerificationsScreen: React.FC<AdminVerificationsScreenProps> = ({ nav
 
               <TouchableOpacity
                 style={[styles.actionButton, styles.infoButton]}
-                onPress={() => handleRequestInfo(selectedVerification)}
+                onPress={() => { handleRequestInfo(selectedVerification); }}
               >
                 <Ionicons name="information" size={20} color="white" />
                 <Text style={styles.actionButtonText}>Request Info</Text>
@@ -389,7 +389,7 @@ const AdminVerificationsScreen: React.FC<AdminVerificationsScreenProps> = ({ nav
 
               <TouchableOpacity
                 style={[styles.actionButton, styles.rejectButton]}
-                onPress={() => handleRejectWithReason(selectedVerification)}
+                onPress={() => { handleRejectWithReason(selectedVerification); }}
               >
                 <Ionicons name="close" size={20} color="white" />
                 <Text style={styles.actionButtonText}>Reject</Text>
@@ -405,7 +405,7 @@ const AdminVerificationsScreen: React.FC<AdminVerificationsScreenProps> = ({ nav
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => { navigation.goBack(); }} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Verification Management</Text>

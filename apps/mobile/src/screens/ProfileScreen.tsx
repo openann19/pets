@@ -91,8 +91,8 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
     }));
   };
 
-  const handleNotificationToggle = (key: string) => () => handleSettingToggle(key);
-  const handlePrivacySettingToggle = (key: string) => () => handlePrivacyToggle(key);
+  const handleNotificationToggle = (key: string) => () => { handleSettingToggle(key); };
+  const handlePrivacySettingToggle = (key: string) => () => { handlePrivacyToggle(key); };
 
   const menuItems = [
     {
@@ -117,13 +117,13 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
       title: 'Help & Support',
       icon: 'help-circle',
       color: '#8b5cf6',
-      onPress: () => Alert.alert('Help', 'Help center coming soon!'),
+      onPress: () => { Alert.alert('Help', 'Help center coming soon!'); },
     },
     {
       title: 'About',
       icon: 'information',
       color: '#f59e0b',
-      onPress: () => Alert.alert('About', 'PawfectMatch v1.0.0'),
+      onPress: () => { Alert.alert('About', 'PawfectMatch v1.0.0'); },
     },
   ];
 

@@ -23,8 +23,8 @@ export const ShimmerPlaceholder: React.FC<ShimmerPlaceholderProps> = ({
 
   useEffect(() => {
     if (delay > 0) {
-      const timer = setTimeout(() => setVisible(true), delay);
-      return () => clearTimeout(timer);
+      const timer = setTimeout(() => { setVisible(true); }, delay);
+      return () => { clearTimeout(timer); };
     }
     return undefined;
   }, [delay]);
@@ -54,7 +54,7 @@ export const ShimmerPlaceholder: React.FC<ShimmerPlaceholderProps> = ({
 
   const translateX = animatedValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [-width as number, width as number],
+    outputRange: [-width, width as number],
   });
 
   return (

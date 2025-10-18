@@ -192,7 +192,7 @@ const ModernPhotoUpload: React.FC<ModernPhotoUploadProps> = ({
               size="sm"
               variant="ghost"
               leftIcon="close"
-              onPress={() => removePhoto(photo.id)}
+              onPress={() => { removePhoto(photo.id); }}
               style={styles.removeButton}
               glowEffect={false}
               rippleEffect={false}

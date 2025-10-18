@@ -64,7 +64,7 @@ export default [
       ...reactPlugin.configs.recommended.rules,
       ...reactPlugin.configs['jsx-runtime'].rules,
       ...reactHooksPlugin.configs.recommended.rules,
-      ...nextPlugin.configs['core-web-vitals'].rules,
+      // Note: Next.js plugin rules applied only in web-specific override below
 
       // --- Customize and enforce ZERO-TOLERANCE rules ---
       
@@ -117,6 +117,22 @@ export default [
       react: {
         version: 'detect',
       },
+    },
+  },
+
+  // 3b. Web App Overrides (enable Next.js rules)
+  {
+    files: ['apps/web/src/**/*.{ts,tsx}', 'apps/web/pages/**/*.{ts,tsx}', 'apps/web/app/**/*.{ts,tsx}'],
+    rules: {
+      ...nextPlugin.configs['core-web-vitals'].rules,
+    },
+  },
+
+  // 3c. Mobile App Overrides (disable Next.js-specific rules)
+  {
+    files: ['apps/mobile/src/**/*.{ts,tsx}'],
+    rules: {
+      '@next/next/no-html-link-for-pages': 'off',
     },
   },
 

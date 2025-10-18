@@ -137,19 +137,19 @@ const ModernSwipeCard: React.FC<SwipeCardProps> = React.memo(({
   const handleSwipeLeft = useCallback(() => {
     if (disabled || isProcessing) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    handlePass(pet).then(() => onSwipeLeft(pet));
+    handlePass(pet).then(() => { onSwipeLeft(pet); });
   }, [disabled, isProcessing, pet, handlePass, onSwipeLeft]);
 
   const handleSwipeRight = useCallback(() => {
     if (disabled || isProcessing) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    handleLike(pet).then(() => onSwipeRight(pet));
+    handleLike(pet).then(() => { onSwipeRight(pet); });
   }, [disabled, isProcessing, pet, handleLike, onSwipeRight]);
 
   const handleSwipeUp = useCallback(() => {
     if (disabled || isProcessing) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    handleSuperLike(pet).then(() => onSwipeUp(pet));
+    handleSuperLike(pet).then(() => { onSwipeUp(pet); });
   }, [disabled, isProcessing, pet, handleSuperLike, onSwipeUp]);
 
   // Swipe gesture hook

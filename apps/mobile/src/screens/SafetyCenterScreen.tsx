@@ -178,7 +178,7 @@ const SafetyCenterScreen: React.FC<SafetyCenterScreenProps> = ({ navigation }) =
             <TouchableOpacity
               key={option.id}
               style={styles.optionCard}
-              onPress={() => handleSafetyOption(option)}
+              onPress={() => { handleSafetyOption(option); }}
             >
               <BlurView intensity={20} style={styles.optionBlur}>
                 <View style={styles.optionContent}>

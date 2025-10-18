@@ -157,7 +157,7 @@ export default function AIPhotoAnalyzerScreen({ navigation }: AIPhotoAnalyzerScr
           <Image source={{ uri: photo }} style={styles.photo} />
           <TouchableOpacity
             style={styles.removeButton}
-            onPress={() => removePhoto(index)}
+            onPress={() => { removePhoto(index); }}
           >
             <Ionicons name="close-circle" size={24} color="#ff4444" />
           </TouchableOpacity>

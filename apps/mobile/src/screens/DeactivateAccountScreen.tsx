@@ -123,7 +123,7 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
                 styles.reasonCard,
                 reason === item && styles.reasonCardSelected
               ]}
-              onPress={() => selectReason(item)}
+              onPress={() => { selectReason(item); }}
             >
               <BlurView intensity={reason === item ? 25 : 15} style={styles.reasonBlur}>
                 <Text style={[
@@ -175,7 +175,7 @@ const DeactivateAccountScreen: React.FC<DeactivateAccountScreenProps> = ({ navig
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[styles.button, styles.cancelButton]}
-              onPress={() => navigation.goBack()}
+              onPress={() => { navigation.goBack(); }}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>

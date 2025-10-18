@@ -183,7 +183,7 @@ const UserIntentScreen = ({ navigation }: UserIntentScreenProps) => {
                     styles.cardButton,
                     selectedIntent === 'adopt' && styles.selectedCard
                   ]}
-                  onPress={() => handleIntentSelect('adopt', scale1)}
+                  onPress={() => { handleIntentSelect('adopt', scale1); }}
                   activeOpacity={0.9}
                   disabled={isNavigating}
                 >
@@ -234,7 +234,7 @@ const UserIntentScreen = ({ navigation }: UserIntentScreenProps) => {
                     styles.cardButton,
                     selectedIntent === 'list' && styles.selectedCard
                   ]}
-                  onPress={() => handleIntentSelect('list', scale2)}
+                  onPress={() => { handleIntentSelect('list', scale2); }}
                   activeOpacity={0.9}
                   disabled={isNavigating}
                 >

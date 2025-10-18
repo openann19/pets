@@ -416,7 +416,7 @@ export default function AICompatibilityScreen({ navigation, route }: AICompatibi
                     Pet 1
                   </Text>
                   {selectedPet1 ? (
-                    renderPetCard(selectedPet1, true, () => setSelectedPet1(null))
+                    renderPetCard(selectedPet1, true, () => { setSelectedPet1(null); })
                   ) : (
                     <View style={[styles.placeholderCard, { backgroundColor: colors.card }]}>
                       <Ionicons name="paw" size={40} color={colors.textSecondary} />
@@ -436,7 +436,7 @@ export default function AICompatibilityScreen({ navigation, route }: AICompatibi
                     Pet 2
                   </Text>
                   {selectedPet2 ? (
-                    renderPetCard(selectedPet2, true, () => setSelectedPet2(null))
+                    renderPetCard(selectedPet2, true, () => { setSelectedPet2(null); })
                   ) : (
                     <View style={[styles.placeholderCard, { backgroundColor: colors.card }]}>
                       <Ionicons name="paw" size={40} color={colors.textSecondary} />

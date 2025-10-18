@@ -18,7 +18,7 @@ export const useSpring = (
     const listener = animatedValue.addListener(({ value: newValue }) => {
       setValue(newValue);
     });
-    return () => animatedValue.removeListener(listener);
+    return () => { animatedValue.removeListener(listener); };
   }, [animatedValue]);
 
   const animate = (toValue: number, customConfig?: Partial<typeof MotionSystem.springs.standard>) => {
@@ -100,7 +100,7 @@ export const useStaggeredFadeIn = (
 
     return () => {
       listeners.forEach((listener, index) =>
-        animatedValues[index].removeListener(listener)
+        { animatedValues[index].removeListener(listener); }
       );
     };
   }, [animatedValues]);

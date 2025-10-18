@@ -25,7 +25,7 @@ export function BioResults({ generatedBio, onSave, onRegenerate }: BioResultsPro
     try {
       await Clipboard.setStringAsync(generatedBio.bio);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => { setCopied(false); }, 2000);
     } catch (error) {
       Alert.alert('Error', 'Failed to copy bio to clipboard');
     }

@@ -98,7 +98,7 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ navigation, r
 
   const updateField = (field: keyof typeof formData, value: string): void => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field as keyof typeof errors]) {
+    if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
@@ -130,7 +130,7 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ navigation, r
               <TextInput
                 style={[styles.input, errors.password && styles.inputError]}
                 value={formData.password}
-                onChangeText={(value) => updateField('password', value)}
+                onChangeText={(value) => { updateField('password', value); }}
                 placeholder="Enter new password"
                 secureTextEntry
                 autoCapitalize="none"
@@ -144,7 +144,7 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ navigation, r
               <TextInput
                 style={[styles.input, errors.confirmPassword && styles.inputError]}
                 value={formData.confirmPassword}
-                onChangeText={(value) => updateField('confirmPassword', value)}
+                onChangeText={(value) => { updateField('confirmPassword', value); }}
                 placeholder="Confirm new password"
                 secureTextEntry
                 autoCapitalize="none"

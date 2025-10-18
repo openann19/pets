@@ -353,7 +353,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
                 variant="ghost"
                 size="small"
                 icon="close"
-                onPress={() => handleApplicationAction(app.id, 'reject')}
+                onPress={() => { handleApplicationAction(app.id, 'reject'); }}
                 style={[{ flex: 1 }, { borderColor: Colors.error }]}
               />
               <View style={GlobalStyles.mx2} />
@@ -362,7 +362,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
                 variant="primary"
                 size="small"
                 icon="checkmark"
-                onPress={() => handleApplicationAction(app.id, 'approve')}
+                onPress={() => { handleApplicationAction(app.id, 'approve'); }}
                 style={{ flex: 1 }}
                 gradient={[Colors.success, '#10b981']}
               />
@@ -410,7 +410,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
               styles.eliteTab, 
               activeTab === 'listings' && styles.eliteActiveTab
             ]}
-            onPress={() => handleTabPress('listings', tabScale1)}
+            onPress={() => { handleTabPress('listings', tabScale1); }}
           >
             <Ionicons 
               name="list" 
@@ -432,7 +432,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
               styles.eliteTab, 
               activeTab === 'applications' && styles.eliteActiveTab
             ]}
-            onPress={() => handleTabPress('applications', tabScale2)}
+            onPress={() => { handleTabPress('applications', tabScale2); }}
           >
             <Ionicons 
               name="document-text" 
@@ -484,7 +484,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
         visible={showStatusModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowStatusModal(false)}
+        onRequestClose={() => { setShowStatusModal(false); }}
       >
         <View style={GlobalStyles.modalOverlay}>
           <View style={GlobalStyles.modalContent}>
@@ -507,7 +507,7 @@ const AdoptionManagerScreen = ({ navigation }: AdoptionManagerScreenProps) => {
             <EliteButton
               title="Cancel"
               variant="secondary"
-              onPress={() => setShowStatusModal(false)}
+              onPress={() => { setShowStatusModal(false); }}
               style={GlobalStyles.mt4}
             />
           </View>

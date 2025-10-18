@@ -226,7 +226,7 @@ const ARScentTrailsScreen = ({ navigation }: ARScentTrailsScreenProps) => {
         <View style={styles.actionsGrid}>
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => Alert.alert('Filter', 'Filter scent trails by intensity')}
+            onPress={() => { Alert.alert('Filter', 'Filter scent trails by intensity'); }}
           >
             <LinearGradient
               colors={['#3b82f6', '#1d4ed8']}
@@ -239,7 +239,7 @@ const ARScentTrailsScreen = ({ navigation }: ARScentTrailsScreenProps) => {
 
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => Alert.alert('Map View', 'Switch to map view')}
+            onPress={() => { Alert.alert('Map View', 'Switch to map view'); }}
           >
             <LinearGradient
               colors={['#10b981', '#047857']}
@@ -252,7 +252,7 @@ const ARScentTrailsScreen = ({ navigation }: ARScentTrailsScreenProps) => {
 
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => Alert.alert('Settings', 'AR settings')}
+            onPress={() => { Alert.alert('Settings', 'AR settings'); }}
           >
             <LinearGradient
               colors={['#8b5cf6', '#7c3aed']}

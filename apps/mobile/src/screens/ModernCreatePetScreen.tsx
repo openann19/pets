@@ -221,16 +221,16 @@ export default function ModernCreatePetScreen({ navigation }: CreatePetScreenPro
   }, []);
 
   // Handler functions for form inputs
-  const handleNameChange = useCallback((value: string) => updateFormData('name', value), [updateFormData]);
-  const handleSpeciesChange = useCallback((species: string) => updateFormData('species', species), [updateFormData]);
-  const handleBreedChange = useCallback((value: string) => updateFormData('breed', value), [updateFormData]);
-  const handleAgeChange = useCallback((value: string) => updateFormData('age', value), [updateFormData]);
-  const handleGenderChange = useCallback((gender: string) => updateFormData('gender', gender), [updateFormData]);
-  const handleSizeChange = useCallback((size: string) => updateFormData('size', size), [updateFormData]);
-  const handleDescriptionChange = useCallback((value: string) => updateFormData('description', value), [updateFormData]);
-  const handleIntentChange = useCallback((intent: string) => updateFormData('intent', intent), [updateFormData]);
-  const handleEmailChange = useCallback((value: string) => updateNestedFormData('contactInfo', 'email', value), [updateNestedFormData]);
-  const handlePhoneChange = useCallback((value: string) => updateNestedFormData('contactInfo', 'phone', value), [updateNestedFormData]);
+  const handleNameChange = useCallback((value: string) => { updateFormData('name', value); }, [updateFormData]);
+  const handleSpeciesChange = useCallback((species: string) => { updateFormData('species', species); }, [updateFormData]);
+  const handleBreedChange = useCallback((value: string) => { updateFormData('breed', value); }, [updateFormData]);
+  const handleAgeChange = useCallback((value: string) => { updateFormData('age', value); }, [updateFormData]);
+  const handleGenderChange = useCallback((gender: string) => { updateFormData('gender', gender); }, [updateFormData]);
+  const handleSizeChange = useCallback((size: string) => { updateFormData('size', size); }, [updateFormData]);
+  const handleDescriptionChange = useCallback((value: string) => { updateFormData('description', value); }, [updateFormData]);
+  const handleIntentChange = useCallback((intent: string) => { updateFormData('intent', intent); }, [updateFormData]);
+  const handleEmailChange = useCallback((value: string) => { updateNestedFormData('contactInfo', 'email', value); }, [updateNestedFormData]);
+  const handlePhoneChange = useCallback((value: string) => { updateNestedFormData('contactInfo', 'phone', value); }, [updateNestedFormData]);
 
   return (
     <EliteContainer gradient="primary">
@@ -289,7 +289,7 @@ export default function ModernCreatePetScreen({ navigation }: CreatePetScreenPro
                       title={species}
                       variant={formData.species === species ? "primary" : "outline"}
                       size="sm"
-                      onPress={() => handleSpeciesChange(species)}
+                      onPress={() => { handleSpeciesChange(species); }}
                     />
                   ))}
                 </View>
@@ -326,7 +326,7 @@ export default function ModernCreatePetScreen({ navigation }: CreatePetScreenPro
                       title={gender}
                       variant={formData.gender === gender ? "primary" : "outline"}
                       size="sm"
-                      onPress={() => handleGenderChange(gender)}
+                      onPress={() => { handleGenderChange(gender); }}
                     />
                   ))}
                 </View>
@@ -341,7 +341,7 @@ export default function ModernCreatePetScreen({ navigation }: CreatePetScreenPro
                       title={size}
                       variant={formData.size === size ? "primary" : "outline"}
                       size="sm"
-                      onPress={() => handleSizeChange(size)}
+                      onPress={() => { handleSizeChange(size); }}
                     />
                   ))}
                 </View>
@@ -381,7 +381,7 @@ export default function ModernCreatePetScreen({ navigation }: CreatePetScreenPro
                       title={intent}
                       variant={formData.intent === intent ? "primary" : "outline"}
                       size="sm"
-                      onPress={() => handleIntentChange(intent)}
+                      onPress={() => { handleIntentChange(intent); }}
                     />
                   ))}
                 </View>
@@ -402,7 +402,7 @@ export default function ModernCreatePetScreen({ navigation }: CreatePetScreenPro
                       title={tag}
                       variant={formData.personalityTags.includes(tag) ? "secondary" : "outline"}
                       size="sm"
-                      onPress={() => togglePersonalityTag(tag)}
+                      onPress={() => { togglePersonalityTag(tag); }}
                     />
                   ))}
                 </View>

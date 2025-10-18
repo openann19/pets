@@ -227,9 +227,9 @@ export default function SwipeScreen({ navigation }: SwipeScreenProps) {
 
       {/* Action Buttons */}
       <SwipeActions
-        onPass={() => handleButtonSwipe('pass')}
-        onSuperLike={() => handleButtonSwipe('superlike')}
-        onLike={() => handleButtonSwipe('like')}
+        onPass={() => { handleButtonSwipe('pass'); }}
+        onSuperLike={() => { handleButtonSwipe('superlike'); }}
+        onLike={() => { handleButtonSwipe('like'); }}
       />
 
       {/* Match Modal */}

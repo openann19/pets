@@ -200,7 +200,7 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
               styles.tab,
               selectedTab === 'matches' && styles.activeTab
             ]}
-            onPress={() => setSelectedTab('matches')}
+            onPress={() => { setSelectedTab('matches'); }}
           >
             <Text style={[
               styles.tabText,
@@ -214,7 +214,7 @@ export default function MatchesScreen({ navigation }: MatchesScreenProps) {
               styles.tab,
               selectedTab === 'likedYou' && styles.activeTab
             ]}
-            onPress={() => setSelectedTab('likedYou')}
+            onPress={() => { setSelectedTab('likedYou'); }}
           >
             <Text style={[
               styles.tabText,

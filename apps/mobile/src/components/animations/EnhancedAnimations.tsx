@@ -63,7 +63,7 @@ export const usePulseAnimation = (duration = 1000) => {
     );
     pulse.start();
 
-    return () => pulse.stop();
+    return () => { pulse.stop(); };
   }, [duration]);
 
   return pulseAnim;
@@ -91,7 +91,7 @@ export const useFloatingAnimation = (amplitude = 10, duration = 2000) => {
     );
     float.start();
 
-    return () => float.stop();
+    return () => { float.stop(); };
   }, [duration]);
 
   const translateY = floatAnim.interpolate({
@@ -116,7 +116,7 @@ export const useShimmerAnimation = (duration = 1500) => {
     );
     shimmer.start();
 
-    return () => shimmer.stop();
+    return () => { shimmer.stop(); };
   }, [duration]);
 
   const translateX = shimmerAnim.interpolate({
@@ -172,7 +172,7 @@ export const FadeInView: React.FC<FadeInViewProps> = ({
       }).start();
     }, delay);
 
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); };
   }, [duration, delay]);
 
   return (
@@ -211,7 +211,7 @@ export const SlideInView: React.FC<SlideInViewProps> = ({
       }).start();
     }, delay);
 
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); };
   }, [duration, delay]);
 
   const getTransform = () => {
@@ -275,7 +275,7 @@ export const ScaleInView: React.FC<ScaleInViewProps> = ({
       }).start();
     }, delay);
 
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); };
   }, [duration, delay, initialScale]);
 
   return (
@@ -312,7 +312,7 @@ export const RotateInView: React.FC<RotateInViewProps> = ({
       }).start();
     }, delay);
 
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); };
   }, [duration, delay]);
 
   const rotation = rotateAnim.interpolate({
@@ -359,11 +359,11 @@ export const TypewriterText: React.FC<TypewriterTextProps> = ({
           });
         }, duration / text.length);
 
-        return () => clearInterval(interval);
+        return () => { clearInterval(interval); };
       }
     }, delay);
 
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); };
   }, [text, duration, delay, currentIndex]);
 
   useEffect(() => {

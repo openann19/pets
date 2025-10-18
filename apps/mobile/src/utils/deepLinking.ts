@@ -186,7 +186,7 @@ export class DeepLinkingService {
       const safeParams = this.sanitizeDeepLinkParams(params);
 
       if (Object.prototype.hasOwnProperty.call(pathMap, pathKey)) {
-        const type = pathMap[pathKey as keyof typeof pathMap];
+        const type = pathMap[pathKey];
         if (type === undefined) {
           return null;
         }

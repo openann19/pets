@@ -189,7 +189,7 @@ const AdminChatsScreen: React.FC<AdminChatsScreenProps> = ({ navigation }) => {
         styles.filterButton,
         { backgroundColor: filter === filterType ? colors.primary : colors.card },
       ]}
-      onPress={() => setFilter(filterType)}
+      onPress={() => { setFilter(filterType); }}
     >
       <Text
         style={[
@@ -206,7 +206,7 @@ const AdminChatsScreen: React.FC<AdminChatsScreenProps> = ({ navigation }) => {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => { navigation.goBack(); }} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Chat Moderation</Text>

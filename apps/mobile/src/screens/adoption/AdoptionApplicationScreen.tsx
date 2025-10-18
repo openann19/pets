@@ -128,7 +128,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: Props) => {
                 styles.optionButton,
                 formData.experience === option && styles.selectedOption,
               ]}
-              onPress={() => updateFormData('experience', option)}
+              onPress={() => { updateFormData('experience', option); }}
             >
               <Text style={[
                 styles.optionText,
@@ -151,7 +151,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: Props) => {
                 styles.optionButton,
                 formData.livingSpace === option && styles.selectedOption,
               ]}
-              onPress={() => updateFormData('livingSpace', option)}
+              onPress={() => { updateFormData('livingSpace', option); }}
             >
               <Text style={[
                 styles.optionText,
@@ -169,7 +169,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: Props) => {
         <TextInput
           style={styles.textArea}
           value={formData.otherPets}
-          onChangeText={(text) => updateFormData('otherPets', text)}
+          onChangeText={(text) => { updateFormData('otherPets', text); }}
           placeholder="Tell us about any other pets you have..."
           multiline
           numberOfLines={3}
@@ -187,7 +187,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: Props) => {
         <TextInput
           style={styles.input}
           value={formData.workSchedule}
-          onChangeText={(text) => updateFormData('workSchedule', text)}
+          onChangeText={(text) => { updateFormData('workSchedule', text); }}
           placeholder="e.g., 9-5 weekdays, work from home, etc."
         />
       </View>
@@ -197,7 +197,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: Props) => {
         <TextInput
           style={styles.textArea}
           value={formData.reason}
-          onChangeText={(text) => updateFormData('reason', text)}
+          onChangeText={(text) => { updateFormData('reason', text); }}
           placeholder="Tell us what draws you to this pet and what you hope to provide..."
           multiline
           numberOfLines={4}
@@ -217,20 +217,20 @@ const AdoptionApplicationScreen = ({ navigation, route }: Props) => {
           <TextInput
             style={styles.input}
             value={ref.name}
-            onChangeText={(text) => updateReference(index, 'name', text)}
+            onChangeText={(text) => { updateReference(index, 'name', text); }}
             placeholder="Full Name"
           />
           <TextInput
             style={styles.input}
             value={ref.phone}
-            onChangeText={(text) => updateReference(index, 'phone', text)}
+            onChangeText={(text) => { updateReference(index, 'phone', text); }}
             placeholder="Phone Number"
             keyboardType="phone-pad"
           />
           <TextInput
             style={styles.input}
             value={ref.relationship}
-            onChangeText={(text) => updateReference(index, 'relationship', text)}
+            onChangeText={(text) => { updateReference(index, 'relationship', text); }}
             placeholder="Relationship (friend, family, etc.)"
           />
         </View>
@@ -240,19 +240,19 @@ const AdoptionApplicationScreen = ({ navigation, route }: Props) => {
       <TextInput
         style={styles.input}
         value={formData.veterinarian.name}
-        onChangeText={(text) => updateVeterinarian('name', text)}
+        onChangeText={(text) => { updateVeterinarian('name', text); }}
         placeholder="Veterinarian Name"
       />
       <TextInput
         style={styles.input}
         value={formData.veterinarian.clinic}
-        onChangeText={(text) => updateVeterinarian('clinic', text)}
+        onChangeText={(text) => { updateVeterinarian('clinic', text); }}
         placeholder="Clinic Name"
       />
       <TextInput
         style={styles.input}
         value={formData.veterinarian.phone}
-        onChangeText={(text) => updateVeterinarian('phone', text)}
+        onChangeText={(text) => { updateVeterinarian('phone', text); }}
         placeholder="Clinic Phone"
         keyboardType="phone-pad"
       />
@@ -268,7 +268,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: Props) => {
         <TextInput
           style={styles.textArea}
           value={formData.commitment}
-          onChangeText={(text) => updateFormData('commitment', text)}
+          onChangeText={(text) => { updateFormData('commitment', text); }}
           placeholder="Please explain your long-term commitment to caring for this pet, including financial responsibility, medical care, and what you would do if circumstances change..."
           multiline
           numberOfLines={5}
@@ -319,7 +319,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: Props) => {
           {currentStep > 0 && (
             <TouchableOpacity
               style={styles.backStepButton}
-              onPress={() => setCurrentStep(prev => prev - 1)}
+              onPress={() => { setCurrentStep(prev => prev - 1); }}
             >
               <Text style={styles.backStepButtonText}>Back</Text>
             </TouchableOpacity>

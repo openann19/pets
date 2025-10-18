@@ -370,7 +370,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
                   icon: 'pencil',
                   title: 'Edit',
                   variant: 'minimal',
-                  onPress: () => handleNavigation('profile'),
+                  onPress: () => { handleNavigation('profile'); },
                 },
               ],
             })}

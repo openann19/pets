@@ -100,7 +100,7 @@ const AdvancedFiltersScreen: React.FC<AdvancedFiltersScreenProps> = ({ navigatio
               styles.filterCard,
               filter.value && styles.filterCardActive
             ]}
-            onPress={() => toggleFilter(filter.id)}
+            onPress={() => { toggleFilter(filter.id); }}
           >
             <BlurView intensity={filter.value ? 25 : 15} style={styles.filterBlur}>
               <View style={styles.filterContent}>

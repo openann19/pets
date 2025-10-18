@@ -67,7 +67,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   const isEnabled = Boolean(buttonConfig.enabled);
 
   useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => setReduceMotion(false));
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => { setReduceMotion(false); });
     const sub = AccessibilityInfo.addEventListener?.('reduceMotionChanged', setReduceMotion);
     return () => {
       // Handle subscription cleanup - type cast needed for RN compatibility
@@ -83,7 +83,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
         variant === 'danger'
           ? Haptics.ImpactFeedbackStyle.Medium
           : Haptics.ImpactFeedbackStyle.Light
-      ).catch(error => logger.error('AnimatedButton haptic error', { error }));
+      ).catch(error => { logger.error('AnimatedButton haptic error', { error }); });
     }
   }, [hapticFeedback, variant, buttonConfig.hapticFeedback, mobileConfig.hapticFeedback]);
 

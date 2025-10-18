@@ -42,14 +42,14 @@ export const SwipeWidget: React.FC<SwipeWidgetProps> = ({
       <View style={styles.actions}>
         <TouchableOpacity
           style={[styles.actionButton, styles.passButton]}
-          onPress={() => onSwipe('left')}
+          onPress={() => { onSwipe('left'); }}
         >
           <Ionicons name="close" size={24} color="#EF4444" />
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.actionButton, styles.likeButton]}
-          onPress={() => onSwipe('right')}
+          onPress={() => { onSwipe('right'); }}
         >
           <Ionicons name="heart" size={24} color="#10B981" />
         </TouchableOpacity>

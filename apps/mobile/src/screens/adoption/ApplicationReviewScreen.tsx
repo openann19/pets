@@ -294,7 +294,7 @@ const ApplicationReviewScreen = ({ navigation, route }: ApplicationReviewScreenP
           <View style={styles.actionsGrid}>
             <TouchableOpacity 
               style={styles.actionButton}
-              onPress={() => handleStatusChange('approved')}
+              onPress={() => { handleStatusChange('approved'); }}
             >
               <LinearGradient
                 colors={['#10b981', '#047857']}
@@ -307,7 +307,7 @@ const ApplicationReviewScreen = ({ navigation, route }: ApplicationReviewScreenP
 
             <TouchableOpacity 
               style={styles.actionButton}
-              onPress={() => handleStatusChange('interview')}
+              onPress={() => { handleStatusChange('interview'); }}
             >
               <LinearGradient
                 colors={['#8b5cf6', '#7c3aed']}
@@ -320,7 +320,7 @@ const ApplicationReviewScreen = ({ navigation, route }: ApplicationReviewScreenP
 
             <TouchableOpacity 
               style={styles.actionButton}
-              onPress={() => handleStatusChange('rejected')}
+              onPress={() => { handleStatusChange('rejected'); }}
             >
               <LinearGradient
                 colors={['#ef4444', '#dc2626']}
@@ -339,7 +339,7 @@ const ApplicationReviewScreen = ({ navigation, route }: ApplicationReviewScreenP
           <View style={styles.contactActions}>
             <TouchableOpacity 
               style={styles.contactButton}
-              onPress={() => Alert.alert('Email', `Send email to ${application.applicantEmail}`)}
+              onPress={() => { Alert.alert('Email', `Send email to ${application.applicantEmail}`); }}
             >
               <LinearGradient
                 colors={['#3b82f6', '#1d4ed8']}
@@ -352,7 +352,7 @@ const ApplicationReviewScreen = ({ navigation, route }: ApplicationReviewScreenP
 
             <TouchableOpacity 
               style={styles.contactButton}
-              onPress={() => Alert.alert('Call', `Call ${application.applicantPhone}`)}
+              onPress={() => { Alert.alert('Call', `Call ${application.applicantPhone}`); }}
             >
               <LinearGradient
                 colors={['#10b981', '#047857']}
@@ -365,7 +365,7 @@ const ApplicationReviewScreen = ({ navigation, route }: ApplicationReviewScreenP
 
             <TouchableOpacity 
               style={styles.contactButton}
-              onPress={() => Alert.alert('Message', `Send message to ${application.applicantPhone}`)}
+              onPress={() => { Alert.alert('Message', `Send message to ${application.applicantPhone}`); }}
             >
               <LinearGradient
                 colors={['#8b5cf6', '#7c3aed']}

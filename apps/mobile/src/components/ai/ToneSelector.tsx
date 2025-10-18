@@ -60,7 +60,7 @@ export function ToneSelector({ selectedTone, onToneSelect }: ToneSelectorProps) 
               selectedTone === tone.id && styles.selectedCard,
               { borderColor: selectedTone === tone.id ? tone.color : Theme.colors.border },
             ]}
-            onPress={() => onToneSelect(tone.id)}
+            onPress={() => { onToneSelect(tone.id); }}
             accessibilityLabel={`Select ${tone.label} tone`}
             accessibilityState={{ selected: selectedTone === tone.id }}
           >

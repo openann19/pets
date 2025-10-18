@@ -34,7 +34,7 @@ export const MatchWidget: React.FC<MatchWidgetProps> = ({
             <TouchableOpacity
               key={match.id}
               style={styles.matchCard}
-              onPress={() => onMatchPress(match.id)}
+              onPress={() => { onMatchPress(match.id); }}
             >
               <View style={styles.petImageContainer}>
                 <Image

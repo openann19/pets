@@ -193,10 +193,10 @@ const LoadingDots: React.FC = () => {
       createDotAnimation(dot3, 400),
     ];
 
-    animations.forEach(animation => animation.start());
+    animations.forEach(animation => { animation.start(); });
 
     return () => {
-      animations.forEach(animation => animation.stop());
+      animations.forEach(animation => { animation.stop(); });
     };
   }, [dot1, dot2, dot3]);
 

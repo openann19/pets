@@ -231,7 +231,7 @@ export default function AIBioScreen({ navigation }: AIBioScreenProps) {
                   selectedTone === tone.id && styles.selectedTone,
                   { borderColor: tone.color }
                 ]}
-                onPress={() => setSelectedTone(tone.id)}
+                onPress={() => { setSelectedTone(tone.id); }}
               >
                 <Text style={styles.toneEmoji}>{tone.icon}</Text>
                 <Text style={[styles.toneLabel, selectedTone === tone.id && { color: tone.color }]}>
@@ -323,7 +323,7 @@ export default function AIBioScreen({ navigation }: AIBioScreenProps) {
               <TouchableOpacity
                 key={index}
                 style={styles.historyItem}
-                onPress={() => setGeneratedBio(bio)}
+                onPress={() => { setGeneratedBio(bio); }}
               >
                 <Text style={styles.historyText} numberOfLines={2}>
                   {bio.bio}

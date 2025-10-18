@@ -152,29 +152,29 @@ export default function NewComponentsTestScreen() {
                 title="Primary"
                 variant="primary"
                 size="md"
-                onPress={() => handleButtonPress('Primary')}
+                onPress={() => { handleButtonPress('Primary'); }}
               />
               <EliteButton
                 title="Secondary"
                 variant="secondary"
                 size="md"
-                onPress={() => handleButtonPress('Secondary')}
+                onPress={() => { handleButtonPress('Secondary'); }}
               />
               <EliteButton
                 title="Outline"
                 variant="outline"
                 size="md"
-                onPress={() => handleButtonPress('Outline')}
+                onPress={() => { handleButtonPress('Outline'); }}
               />
               <EliteButtonPresets.holographic
                 title="Holographic"
                 size="md"
-                onPress={() => handleButtonPress('Holographic')}
+                onPress={() => { handleButtonPress('Holographic'); }}
               />
               <EliteButtonPresets.glass
                 title="Glass"
                 size="md"
-                onPress={() => handleButtonPress('Glass')}
+                onPress={() => { handleButtonPress('Glass'); }}
               />
               <EliteButton
                 title="Loading Test"

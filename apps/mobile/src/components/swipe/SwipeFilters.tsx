@@ -48,7 +48,7 @@ export function SwipeFilters({ filters, onFiltersChange, onApplyFilters }: Swipe
                   magnetic={true}
                   ripple={true}
                   glow={filters.breed === breed}
-                  onPress={() => handleBreedPress(breed)}
+                  onPress={() => { handleBreedPress(breed); }}
                 />
               ))}
             </View>
@@ -64,7 +64,7 @@ export function SwipeFilters({ filters, onFiltersChange, onApplyFilters }: Swipe
                   magnetic={true}
                   ripple={true}
                   glow={(species === 'All' ? '' : species.toLowerCase()) === filters.species}
-                  onPress={() => handleSpeciesPress(species)}
+                  onPress={() => { handleSpeciesPress(species); }}
                 />
               ))}
             </View>

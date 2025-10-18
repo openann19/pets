@@ -207,7 +207,7 @@ export default function AdminAnalyticsScreen({ navigation }: AdminScreenProps<'A
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => (navigation as { goBack: () => void }).goBack()}
+            onPress={() => { (navigation as { goBack: () => void }).goBack(); }}
             style={styles.backButton}
           >
             <Ionicons name="arrow-back" size={24} color={colors.text} />

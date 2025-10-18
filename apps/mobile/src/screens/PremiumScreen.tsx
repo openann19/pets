@@ -283,7 +283,7 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
                 selectedPlan === plan.id && [styles.selectedPlan, { borderColor: colors.accent }],
                 plan.popular && styles.popularPlan,
               ]}
-              onPress={() => handlePlanSelection(plan.id)}
+              onPress={() => { handlePlanSelection(plan.id); }}
               activeOpacity={0.8}
             >
               {plan.popular && (

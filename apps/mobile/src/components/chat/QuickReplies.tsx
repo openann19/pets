@@ -32,7 +32,7 @@ export const QuickReplies: React.FC<QuickRepliesProps> = ({
         size="sm"
         magnetic={true}
         ripple={true}
-        onPress={() => onReplySelect(item)}
+        onPress={() => { onReplySelect(item); }}
         style={styles.quickReply}
       />
     </FadeInUp>

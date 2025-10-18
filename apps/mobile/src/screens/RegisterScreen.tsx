@@ -121,7 +121,7 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
               <TextInput
                 style={styles.input}
                 value={formData.email}
-                onChangeText={(text) => updateFormField('email', text)}
+                onChangeText={(text) => { updateFormField('email', text); }}
                 placeholder="your@email.com"
                 autoCapitalize="none"
                 keyboardType="email-address"
@@ -135,7 +135,7 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
               <TextInput
                 style={styles.input}
                 value={formData.firstName}
-                onChangeText={(text) => updateFormField('firstName', text)}
+                onChangeText={(text) => { updateFormField('firstName', text); }}
                 placeholder="John"
               />
               {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
@@ -146,7 +146,7 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
               <TextInput
                 style={styles.input}
                 value={formData.lastName}
-                onChangeText={(text) => updateFormField('lastName', text)}
+                onChangeText={(text) => { updateFormField('lastName', text); }}
                 placeholder="Doe"
               />
               {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
@@ -157,7 +157,7 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
               <TextInput
                 style={styles.input}
                 value={formData.dateOfBirth}
-                onChangeText={(text) => updateFormField('dateOfBirth', text)}
+                onChangeText={(text) => { updateFormField('dateOfBirth', text); }}
                 placeholder="1990-01-01"
                 keyboardType="numbers-and-punctuation"
               />
@@ -169,7 +169,7 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
               <TextInput
                 style={styles.input}
                 value={formData.password}
-                onChangeText={(text) => updateFormField('password', text)}
+                onChangeText={(text) => { updateFormField('password', text); }}
                 placeholder="********"
                 secureTextEntry
               />
@@ -181,7 +181,7 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
               <TextInput
                 style={styles.input}
                 value={formData.confirmPassword}
-                onChangeText={(text) => updateFormField('confirmPassword', text)}
+                onChangeText={(text) => { updateFormField('confirmPassword', text); }}
                 placeholder="********"
                 secureTextEntry
               />

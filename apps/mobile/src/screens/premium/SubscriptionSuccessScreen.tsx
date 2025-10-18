@@ -140,14 +140,14 @@ export const SubscriptionSuccessScreen: React.FC = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('SubscriptionManager')}
+          onPress={() => { navigation.navigate('SubscriptionManager'); }}
         >
           <Text style={styles.buttonText}>Manage Subscription</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.button, styles.secondaryButton]}
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => { navigation.navigate('Home'); }}
         >
           <Text style={styles.secondaryButtonText}>Go to Home</Text>
         </TouchableOpacity>

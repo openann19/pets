@@ -79,8 +79,8 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
         'Contract Generated',
         'The adoption contract has been generated and sent to both parties for review and signature.',
         [
-          { text: 'View Contract', onPress: () => console.log('View contract') },
-          { text: 'Send for Signature', onPress: () => handleSendForSignature() },
+          { text: 'View Contract', onPress: () => { console.log('View contract'); } },
+          { text: 'Send for Signature', onPress: () => { handleSendForSignature(); } },
         ]
       );
     } catch (error) {
@@ -125,7 +125,7 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
             <TextInput
               style={styles.input}
               value={contractTerms.adoptionFee}
-              onChangeText={(text) => updateContractTerms('adoptionFee', text)}
+              onChangeText={(text) => { updateContractTerms('adoptionFee', text); }}
               placeholder="0"
               keyboardType="numeric"
             />
@@ -151,7 +151,7 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
               </View>
               <Switch
                 value={contractTerms[item.key as keyof ContractTerms] as boolean}
-                onValueChange={(value) => updateContractTerms(item.key, value)}
+                onValueChange={(value) => { updateContractTerms(item.key, value); }}
                 trackColor={{ false: '#e5e7eb', true: '#fce7f3' }}
                 thumbColor={contractTerms[item.key as keyof ContractTerms] ? '#ec4899' : '#9ca3af'}
               />
@@ -175,7 +175,7 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
               </View>
               <Switch
                 value={contractTerms[item.key as keyof ContractTerms] as boolean}
-                onValueChange={(value) => updateContractTerms(item.key, value)}
+                onValueChange={(value) => { updateContractTerms(item.key, value); }}
                 trackColor={{ false: '#e5e7eb', true: '#fce7f3' }}
                 thumbColor={contractTerms[item.key as keyof ContractTerms] ? '#ec4899' : '#9ca3af'}
               />
@@ -195,7 +195,7 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
             <TextInput
               style={styles.input}
               value={contractTerms.emergencyContact.name}
-              onChangeText={(text) => updateEmergencyContact('name', text)}
+              onChangeText={(text) => { updateEmergencyContact('name', text); }}
               placeholder="Full Name"
             />
           </View>
@@ -205,7 +205,7 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
             <TextInput
               style={styles.input}
               value={contractTerms.emergencyContact.phone}
-              onChangeText={(text) => updateEmergencyContact('phone', text)}
+              onChangeText={(text) => { updateEmergencyContact('phone', text); }}
               placeholder="Phone Number"
               keyboardType="phone-pad"
             />
@@ -216,7 +216,7 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
             <TextInput
               style={styles.input}
               value={contractTerms.emergencyContact.relationship}
-              onChangeText={(text) => updateEmergencyContact('relationship', text)}
+              onChangeText={(text) => { updateEmergencyContact('relationship', text); }}
               placeholder="e.g., Friend, Family Member, Veterinarian"
             />
           </View>
@@ -232,7 +232,7 @@ const AdoptionContractScreen = ({ navigation, route }: Props) => {
           <TextInput
             style={styles.textArea}
             value={contractTerms.specialConditions}
-            onChangeText={(text) => updateContractTerms('specialConditions', text)}
+            onChangeText={(text) => { updateContractTerms('specialConditions', text); }}
             placeholder="Enter any special conditions, restrictions, or requirements..."
             multiline
             numberOfLines={4}

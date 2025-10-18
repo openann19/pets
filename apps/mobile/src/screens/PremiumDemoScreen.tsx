@@ -109,7 +109,7 @@ const PremiumDemoScreen: React.FC = () => {
                 gradientName={variant === 'holographic' ? gradientNames[index % gradientNames.length] : undefined}
                 hapticFeedback={true}
                 soundEffect={false}
-                onPress={() => handleButtonPress(variant)}
+                onPress={() => { handleButtonPress(variant); }}
                 style={{ marginBottom: 10 }}
               />
 
@@ -127,25 +127,25 @@ const PremiumDemoScreen: React.FC = () => {
                   title="SM"
                   variant={variant as any}
                   size="sm"
-                  onPress={() => handleButtonPress(`${variant}-sm`)}
+                  onPress={() => { handleButtonPress(`${variant}-sm`); }}
                 />
                 <InteractiveButton
                   title="MD"
                   variant={variant as any}
                   size="md"
-                  onPress={() => handleButtonPress(`${variant}-md`)}
+                  onPress={() => { handleButtonPress(`${variant}-md`); }}
                 />
                 <InteractiveButton
                   title="LG"
                   variant={variant as any}
                   size="lg"
-                  onPress={() => handleButtonPress(`${variant}-lg`)}
+                  onPress={() => { handleButtonPress(`${variant}-lg`); }}
                 />
                 <InteractiveButton
                   title="XL"
                   variant={variant as any}
                   size="xl"
-                  onPress={() => handleButtonPress(`${variant}-xl`)}
+                  onPress={() => { handleButtonPress(`${variant}-xl`); }}
                 />
               </View>
             </View>
@@ -181,7 +181,7 @@ const PremiumDemoScreen: React.FC = () => {
               gradientName={variant === 'holographic' ? gradientNames[index] : undefined}
               glowColor={variant === 'elevated' ? 'primary' : undefined}
               style={{ marginBottom: 20 }}
-              onPress={() => handleCardPress(variant)}
+              onPress={() => { handleCardPress(variant); }}
             >
               <View style={{ padding: 20 }}>
                 <Text style={{
@@ -431,7 +431,7 @@ const PremiumDemoScreen: React.FC = () => {
                 magneticEffect={true}
                 glowEffect={activeDemo === item.id}
                 gradientName={activeDemo === item.id ? 'premium' : undefined}
-                onPress={() => setActiveDemo(item.id as any)}
+                onPress={() => { setActiveDemo(item.id as any); }}
                 style={{ marginBottom: 10 }}
               />
             ))}

@@ -247,7 +247,7 @@ export const AdvancedInteractionTest: React.FC = () => {
           rightButtons: [
             {
               type: 'more',
-              onPress: () => Alert.alert('Test Info', 'Advanced interaction test suite for mobile components'),
+              onPress: () => { Alert.alert('Test Info', 'Advanced interaction test suite for mobile components'); },
               variant: 'minimal',
               haptic: 'light',
             },
@@ -352,7 +352,7 @@ export const AdvancedInteractionTest: React.FC = () => {
                 size="sm"
                 interactions={['hover', 'press', 'glow']}
                 haptic="medium"
-                onPress={() => Alert.alert('Primary Button', 'Primary variant pressed!')}
+                onPress={() => { Alert.alert('Primary Button', 'Primary variant pressed!'); }}
               />
               <AdvancedButton
                 title="Glass"
@@ -360,7 +360,7 @@ export const AdvancedInteractionTest: React.FC = () => {
                 size="sm"
                 interactions={['hover', 'press', 'glow']}
                 haptic="medium"
-                onPress={() => Alert.alert('Glass Button', 'Glass variant pressed!')}
+                onPress={() => { Alert.alert('Glass Button', 'Glass variant pressed!'); }}
               />
               <AdvancedButton
                 title="Neon"
@@ -368,7 +368,7 @@ export const AdvancedInteractionTest: React.FC = () => {
                 size="sm"
                 interactions={['hover', 'press', 'glow']}
                 haptic="medium"
-                onPress={() => Alert.alert('Neon Button', 'Neon variant pressed!')}
+                onPress={() => { Alert.alert('Neon Button', 'Neon variant pressed!'); }}
               />
               <AdvancedButton
                 title="Premium"
@@ -376,7 +376,7 @@ export const AdvancedInteractionTest: React.FC = () => {
                 size="sm"
                 interactions={['hover', 'press', 'glow']}
                 haptic="medium"
-                onPress={() => Alert.alert('Premium Button', 'Premium variant pressed!')}
+                onPress={() => { Alert.alert('Premium Button', 'Premium variant pressed!'); }}
               />
             </View>
           </AdvancedCard>

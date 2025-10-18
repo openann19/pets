@@ -64,7 +64,7 @@ export const AdvancedPetFilters: React.FC<AdvancedPetFiltersProps> = ({ value, o
                 <Text style={styles.label}>Species</Text>
                 <Picker
                     selectedValue={value.species || ''}
-                    onValueChange={v => handleChange('species', v || undefined)}
+                    onValueChange={v => { handleChange('species', v || undefined); }}
                     style={styles.picker}
                     accessibilityLabel="Species"
                 >
@@ -81,7 +81,7 @@ export const AdvancedPetFilters: React.FC<AdvancedPetFiltersProps> = ({ value, o
                     maximumValue={20}
                     step={1}
                     value={value.minAge ?? 0}
-                    onValueChange={v => handleChange('minAge', v)}
+                    onValueChange={v => { handleChange('minAge', v); }}
                     style={styles.slider}
                     accessibilityLabel="Minimum Age"
                 />
@@ -91,14 +91,14 @@ export const AdvancedPetFilters: React.FC<AdvancedPetFiltersProps> = ({ value, o
                     maximumValue={20}
                     step={1}
                     value={value.maxAge ?? 20}
-                    onValueChange={v => handleChange('maxAge', v)}
+                    onValueChange={v => { handleChange('maxAge', v); }}
                     style={styles.slider}
                     accessibilityLabel="Maximum Age"
                 />
                 <Text style={styles.label}>Size</Text>
                 <Picker
                     selectedValue={value.size || ''}
-                    onValueChange={v => handleChange('size', v || undefined)}
+                    onValueChange={v => { handleChange('size', v || undefined); }}
                     style={styles.picker}
                     accessibilityLabel="Size"
                 >
@@ -111,7 +111,7 @@ export const AdvancedPetFilters: React.FC<AdvancedPetFiltersProps> = ({ value, o
                 <Text style={styles.label}>Intent</Text>
                 <Picker
                     selectedValue={value.intent || ''}
-                    onValueChange={v => handleChange('intent', v || undefined)}
+                    onValueChange={v => { handleChange('intent', v || undefined); }}
                     style={styles.picker}
                     accessibilityLabel="Intent"
                 >
@@ -127,7 +127,7 @@ export const AdvancedPetFilters: React.FC<AdvancedPetFiltersProps> = ({ value, o
                     maximumValue={100}
                     step={1}
                     value={value.maxDistance ?? 10}
-                    onValueChange={v => handleChange('maxDistance', v)}
+                    onValueChange={v => { handleChange('maxDistance', v); }}
                     style={styles.slider}
                     accessibilityLabel="Maximum Distance"
                 />
