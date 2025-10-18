@@ -39,7 +39,14 @@ export default [
         ecmaVersion: 'latest',
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
-        project: ['./tsconfig.json', './apps/*/tsconfig.json', './packages/*/tsconfig.json'],
+        project: [
+          './tsconfig.json',
+          './tsconfig.base.json',
+          './apps/*/tsconfig.json',
+          './packages/tsconfig.json',
+          './packages/*/tsconfig.json',
+        ],
+        tsconfigRootDir: '.',
       },
       globals: {
         ...globals.browser,
