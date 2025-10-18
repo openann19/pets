@@ -4,10 +4,10 @@
  * Reduced from 17,000+ lines to focused, maintainable component
  */
 
-import React from 'react';
 import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import type { NavigationProp } from '@react-navigation/native';
 
 import { useAIBio } from '../../hooks/useAIBio';
 import { PetInfoForm } from '../../components/ai/PetInfoForm';
@@ -16,7 +16,7 @@ import { BioResults } from '../../components/ai/BioResults';
 import { Theme } from '../../theme/unified-theme';
 
 interface AIBioScreenProps {
-  navigation: any; // TODO: Replace with proper navigation type
+  navigation: NavigationProp<any>;
 }
 
 export default function AIBioScreen({ navigation }: AIBioScreenProps) {
@@ -33,7 +33,6 @@ export default function AIBioScreen({ navigation }: AIBioScreenProps) {
     selectedTone,
     setSelectedTone,
     selectedPhoto,
-    setSelectedPhoto,
 
     // Generation state
     isGenerating,
