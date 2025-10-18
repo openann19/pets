@@ -10,8 +10,8 @@ import { Image } from 'react-native';
 // Critical assets that should be preloaded
 const CRITICAL_IMAGES = [
   // App icons and logos
-  require('../assets/icon.png'),
-  require('../assets/splash.png'),
+  // require('../assets/icon.png'),
+  // require('../assets/splash.png'),
   // Common UI assets
   // Add your critical images here
 ];
@@ -23,14 +23,14 @@ const CRITICAL_FONTS = {
 };
 
 class AssetPreloader {
-  private static instance: AssetPreloader;
+  private static instance: AssetPreloader | undefined;
   private preloadPromise: Promise<void> | null = null;
   private isPreloaded = false;
 
   private constructor() { }
 
   static getInstance(): AssetPreloader {
-    if (!AssetPreloader.instance) {
+    if (AssetPreloader.instance === undefined) {
       AssetPreloader.instance = new AssetPreloader();
     }
     return AssetPreloader.instance;
@@ -44,7 +44,7 @@ class AssetPreloader {
       return;
     }
 
-    if (this.preloadPromise) {
+    if (this.preloadPromise !== null) {
       return this.preloadPromise;
     }
 
@@ -95,11 +95,11 @@ class AssetPreloader {
   /**
    * Preload a single image
    */
-  private async preloadImage(source: any): Promise<void> {
+  private async preloadImage(source: unknown): Promise<void> {
     return new Promise((resolve) => {
       Image.prefetch(Image.resolveAssetSource(source).uri)
-        .then(() => resolve())
-        .catch(error => {
+        .then(() => { resolve(); })
+        .catch((error: unknown) => {
           logger.warn('Image preload failed', { source, error });
           resolve(); // Don't fail on individual image errors
         });
@@ -129,8 +129,8 @@ class AssetPreloader {
       const promises = urls.map(url =>
         new Promise<void>((resolve) => {
           Image.prefetch(url)
-            .then(() => resolve())
-            .catch(() => resolve()); // Don't fail on individual image errors
+            .then(() => { resolve(); })
+            .catch(() => { resolve(); }); // Don't fail on individual image errors
         })
       );
 
@@ -146,19 +146,19 @@ class AssetPreloader {
    */
   async preloadScreenAssets(screenName: string, assets: {
     images?: string[];
-    fonts?: Record<string, any>;
+    fonts?: Record<string, unknown>;
   }): Promise<void> {
     try {
       const promises: Promise<void>[] = [];
 
       // Preload screen-specific images
-      if (assets.images && assets.images.length > 0) {
+      if (assets.images !== undefined && assets.images.length > 0) {
         const imagePromises = assets.images.map(uri => this.preloadImage(uri));
         promises.push(...imagePromises);
       }
 
       // Load screen-specific fonts
-      if (assets.fonts && Object.keys(assets.fonts).length > 0) {
+      if (assets.fonts !== undefined && Object.keys(assets.fonts).length > 0) {
         const fontPromise = Font.loadAsync(assets.fonts);
         promises.push(fontPromise);
       }
@@ -186,7 +186,7 @@ class AssetPreloader {
   } {
     return {
       isPreloaded: this.isPreloaded,
-      isLoading: !!this.preloadPromise && !this.isPreloaded,
+      isLoading: this.preloadPromise !== null && !this.isPreloaded,
     };
   }
 }
@@ -197,7 +197,10 @@ export const assetPreloader = AssetPreloader.getInstance();
 // Export convenience functions
 export const preloadCriticalAssets = () => assetPreloader.preloadCriticalAssets();
 export const preloadRemoteImages = (urls: string[]) => assetPreloader.preloadRemoteImages(urls);
-export const preloadScreenAssets = (screenName: string, assets: any) =>
+export const preloadScreenAssets = (screenName: string, assets: {
+  images?: string[];
+  fonts?: Record<string, unknown>;
+}) =>
   assetPreloader.preloadScreenAssets(screenName, assets);
 export const isAssetsPreloaded = () => assetPreloader.isAssetsPreloaded();
 

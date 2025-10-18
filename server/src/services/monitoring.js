@@ -76,34 +76,28 @@ class AnalyticsService {
 
   // Track API calls
   trackApiCall(endpoint, method, statusCode, duration, metadata = {}) {
-    const event = {
+    this.updateMetrics('apiCalls', `${method}-${endpoint}`, { statusCode, duration });
+
+    logger.info('API call tracked', {
       endpoint,
       method,
       statusCode,
       duration,
-      timestamp: new Date().toISOString(),
-      metadata
-    };
-
-    // Update metrics
-    this.updateMetrics('apiCalls', `${method}-${endpoint}`, { statusCode, duration });
-
-    logger.info('API call tracked', { endpoint, method, statusCode, duration });
+      metadata,
+      timestamp: new Date().toISOString()
+    });
   }
 
   // Track performance metrics
   trackPerformance(metric, value, metadata = {}) {
-    const event = {
-      metric,
-      value,
-      timestamp: new Date().toISOString(),
-      metadata
-    };
-
-    // Update metrics
     this.updateMetrics('performance', metric, { value });
 
-    logger.info('Performance metric tracked', { metric, value, metadata });
+    logger.info('Performance metric tracked', {
+      metric,
+      value,
+      metadata,
+      timestamp: new Date().toISOString()
+    });
   }
 
   // Track errors
@@ -316,14 +310,20 @@ class HealthCheckService {
 
   async runSingleCheck(name, config) {
     const startTime = Date.now();
+    let timeoutId;
 
     try {
       const result = await Promise.race([
-        config.check(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Health check timeout')), config.timeout)
-        )
+        Promise.resolve().then(() => config.check()),
+        new Promise((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Health check timeout')), config.timeout);
+        })
       ]);
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
 
       const duration = Date.now() - startTime;
 
@@ -339,6 +339,11 @@ class HealthCheckService {
 
       return checkResult;
     } catch (error) {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+
       const duration = Date.now() - startTime;
 
       const checkResult = {
@@ -357,10 +362,11 @@ class HealthCheckService {
 
   determineOverallHealth(results) {
     const criticalChecks = Array.from(this.checks.values()).filter(c => c.critical);
-    const criticalResults = criticalChecks.map(c => {
-      const checkName = Array.from(this.checks.entries()).find(([_, config]) => config === c)[0];
-      return results[checkName];
-    });
+    const criticalResults = criticalChecks.map(checkConfig => {
+      const entry = Array.from(this.checks.entries()).find(([, config]) => config === checkConfig);
+      const checkName = entry ? entry[0] : undefined;
+      return checkName ? results[checkName] : undefined;
+    }).filter(Boolean);
 
     // If any critical check is unhealthy, overall status is unhealthy
     if (criticalResults.some(r => r.status === 'unhealthy')) {
@@ -414,6 +420,7 @@ healthCheckService.registerCheck('redis', async () => {
     await client.quit();
     return { status: 'connected' };
   } catch (error) {
+    logger.error('Redis health check failed', { error: error.message });
     throw new Error('Redis connection failed');
   }
 });
@@ -425,6 +432,7 @@ healthCheckService.registerCheck('ai-service', async () => {
     const response = await axios.get(`${process.env.AI_SERVICE_URL}/health`, { timeout: 3000 });
     return { status: 'available', responseTime: response.headers['response-time'] };
   } catch (error) {
+    logger.error('AI service health check failed', { error: error.message });
     throw new Error('AI service unavailable');
   }
 });

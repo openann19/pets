@@ -12,7 +12,8 @@ try {
     if (key) {
         stripe = stripeFactory(key);
     }
-} catch (e) {
+} catch (error) {
+    logger.warn('Stripe initialization skipped', { error: error.message });
     // If stripe lib unavailable, leave null (handled in route)
 }
 
@@ -83,6 +84,11 @@ const cancelSubscription = async (req, res) => {
             return res.status(400).json({ success: false, message: 'No active subscription found' });
         }
 
+        if (!stripe) {
+            logger.error('cancelSubscription error', { error: 'Stripe not initialized', userId: req.userId });
+            return res.status(503).json({ success: false, message: 'Payments temporarily unavailable' });
+        }
+
         await stripe.subscriptions.del(user.premium.stripeSubscriptionId);
 
         user.premium.isActive = false;
@@ -93,6 +99,7 @@ const cancelSubscription = async (req, res) => {
 
         res.json({ success: true, message: 'Subscription cancelled successfully' });
     } catch (error) {
+        logger.error('cancelSubscription error', { error: error.message, userId: req.userId });
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -131,6 +138,7 @@ const boostProfile = async (req, res) => {
 
         res.json({ success: true, message: 'Profile boosted successfully' });
     } catch (error) {
+        logger.error('boostProfile error', { error: error.message, userId: req.userId, petId: req.params.petId });
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
@@ -292,7 +300,7 @@ const reactivateSubscription = async (req, res) => {
 
         // Update the subscription in Stripe to not cancel at period end
         if (stripe) {
-            const subscription = await stripe.subscriptions.update(
+            await stripe.subscriptions.update(
                 user.premium.stripeSubscriptionId,
                 { cancel_at_period_end: false }
             );

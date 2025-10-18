@@ -662,17 +662,14 @@ describe('Pet Matching Algorithms E2E Tests', () => {
       expect(response.body.success).toBe(true);
       
       // Closer pets should have higher compatibility scores
-      const sortedByDistance = response.body.data.sort((a, b) => a.distance - b.distance);
-      const sortedByScore = response.body.data.sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
-      
-      // Distance should correlate with compatibility score
-      for (let i = 0; i < Math.min(3, sortedByDistance.length); i++) {
-        const distanceRank = sortedByDistance[i].distance;
-        const scoreRank = sortedByScore.findIndex(pet => pet._id === sortedByDistance[i]._id);
-        
-        // Closer pets should generally have higher scores
-        expect(scoreRank).toBeLessThan(sortedByDistance.length / 2);
-      }
+      const sortedByDistance = [...response.body.data].sort((a, b) => a.distance - b.distance);
+      const sortedByScore = [...response.body.data].sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
+
+      const topDistanceIds = new Set(sortedByDistance.slice(0, Math.ceil(sortedByDistance.length / 3)).map(pet => pet._id));
+      const topScoreIds = new Set(sortedByScore.slice(0, Math.ceil(sortedByScore.length / 3)).map(pet => pet._id));
+
+      const overlap = [...topDistanceIds].filter(id => topScoreIds.has(id));
+      expect(overlap.length).toBeGreaterThan(0);
     });
   });
 

@@ -4,7 +4,7 @@
  */
 
 const express = require('express');
-const { body, param, query, validationResult } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 const { authenticateToken } = require('../middleware/auth');
 const {
   getNotificationPreferences,

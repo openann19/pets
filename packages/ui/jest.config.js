@@ -1,4 +1,7 @@
+const baseConfig = require('../../jest.config.base.js');
+
 module.exports = {
+  ...baseConfig,
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/src'],
@@ -10,18 +13,10 @@ module.exports = {
     '^.+\\.(ts|tsx)$': 'ts-jest',
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1'
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@pawfectmatch/core$': '<rootDir>/../core/src/index.ts',
+    '^@pawfectmatch/core/(.*)$': '<rootDir>/../core/src/$1'
   },
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
-  testTimeout: 10000,
-  verbose: true,
-  globals: {
-    'ts-jest': {
-      tsconfig: {
-        jsx: 'react-jsx'
-      }
-    }
-  }
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts']
 };

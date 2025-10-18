@@ -7,6 +7,7 @@
 // to avoid unused interface warnings
 
 // Cross-platform storage interface
+import { getLocalStorage, getNavigatorObject, isBrowserEnvironment } from './environment';
 export interface CrossPlatformStorage {
   getItem: (key: string) => Promise<string | null>;
   setItem: (key: string, value: string) => Promise<void>;
@@ -17,6 +18,8 @@ export interface CrossPlatformStorage {
  * Web storage implementation using localStorage with encryption
  */
 class WebStorageImpl implements CrossPlatformStorage {
+  constructor(private readonly getStorage = getLocalStorage, private readonly getNavigator = getNavigatorObject) {}
+
   private encryptData(data: string, key: string): string {
     try {
       let encrypted = '';
@@ -47,47 +50,55 @@ class WebStorageImpl implements CrossPlatformStorage {
   }
 
   private generateStorageKey(): string {
-    const baseKey = typeof window !== 'undefined' 
-      ? window.navigator.userAgent + new Date().getTime() 
-      : 'fallback_key';
+    const navigator = this.getNavigator();
+    const userAgent = navigator?.userAgent ?? 'unknown_agent';
+    const timestamp = Date.now().toString(36);
+    const baseKey = `${userAgent}-${timestamp}`;
     return btoa(baseKey).slice(0, 16);
   }
 
-  async getItem(key: string): Promise<string | null> {
-    if (typeof window === 'undefined') return null;
-    
+  getItem(key: string): Promise<string | null> {
+    const storage = this.getStorage();
+    if (storage == null) return Promise.resolve(null);
+
     try {
-      const item = localStorage.getItem(key);
-      if (!item) return null;
+      const item = storage.getItem(key);
+      if (item == null) return Promise.resolve(null);
       
       const storageKey = this.generateStorageKey();
       const decrypted = this.decryptData(item, storageKey);
-      return decrypted || null;
+      return Promise.resolve(decrypted);
     } catch (error) {
       console.error('Web storage get error:', error);
-      return null;
+      return Promise.resolve(null);
     }
   }
 
-  async setItem(key: string, value: string): Promise<void> {
-    if (typeof window === 'undefined') return;
+  public setItem(key: string, value: string): Promise<void> {
+    const storage = this.getStorage();
+    if (storage == null) return Promise.resolve();
     
     try {
       const storageKey = this.generateStorageKey();
       const encrypted = this.encryptData(value, storageKey);
-      localStorage.setItem(key, encrypted);
+      storage.setItem(key, encrypted);
+      return Promise.resolve();
     } catch (error) {
       console.error('Web storage set error:', error);
+      return Promise.resolve();
     }
   }
 
-  async removeItem(key: string): Promise<void> {
-    if (typeof window === 'undefined') return;
+  removeItem(key: string): Promise<void> {
+    const storage = this.getStorage();
+    if (storage == null) return Promise.resolve();
     
     try {
-      localStorage.removeItem(key);
+      storage.removeItem(key);
+      return Promise.resolve();
     } catch (error) {
       console.error('Web storage remove error:', error);
+      return Promise.resolve();
     }
   }
 }
@@ -124,7 +135,7 @@ class MobileStorageImpl implements CrossPlatformStorage {
 
   async getItem(key: string): Promise<string | null> {
     try {
-      if (this.secureStore) {
+      if (this.secureStore !== null) {
         return await this.secureStore.getItemAsync(key);
       } else {
         try {
@@ -144,9 +155,9 @@ class MobileStorageImpl implements CrossPlatformStorage {
     }
   }
 
-  async setItem(key: string, value: string): Promise<void> {
+  public async setItem(key: string, value: string): Promise<void> {
     try {
-      if (this.secureStore) {
+      if (this.secureStore !== null) {
         await this.secureStore.setItemAsync(key, value);
       } else {
         try {
@@ -165,7 +176,7 @@ class MobileStorageImpl implements CrossPlatformStorage {
 
   async removeItem(key: string): Promise<void> {
     try {
-      if (this.secureStore) {
+      if (this.secureStore !== null) {
         await this.secureStore.deleteItemAsync(key);
       } else {
         try {
@@ -183,18 +194,14 @@ class MobileStorageImpl implements CrossPlatformStorage {
   }
 }
 
-// Detect platform and provide appropriate implementation
-let storageImpl: CrossPlatformStorage;
+const createStorageImplementation = (): CrossPlatformStorage => {
+  if (isBrowserEnvironment()) {
+    return new WebStorageImpl();
+  }
+  return new MobileStorageImpl();
+};
 
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-  // Web platform
-  storageImpl = new WebStorageImpl();
-} else {
-  // Mobile platform (React Native)
-  storageImpl = new MobileStorageImpl();
-}
-
-export const secureStorage: CrossPlatformStorage = storageImpl;
+export const secureStorage: CrossPlatformStorage = createStorageImplementation();
 
 // Convenience methods for auth tokens
 export async function getAccessToken(): Promise<string | null> {

@@ -1,5 +1,5 @@
 // Mock for @react-native/js-polyfills/error-guard to prevent Flow/TypeScript parsing issues
-module.exports = {
+export default {
     setGlobalHandler: jest.fn(),
     getGlobalHandler: jest.fn(() => jest.fn()),
 };

@@ -6,11 +6,25 @@
 const User = require('../models/User');
 const Pet = require('../models/Pet');
 const Match = require('../models/Match');
-let Message;
-try { Message = require('../models/Message'); } catch { }
-let AuditLog;
-try { AuditLog = require('../models/AdminActivityLog'); } catch { }
 const logger = require('../utils/logger');
+
+let Message;
+try {
+  Message = require('../models/Message');
+} catch (error) {
+  logger.warn('Optional Message model not available for index management', {
+    error: error.message
+  });
+}
+
+let AuditLog;
+try {
+  AuditLog = require('../models/AdminActivityLog');
+} catch (error) {
+  logger.warn('Optional AdminActivityLog model not available for index management', {
+    error: error.message
+  });
+}
 
 const createIndexes = async () => {
   try {

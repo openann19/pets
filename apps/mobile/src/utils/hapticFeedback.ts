@@ -1,6 +1,9 @@
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 
+// Declare global __DEV__ variable
+declare const __DEV__: boolean;
+
 /**
  * Enhanced Haptic Feedback System
  * Implements U-05: Haptic feedback fine-tuned: heavy → superlike, light → like
@@ -141,13 +144,13 @@ class HapticFeedbackManager {
   /**
    * Check accessibility settings to respect user preferences
    */
-  private async checkAccessibilitySettings(): Promise<void> {
+  private checkAccessibilitySettings(): void {
     try {
       // Note: In a real implementation, you'd check AccessibilityInfo.isReduceMotionEnabled()
       // For now, we'll assume it's available
       this.isReduceMotionEnabled = false;
-    } catch (error) {
-      console.warn('Could not check accessibility settings:', error);
+    } catch (_error) {
+      console.warn('Could not check accessibility settings:', _error);
     }
   }
 
@@ -161,11 +164,11 @@ class HapticFeedbackManager {
   /**
    * Check if haptic feedback is available on the current platform
    */
-  public async isAvailable(): Promise<boolean> {
+  public isAvailable(): boolean {
     try {
       // Haptics are primarily available on iOS and some Android devices
       return Platform.OS === 'ios' || Platform.OS === 'android';
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -181,11 +184,6 @@ class HapticFeedbackManager {
     try {
       const config = HAPTIC_CONFIG[type];
       
-      if (!config) {
-        console.warn(`Unknown haptic feedback type: ${type}`);
-        return;
-      }
-
       // Use appropriate haptic method based on feedback type
       if (type === HapticFeedbackType.SUCCESS || 
           type === HapticFeedbackType.ERROR || 
@@ -198,7 +196,7 @@ class HapticFeedbackManager {
 
       // Log for debugging in development
       if (__DEV__) {
-        console.log(`Haptic feedback triggered: ${type} (${config.description})`);
+        console.warn(`Haptic feedback triggered: ${type} (${config.description})`);
       }
     } catch (error) {
       console.warn('Haptic feedback failed:', error);

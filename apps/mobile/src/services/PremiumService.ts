@@ -59,7 +59,7 @@ class PremiumService {
       price: 4.99,
       interval: 'month',
       features: ['5 Super Likes/day', 'See who liked you', 'Advanced filters'],
-      stripePriceId: process.env['EXPO_PUBLIC_STRIPE_BASIC_PRICE_ID'] || 'price_1P1234567890abcdefghijklmn',
+      stripePriceId: process.env['EXPO_PUBLIC_STRIPE_BASIC_PRICE_ID'] ?? 'price_1P1234567890abcdefghijklmn',
     },
     {
       id: 'premium',
@@ -67,7 +67,7 @@ class PremiumService {
       price: 9.99,
       interval: 'month',
       features: ['Unlimited Super Likes', 'Priority matching', 'Profile boost', 'Undo swipes'],
-      stripePriceId: process.env['EXPO_PUBLIC_STRIPE_PREMIUM_PRICE_ID'] || 'price_1P2345678901bcdefghijklmnop',
+      stripePriceId: process.env['EXPO_PUBLIC_STRIPE_PREMIUM_PRICE_ID'] ?? 'price_1P2345678901bcdefghijklmnop',
       popular: true,
     },
     {
@@ -76,7 +76,7 @@ class PremiumService {
       price: 19.99,
       interval: 'month',
       features: ['Everything in Premium', 'Video calls', 'Advanced analytics', 'VIP support'],
-      stripePriceId: process.env['EXPO_PUBLIC_STRIPE_ULTIMATE_PRICE_ID'] || 'price_1P3456789012cdefghijklmnopqr',
+      stripePriceId: process.env['EXPO_PUBLIC_STRIPE_ULTIMATE_PRICE_ID'] ?? 'price_1P3456789012cdefghijklmnopqr',
     },
   ];
 
@@ -100,7 +100,7 @@ class PremiumService {
     try {
       // Check cache first
       const cached = await this.getCachedStatus();
-      if (cached && this.isCacheValid(cached.timestamp)) {
+      if (cached !== null && this.isCacheValid(cached.timestamp)) {
         return cached.status;
       }
 
@@ -120,9 +120,9 @@ class PremiumService {
         plan: response.plan,
         features: response.features,
         autoRenew: response.autoRenew,
-        ...(response.expiresAt ? { expiresAt: response.expiresAt } : {}),
-        ...(response.stripeCustomerId ? { stripeCustomerId: response.stripeCustomerId } : {}),
-        ...(response.currentPeriodEnd ? { currentPeriodEnd: response.currentPeriodEnd } : {}),
+        ...(response.expiresAt !== undefined ? { expiresAt: response.expiresAt } : {}),
+        ...(response.stripeCustomerId !== undefined ? { stripeCustomerId: response.stripeCustomerId } : {}),
+        ...(response.currentPeriodEnd !== undefined ? { currentPeriodEnd: response.currentPeriodEnd } : {}),
       };
 
       // Cache the result
@@ -160,7 +160,7 @@ class PremiumService {
   async createCheckoutSession(planId: string, successUrl?: string, cancelUrl?: string): Promise<{ sessionId: string; url: string }> {
     try {
       const plan = PremiumService.PLANS.find(p => p.id === planId);
-      if (!plan) {
+      if (plan === undefined) {
         throw new Error(`Invalid plan ID: ${planId}`);
       }
 
@@ -170,8 +170,8 @@ class PremiumService {
           method: 'POST',
           body: JSON.stringify({
             priceId: plan.stripePriceId,
-            successUrl: successUrl || 'pawfectmatch://premium/success',
-            cancelUrl: cancelUrl || 'pawfectmatch://premium/cancel',
+            successUrl: successUrl !== undefined ? successUrl : 'pawfectmatch://premium/success',
+            cancelUrl: cancelUrl !== undefined ? cancelUrl : 'pawfectmatch://premium/cancel',
           }),
         }
       );
@@ -307,10 +307,10 @@ class PremiumService {
 
   // Private helper methods
 
-  private async getCachedStatus(): Promise<{ status: SubscriptionStatus; timestamp: number } | null> {
+  private getCachedStatus(): Promise<{ status: SubscriptionStatus; timestamp: number } | null> {
     // This would typically use AsyncStorage or similar
     // For now, return null to always fetch fresh data
-    return null;
+    return Promise.resolve(null);
   }
 
   private async setCachedStatus(_status: SubscriptionStatus): Promise<void> {

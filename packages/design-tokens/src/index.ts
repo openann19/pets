@@ -20,7 +20,7 @@ export const COLORS = {
     900: '#831843',
     950: '#500724',
   },
-  
+
   // Brand Secondary (Purple/Violet)
   secondary: {
     50: '#faf5ff',
@@ -118,7 +118,7 @@ export const GRADIENTS = {
   // Primary brand gradients
   primary: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
   secondary: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-  
+
   // Premium mesh gradients
   mesh: {
     warm: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 25%, #c44569 50%, #a8385d 75%, #7f2c53 100%)',
@@ -419,59 +419,63 @@ export const utils = {
   // Get color with opacity
   withOpacity: (color: string, opacity: number): string => {
     const hex = color.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    const normalized = hex.length === 3
+      ? hex.slice(0, 1) + hex.slice(0, 1) + hex.slice(1, 2) + hex.slice(1, 2) + hex.slice(2, 3) + hex.slice(2, 3)
+      : hex;
+    const r = parseInt(normalized.slice(0, 2), 16);
+    const g = parseInt(normalized.slice(2, 4), 16);
+    const b = parseInt(normalized.slice(4, 6), 16);
+    return 'rgba(' + String(r) + ', ' + String(g) + ', ' + String(b) + ', ' + String(opacity) + ')';
   },
 
   // Get responsive value
-  getResponsiveValue: (values: { sm?: unknown; md?: unknown; lg?: unknown }, screenWidth: number) => {
-    if (screenWidth < 640) return values.sm || values.md || values.lg;
-    if (screenWidth < 1024) return values.md || values.lg;
+  getResponsiveValue: <T>(values: { sm?: T; md?: T; lg?: T }, screenWidth: number): T | undefined => {
+    if (screenWidth < 640) {
+      if (values.sm !== undefined) return values.sm;
+      if (values.md !== undefined) return values.md;
+      return values.lg;
+    }
+    if (screenWidth < 1024) {
+      if (values.md !== undefined) return values.md;
+      return values.lg;
+    }
     return values.lg;
   },
 
   // Generate random gradient
   getRandomGradient: (): string => {
-    const gradients = Object.values(GRADIENTS.mesh);
-    return gradients[Math.floor(Math.random() * gradients.length)];
+    const gradients = Object.values(GRADIENTS.mesh).filter(Boolean);
+    if (gradients.length === 0) return GRADIENTS.primary;
+    const gradient = gradients[Math.floor(Math.random() * gradients.length)];
+    return gradient ?? GRADIENTS.primary;
   },
 
   // Convert hex to RGB
   hexToRgb: (hex: string): { r: number; g: number; b: number } | null => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : null;
+    if (result == null || result.length < 4) return null;
+    const rHex = result[1];
+    const gHex = result[2];
+    const bHex = result[3];
+    if (rHex === undefined || gHex === undefined || bHex === undefined) return null;
+    return {
+      r: parseInt(rHex, 16),
+      g: parseInt(gHex, 16),
+      b: parseInt(bHex, 16),
+    };
   },
 
   // Get contrast color
   getContrastColor: (hexColor: string): string => {
     const rgb = utils.hexToRgb(hexColor);
-    if (!rgb) return COLORS.neutral[900];
-    
+    if (rgb == null) return COLORS.neutral[900];
+
     const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
     return brightness > 128 ? COLORS.neutral[900] : COLORS.neutral[0];
   },
 } as const;
 
 // ====== EXPORTS ======
-export default {
-  COLORS,
-  GRADIENTS,
-  SHADOWS,
-  BLUR,
-  RADIUS,
-  SPACING,
-  TYPOGRAPHY,
-  TRANSITIONS,
-  Z_INDEX,
-  VARIANTS,
-  utils,
-};
 
 // ====== TYPE DEFINITIONS ======
 export type ColorScale = keyof typeof COLORS;

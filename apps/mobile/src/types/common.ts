@@ -3,9 +3,9 @@
  * Replaces all `any` types with proper TypeScript interfaces for React Native
  */
 
+import React from 'react';
 import { ComponentType } from 'react';
-import { NavigationContainerRef, RouteProp, NavigationProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp, NavigationProp } from '@react-navigation/native';
 
 // Navigation Types
 export interface RootStackParamList {
@@ -37,9 +37,6 @@ export interface RootStackParamList {
   ModernCreatePet: undefined;
   MigrationExample: undefined;
 }
-
-export type NavigationProp<T extends keyof RootStackParamList> = StackNavigationProp<RootStackParamList, T>;
-export type RouteProp<T extends keyof RootStackParamList> = RouteProp<RootStackParamList, T>;
 
 // Screen Props Types
 export interface BaseScreenProps {
@@ -370,7 +367,6 @@ export type DeepPartial<T> = {
 };
 
 // Generic Types
-export type ComponentType<T = Record<string, unknown>> = React.ComponentType<T>;
 export type EventHandler<T = unknown> = (event: T) => void;
 export type AsyncFunction<T = unknown, R = unknown> = (args: T) => Promise<R>;
 export type Callback<T = unknown> = (data: T) => void;

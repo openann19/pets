@@ -1,4 +1,3 @@
-const { requirePremium, requirePremiumFeature } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 /**
@@ -98,7 +97,6 @@ const requireProfileBoost = (req, res, next) => {
 
   // Check if user has boosts remaining this month
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const boostsThisMonth = user.premium?.usage?.boostsUsed || 0;
   const boostLimit = user.premium?.usage?.boostsLimit || 0;
 

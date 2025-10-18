@@ -200,7 +200,7 @@ const optionalAuth = async (req, res, next) => {
     }
 
     next();
-  } catch (error) {
+  } catch {
     // Ignore errors for optional auth
     next();
   }

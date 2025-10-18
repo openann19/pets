@@ -97,7 +97,8 @@ router.get('/', async (req, res) => {
           free: Math.round(freeSpace / 1024 / 1024 / 1024) + 'GB',
           usedPercent: usedPercent + '%'
         };
-      } catch (error) {
+      } catch (diskError) {
+        logger.warn('Disk check failed', { error: diskError.message });
         health.checks.disk = {
           status: 'unknown',
           error: 'Could not check disk space'

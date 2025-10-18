@@ -1,12 +1,11 @@
+import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { createDeepSeekService } from '../deepSeekService';
-
-declare const global: unknown;
 
 describe('DeepSeekService', () => {
   const apiKey = 'test-key';
 
   beforeEach(() => {
-    global.fetch = jest.fn();
+    globalThis.fetch = jest.fn() as never;
   });
 
   afterEach(() => {
@@ -25,26 +24,30 @@ describe('DeepSeekService', () => {
       usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
     };
 
-    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => mockResponse });
+    jest.mocked(globalThis.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
+    } as Response);
 
     const svc = createDeepSeekService({ apiKey });
     const res = await svc.analyzePetPhoto('BASE64');
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       'https://api.deepseek.com/v1/chat/completions',
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({ Authorization: `Bearer ${apiKey}` }),
       })
     );
-    expect(res.choices[0].message.content).toContain('species');
+    const content = res.choices[0]!.message?.content ?? '';
+    expect(content).toContain('species');
   });
 
   test('analyzePetPhoto throws on API error', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    jest.mocked(globalThis.fetch).mockResolvedValueOnce({
       ok: false,
-      json: async () => ({ error: { message: 'Bad request', type: 'bad', code: '400' } }),
-    });
+      json: () => Promise.resolve({ error: { message: 'Bad request', type: 'bad', code: '400' } }),
+    } as Response);
 
     const svc = createDeepSeekService({ apiKey });
 
@@ -52,9 +55,15 @@ describe('DeepSeekService', () => {
   });
 
   test('testConnection returns boolean based on API result', async () => {
-    (global.fetch as jest.Mock)
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ choices: [{}, {}] }) })
-      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: { message: 'x', type: 'y', code: 'z' } }) });
+    jest.mocked(globalThis.fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ choices: [{}, {}] }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: false,
+        json: () => Promise.resolve({ error: { message: 'x', type: 'y', code: 'z' } }),
+      } as Response);
 
     const svc = createDeepSeekService({ apiKey });
 

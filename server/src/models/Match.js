@@ -309,11 +309,10 @@ matchSchema.methods.toggleFavorite = function(userId) {
 // Static methods
 matchSchema.statics.findActiveMatchesForUser = function(userId) {
   return this.find({
-    $or: [{ user1: userId }, { user2: userId }],
     status: 'active',
     $or: [
-      { 'userActions.user1.isArchived': false, user1: userId },
-      { 'userActions.user2.isArchived': false, user2: userId }
+      { user1: userId, 'userActions.user1.isArchived': false },
+      { user2: userId, 'userActions.user2.isArchived': false }
     ]
   }).populate('pet1 pet2 user1 user2', '-password -refreshTokens');
 };

@@ -44,6 +44,7 @@ class MapSocketServer {
           socket.emit('authenticated', { success: true });
           console.log(`✅ User authenticated: ${socket.userEmail}`);
         } catch (error) {
+          console.error('Map socket authentication failed', error);
           socket.emit('auth_error', { message: 'Invalid token' });
         }
       });
@@ -74,8 +75,7 @@ class MapSocketServer {
       });
 
       // Send initial pins when requested
-      socket.on('request:initial-pins', (data) => {
-        const { radius = 5 } = data;
+      socket.on('request:initial-pins', () => {
         const pins = Array.from(this.activePins.values())
           .filter(pin => new Date(pin.expiresAt) > new Date())
           .slice(-50); // Last 50 active pins
@@ -158,8 +158,8 @@ class MapSocketServer {
           // Remove user's pins after 5 minutes
           setTimeout(() => {
             const userPins = Array.from(this.activePins.entries())
-              .filter(([_, pin]) => pin.ownerId === socket.userId);
-            
+              .filter(([, pin]) => pin.ownerId === socket.userId);
+
             userPins.forEach(([pinId]) => {
               this.activePins.delete(pinId);
               this.io.emit('pin:remove', pinId);
@@ -227,7 +227,7 @@ class MapSocketServer {
       // Clean up expired pins
       const now = new Date();
       const expiredPins = Array.from(this.activePins.entries())
-        .filter(([_, pin]) => new Date(pin.expiresAt) <= now);
+        .filter(([, pin]) => new Date(pin.expiresAt) <= now);
 
       expiredPins.forEach(([pinId]) => {
         this.activePins.delete(pinId);
@@ -272,7 +272,7 @@ class MapSocketServer {
     });
 
     // Convert to heatmap format [lat, lng, intensity]
-    heatGrid.forEach((cell, key) => {
+    heatGrid.forEach((cell) => {
       if (cell.count >= 2) { // Only show areas with multiple activities
         heatmap.push([
           cell.lat / cell.count,

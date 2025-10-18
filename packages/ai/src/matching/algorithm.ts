@@ -106,13 +106,10 @@ export class AIMatchingAlgorithm {
     };
 
     // Calculate weighted total score
-    const compatibilityScore = Object.entries(breakdown).reduce(
-      (total, [key, score]) => {
-        const weight = this.weights[key as keyof typeof this.weights];
-        return total + (score * weight);
-      },
-      0
-    );
+    const compatibilityScore = Object.entries(breakdown).reduce((total, [key, score]) => {
+      const weight = this.weights[key as keyof typeof this.weights];
+      return total + score * weight;
+    }, 0);
 
     // Generate insights
     const reasons = this.generateReasons(pet, userPreferences, breakdown);
@@ -293,18 +290,18 @@ export class AIMatchingAlgorithm {
     }
 
     if (breakdown.age >= 80) {
-      reasons.push(`Age ${pet.age} fits your preferred age range`);
+      reasons.push(`Age ${String(pet.age)} fits your preferred age range`);
     }
 
     if (breakdown.temperament >= 80) {
       const matchingTraits = pet.temperament.filter(trait =>
         preferences.temperamentPreferences.includes(trait)
       );
-      reasons.push(`Shares ${matchingTraits.length} temperament traits you prefer`);
+      reasons.push(`Shares ${String(matchingTraits.length)} temperament traits you prefer`);
     }
 
     if (breakdown.activity >= 80) {
-      reasons.push(`Activity level ${pet.activityLevel}/10 matches your lifestyle`);
+      reasons.push(`Activity level ${String(pet.activityLevel)}/10 matches your lifestyle`);
     }
 
     if (breakdown.lifestyle >= 80) {
@@ -325,7 +322,7 @@ export class AIMatchingAlgorithm {
     const concerns: string[] = [];
 
     if (breakdown.age < 50) {
-      concerns.push(`Age ${pet.age} may not match your preferences`);
+      concerns.push(`Age ${String(pet.age)} may not match your preferences`);
     }
 
     if (breakdown.temperament < 50) {
@@ -388,7 +385,7 @@ export class AIMatchingAlgorithm {
       reptile: ['lizard', 'snake', 'turtle'],
     };
 
-    return relatedMap[species] || [];
+    return relatedMap[species] ?? [];
   }
 
   /**

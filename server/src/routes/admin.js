@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const stripe = require('stripe');
 const Configuration = require('../models/Configuration');
-const User = require('../models/User');
-const { encrypt, decrypt } = require('../utils/encryption');
+const { encrypt } = require('../utils/encryption');
 const { logAdminActivity, adminActionLogger } = require('../middleware/adminLogger');
 const { validate, schemas } = require('../middleware/validator');
 const subscriptionAnalyticsService = require('../services/subscriptionAnalyticsService');
@@ -311,6 +310,7 @@ router.get('/ai/config', async (req, res) => {
 
     res.json(config);
   } catch (error) {
+    logger.error('Failed to load AI config', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load AI config' });
   }
 });
@@ -337,6 +337,7 @@ router.post('/ai/config', async (req, res) => {
       isActive: true
     });
   } catch (error) {
+    logger.error('Failed to save AI config', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to save AI config' });
   }
 });
@@ -357,6 +358,7 @@ router.get('/ai/stats', async (req, res) => {
 
     res.json(stats);
   } catch (error) {
+    logger.error('Failed to load AI stats', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load AI stats' });
   }
 });
@@ -398,6 +400,7 @@ router.get('/ai/endpoints', async (req, res) => {
 
     res.json(endpoints);
   } catch (error) {
+    logger.error('Failed to load AI endpoints', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load AI endpoints' });
   }
 });
@@ -425,6 +428,7 @@ router.get('/ai/models', async (req, res) => {
 
     res.json(models);
   } catch (error) {
+    logger.error('Failed to load AI models', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load AI models' });
   }
 });
@@ -497,6 +501,7 @@ router.get('/maps/config', async (req, res) => {
 
     res.json(config);
   } catch (error) {
+    logger.error('Failed to load Maps config', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load Maps config' });
   }
 });
@@ -523,6 +528,7 @@ router.post('/maps/config', async (req, res) => {
       restrictions
     });
   } catch (error) {
+    logger.error('Failed to save Maps config', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to save Maps config' });
   }
 });
@@ -546,6 +552,7 @@ router.get('/maps/stats', async (req, res) => {
 
     res.json(stats);
   } catch (error) {
+    logger.error('Failed to load Maps stats', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load Maps stats' });
   }
 });
@@ -590,6 +597,7 @@ router.get('/maps/services', async (req, res) => {
 
     res.json(services);
   } catch (error) {
+    logger.error('Failed to load Maps services', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load Maps services' });
   }
 });
@@ -622,6 +630,7 @@ router.get('/maps/quotas', async (req, res) => {
 
     res.json(quotas);
   } catch (error) {
+    logger.error('Failed to load Maps quotas', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load Maps quotas' });
   }
 });
@@ -676,7 +685,8 @@ router.get('/billing/customers', async (req, res) => {
           churnRisk: 'low'
         };
       });
-    } catch (e) {
+    } catch (error) {
+      logger.warn('Stripe customers list unavailable, falling back to Mongo data', { error: error.message });
       const User = require('../models/User');
       const users = await User.find({ 'premium.isActive': true }).select('email firstName lastName premium createdAt').lean();
       customers = users.map(u => ({
@@ -698,6 +708,7 @@ router.get('/billing/customers', async (req, res) => {
 
     res.json(customers);
   } catch (error) {
+    logger.error('Failed to load customers', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load customers' });
   }
 });
@@ -754,7 +765,8 @@ router.get('/billing/metrics', async (req, res) => {
         if (t.type === 'charge' && t.status === 'available') return sum + t.amount;
         return sum;
       }, 0);
-    } catch (e) {
+    } catch (error) {
+      logger.warn('Stripe metrics unavailable, using estimates', { error: error.message });
       // Stripe not configured, use estimates
     }
 
@@ -778,6 +790,7 @@ router.get('/billing/metrics', async (req, res) => {
 
     res.json(metrics);
   } catch (error) {
+    logger.error('Failed to load billing metrics', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load billing metrics' });
   }
 });
@@ -820,6 +833,7 @@ router.get('/billing/revenue', async (req, res) => {
 
     res.json(revenueData.reverse());
   } catch (error) {
+    logger.error('Failed to load revenue data', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load revenue data' });
   }
 });
@@ -848,21 +862,18 @@ router.get('/billing/payment-methods', async (req, res) => {
             type: pm.type,
             last4: pm.card?.last4 || pm.us_bank_account?.last4 || '****',
             brand: pm.card?.brand || pm.type,
-            expMonth: pm.card?.exp_month,
-            expYear: pm.card?.exp_year,
-            isDefault: true,
-            status: 'active'
           });
-        } catch (pmError) {
-          // Payment method not found or not accessible
+        } catch (error) {
+          logger.warn('Payment method retrieval failed', { error: error.message, paymentMethodId: pmId });
         }
       }
-    } catch (e) {
-      // Stripe not configured, return empty
+    } catch (error) {
+      logger.warn('Stripe payment methods unavailable, returning empty list', { error: error.message });
     }
 
     res.json(paymentMethods);
   } catch (error) {
+    logger.error('Failed to load payment methods', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load payment methods' });
   }
 });
@@ -909,7 +920,8 @@ router.post('/billing/customers/export', async (req, res) => {
           lifetimeValue: null
         };
       });
-    } catch (e) {
+    } catch (error) {
+      logger.warn('Stripe customer export unavailable, using Mongo data', { error: error.message });
       const User = require('../models/User');
       const users = await User.find({ 'premium.isActive': true }).select('email firstName lastName premium').lean();
       customers = users.map(u => ({
@@ -942,6 +954,7 @@ router.post('/billing/customers/export', async (req, res) => {
     ].join(',')).join('\n');
     res.send(header + rows + '\n');
   } catch (error) {
+    logger.error('Failed to export customers', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to export customers' });
   }
 });
@@ -1026,6 +1039,7 @@ router.get('/external-services', async (req, res) => {
 
     res.json(services);
   } catch (error) {
+    logger.error('Failed to load external services', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load external services' });
   }
 });
@@ -1044,6 +1058,7 @@ router.get('/external-services/metrics', async (req, res) => {
 
     res.json(metrics);
   } catch (error) {
+    logger.error('Failed to load external services metrics', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to load external services metrics' });
   }
 });
@@ -1056,13 +1071,14 @@ router.post('/external-services/:serviceId/config', async (req, res) => {
     // In production, save to database or environment variables
     res.json({
       id: serviceId,
-      apiKey: '***configured***',
+      apiKey: apiKey ? '***configured***' : '',
       endpoint,
       limit,
       isActive,
       isConfigured: true
     });
   } catch (error) {
+    logger.error('Failed to save service config', { error: error.message });
     res.status(500).json({ success: false, message: 'Failed to save service config' });
   }
 });
@@ -1143,13 +1159,14 @@ router.post('/payments/process-notifications', async (req, res) => {
 });
 
 router.post('/external-services/:serviceId/toggle', async (req, res) => {
+  const { serviceId } = req.params;
   try {
-    const { serviceId } = req.params;
     const { isActive } = req.body;
 
     // In production, update database
-    res.json({ success: true, isActive });
+    res.json({ success: true, serviceId, isActive });
   } catch (error) {
+    logger.error('Failed to toggle service', { error: error.message, serviceId });
     res.status(500).json({ success: false, message: 'Failed to toggle service' });
   }
 });

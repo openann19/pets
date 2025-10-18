@@ -1,6 +1,6 @@
 import React from 'react';
 import { Linking } from 'react-native';
-import { logger } from '../services/logger';
+import { logger } from '@pawfectmatch/core';
 
 /**
  * Deep Linking Service for PawfectMatch Mobile
@@ -27,9 +27,9 @@ export function parseDeepLink(url: string): DeepLinkData {
     const pathSegments = urlObj.pathname.split('/').filter(Boolean);
 
     // Extract type and ID from path segments
-    const type = pathSegments[0] as DeepLinkData['type'] || 'profile';
-    const id = pathSegments[1] || '';
-    const action = pathSegments[2];
+    const type = (pathSegments[0] !== undefined && pathSegments[0] !== '') ? pathSegments[0] as DeepLinkData['type'] : 'profile';
+    const id = (pathSegments[1] !== undefined && pathSegments[1] !== '') ? pathSegments[1] : '';
+    const action = (pathSegments[2] !== undefined && pathSegments[2] !== '') ? pathSegments[2] : undefined;
 
     // Extract query parameters
     const params: Record<string, string> = {};
@@ -56,16 +56,16 @@ export function parseDeepLink(url: string): DeepLinkData {
 }
 
 export class DeepLinkingService {
-  private static instance: DeepLinkingService;
+  private static instance: DeepLinkingService | null = null;
   private listeners = new Set<(data: DeepLinkData) => void>();
   private navigator: { navigate: (routeName: string, params?: Record<string, unknown>) => void } | null = null;
 
   private constructor() {
-    this.initialize();
+    void this.initialize();
   }
 
   static getInstance(): DeepLinkingService {
-    if (!DeepLinkingService.instance) {
+    if (DeepLinkingService.instance === null) {
       DeepLinkingService.instance = new DeepLinkingService();
     }
     return DeepLinkingService.instance;
@@ -75,8 +75,8 @@ export class DeepLinkingService {
     try {
       // Handle initial URL if app was opened from a link
       const initialUrl = await Linking.getInitialURL();
-      if (initialUrl) {
-        await this.handleUrl(initialUrl);
+      if (initialUrl !== null) {
+        this.handleUrl(initialUrl);
       }
 
       // Listen for incoming URLs
@@ -87,18 +87,20 @@ export class DeepLinkingService {
   }
 
   private handleUrlEvent = (event: { url: string }): void => {
-    this.handleUrl(event.url).catch((error) => {
+    try {
+      this.handleUrl(event.url);
+    } catch (error) {
       logger.error('Error handling deep link URL event:', { error: error instanceof Error ? error.message : String(error) });
-    });
+    }
   };
 
-  async handleUrl(url: string): Promise<DeepLinkData | null> {
+  handleUrl(url: string): DeepLinkData | null {
     try {
       logger.info('Handling deep link URL:', { url });
 
       const parsedData = this.parseUrl(url);
-      if (parsedData) {
-        await this.navigateToScreen(parsedData);
+      if (parsedData !== null) {
+        this.navigateToScreen(parsedData);
         this.notifyListeners(parsedData);
         return parsedData;
       }
@@ -136,10 +138,11 @@ export class DeepLinkingService {
     if (parts.length === 0) return null;
 
     const type = parts[0] as DeepLinkData['type'];
-    const id = parts[1] || '';
+    const id = (parts[1] !== undefined && parts[1] !== '') ? parts[1] : '';
+    const action = (parts[2] !== undefined && parts[2] !== '') ? parts[2] : undefined;
     const params = this.extractParams(url);
 
-    return { type, id, params };
+    return { type, id, action, params };
   }
 
   private parseWebUrl(url: string): DeepLinkData | null {
@@ -164,8 +167,8 @@ export class DeepLinkingService {
         'subscription': 'premium'
       };
 
-      const type = pathMap[parts[0] ?? ''];
-      const id = parts[1] || '';
+      const pathKey = parts[0] ?? '';
+      const _id = (parts[1] !== undefined && parts[1] !== '') ? parts[1] : '';
 
       // Convert URLSearchParams to object manually
       const params: Record<string, string> = {};
@@ -173,23 +176,28 @@ export class DeepLinkingService {
         params[key] = value;
       });
 
-      if (!type) return null;
+      if (pathKey in pathMap) {
+        const type = pathMap[pathKey];
+        const id = (parts[1] !== undefined && parts[1] !== '') ? parts[1] : '';
+        return { type, id, params };
+      }
 
-      return { type, id, params };
+      return null;
     } catch (error) {
       logger.error('Error parsing web URL:', { error: error instanceof Error ? error.message : String(error), url });
       return null;
     }
+  }
   }
 
   private extractParams(url: string): Record<string, string> {
     const params: Record<string, string> = {};
     const queryString = url.split('?')[1];
 
-    if (queryString) {
+    if (queryString !== undefined && queryString !== '') {
       queryString.split('&').forEach(pair => {
         const [key, value] = pair.split('=');
-        if (key && value) {
+        if (key !== undefined && key !== '' && value !== undefined && value !== '') {
           params[decodeURIComponent(key)] = decodeURIComponent(value);
         }
       });
@@ -198,27 +206,27 @@ export class DeepLinkingService {
     return params;
   }
 
-  private async navigateToScreen(data: DeepLinkData): Promise<void> {
+  private navigateToScreen(data: DeepLinkData): void {
     // This would integrate with your navigation system
     // For now, we'll log the navigation intent
     logger.info('Deep link navigation:', { data });
 
     // Handle notification-based deep linking
-    if (data.type === 'chat' && data.id) {
+    if (data.type === 'chat' && data.id !== '') {
       // Navigate to specific chat
-      await this.navigateToChat(data.id);
-    } else if (data.type === 'pet' && data.id) {
+      this.navigateToChat(data.id);
+    } else if (data.type === 'pet' && data.id !== '') {
       // Navigate to pet profile
-      await this.navigateToPetProfile(data.id);
-    } else if (data.type === 'match' && data.id) {
+      this.navigateToPetProfile(data.id);
+    } else if (data.type === 'match' && data.id !== '') {
       // Navigate to match details
-      await this.navigateToMatch(data.id);
-    } else if (data.type === 'profile' && data.id) {
+      this.navigateToMatch(data.id);
+    } else if (data.type === 'profile' && data.id !== '') {
       // Navigate to user profile
-      await this.navigateToUserProfile(data.id);
+      this.navigateToUserProfile(data.id);
     } else if (data.type === 'premium') {
       // Navigate to premium screen
-      await this.navigateToPremium();
+      this.navigateToPremium();
     }
   }
 
@@ -227,40 +235,40 @@ export class DeepLinkingService {
     this.navigator = navigator;
   }
 
-  private async navigateToChat(matchId: string): Promise<void> {
-    if (this.navigator !== null && this.navigator !== undefined) {
+  private navigateToChat(matchId: string): void {
+    if (this.navigator !== null) {
       this.navigator.navigate('Chat', { matchId });
       return;
     }
     logger.warn('Navigator not available, cannot navigate to chat:', { matchId });
   }
 
-  private async navigateToPetProfile(petId: string): Promise<void> {
-    if (this.navigator !== null && this.navigator !== undefined) {
+  private navigateToPetProfile(petId: string): void {
+    if (this.navigator !== null) {
       this.navigator.navigate('PetProfile', { petId });
       return;
     }
     logger.warn('Navigator not available, cannot navigate to pet profile:', { petId });
   }
 
-  private async navigateToMatch(matchId: string): Promise<void> {
-    if (this.navigator !== null && this.navigator !== undefined) {
+  private navigateToMatch(matchId: string): void {
+    if (this.navigator !== null) {
       this.navigator.navigate('MatchDetails', { matchId });
       return;
     }
     logger.warn('Navigator not available, cannot navigate to match:', { matchId });
   }
 
-  private async navigateToUserProfile(userId: string): Promise<void> {
-    if (this.navigator !== null && this.navigator !== undefined) {
+  private navigateToUserProfile(userId: string): void {
+    if (this.navigator !== null) {
       this.navigator.navigate('UserProfile', { userId });
       return;
     }
     logger.warn('Navigator not available, cannot navigate to user profile:', { userId });
   }
 
-  private async navigateToPremium(): Promise<void> {
-    if (this.navigator !== null && this.navigator !== undefined) {
+  private navigateToPremium(): void {
+    if (this.navigator !== null) {
       this.navigator.navigate('Premium');
       return;
     }
@@ -307,6 +315,63 @@ export class DeepLinkingService {
     // as the addEventListener returns a subscription that should be removed
     // This is handled by the component using the service
     this.listeners.clear();
+  }
+
+  // ===== SECURITY CONTROLS =====
+
+  /**
+   * Validate deep link URL format and security
+   */
+  private validateDeepLinkUrl(url: string): boolean {
+    try {
+      // Basic validation: should not be empty, reasonable length
+      if (typeof url !== 'string' || url.length === 0 || url.length > 2000) {
+        return false;
+      }
+
+      // Only allow http, https, or custom scheme
+      const allowedSchemes = ['http:', 'https:', 'pawfectmatch:'];
+      const urlObj = new URL(url);
+      
+      return allowedSchemes.some(scheme => url.startsWith(scheme));
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Sanitize deep link parameters to prevent injection
+   */
+  private sanitizeDeepLinkParams(params: Record<string, string>): Record<string, string> {
+    const sanitized: Record<string, string> = {};
+    
+    for (const [key, value] of Object.entries(params)) {
+      // Remove potentially dangerous characters and limit length
+      const cleanKey = key.replace(/[<>"'`]/g, '').substring(0, 100);
+      const cleanValue = value.replace(/[<>"'`]/g, '').substring(0, 500);
+      
+      if (cleanKey !== '' && cleanValue !== '') {
+        sanitized[cleanKey] = cleanValue;
+      }
+    }
+    
+    return sanitized;
+  }
+
+  /**
+   * Rate limiting for deep link processing
+   */
+  private lastDeepLinkTime: number = 0;
+  private readonly DEEP_LINK_RATE_LIMIT_MS = 1000; // 1 second between deep links
+
+  private checkDeepLinkRateLimit(): boolean {
+    const now = Date.now();
+    if (now - this.lastDeepLinkTime < this.DEEP_LINK_RATE_LIMIT_MS) {
+      logger.warn('Deep link rate limit exceeded');
+      return false;
+    }
+    this.lastDeepLinkTime = now;
+    return true;
   }
 }
 

@@ -39,54 +39,68 @@ export const useAuthStore = create<AuthState>()(
       isOnboarded: false as boolean,
 
       // Update user data
-      setUser: (user: User | null) => set((state: AuthState) => {
-        state.user = user;
-        state.isAuthenticated = !!user;
-        return state;
-      }),
+      setUser: (user: User | null) => {
+        set((state: AuthState) => {
+          state.user = user;
+          state.isAuthenticated = user !== null;
+          return state;
+        });
+      },
 
       // Set tokens after successful login/registration
-      setTokens: (accessToken: string, refreshToken: string) => set((state: AuthState) => {
-        state.accessToken = accessToken;
-        state.refreshToken = refreshToken;
-        state.isAuthenticated = true;
-        return state;
-      }),
+      setTokens: (accessToken: string, refreshToken: string) => {
+        set((state: AuthState) => {
+          state.accessToken = accessToken;
+          state.refreshToken = refreshToken;
+          state.isAuthenticated = true;
+          return state;
+        });
+      },
 
       // Clear tokens on logout
-      clearTokens: () => set((state: AuthState) => {
-        state.accessToken = null;
-        state.refreshToken = null;
-        state.isAuthenticated = false;
-        return state;
-      }),
+      clearTokens: () => {
+        set((state: AuthState) => {
+          state.accessToken = null;
+          state.refreshToken = null;
+          state.isAuthenticated = false;
+          return state;
+        });
+      },
 
       // Full logout
-      logout: () => set((state: AuthState) => {
-        state.user = null;
-        state.accessToken = null;
-        state.refreshToken = null;
-        state.isAuthenticated = false;
-        return state;
-      }),
+      logout: () => {
+        set((state: AuthState) => {
+          state.user = null;
+          state.accessToken = null;
+          state.refreshToken = null;
+          state.isAuthenticated = false;
+          return state;
+        });
+      },
 
       // Set loading state
-      setIsLoading: (isLoading: boolean) => set((state: AuthState) => {
-        state.isLoading = isLoading;
-        return state;
-      }),
+      setIsLoading: (isLoading: boolean) => {
+        set((state: AuthState) => {
+          state.isLoading = isLoading;
+          return state;
+        });
+      },
 
       // Set error message
-      setError: (error: string | null) => set((state: AuthState) => {
-        state.error = error;
-        return state;
-      }),
+      setError: (error: string | null) => {
+        set((state: AuthState) => {
+          state.error = error;
+          return state;
+        });
+      },
 
       // Set onboarding state
-      setIsOnboarded: (isOnboarded: boolean) => set((state: AuthState) => {
-        state.isOnboarded = isOnboarded;
-        return state;
-      }),
+      setIsOnboarded: (isOnboarded: boolean) => {
+        set((state: AuthState) => {
+          state.isOnboarded = isOnboarded;
+          return state;
+        });
+      },
     })),
     {
       name: 'auth-storage',

@@ -1,5 +1,5 @@
 const express = require('express');
-const { authenticateToken, requirePremium, requirePremiumFeature } = require('../middleware/auth');
+const { authenticateToken, requirePremium } = require('../middleware/auth');
 const {
   subscribeToPremium,
   cancelSubscription,

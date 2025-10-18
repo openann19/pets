@@ -174,28 +174,28 @@ StorySchema.methods.hasUserViewed = function (userId) {
  * Get active stories for a user's feed (following + own)
  */
 StorySchema.statics.getActiveFeedStories = async function (userId, followingIds = [], options = {}) {
-    // Back-compat: if third arg omitted but second is an object, shift args
-    if (followingIds && !Array.isArray(followingIds) && typeof followingIds === 'object') {
-        options = followingIds; // eslint-disable-line no-param-reassign
-        followingIds = []; // eslint-disable-line no-param-reassign
-    }
+    const interpretedAsOptions = followingIds && !Array.isArray(followingIds) && typeof followingIds === 'object';
+    const normalizedFollowingIds = interpretedAsOptions ? [] : followingIds;
+    const optionsConfig = interpretedAsOptions ? followingIds : options;
 
     const now = new Date();
-    const userIds = [userId, ...followingIds];
+    const userIds = [userId, ...normalizedFollowingIds];
 
     const query = {
         userId: { $in: userIds },
         expiresAt: { $gt: now },
     };
 
-    if (options && options.cursor) {
-        const cursorDate = new Date(options.cursor);
+    if (optionsConfig && optionsConfig.cursor) {
+        const cursorDate = new Date(optionsConfig.cursor);
         if (!isNaN(cursorDate.getTime())) {
             query.createdAt = { $lt: cursorDate };
         }
     }
 
-    const limit = options && Number.isInteger(options.limit) ? Math.max(1, Math.min(options.limit, 100)) : undefined;
+    const limit = optionsConfig && Number.isInteger(optionsConfig.limit)
+        ? Math.max(1, Math.min(optionsConfig.limit, 100))
+        : undefined;
 
     return this.find(query)
         .populate('userId', 'name profilePhoto username')
@@ -208,7 +208,6 @@ StorySchema.statics.getActiveFeedStories = async function (userId, followingIds 
  * Get user's active stories
  */
 StorySchema.statics.getUserActiveStories = async function (userId, options = {}) {
-    // Back-compat: if options omitted, behave as before
     const now = new Date();
     const query = {
         userId,
@@ -234,20 +233,18 @@ StorySchema.statics.getUserActiveStories = async function (userId, options = {})
  * Get stories grouped by user (for stories bar)
  */
 StorySchema.statics.getStoriesGroupedByUser = async function (userId, followingIds = [], options = {}) {
-    // Back-compat arg shifting
-    if (followingIds && !Array.isArray(followingIds) && typeof followingIds === 'object') {
-        options = followingIds; // eslint-disable-line no-param-reassign
-        followingIds = []; // eslint-disable-line no-param-reassign
-    }
+    const interpretedAsOptions = followingIds && !Array.isArray(followingIds) && typeof followingIds === 'object';
+    const normalizedFollowingIds = interpretedAsOptions ? [] : followingIds;
+    const optionsConfig = interpretedAsOptions ? followingIds : options;
     const now = new Date();
-    const userIds = [userId, ...followingIds];
+    const userIds = [userId, ...normalizedFollowingIds];
 
     const match = {
         userId: { $in: userIds.map(id => mongoose.Types.ObjectId(id)) },
         expiresAt: { $gt: now },
     };
-    if (options && options.cursor) {
-        const cursorDate = new Date(options.cursor);
+    if (optionsConfig && optionsConfig.cursor) {
+        const cursorDate = new Date(optionsConfig.cursor);
         if (!isNaN(cursorDate.getTime())) {
             match.createdAt = { $lt: cursorDate };
         }
@@ -304,8 +301,8 @@ StorySchema.statics.getStoriesGroupedByUser = async function (userId, followingI
         { $sort: { hasUnseen: -1, latestStoryTime: -1 } },
     ];
 
-    if (options && Number.isInteger(options.limit)) {
-        const limit = Math.max(1, Math.min(options.limit, 100));
+    if (optionsConfig && Number.isInteger(optionsConfig.limit)) {
+        const limit = Math.max(1, Math.min(optionsConfig.limit, 100));
         pipeline.push({ $limit: limit });
     }
 

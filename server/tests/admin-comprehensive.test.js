@@ -11,7 +11,6 @@ const jwt = require('jsonwebtoken');
 
 // Mock app setup
 let app;
-let server;
 let adminToken;
 let moderatorToken;
 let supportToken;
@@ -454,7 +453,7 @@ describe('🔍 ULTRA DEEP ADMIN SYSTEM TESTS', () => {
     });
 
     test('Handles malformed JSON in request body', async () => {
-      const response = await request(app)
+      await request(app)
         .post('/api/admin/stripe/config')
         .set('Authorization', `Bearer ${adminToken}`)
         .set('Content-Type', 'application/json')
@@ -497,6 +496,8 @@ describe('🔍 ULTRA DEEP ADMIN SYSTEM TESTS', () => {
         .get('/api/admin/audit-logs?page=-1&limit=1000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200); // Should use defaults
+
+      expect(response.body.success).toBe(true);
     });
   });
 
@@ -548,6 +549,9 @@ describe('🔍 ULTRA DEEP ADMIN SYSTEM TESTS', () => {
           publishableKey: 'pk_test_xxx'
         })
         .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message || '').not.toContain('<script>');
     });
   });
 

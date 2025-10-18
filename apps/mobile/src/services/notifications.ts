@@ -7,10 +7,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { logger } from '@pawfectmatch/core';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
+  handleNotification: () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
@@ -36,8 +37,7 @@ class NotificationService {
     try {
       // Check if device supports notifications
       if (!Device.isDevice) {
-        // eslint-disable-next-line no-console
-        console.log('Must use physical device for Push Notifications');
+        logger.warn('Must use physical device for Push Notifications');
         return null;
       }
 
@@ -52,8 +52,7 @@ class NotificationService {
       }
 
       if (finalStatus !== 'granted') {
-        // eslint-disable-next-line no-console
-        console.log('Failed to get push token for push notification!');
+        logger.warn('Failed to get push token for push notification!');
         return null;
       }
 
@@ -81,11 +80,10 @@ class NotificationService {
       // Set up listeners
       this.setupListeners();
 
-      // eslint-disable-next-line no-console
-      console.log('Push notifications initialized successfully');
+      logger.info('Push notifications initialized successfully');
       return token;
     } catch (error) {
-      console.error('Error initializing push notifications:', error);
+      logger.error('Error initializing push notifications', { error });
       return null;
     }
   }
@@ -135,8 +133,7 @@ class NotificationService {
   private setupListeners() {
     this.notificationListener = Notifications.addNotificationReceivedListener(
       (notification: Notifications.Notification) => {
-        // eslint-disable-next-line no-console
-        console.log('Notification received:', notification);
+        logger.debug('Notification received', { notification });
         this.handleNotificationReceived(notification);
       }
     );
@@ -151,9 +148,11 @@ class NotificationService {
 
   private handleNotificationReceived(notification: Notifications.Notification) {
     const { data } = notification.request.content;
-    
-    // Handle different notification types
-    switch (data?.['type'] as string) {
+
+    // Handle different notification types with safe type checking
+    const notificationType = typeof data['type'] === 'string' ? data['type'] : '';
+
+    switch (notificationType) {
       case 'match':
         // Could trigger a celebration animation
         break;
@@ -168,13 +167,16 @@ class NotificationService {
 
   private handleNotificationResponse(data: Record<string, unknown>) {
     // Navigate to appropriate screen based on notification type
-    switch (data?.['type'] as string) {
+    const notificationType = typeof data['type'] === 'string' ? data['type'] : '';
+    const matchId = typeof data['matchId'] === 'string' ? data['matchId'] : '';
+
+    switch (notificationType) {
       case 'match':
         // Navigate to matches screen
         break;
       case 'message':
         // Navigate to specific chat
-        if (data['matchId'] != null) {
+        if (matchId !== '') {
           // Navigate to specific chat with matchId
         }
         break;
@@ -228,7 +230,7 @@ class NotificationService {
       
       // Configure trigger (immediate or scheduled)
       let trigger: Notifications.NotificationTriggerInput | null = null;
-      if (notificationData.scheduledFor) {
+      if (notificationData.scheduledFor !== undefined) {
         trigger = {
           date: notificationData.scheduledFor
         };
@@ -247,7 +249,7 @@ class NotificationService {
 
       return identifier;
     } catch (error) {
-      console.error('Error sending local notification:', error);
+      logger.error('Error sending local notification', { error });
       return null;
     }
   }
@@ -258,6 +260,7 @@ class NotificationService {
       const count = await Notifications.getBadgeCountAsync();
       return count;
     } catch (error) {
+      logger.error('Error getting badge count', { error });
       return 0;
     }
   }
@@ -268,6 +271,7 @@ class NotificationService {
       await Notifications.setBadgeCountAsync(count);
       return true;
     } catch (error) {
+      logger.error('Error setting badge count', { error, count });
       return false;
     }
   }
@@ -283,6 +287,7 @@ class NotificationService {
       await Notifications.cancelScheduledNotificationAsync(identifier);
       return true;
     } catch (error) {
+      logger.error('Error canceling notification', { error, identifier });
       return false;
     }
   }
@@ -293,6 +298,7 @@ class NotificationService {
       await Notifications.cancelAllScheduledNotificationsAsync();
       return true;
     } catch (error) {
+      logger.error('Error canceling all notifications', { error });
       return false;
     }
   }
@@ -347,7 +353,7 @@ class NotificationService {
     return this.sendLocalNotification({
       type: 'reminder',
       title: 'Missing Your Furry Friends!',
-      body: `It's been ${hours} hours since your last visit. Check out new potential matches!`,
+      body: `It's been ${String(hours)} hours since your last visit. Check out new potential matches!`,
       data: {
         type: 'reminder',
       },
@@ -362,15 +368,76 @@ class NotificationService {
 
   // Clean up resources
   cleanup(): void {
-    if (this.notificationListener) {
+    if (this.notificationListener !== null) {
       this.notificationListener.remove();
       this.notificationListener = null;
     }
     
-    if (this.responseListener) {
+    if (this.responseListener !== null) {
       this.responseListener.remove();
       this.responseListener = null;
     }
+  }
+
+  // ===== SECURITY CONTROLS =====
+
+  /**
+   * Validate Expo push token format
+   */
+  private validateExpoPushToken(token: string): boolean {
+    // Basic validation: should be non-empty string, reasonable length for Expo tokens
+    return typeof token === 'string' && token.length > 0 && token.length < 200 && token.startsWith('ExponentPushToken[');
+  }
+
+  /**
+   * Rate limiting for notification scheduling
+   */
+  private lastScheduledTime: number = 0;
+  private readonly SCHEDULE_RATE_LIMIT_MS = 5000; // 5 seconds between scheduled notifications
+
+  private checkScheduleRateLimit(): boolean {
+    const now = Date.now();
+    if (now - this.lastScheduledTime < this.SCHEDULE_RATE_LIMIT_MS) {
+      logger.warn('Notification schedule rate limit exceeded');
+      return false;
+    }
+    this.lastScheduledTime = now;
+    return true;
+  }
+
+  /**
+   * Validate notification data for security
+   */
+  private validateNotificationData(data: NotificationData): boolean {
+    // Validate type
+    const validTypes = ['match', 'message', 'like', 'super_like', 'premium', 'reminder'];
+    if (!validTypes.includes(data.type)) {
+      return false;
+    }
+
+    // Validate title and body length
+    if (data.title.length > 100 || data.body.length > 500) {
+      return false;
+    }
+
+    // Validate data object if present
+    if (data.data !== undefined) {
+      const dataSize = JSON.stringify(data.data).length;
+      if (dataSize > 2048) { // 2KB limit for notification data
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Secure token storage reference
+   */
+  private storeExpoPushTokenSecurely(_token: string): void {
+    // This should use secureStorage instead of AsyncStorage
+    // await secureStorage.setItem('expo_push_token', token);
+    logger.debug('Expo push token should be stored securely');
   }
 }
 

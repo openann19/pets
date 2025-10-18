@@ -3,6 +3,17 @@
  * Production-grade logging with structured output, levels, and multiple transports
  */
 
+/// <reference types="node" />
+
+import { addEventListenerSafely, getWindowObject } from '../utils/environment';
+
+interface MemoryUsage {
+  rss: number;
+  heapTotal: number;
+  heapUsed: number;
+  external: number;
+}
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'critical';
 
 export interface LogEntry {
@@ -25,7 +36,7 @@ export interface LogEntry {
   };
   performance?: {
     duration: number;
-    memoryUsage?: NodeJS.MemoryUsage;
+    memoryUsage?: MemoryUsage;
   };
 }
 
@@ -130,7 +141,7 @@ class LoggerService {
   endPerformance(label: string, context?: LogEntry['context']): void {
     if (this.config.enablePerformanceLogging) {
       const startTime = this.performanceMarks.get(label);
-      if (startTime) {
+      if (startTime != null) {
         const duration = Date.now() - startTime;
         this.log('info', `Performance: ${label}`, {
           ...context,
@@ -228,14 +239,14 @@ class LoggerService {
       entry => entry.level === 'error' || entry.level === 'critical'
     ).filter(entry => entry.timestamp >= oneHourAgo);
     
-    const byLevel = this.logQueue.reduce((acc, entry) => {
-      acc[entry.level] = (acc[entry.level] || 0) + 1;
+    const byLevel = this.logQueue.reduce<Record<LogLevel, number>>((acc, entry) => {
+      acc[entry.level] += 1;
       return acc;
-    }, {} as Record<LogLevel, number>);
+    }, { debug: 0, info: 0, warn: 0, error: 0, critical: 0 });
 
     const byComponent = this.logQueue.reduce<Record<string, number>>((acc, entry) => {
-      const component = entry.context?.component || 'unknown';
-      acc[component] = (acc[component] || 0) + 1;
+      const component = entry.context?.component ?? 'unknown';
+      acc[component] = (acc[component] ?? 0) + 1;
       return acc;
     }, {});
 
@@ -274,12 +285,12 @@ class LoggerService {
       timestamp: new Date(),
       context: {
         ...context,
-        component: context?.component || 'unknown',
+        component: context?.component ?? 'unknown',
       },
     };
 
     // Add error information if provided
-    if (error) {
+    if (error != null) {
       entry.error = {
         name: error.name,
         message: error.message,
@@ -292,7 +303,7 @@ class LoggerService {
     this.addToQueue(entry);
 
     // Process logs asynchronously
-    this.processLogs();
+    void this.processLogs();
   }
 
   /**
@@ -371,12 +382,12 @@ class LoggerService {
     }
 
     // File transport
-    if (this.config.enableFile && this.config.filePath) {
+    if (this.config.enableFile && this.config.filePath != null && this.config.filePath !== '') {
       this.transports.push(this.createFileTransport());
     }
 
     // Remote transport
-    if (this.config.enableRemote && this.config.remoteEndpoint) {
+    if (this.config.enableRemote && this.config.remoteEndpoint != null && this.config.remoteEndpoint !== '') {
       this.transports.push(this.createRemoteTransport());
     }
   }
@@ -393,9 +404,11 @@ class LoggerService {
         
         switch (entry.level) {
           case 'debug':
+            // eslint-disable-next-line no-console
             console.debug(formattedMessage);
             break;
           case 'info':
+            // eslint-disable-next-line no-console
             console.info(formattedMessage);
             break;
           case 'warn':
@@ -417,10 +430,11 @@ class LoggerService {
     return {
       name: 'file',
       shouldLog: (level) => this.shouldLog(level),
-      write: async (entry) => {
+      write: (entry) => {
         // In a real implementation, this would write to a file
         // For now, we'll just log to console in development
         if (process.env['NODE_ENV'] !== 'production') {
+          // eslint-disable-next-line no-console
           console.log('File log:', this.formatJsonMessage(entry));
         }
       },
@@ -434,12 +448,12 @@ class LoggerService {
     return {
       name: 'remote',
       shouldLog: (level) => this.shouldLog(level),
-      write: async (entry) => {
+      write: (entry) => {
         try {
           // In a real implementation, this would send to a remote logging service
           // For now, we'll just log to console in development
           if (process.env['NODE_ENV'] !== 'production') {
-            console.log('Remote log:', this.formatJsonMessage(entry));
+            console.warn('Remote log:', this.formatJsonMessage(entry));
           }
         } catch (error) {
           console.error('Remote logging failed:', error);
@@ -454,23 +468,23 @@ class LoggerService {
   private formatConsoleMessage(entry: LogEntry): string {
     const timestamp = entry.timestamp.toISOString();
     const level = entry.level.toUpperCase().padEnd(8);
-    const component = entry.context?.component || 'unknown';
-    const action = entry.context?.action ? ` [${entry.context.action}]` : '';
+    const component = entry.context?.component ?? 'unknown';
+    const action = entry.context?.action != null && entry.context.action !== '' ? ` [${entry.context.action}]` : '';
     
     let message = `[${timestamp}] ${level} ${component}${action}: ${entry.message}`;
     
-    if (entry.error) {
+    if (entry.error != null) {
       message += `\n  Error: ${entry.error.name}: ${entry.error.message}`;
-      if (entry.error.stack && process.env['NODE_ENV'] !== 'production') {
+      if (entry.error.stack != null && entry.error.stack !== '' && process.env['NODE_ENV'] !== 'production') {
         message += `\n  Stack: ${entry.error.stack}`;
       }
     }
     
-    if (entry.performance) {
-      message += `\n  Performance: ${entry.performance.duration}ms`;
+    if (entry.performance != null) {
+      message += `\n  Performance: ${String(entry.performance.duration)}ms`;
     }
     
-    if (entry.context?.metadata && Object.keys(entry.context.metadata).length > 0) {
+    if (entry.context?.metadata != null && Object.keys(entry.context.metadata).length > 0) {
       message += `\n  Metadata: ${JSON.stringify(entry.context.metadata, null, 2)}`;
     }
     
@@ -489,32 +503,46 @@ class LoggerService {
    */
   private setupGlobalHandlers(): void {
     if (this.config.enableErrorTracking) {
-      // Handle unhandled promise rejections
-      if (typeof window !== 'undefined') {
-        window.addEventListener('unhandledrejection', (event) => {
-          this.error('Unhandled Promise Rejection', event.reason, {
-            component: 'Global',
-            action: 'unhandled_promise_rejection',
-            metadata: {
-              reason: event.reason,
-              promise: event.promise,
-            },
-          });
-        });
-
-        // Handle global errors
-        window.addEventListener('error', (event) => {
-          this.error('Global Error', event.error, {
-            component: 'Global',
-            action: 'global_error',
-            metadata: {
-              filename: event.filename,
-              lineno: event.lineno,
-              colno: event.colno,
-            },
-          });
-        });
+      const browserWindow = getWindowObject();
+      if (browserWindow == null) {
+        return;
       }
+
+      const handleUnhandledRejection = (event: Event): void => {
+        if (!isPromiseRejectionEvent(event)) {
+          return;
+        }
+
+        const reason = event.reason instanceof Error ? event.reason : undefined;
+        this.error('Unhandled Promise Rejection', reason, {
+          component: 'Global',
+          action: 'unhandled_promise_rejection',
+          metadata: {
+            reason: event.reason,
+            promise: event.promise,
+          },
+        });
+      };
+
+      const handleGlobalError = (event: Event): void => {
+        if (!isErrorEvent(event)) {
+          return;
+        }
+
+        const error = event.error instanceof Error ? event.error : undefined;
+        this.error('Global Error', error, {
+          component: 'Global',
+          action: 'global_error',
+          metadata: {
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno,
+          },
+        });
+      };
+
+      addEventListenerSafely(browserWindow, 'unhandledrejection', handleUnhandledRejection);
+      addEventListenerSafely(browserWindow, 'error', handleGlobalError);
     }
   }
 }
@@ -522,3 +550,11 @@ class LoggerService {
 // Export singleton instance
 export const logger = new LoggerService();
 export default logger;
+
+const isPromiseRejectionEvent = (event: Event): event is PromiseRejectionEvent => {
+  return 'reason' in event && 'promise' in event;
+};
+
+const isErrorEvent = (event: Event): event is ErrorEvent => {
+  return 'error' in event && 'filename' in event;
+};

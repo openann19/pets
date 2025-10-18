@@ -3,14 +3,12 @@ const { app, httpServer } = require('../../../server');
 const User = require('../../../src/models/User');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
-const sinon = require('sinon');
-const stripe = require('stripe');
 
 // Mock Stripe
 jest.mock('stripe', () => {
   return jest.fn(() => ({
     webhooks: {
-      constructEvent: jest.fn().mockImplementation((payload, signature, secret) => {
+      constructEvent: jest.fn().mockImplementation((payload, signature) => {
         if (!signature || signature !== 'valid_signature') {
           throw new Error('Invalid signature');
         }
@@ -34,8 +32,6 @@ jest.mock('stripe', () => {
 });
 
 let mongoServer;
-// Use the imported app reference; do not redeclare
-let server;
 
 describe('Webhook Resilience Tests', () => {
   let testUser;

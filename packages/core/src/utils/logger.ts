@@ -57,13 +57,18 @@ const formatMessage = (
     return `${timestamp}[${level}][${context}] ${message}`;
 };
 
+// Helper function to get context with fallback
+const getContext = (context: string | undefined): string => {
+    return context != null && context.length > 0 ? context : 'App';
+};
+
 // Error reporting service (can be extended to send to Sentry, etc.)
 const reportErrorToServer = async (
     error: string | Error,
     context: string,
     endpoint?: string
 ): Promise<void> => {
-    if (!endpoint) return;
+    if (endpoint == null || endpoint === '') return;
 
     try {
         const errorObj = error instanceof Error
@@ -100,10 +105,10 @@ class LoggerService implements Logger {
             const formattedMsg = formatMessage(
                 'DEBUG',
                 message,
-                this.config.context || 'App',
+                getContext(this.config.context),
                 this.config.useTimestamps
             );
-            console.debug(formattedMsg, ...args);
+            console.warn(formattedMsg, ...args); // Use console.warn for debug level
         }
     }
 
@@ -112,10 +117,10 @@ class LoggerService implements Logger {
             const formattedMsg = formatMessage(
                 'INFO',
                 message,
-                this.config.context || 'App',
+                getContext(this.config.context),
                 this.config.useTimestamps
             );
-            console.info(formattedMsg, ...args);
+            console.warn(formattedMsg, ...args); // Use console.warn for info level
         }
     }
 
@@ -124,7 +129,7 @@ class LoggerService implements Logger {
             const formattedMsg = formatMessage(
                 'WARN',
                 message,
-                this.config.context || 'App',
+                getContext(this.config.context),
                 this.config.useTimestamps
             );
             console.warn(formattedMsg, ...args);
@@ -137,14 +142,15 @@ class LoggerService implements Logger {
             const formattedMsg = formatMessage(
                 'ERROR',
                 errorMsg,
-                this.config.context || 'App',
+                getContext(this.config.context),
                 this.config.useTimestamps
             );
             console.error(formattedMsg, ...(message instanceof Error ? [message, ...args] : args));
 
             // Report error to server if enabled
-            if (this.config.serverReporting && this.config.serverEndpoint) {
-                reportErrorToServer(message, this.config.context || 'App', this.config.serverEndpoint);
+            if (this.config.serverReporting) {
+                const endpoint: string = this.config.serverEndpoint as string;
+                void reportErrorToServer(message, getContext(this.config.context), endpoint);
             }
         }
     }
@@ -166,7 +172,7 @@ class LoggerService implements Logger {
     }
 
     public createChildLogger(childContext: string): Logger {
-        const parentContext = this.config.context || 'App';
+        const parentContext = getContext(this.config.context);
         return new LoggerService({
             ...this.config,
             context: `${parentContext}:${childContext}`

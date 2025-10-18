@@ -308,11 +308,11 @@ function analyzeDescriptionKeywords(description, archetypeTraits) {
 
 function generatePersonalityDescription(primary, secondary) {
   const descriptions = {
-    'the-playful-explorer': `${primary.name} - ${primary.description} They're always ready for adventure and love exploring new places and meeting new friends.`,
-    'the-cautious-cuddler': `${primary.name} - ${primary.description} They prefer familiar environments but are incredibly loving and gentle with those they trust.`,
-    'the-social-butterfly': `${primary.name} - ${primary.description} They thrive on social interaction and make friends wherever they go.`,
-    'the-independent-thinker': `${primary.name} - ${primary.description} They're smart and self-reliant, enjoying both their own company and thoughtful interactions.`,
-    'the-energetic-athlete': `${primary.name} - ${primary.description} They need plenty of physical activity and excel at athletic challenges and games.`
+    'the-playful-explorer': `${primary.name} - ${primary.description} Secondary influence: ${secondary?.name ?? 'N/A'} adds ${secondary?.traits?.slice(0, 2).join(', ') || 'balanced temperament'}.`,
+    'the-cautious-cuddler': `${primary.name} - ${primary.description} Secondary influence: ${secondary?.name ?? 'N/A'} encourages ${secondary?.traits?.slice(0, 2).join(', ') || 'gentle interactions'}.`,
+    'the-social-butterfly': `${primary.name} - ${primary.description} Secondary influence: ${secondary?.name ?? 'N/A'} enhances ${secondary?.traits?.slice(0, 2).join(', ') || 'social adaptability'}.`,
+    'the-independent-thinker': `${primary.name} - ${primary.description} Secondary influence: ${secondary?.name ?? 'N/A'} contributes ${secondary?.traits?.slice(0, 2).join(', ') || 'thoughtful balance'}.`,
+    'the-energetic-athlete': `${primary.name} - ${primary.description} Secondary influence: ${secondary?.name ?? 'N/A'} supports ${secondary?.traits?.slice(0, 2).join(', ') || 'motivated routines'}.`
   };
 
   return descriptions[primary.name.toLowerCase().replace(/\s+/g, '-')] || primary.description;
@@ -332,10 +332,19 @@ function generateCompatibilityTips(archetype) {
 }
 
 function generateCompatibilityInsights(analysisResult) {
+  const { personalityScore, primaryArchetype, secondaryArchetype } = analysisResult;
+
   return {
-    energyMatch: 'High energy pets need active companions',
-    socialMatch: 'Social pets thrive with outgoing friends',
-    independenceMatch: 'Independent pets appreciate space and quiet time'
+    energyMatch: personalityScore.energy > 6
+      ? 'Високата енергия предполага активни партньори.'
+      : 'По-ниската енергия пасва на спокойни срещи.',
+    socialMatch: personalityScore.sociability > 6
+      ? 'Социалните любимци обожават групови занимания.'
+      : 'По-интровертните любимци предпочитат индивидуални срещи.',
+    independenceMatch: personalityScore.independence > 6
+      ? 'Самостоятелните любимци ценят пространство и време за адаптация.'
+      : 'По-зависимите любимци се нуждаят от внимателно въвеждане.',
+    archetypeSummary: `Основен архетип: ${primaryArchetype}. Допълващ архетип: ${secondaryArchetype}.`
   };
 }
 
@@ -373,8 +382,20 @@ function calculatePersonalityCompatibility(pet1, pet2, interactionType) {
   };
 
   // Calculate overall compatibility (lower difference = higher compatibility)
-  const avgDifference = (scores.energy + scores.independence + scores.sociability) / 3;
-  const compatibilityScore = Math.max(0, 100 - (avgDifference * 10));
+  const weights = {
+    playdate: { energy: 0.5, independence: 0.2, sociability: 0.3 },
+    mating: { energy: 0.3, independence: 0.2, sociability: 0.5 },
+    adoption: { energy: 0.4, independence: 0.4, sociability: 0.2 },
+    cohabitation: { energy: 0.3, independence: 0.5, sociability: 0.2 }
+  };
+
+  const { energy, independence, sociability } = weights[interactionType] || weights.playdate;
+  const weightedDifference =
+    scores.energy * energy +
+    scores.independence * independence +
+    scores.sociability * sociability;
+
+  const compatibilityScore = Math.max(0, 100 - (weightedDifference * 10));
 
   return Math.round(compatibilityScore);
 }
@@ -383,29 +404,36 @@ function generateDetailedCompatibilityAnalysis(pet1, pet2, interactionType) {
   return {
     energyCompatibility: {
       score: Math.max(0, 100 - Math.abs(pet1.personalityScore.energy - pet2.personalityScore.energy) * 10),
-      description: 'Energy level compatibility analysis'
+      description: `Енергийна съвместимост спрямо сценарий "${interactionType}"`
     },
     socialCompatibility: {
       score: Math.max(0, 100 - Math.abs(pet1.personalityScore.sociability - pet2.personalityScore.sociability) * 10),
-      description: 'Social interaction compatibility analysis'
+      description: `Социална динамика при "${interactionType}"`
     },
     independenceCompatibility: {
       score: Math.max(0, 100 - Math.abs(pet1.personalityScore.independence - pet2.personalityScore.independence) * 10),
-      description: 'Independence level compatibility analysis'
+      description: `Ниво на независимост в контекст "${interactionType}"`
     }
   };
 }
 
 function generateRecommendations(compatibilityScore, interactionType) {
+  const baseRecommendations = {
+    playdate: 'Планирайте кратки и наблюдавани срещи.',
+    mating: 'Работете с ветеринар за поетапно запознаване.',
+    adoption: 'Осигурете адаптационен период и безопасно пространство.',
+    cohabitation: 'Следете споделените ресурси и отделните зони за почивка.'
+  };
+
   if (compatibilityScore >= 80) {
-    return ['Excellent match! These pets should get along very well.', 'Consider supervised introductions in a neutral environment.'];
+    return ['Отлична съвместимост – очаквайте бърза адаптация.', baseRecommendations[interactionType] || baseRecommendations.playdate];
   } else if (compatibilityScore >= 60) {
-    return ['Good potential match with some considerations.', 'Monitor interactions closely during initial meetings.'];
+    return ['Добра съвместимост с дребни забележки.', baseRecommendations[interactionType] || baseRecommendations.playdate];
   } else if (compatibilityScore >= 40) {
-    return ['Moderate compatibility - proceed with caution.', 'Consider gradual introduction over multiple sessions.'];
-  } else {
-    return ['Low compatibility - may not be suitable for this interaction type.', 'Consider alternative matches or different interaction types.'];
+    return ['Умерена съвместимост – подходете внимателно.', baseRecommendations[interactionType] || baseRecommendations.playdate];
   }
+
+  return ['Ниска съвместимост – преценете алтернативи или различен тип взаимодействие.', baseRecommendations[interactionType] || baseRecommendations.playdate];
 }
 
 function getEnergyScore(energyLevel) {

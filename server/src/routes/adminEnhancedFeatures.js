@@ -4,7 +4,7 @@
  */
 
 const express = require('express');
-const { body, param, query } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 const { requireAuth, requireAdmin } = require('../middleware/adminAuth');
 const {
   getEnhancedFeaturesOverview,

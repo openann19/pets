@@ -103,7 +103,7 @@ describe('Input Validation Security Tests', () => {
       const petId = createPetResponse.body.data._id;
       
       for (const xssPayload of xssPayloads) {
-        const response = await request(app)
+        await request(app)
           .put(`/api/pets/${petId}`)
           .set('Authorization', `Bearer ${authToken}`)
           .send({

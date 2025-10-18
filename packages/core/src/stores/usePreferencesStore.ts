@@ -98,45 +98,45 @@ export const _usePreferencesStore = create<PreferencesState>()(
       ...defaultPreferences,
       
       // Update discovery preferences
-      updateDiscoveryPreferences: (preferences) => set((state: PreferencesState) => {
+      updateDiscoveryPreferences: (preferences) => { set((state: PreferencesState) => {
         state.discovery = {
           ...state.discovery,
           ...preferences,
         };
         return state;
-      }),
+      }); },
       
       // Update notification settings
-      updateNotificationSettings: (settings) => set((state: PreferencesState) => {
+      updateNotificationSettings: (settings) => { set((state: PreferencesState) => {
         state.notifications = {
           ...state.notifications,
           ...settings,
         };
         return state;
-      }),
+      }); },
       
       // Update appearance settings
-      updateAppearanceSettings: (settings) => set((state: PreferencesState) => {
+      updateAppearanceSettings: (settings) => { set((state: PreferencesState) => {
         state.appearance = {
           ...state.appearance,
           ...settings,
         };
         return state;
-      }),
+      }); },
       
       // Update privacy settings
-      updatePrivacySettings: (settings) => set((state: PreferencesState) => {
+      updatePrivacySettings: (settings) => { set((state: PreferencesState) => {
         state.privacy = {
           ...state.privacy,
           ...settings,
         };
         return state;
-      }),
+      }); },
       
       // Reset all preferences to defaults
-      resetPreferences: () => set(() => ({
+      resetPreferences: () => { set(() => ({
         ...defaultPreferences,
-      })),
+      })); },
     })),
     {
       name: 'pawfectmatch-preferences',

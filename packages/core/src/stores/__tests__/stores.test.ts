@@ -102,10 +102,11 @@ describe('Zustand Stores', () => {
         });
       });
 
-      expect(result.current.toasts).toHaveLength(1);
-      expect(result.current.toasts[0].message).toBe('Test toast');
+  expect(result.current.toasts).toHaveLength(1);
+  const toast = result.current.toasts[0]!; // non-null in tests is acceptable
+  expect(toast.message).toBe('Test toast');
 
-      const toastId = result.current.toasts[0].id;
+  const toastId = toast.id;
       act(() => {
         result.current.removeToast(toastId);
       });

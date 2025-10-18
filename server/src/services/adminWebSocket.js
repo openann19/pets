@@ -155,7 +155,7 @@ class AdminWebSocketService {
       timestamp: new Date().toISOString()
     });
 
-    this.clients.forEach((client, userId) => {
+    this.clients.forEach((client) => {
       if (client.ws.readyState === WebSocket.OPEN) {
         client.ws.send(message);
       }
@@ -175,7 +175,7 @@ class AdminWebSocketService {
       timestamp: new Date().toISOString()
     });
 
-    this.clients.forEach((client, userId) => {
+    this.clients.forEach((client) => {
       if (allowedRoles.includes(client.role) && client.ws.readyState === WebSocket.OPEN) {
         client.ws.send(message);
       }

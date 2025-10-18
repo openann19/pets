@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { getDocumentObject } from '../utils/environment';
 
 export function useFocusTrap() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -6,7 +7,7 @@ export function useFocusTrap() {
   const lastFocusableElement = useRef<HTMLElement | null>(null);
 
   const handleTabKey = useCallback((e: KeyboardEvent) => {
-    if (!containerRef.current) return;
+    if (containerRef.current == null) return;
 
     const focusableElements = containerRef.current.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -14,17 +15,25 @@ export function useFocusTrap() {
 
     if (focusableElements.length === 0) return;
 
-    firstFocusableElement.current = focusableElements[0] as HTMLElement;
-    lastFocusableElement.current = focusableElements[focusableElements.length - 1] as HTMLElement;
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
-    if (e.key === 'Tab' && !e.shiftKey && document.activeElement === lastFocusableElement.current) {
-      e.preventDefault();
-      firstFocusableElement.current?.focus();
+    firstFocusableElement.current = firstElement;
+    lastFocusableElement.current = lastElement;
+
+    const activeDocument = getDocumentObject();
+    if (activeDocument == null) {
+      return;
     }
 
-    if (e.key === 'Tab' && e.shiftKey && document.activeElement === firstFocusableElement.current) {
+    if (e.key === 'Tab' && !e.shiftKey && activeDocument.activeElement === lastElement) {
       e.preventDefault();
-      lastFocusableElement.current?.focus();
+      firstElement.focus();
+    }
+
+    if (e.key === 'Tab' && e.shiftKey && activeDocument.activeElement === firstElement) {
+      e.preventDefault();
+      lastElement.focus();
     }
   }, []);
 
@@ -36,7 +45,7 @@ export function useFocusTrap() {
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (container == null) return;
 
     container.addEventListener('keydown', handleKeyDown);
 
@@ -46,7 +55,10 @@ export function useFocusTrap() {
     );
     
     if (focusableElements.length > 0) {
-      (focusableElements[0] as HTMLElement).focus();
+      const initialElement = focusableElements[0] as HTMLElement | undefined;
+      if (initialElement != null) {
+        initialElement.focus();
+      }
     }
 
     return () => {

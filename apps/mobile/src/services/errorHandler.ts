@@ -5,6 +5,8 @@
 
 import { Alert } from 'react-native';
 
+import { logger } from './logger';
+
 interface ErrorContext {
   component: string;
   action: string;
@@ -27,7 +29,7 @@ interface ErrorHandlerOptions {
 class ErrorHandler {
   private logError(error: Error, context: ErrorContext): void {
     // In production, this would send to a logging service like Sentry
-    console.error('Error occurred:', {
+    logger.error('Error occurred', {
       message: error.message,
       stack: error.stack,
       context,

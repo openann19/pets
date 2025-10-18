@@ -2,12 +2,7 @@
 // This replaces the original 46KB adminController.js with optimized queries
 
 const User = require('../models/User');
-const Pet = require('../models/Pet');
 const Match = require('../models/Match');
-const Message = require('../models/Message');
-const Verification = require('../models/Verification');
-const Upload = require('../models/Upload');
-const Report = require('../models/Report');
 const AuditLog = require('../models/AuditLog');
 const mongoose = require('mongoose');
 const logger = require('../utils/logger');
@@ -366,4 +361,10 @@ const getAllChats = async (req, res) => {
       error: error.message
     });
   }
+};
+
+module.exports = {
+  getAllUsers,
+  getUserDetails,
+  getAllChats,
 };

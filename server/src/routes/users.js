@@ -1,8 +1,20 @@
 const express = require('express');
-const { body } = require('express-validator');
 const multer = require('multer');
+const { body } = require('express-validator');
 const { validate } = require('../middleware/validation');
+const { authenticateToken } = require('../middleware/auth');
 const {
+  getCompleteProfile,
+  updateAdvancedProfile,
+  updatePrivacySettings,
+  updateNotificationPreferences,
+  uploadProfilePhotos,
+  deleteProfilePhoto,
+  setPrimaryPhoto,
+  getUserAnalytics,
+  exportUserData,
+  deactivateAccount,
+  reactivateAccount,
   getProfile,
   updateProfile,
   updatePreferences,
@@ -16,11 +28,11 @@ const {
 
 const router = express.Router();
 
-// Configure multer for avatar upload
+// Configure multer for memory storage (Cloudinary upload)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB limit
+    fileSize: 5 * 1024 * 1024, // 5MB limit
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -31,7 +43,18 @@ const upload = multer({
   }
 });
 
+// Apply authentication to all routes
+router.use(authenticateToken);
+
 // Validation rules
+const profileUpdateValidation = [
+  body('firstName').optional().trim().isLength({ min: 1, max: 50 }).withMessage('First name must be 1-50 characters'),
+  body('lastName').optional().trim().isLength({ min: 1, max: 50 }).withMessage('Last name must be 1-50 characters'),
+  body('bio').optional().trim().isLength({ max: 500 }).withMessage('Bio cannot exceed 500 characters'),
+  body('dateOfBirth').optional().isISO8601().withMessage('Valid date of birth required'),
+  body('phone').optional().isMobilePhone().withMessage('Valid phone number required')
+];
+
 const profileValidation = [
   body('firstName').optional().trim().isLength({ min: 1, max: 50 }).withMessage('First name must be 1-50 characters'),
   body('lastName').optional().trim().isLength({ min: 1, max: 50 }).withMessage('Last name must be 1-50 characters'),
@@ -45,7 +68,26 @@ const locationValidation = [
   body('address').optional().isObject().withMessage('Address must be an object')
 ];
 
-// Routes
+// Profile management routes
+router.get('/profile/complete', getCompleteProfile);
+router.put('/profile/advanced', profileUpdateValidation, validate, updateAdvancedProfile);
+router.put('/privacy-settings', updatePrivacySettings);
+router.put('/notification-preferences', updateNotificationPreferences);
+
+// Photo management routes
+router.post('/photos', upload.array('photos', 6), uploadProfilePhotos);
+router.delete('/photos/:photoId', deleteProfilePhoto);
+router.put('/photos/:photoId/primary', setPrimaryPhoto);
+
+// Analytics and data export
+router.get('/analytics', getUserAnalytics);
+router.get('/export', exportUserData);
+
+// Account management
+router.post('/deactivate', deactivateAccount);
+router.post('/reactivate', reactivateAccount);
+
+// Old routes
 router.get('/profile', getProfile);
 router.put('/profile', profileValidation, validate, updateProfile);
 router.put('/preferences', updatePreferences);

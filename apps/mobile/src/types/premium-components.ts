@@ -3,6 +3,7 @@
  * Type-safe definitions for premium mobile components
  */
 
+import React from 'react';
 import type { ViewStyle } from 'react-native';
 
 // ====== BASE TYPES ======

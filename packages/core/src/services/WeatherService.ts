@@ -1,5 +1,6 @@
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { z } from 'zod';
+import { getGeolocation } from '../utils/environment';
 
 /**
  * Enhanced weather service with time-of-day awareness and seasonal variations
@@ -32,15 +33,15 @@ export interface EnhancedWeatherData extends WeatherResponse {
   activitySuggestions: string[];
 }
 
-const API_KEY = process.env['REACT_APP_OPENWEATHER_KEY'] || process.env['OPENWEATHER_KEY'];
+const API_KEY = process.env['REACT_APP_OPENWEATHER_KEY'] ?? process.env['OPENWEATHER_KEY'];
 const ENDPOINT = 'https://api.openweathermap.org/data/2.5/weather';
 
 async function fetchWeather(lat: number, lon: number): Promise<WeatherResponse> {
-  if (!API_KEY) throw new Error('OpenWeather API key not configured');
-  const url = `${ENDPOINT}?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
+  if (API_KEY == null || API_KEY === '') throw new Error('OpenWeather API key not configured');
+  const url = `${ENDPOINT}?lat=${String(lat)}&lon=${String(lon)}&units=metric&appid=${API_KEY}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to fetch weather');
-  const json = await res.json();
+  const json: unknown = await res.json();
   return WeatherSchema.parse(json);
 }
 
@@ -48,7 +49,7 @@ async function fetchWeather(lat: number, lon: number): Promise<WeatherResponse> 
  * Get current time of day based on sunrise/sunset
  */
 function getTimeOfDay(sunrise: number, sunset: number, currentTime: number): 'dawn' | 'day' | 'dusk' | 'night' {
-  const now = currentTime || Date.now() / 1000;
+  const now = currentTime;
   const dawnStart = sunrise - 3600; // 1 hour before sunrise
   const duskEnd = sunset + 3600; // 1 hour after sunset
 
@@ -85,11 +86,11 @@ function generatePetTips(weather: WeatherResponse, timeOfDay: string, season: st
   }
 
   // Weather condition tips
-  if (condition?.includes('rain')) {
+  if (condition != null && condition.includes('rain')) {
     tips.push('Pack a towel for after-walk cleanup and consider waterproof gear');
-  } else if (condition?.includes('snow')) {
+  } else if (condition != null && condition.includes('snow')) {
     tips.push('Protect paws with booties and limit outdoor time in extreme cold');
-  } else if (condition?.includes('thunderstorm')) {
+  } else if (condition != null && condition.includes('thunderstorm')) {
     tips.push('Keep pets indoors during storms - many are afraid of thunder');
   }
 
@@ -120,7 +121,7 @@ function generateActivitySuggestions(weather: WeatherResponse, timeOfDay: string
   const windSpeed = weather.wind.speed;
 
   // Outdoor activities
-  if (temp >= 10 && temp <= 25 && !condition?.includes('rain') && !condition?.includes('snow')) {
+  if (temp >= 10 && temp <= 25 && (condition == null || !condition.includes('rain')) && (condition == null || !condition.includes('snow'))) {
     suggestions.push('Perfect weather for a long park walk');
     suggestions.push('Great conditions for fetch or agility training');
     if (windSpeed < 5) {
@@ -129,7 +130,7 @@ function generateActivitySuggestions(weather: WeatherResponse, timeOfDay: string
   }
 
   // Indoor activities
-  if (temp < 10 || temp > 30 || condition?.includes('rain')) {
+  if (temp < 10 || temp > 30 || (condition != null && condition.includes('rain'))) {
     suggestions.push('Try indoor puzzle toys or training games');
     suggestions.push('Perfect time for bonding with cuddle sessions');
   }
@@ -152,7 +153,7 @@ function generateActivitySuggestions(weather: WeatherResponse, timeOfDay: string
 /**
  * Enhanced weather hook with time-of-day and seasonal context
  */
-export function useEnhancedWeather(): UseQueryResult<EnhancedWeatherData, Error> {
+export function useEnhancedWeather(): UseQueryResult<EnhancedWeatherData> {
   return useQuery({
     queryKey: ['enhanced-weather'],
     queryFn: async () => {
@@ -191,7 +192,7 @@ export function useEnhancedWeather(): UseQueryResult<EnhancedWeatherData, Error>
 /**
  * React Query + Geolocation hook for basic weather
  */
-export function useWeather(): UseQueryResult<WeatherResponse, Error> {
+export function useWeather(): UseQueryResult<WeatherResponse> {
   return useQuery({
     queryKey: ['weather'],
     queryFn: async () => {
@@ -206,11 +207,12 @@ export function useWeather(): UseQueryResult<WeatherResponse, Error> {
 
 function getPosition(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
+    const geolocation = getGeolocation();
+    if (geolocation == null) {
       reject(new Error('Geolocation not available'));
       return;
     }
-    navigator.geolocation.getCurrentPosition(resolve, reject);
+    geolocation.getCurrentPosition(resolve, reject);
   });
 }
 

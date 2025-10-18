@@ -2,7 +2,6 @@
 
 const mongoose = require('mongoose');
 const Conversation = require('../models/Conversation');
-const User = require('../models/User');
 const logger = require('../utils/logger');
 
 function ok(res, status, payload) {

@@ -1,4 +1,7 @@
+const baseConfig = require('../../jest.config.base.js');
+
 module.exports = {
+  ...baseConfig,
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/src'],
@@ -10,13 +13,10 @@ module.exports = {
     '^.+\\.(ts|tsx)$': 'ts-jest',
     '^.+\\.(js|jsx)$': 'babel-jest'
   },
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
-  testTimeout: 10000,
-  verbose: true,
   globals: {
     'ts-jest': {
       tsconfig: {
@@ -24,22 +24,12 @@ module.exports = {
       }
     }
   },
-  collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/setupTests.ts',
-    '!src/**/__tests__/**',
-    '!src/**/*.test.{ts,tsx}',
-    '!src/**/*.spec.{ts,tsx}'
-  ],
-  coverageReporters: ['text', 'lcov', 'html'],
-  coverageDirectory: 'coverage',
   coverageThreshold: {
     global: {
-      branches: 70,
-      functions: 70,
-      lines: 70,
-      statements: 70
+      branches: 85,
+      functions: 85,
+      lines: 85,
+      statements: 85
     }
   }
 };

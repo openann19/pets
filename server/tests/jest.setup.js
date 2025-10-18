@@ -6,7 +6,6 @@
  */
 
 /* eslint-disable no-undef */
-/* eslint-disable no-console */
 
 // Make Jest globals available
 global.jest = jest;
@@ -52,16 +51,21 @@ global.fail = (message) => {
 };
 
 // Mock console methods to keep test output clean
-const originalConsole = { ...console };
+const consoleRef = globalThis.console;
+const originalConsole = {
+  log: consoleRef.log,
+  error: consoleRef.error,
+  warn: consoleRef.warn
+};
 global.silenceConsole = () => {
-  console.log = jest.fn();
-  console.error = jest.fn();
-  console.warn = jest.fn();
+  consoleRef.log = jest.fn();
+  consoleRef.error = jest.fn();
+  consoleRef.warn = jest.fn();
 };
 global.restoreConsole = () => {
-  console.log = originalConsole.log;
-  console.error = originalConsole.error;
-  console.warn = originalConsole.warn;
+  consoleRef.log = originalConsole.log;
+  consoleRef.error = originalConsole.error;
+  consoleRef.warn = originalConsole.warn;
 };
 
 // Useful for schema validation tests
@@ -83,4 +87,3 @@ afterAll(() => {
 });
 
 /* eslint-enable no-undef */
-/* eslint-enable no-console */

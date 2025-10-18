@@ -1,16 +1,6 @@
-/**
- * Admin Users Screen for Mobile
- * Comprehensive user management with search, filtering, and actions
- */
-
-import { Ionicons } from '@expo/vector-icons';
-import { logger, useAuthStore } from '@pawfectmatch/core';
-import * as Haptics from 'expo-haptics';
-import { useEffect, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
-  Alert,
-  Dimensions,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -20,630 +10,300 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
+import {
+  AdminUserListItem,
+  type AdminUserListItemViewModel,
+} from '../../components/admin/AdminUserListItem';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAdminUsersScreen } from '../../hooks/useAdminUsersScreen';
 import type { AdminScreenProps } from '../../navigation/types';
-import { _adminAPI as adminAPI } from '../../services/api';
-;
 
-const { width: _SCREEN_WIDTH } = Dimensions.get('window');
+const FILTER_BUTTON_HIT_SLOP = { top: 8, bottom: 8, left: 12, right: 12 } as const;
 
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  status: 'active' | 'suspended' | 'banned' | 'pending';
-  verified: boolean;
-  createdAt: string;
-  lastLogin: string;
-  petsCount: number;
-  matchesCount: number;
-  messagesCount: number;
-  profileImage?: string;
-}
-
-export default function AdminUsersScreen({ navigation }: AdminScreenProps<'AdminUsers'>): React.JSX.Element {
+const AdminUsersScreen = ({ navigation }: AdminScreenProps<'AdminUsers'>) => {
   const { colors } = useTheme();
-  const { user: _user } = useAuthStore();
-  const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'suspended' | 'banned' | 'pending'>('all');
-  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const state = useAdminUsersScreen({ navigation });
 
-  useEffect(() => {
-    void loadUsers();
-  }, []);
+  const { filters, onStatusChange, users, keyExtractor, getItemLayout } = state;
 
-  useEffect(() => {
-    filterUsers();
-  }, [users, searchQuery, selectedFilter]);
+  const filterHandlers = useMemo(() => {
+    return filters.reduce<Record<string, () => void>>((acc, filter) => {
+      acc[filter.value] = () => onStatusChange(filter.value);
+      return acc;
+    }, {});
+  }, [filters, onStatusChange]);
 
-  const loadUsers = async (): Promise<void> => {
-    try {
-      setLoading(true);
-      const response = await adminAPI.getUsers({
-        page: 1,
-        limit: 100,
-        sort: 'createdAt',
-        order: 'desc'
-      });
-      setUsers(response.data.users);
-    } catch (error: unknown) {
-      logger.error('Error loading users:', { error });
-      Alert.alert('Error', 'Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onRefresh = async (): Promise<void> => {
-    setRefreshing(true);
-    await loadUsers();
-    setRefreshing(false);
-  };
-
-  const filterUsers = (): void => {
-    let filtered = users;
-
-    // Filter by status
-    if (selectedFilter !== 'all') {
-      filtered = filtered.filter(user => user.status === selectedFilter);
-    }
-
-    // Filter by search query
-    if (searchQuery.trim() !== '') {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(user =>
-        user.firstName.toLowerCase().includes(query) ||
-        user.lastName.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query)
-      );
-    }
-
-    setFilteredUsers(filtered);
-  };
-
-  const handleUserAction = async (userId: string, action: 'suspend' | 'activate' | 'ban' | 'unban'): Promise<void> => {
-    if (Haptics) {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    try {
-      setActionLoading(userId);
-
-      let response;
-      switch (action) {
-        case 'suspend':
-          response = await adminAPI.suspendUser(userId);
-          break;
-        case 'activate':
-          response = await adminAPI.activateUser(userId);
-          break;
-        case 'ban':
-          response = await adminAPI.banUser(userId);
-          break;
-        case 'unban':
-          response = await adminAPI.unbanUser(userId);
-          break;
-      }
-
-      if (response.success) {
-        // Update user in list
-        setUsers(prevUsers =>
-          prevUsers.map(user =>
-            user.id === userId
-              ? {
-                ...user,
-                status: action === 'suspend' || action === 'ban'
-                  ? action === 'ban' ? 'banned' : 'suspended'
-                  : 'active'
-              }
-              : user
-          )
-        );
-
-        Alert.alert('Success', `User ${action}d successfully`);
-      }
-    } catch (error: unknown) {
-      logger.error(`Error ${action}ing user:`, { error });
-      Alert.alert('Error', `Failed to ${action} user`);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleBulkAction = async (action: 'suspend' | 'activate' | 'ban'): Promise<void> => {
-    if (selectedUsers.size === 0) {
-      Alert.alert('No Selection', 'Please select users first');
-      return;
-    }
-
-    const actionText = action === 'suspend' ? 'suspend' : action === 'activate' ? 'activate' : 'ban';
-
-    Alert.alert(
-      `Bulk ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}`,
-      `Are you sure you want to ${actionText} ${selectedUsers.size} users?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: actionText.charAt(0).toUpperCase() + actionText.slice(1),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setActionLoading('bulk');
-              const userIds = Array.from(selectedUsers);
-
-              for (const userId of userIds) {
-                await handleUserAction(userId, action);
-              }
-
-              setSelectedUsers(new Set());
-              Alert.alert('Success', `${selectedUsers.size} users ${actionText}ed successfully`);
-            } catch (error: unknown) {
-              Alert.alert('Error', `Failed to ${actionText} users`);
-            } finally {
-              setActionLoading(null);
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  const toggleUserSelection = (userId: string): void => {
-    if (Haptics) {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
-    setSelectedUsers(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(userId)) {
-        newSet.delete(userId);
-      } else {
-        newSet.add(userId);
-      }
-      return newSet;
-    });
-  };
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'active': return '#10B981';
-      case 'suspended': return '#F59E0B';
-      case 'banned': return '#EF4444';
-      case 'pending': return '#6B7280';
-      default: return '#6B7280';
-    }
-  };
-
-  const getStatusIcon = (status: string): string => {
-    switch (status) {
-      case 'active': return 'checkmark-circle';
-      case 'suspended': return 'pause-circle';
-      case 'banned': return 'ban';
-      case 'pending': return 'time';
-      default: return 'help-circle';
-    }
-  };
-
-  const formatDate = (dateString: string): string => new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
-
-  const renderUserItem = ({ item }: { item: User }): React.JSX.Element => {
-    const isSelected = selectedUsers.has(item.id);
-    const isActionLoading = actionLoading === item.id;
-
-    return (
-      <TouchableOpacity
-        style={[
-          styles.userCard,
-          { backgroundColor: colors.card },
-          isSelected && styles.userCardSelected
-        ]}
-        onPress={() => { toggleUserSelection(item.id); }}
-        onLongPress={() => {
-          if (Haptics) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-          }
-          // Show user details modal
-        }}
-      >
-        <View style={styles.userHeader}>
-          <View style={styles.userInfo}>
-            <View style={styles.userAvatar}>
-              <Text style={[styles.userAvatarText, { color: colors.text }]}>
-                {item.firstName.charAt(0)}{item.lastName.charAt(0)}
-              </Text>
-            </View>
-            <View style={styles.userDetails}>
-              <Text style={[styles.userName, { color: colors.text }]}>
-                {item.firstName} {item.lastName}
-              </Text>
-              <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-                {item.email}
-              </Text>
-              <View style={styles.userMeta}>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                  <Ionicons
-                    name={getStatusIcon(item.status)}
-                    size={12}
-                    color="#FFFFFF"
-                  />
-                  <Text style={styles.statusText}>
-                    {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                  </Text>
-                </View>
-                {item.verified ? <View style={[styles.verifiedBadge, { backgroundColor: '#10B981' }]}>
-                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                  <Text style={styles.verifiedText}>Verified</Text>
-                </View> : null}
-              </View>
-            </View>
-          </View>
-          <View style={styles.userActions}>
-            {item.status === 'active' ? (
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: '#F59E0B' }]}
-                onPress={() => handleUserAction(item.id, 'suspend')}
-                disabled={isActionLoading}
-              >
-                {isActionLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Ionicons name="pause" size={16} color="#FFFFFF" />
-                )}
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: '#10B981' }]}
-                onPress={() => handleUserAction(item.id, 'activate')}
-                disabled={isActionLoading}
-              >
-                {isActionLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Ionicons name="play" size={16} color="#FFFFFF" />
-                )}
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: '#EF4444' }]}
-              onPress={() => handleUserAction(item.id, item.status === 'banned' ? 'unban' : 'ban')}
-              disabled={isActionLoading}
-            >
-              {isActionLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Ionicons name="ban" size={16} color="#FFFFFF" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.userStats}>
-          <View style={styles.statItem}>
-            <Ionicons name="paw" size={16} color="#10B981" />
-            <Text style={[styles.statText, { color: colors.textSecondary }]}>
-              {item.petsCount} pets
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="heart" size={16} color="#EC4899" />
-            <Text style={[styles.statText, { color: colors.textSecondary }]}>
-              {item.matchesCount} matches
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="chatbubble" size={16} color="#8B5CF6" />
-            <Text style={[styles.statText, { color: colors.textSecondary }]}>
-              {item.messagesCount} messages
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="calendar" size={16} color="#6B7280" />
-            <Text style={[styles.statText, { color: colors.textSecondary }]}>
-              Joined {formatDate(item.createdAt)}
-            </Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>
-            Loading users...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const renderItem = useCallback(
+    ({ item }: { item: AdminUserListItemViewModel }) => (
+      <AdminUserListItem
+        data={item}
+        colors={colors}
+        onSelect={item.onSelect}
+        onPrimaryAction={item.onPrimaryAction}
+        onSecondaryAction={item.onSecondaryAction}
+      />
+    ),
+    [colors]
+  );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => { navigation.goBack(); }}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>
-          User Management
-        </Text>
-        <View style={styles.headerActions}>
-          {selectedUsers.size > 0 && (
-            <TouchableOpacity
-              style={[styles.bulkActionButton, { backgroundColor: colors.primary }]}
-              onPress={() => handleBulkAction('suspend')}
-              disabled={actionLoading === 'bulk'}
-            >
-              {actionLoading === 'bulk' ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.bulkActionText}>
-                  Suspend ({selectedUsers.size})
-                </Text>
-              )}
-            </TouchableOpacity>
+    <ErrorBoundary>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}> 
+        <View style={styles.header}>
+          <View>
+            <Text style={[styles.title, { color: colors.text }]}>{state.title}</Text>
+            <Text style={[styles.description, { color: colors.textSecondary }]}>
+              {state.description}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={state.onBackPress}
+            style={[styles.backButton, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text style={[styles.backButtonText, { color: colors.text }]}>Back</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.controls}>
+          <View style={[styles.searchContainer, { borderColor: colors.border }]}> 
+            <TextInput
+              value={state.searchQuery}
+              onChangeText={state.onSearchChange}
+              placeholder="Search users by name or email"
+              placeholderTextColor={colors.textSecondary}
+              style={[styles.searchInput, { color: colors.text }]}
+              autoCorrect={false}
+              accessibilityRole="search"
+            />
+          </View>
+
+          <View style={styles.filterRow}>
+            {filters.map((filter) => {
+              const isActive = state.statusFilter === filter.value;
+              return (
+                <TouchableOpacity
+                  key={filter.value}
+                  onPress={filterHandlers[filter.value]}
+                  style={[
+                    styles.filterButton,
+                    {
+                      backgroundColor: isActive ? colors.primary : 'transparent',
+                      borderColor: isActive ? colors.primary : colors.border,
+                    },
+                  ]}
+                  hitSlop={FILTER_BUTTON_HIT_SLOP}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
+                >
+                  <Text
+                    style={[
+                      styles.filterText,
+                      { color: isActive ? '#FFFFFF' : colors.text },
+                    ]}
+                  >
+                    {filter.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {state.isBulkProcessing ? (
+          <View style={styles.bulkStatus}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[styles.bulkStatusText, { color: colors.text }]}>
+              Performing bulk action...
+            </Text>
+          </View>
+        ) : null}
+
+        {state.selectedCount > 0 ? (
+          <View style={[styles.bulkActions, { backgroundColor: colors.surface }]}> 
+            <Text style={[styles.bulkSummary, { color: colors.text }]}>
+              {state.selectedCount} selected
+            </Text>
+            <View style={styles.bulkButtons}>
+              <TouchableOpacity
+                style={[styles.bulkButton, { borderColor: colors.warning }]}
+                onPress={state.onBulkSuspend}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.bulkButtonText, { color: colors.warning }]}>Suspend</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.bulkButton, { borderColor: colors.success }]}
+                onPress={state.onBulkActivate}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.bulkButtonText, { color: colors.success }]}>Activate</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.bulkButton, { borderColor: colors.error }]}
+                onPress={state.onBulkBan}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.bulkButtonText, { color: colors.error }]}>Ban</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
+
+        <FlatList
+          data={users}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          refreshControl={(
+            <RefreshControl
+              refreshing={state.isRefreshing}
+              onRefresh={state.onRefresh}
+              tintColor={colors.primary}
+            />
           )}
-        </View>
-      </View>
-
-      {/* Search and Filters */}
-      <View style={styles.searchContainer}>
-        <View style={[styles.searchInputContainer, { backgroundColor: colors.card }]}>
-          <Ionicons name="search" size={20} color={colors.textSecondary} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Search users..."
-            placeholderTextColor={colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-
-        <View style={styles.filterContainer}>
-          {(['all', 'active', 'suspended', 'banned', 'pending'] as const).map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              style={[
-                styles.filterButton,
-                selectedFilter === filter && styles.filterButtonActive,
-                {
-                  backgroundColor: selectedFilter === filter ? colors.primary : colors.card
-                }
-              ]}
-              onPress={() => { setSelectedFilter(filter); }}
-            >
-              <Text style={[
-                styles.filterText,
-                { color: selectedFilter === filter ? '#FFFFFF' : colors.text }
-              ]}>
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Users List */}
-      <FlatList
-        data={filteredUsers}
-        renderItem={renderUserItem}
-        keyExtractor={(item) => item.id}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-          />
-        }
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            state.isLoading ? (
+              <View style={styles.emptyState}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                  Loading users...
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                  No users match the current filters.
+                </Text>
+              </View>
+            )
+          }
+          getItemLayout={getItemLayout}
+          initialNumToRender={8}
+          windowSize={5}
+          removeClippedSubviews
+        />
+      </SafeAreaView>
+    </ErrorBoundary>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: '500',
-  },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-  },
-  backButton: {
-    padding: 8,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    flex: 1,
-    marginLeft: 8,
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 4,
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
+  description: {
+    fontSize: 14,
   },
-  bulkActionButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+  backButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
   },
-  bulkActionText: {
-    color: '#FFFFFF',
-    fontSize: 12,
+  backButtonText: {
     fontWeight: '600',
   },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  controls: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
     gap: 12,
   },
-  searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  searchContainer: {
+    borderWidth: 1,
     borderRadius: 12,
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   searchInput: {
-    flex: 1,
-    fontSize: 16,
+    fontSize: 15,
   },
-  filterContainer: {
+  filterRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   filterButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  filterButtonActive: {
-    // Active state handled by backgroundColor
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
   },
   filterText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
-  listContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  userCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  userCardSelected: {
-    borderWidth: 2,
-    borderColor: '#3B82F6',
-  },
-  userHeader: {
+  bulkStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  userAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  userAvatarText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  userDetails: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  userEmail: {
+  bulkStatusText: {
     fontSize: 14,
-    marginBottom: 4,
-  },
-  userMeta: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    gap: 4,
-  },
-  statusText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    gap: 4,
-  },
-  verifiedText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  userActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  userStats: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statText: {
-    fontSize: 12,
     fontWeight: '500',
   },
+  bulkActions: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.06)',
+    elevation: 1,
+  },
+  bulkSummary: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  bulkButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  bulkButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bulkButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 32,
+    paddingTop: 4,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 14,
+    textAlign: 'center',
+    maxWidth: 260,
+  },
 });
+
+export default AdminUsersScreen;

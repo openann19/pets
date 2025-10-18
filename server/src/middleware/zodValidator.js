@@ -1,4 +1,4 @@
-const { z } = require('zod');
+const z = require('zod');
 
 function zodValidate({ body, params, query }) {
     return (req, res, next) => {
@@ -19,4 +19,4 @@ function zodValidate({ body, params, query }) {
     };
 }
 
-module.exports = { zodValidate, z: require('zod') };
+module.exports = { zodValidate, z };

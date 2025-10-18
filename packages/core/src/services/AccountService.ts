@@ -14,6 +14,10 @@ import type {
   DataExportStatus,
 } from '../types/account';
 
+interface ApiError {
+  message?: string;
+}
+
 export class AccountService {
   private baseUrl: string;
 
@@ -38,11 +42,11 @@ export class AccountService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to request account deletion');
+      const error: ApiError = await response.json() as ApiError;
+      throw new Error(error.message ?? 'Failed to request account deletion');
     }
 
-    return await response.json();
+    return await response.json() as AccountDeletionResponse;
   }
 
   /**
@@ -62,11 +66,11 @@ export class AccountService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to cancel account deletion');
+      const error: ApiError = await response.json() as ApiError;
+      throw new Error(error.message ?? 'Failed to cancel account deletion');
     }
 
-    return await response.json();
+    return await response.json() as { success: boolean; message: string };
   }
 
   /**
@@ -86,11 +90,11 @@ export class AccountService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to deactivate account');
+      const error: ApiError = await response.json() as ApiError;
+      throw new Error(error.message ?? 'Failed to deactivate account');
     }
 
-    return await response.json();
+    return await response.json() as AccountDeactivationResponse;
   }
 
   /**
@@ -108,11 +112,11 @@ export class AccountService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to reactivate account');
+      const error: ApiError = await response.json() as ApiError;
+      throw new Error(error.message ?? 'Failed to reactivate account');
     }
 
-    return await response.json();
+    return await response.json() as { success: boolean; message: string };
   }
 
   /**
@@ -132,11 +136,11 @@ export class AccountService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to request data export');
+      const error: ApiError = await response.json() as ApiError;
+      throw new Error(error.message ?? 'Failed to request data export');
     }
 
-    return await response.json();
+    return await response.json() as DataExportResponse;
   }
 
   /**
@@ -156,11 +160,11 @@ export class AccountService {
     );
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to get export status');
+      const error: ApiError = await response.json() as ApiError;
+      throw new Error(error.message ?? 'Failed to get export status');
     }
 
-    return await response.json();
+    return await response.json() as DataExportStatus;
   }
 
   /**
@@ -180,8 +184,8 @@ export class AccountService {
     );
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to download data export');
+      const error: ApiError = await response.json() as ApiError;
+      throw new Error(error.message ?? 'Failed to download data export');
     }
 
     return await response.blob();

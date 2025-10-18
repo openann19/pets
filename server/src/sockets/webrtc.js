@@ -21,13 +21,13 @@ module.exports = function attachWebRTCNamespace(io) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       socket.userId = decoded.id;
       next();
-    } catch (err) {
-      next(new Error('Authentication error'));
+    } catch {
+      return next(new Error('Invalid token'));
     }
   });
 
   nsp.on('connection', (socket) => {
-    console.log(`WebRTC client connected: ${socket.id} (User: ${socket.userId})`);
+    logger.info('WebRTC client connected', { socketId: socket.id, userId: socket.userId });
     
     // Store user-socket mapping
     userSockets.set(socket.userId, socket.id);

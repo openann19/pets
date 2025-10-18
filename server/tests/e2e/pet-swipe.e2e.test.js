@@ -10,7 +10,6 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 let app;
 let mongoServer;
 let userToken;
-let userId;
 let petId;
 
 describe('Pet Swipe E2E Tests', () => {
@@ -40,7 +39,6 @@ describe('Pet Swipe E2E Tests', () => {
       });
     
     userToken = response.body.data.accessToken;
-    userId = response.body.data.user.id;
   }, 30000); // 30 second timeout for setup
 
   afterAll(async () => {
@@ -133,7 +131,6 @@ describe('Pet Swipe E2E Tests', () => {
   });
 
   describe('Swipe Actions', () => {
-    let secondUserId;
     let secondUserToken;
     let secondPetId;
 
@@ -150,7 +147,6 @@ describe('Pet Swipe E2E Tests', () => {
         });
       
       secondUserToken = userResponse.body.data.accessToken;
-      secondUserId = userResponse.body.data.user.id;
 
       const petResponse = await request(app)
         .post('/api/pets')

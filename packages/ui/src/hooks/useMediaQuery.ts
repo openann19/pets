@@ -1,54 +1,47 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
+import { getWindow } from '../utils/environment';
 
-/**
- * A hook that returns true if the media query matches
- * @param query The media query to check
- * @returns boolean Whether the media query matches
- */
-export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState<boolean>(false);
+const getSnapshotFactory = (query: string) => () => {
+  const currentWindow = getWindow();
+  if (currentWindow == null) {
+    return false;
+  }
 
-  useEffect(() => {
-    // Check for browser environment
-    if (typeof window === 'undefined' || !window.matchMedia) {
-      return;
-    }
-    
-    const mediaQuery = window.matchMedia(query);
-    
-    // Set initial match
-    setMatches(mediaQuery.matches);
-    
-    // Create event listener function
-    const handleMatch = (event: MediaQueryListEvent): void => {
-      setMatches(event.matches);
-    };
-    
-    // Modern browsers support addEventListener
-    mediaQuery.addEventListener('change', handleMatch);
-    
+  return currentWindow.matchMedia(query).matches;
+};
+
+const subscribeFactory = (query: string) => (listener: () => void) => {
+  const currentWindow = getWindow();
+  if (currentWindow == null) {
+    return (): void => undefined;
+  }
+
+  const mediaQueryList = currentWindow.matchMedia(query);
+  const handleChange = () => {
+    listener();
+  };
+
+  if (typeof mediaQueryList.addEventListener === 'function') {
+    mediaQueryList.addEventListener('change', handleChange);
     return () => {
-      mediaQuery.removeEventListener('change', handleMatch);
+      mediaQueryList.removeEventListener('change', handleChange);
     };
-  }, [query]);
-  
-  return matches;
-}
+  }
 
-/**
- * A hook that returns true if the user prefers reduced motion
- * @returns boolean Whether the user prefers reduced motion
- */
-export function usePrefersReducedMotion(): boolean {
-  return useMediaQuery('(prefers-reduced-motion: reduce)');
-}
+  const previousHandler = mediaQueryList.onchange;
+  mediaQueryList.onchange = handleChange;
 
-/**
- * A hook that returns true if the user prefers dark color scheme
- * @returns boolean Whether the user prefers dark mode
- */
-export function usePrefersDarkMode(): boolean {
-  return useMediaQuery('(prefers-color-scheme: dark)');
-}
+  return () => {
+    if (mediaQueryList.onchange === handleChange) {
+      mediaQueryList.onchange = previousHandler ?? null;
+    }
+  };
+};
 
-export default useMediaQuery;
+export const useMediaQuery = (query: string): boolean => {
+  return useSyncExternalStore(
+    (listener) => subscribeFactory(query)(listener),
+    getSnapshotFactory(query),
+    () => false,
+  );
+};

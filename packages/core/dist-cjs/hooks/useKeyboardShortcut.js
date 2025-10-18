@@ -8,19 +8,23 @@ function useKeyboardShortcut(keyCombo, handler) {
     (0, react_1.useEffect)(() => {
         handlerRef.current = handler;
     }, [handler]);
+    // Keep the formatted combo in sync when keyCombo changes without re-subscribing listeners
     (0, react_1.useEffect)(() => {
-        const handleKeyDown = (0, react_1.useCallback)((event) => {
+        formattedCombo.current = formatKeyCombo(keyCombo);
+    }, [keyCombo]);
+    (0, react_1.useEffect)(() => {
+        const handleKeyDown = (event) => {
             const pressedCombo = formatPressedKeys(event);
             if (pressedCombo === formattedCombo.current) {
                 event.preventDefault();
                 handlerRef.current();
             }
-        }, []);
+        };
         document.addEventListener('keydown', handleKeyDown);
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [keyCombo]);
+    }, [keyCombo, handler]);
     return formattedCombo.current;
 }
 function formatKeyCombo(combo) {

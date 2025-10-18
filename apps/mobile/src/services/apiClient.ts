@@ -5,11 +5,15 @@
  * error interceptors, and base URL configuration.
  */
 
+import { logger } from '@pawfectmatch/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import axios from 'axios';
+import axios, { AxiosHeaders } from 'axios';
 
-const API_BASE_URL = process.env['EXPO_PUBLIC_API_URL'] || 'http://localhost:3001/api';
+const envApiBaseUrl = process.env['EXPO_PUBLIC_API_URL'];
+const API_BASE_URL = typeof envApiBaseUrl === 'string' && envApiBaseUrl.trim().length > 0
+    ? envApiBaseUrl
+    : 'http://localhost:3001/api';
 
 interface ApiClientConfig {
     baseURL: string;
@@ -17,20 +21,20 @@ interface ApiClientConfig {
 }
 
 class ApiClient {
-    private instance: AxiosInstance;
+    private readonly instance: AxiosInstance;
     private token: string | null = null;
 
     constructor(config: ApiClientConfig) {
         this.instance = axios.create({
             baseURL: config.baseURL,
-            timeout: config.timeout || 30000,
+            timeout: config.timeout ?? 30000,
             headers: {
                 'Content-Type': 'application/json',
             },
         });
 
         this.setupInterceptors();
-        this.loadToken();
+        void this.loadToken();
     }
 
     /**
@@ -39,11 +43,11 @@ class ApiClient {
     private async loadToken(): Promise<void> {
         try {
             const token = await AsyncStorage.getItem('authToken');
-            if (token) {
+            if (token !== null) {
                 this.token = token;
             }
-        } catch (error) {
-            console.error('Failed to load auth token:', error);
+        } catch (error: unknown) {
+            logger.error('api-client.load-token.failed', { error });
         }
     }
 
@@ -54,8 +58,8 @@ class ApiClient {
         this.token = token;
         try {
             await AsyncStorage.setItem('authToken', token);
-        } catch (error) {
-            console.error('Failed to save auth token:', error);
+        } catch (error: unknown) {
+            logger.error('api-client.save-token.failed', { error });
         }
     }
 
@@ -66,8 +70,8 @@ class ApiClient {
         this.token = null;
         try {
             await AsyncStorage.removeItem('authToken');
-        } catch (error) {
-            console.error('Failed to clear auth token:', error);
+        } catch (error: unknown) {
+            logger.error('api-client.clear-token.failed', { error });
         }
     }
 
@@ -78,42 +82,45 @@ class ApiClient {
         // Request interceptor - add auth token
         this.instance.interceptors.request.use(
             (config) => {
-                if (this.token) {
-                    config.headers.Authorization = `Bearer ${this.token}`;
+                if (this.token !== null) {
+                    const token = this.token;
+                    const headers = new AxiosHeaders(config.headers);
+                    headers.set('Authorization', `Bearer ${token}`);
+                    config.headers = headers;
                 }
                 return config;
             },
-            (error) => Promise.reject(error)
+            (error: unknown) => {
+                const reason = error instanceof Error ? error : new Error('Request interceptor rejected');
+                return Promise.reject(reason);
+            }
         );
 
         // Response interceptor - handle errors
         this.instance.interceptors.response.use(
             (response) => response,
             async (error: AxiosError) => {
-                if (error.response) {
-                    // Server responded with error status
-                    const { status } = error.response;
+                if (error.response !== undefined) {
+                    const { status, data } = error.response;
 
                     if (status === 401) {
-                        // Unauthorized - clear token and redirect to login
                         await this.clearToken();
-                        // You can emit an event here to notify app to navigate to login
+                        logger.warn('api-client.unauthorized', { status });
                     } else if (status === 403) {
-                        // Forbidden
-                        console.error('Access forbidden:', error.response.data);
+                        logger.error('api-client.forbidden', { status, data });
                     } else if (status === 500) {
-                        // Server error
-                        console.error('Server error:', error.response.data);
+                        logger.error('api-client.server-error', { status, data });
+                    } else {
+                        logger.error('api-client.http-error', { status, data });
                     }
-                } else if (error.request) {
-                    // Request made but no response received
-                    console.error('Network error - no response:', error.message);
+                } else if (error.request !== undefined) {
+                    logger.error('api-client.network-error', { message: error.message });
                 } else {
-                    // Something else happened
-                    console.error('Request setup error:', error.message);
+                    logger.error('api-client.request-setup-error', { message: error.message });
                 }
 
-                return Promise.reject(error);
+                const reason = error instanceof Error ? error : new Error('API request failed');
+                return Promise.reject(reason);
             }
         );
     }
@@ -121,7 +128,7 @@ class ApiClient {
     /**
      * GET request
      */
-    public async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
         const response: AxiosResponse<T> = await this.instance.get(url, config);
         return response.data;
     }
@@ -129,7 +136,7 @@ class ApiClient {
     /**
      * POST request
      */
-    public async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    public async post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
         const response: AxiosResponse<T> = await this.instance.post(url, data, config);
         return response.data;
     }
@@ -137,7 +144,7 @@ class ApiClient {
     /**
      * PUT request
      */
-    public async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    public async put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
         const response: AxiosResponse<T> = await this.instance.put(url, data, config);
         return response.data;
     }
@@ -145,7 +152,7 @@ class ApiClient {
     /**
      * PATCH request
      */
-    public async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    public async patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
         const response: AxiosResponse<T> = await this.instance.patch(url, data, config);
         return response.data;
     }
@@ -153,7 +160,7 @@ class ApiClient {
     /**
      * DELETE request
      */
-    public async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
         const response: AxiosResponse<T> = await this.instance.delete(url, config);
         return response.data;
     }

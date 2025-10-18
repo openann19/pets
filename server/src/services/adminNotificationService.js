@@ -59,6 +59,7 @@ async function sendAdminNotification(notification) {
       type,
       severity,
       title,
+      message,
       recipientCount: adminEmails.length,
       metadata
     });

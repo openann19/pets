@@ -1,4 +1,5 @@
 "use strict";
+// Removed empty import statement
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toCorePet = toCorePet;
 exports.toCorePets = toCorePets;

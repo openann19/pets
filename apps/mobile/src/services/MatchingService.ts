@@ -50,13 +50,13 @@ class MatchingService {
   async getRecommendations(filters?: PetFilters, limit: number = 20): Promise<MatchResult[]> {
     try {
       const queryParams = new URLSearchParams();
-      if (filters?.species) queryParams.set('species', filters.species);
+      if (filters?.species !== undefined && filters.species !== '') queryParams.set('species', filters.species);
       if (filters?.minAge !== undefined) queryParams.set('minAge', filters.minAge.toString());
       if (filters?.maxAge !== undefined) queryParams.set('maxAge', filters.maxAge.toString());
-      if (filters?.size) queryParams.set('size', filters.size);
-      if (filters?.intent) queryParams.set('intent', filters.intent);
+      if (filters?.size !== undefined && filters.size !== '') queryParams.set('size', filters.size);
+      if (filters?.intent !== undefined && filters.intent !== '') queryParams.set('intent', filters.intent);
       if (filters?.distance !== undefined) queryParams.set('distance', filters.distance.toString());
-      if (filters?.breed) queryParams.set('breed', filters.breed);
+      if (filters?.breed !== undefined && filters.breed !== '') queryParams.set('breed', filters.breed);
       queryParams.set('limit', limit.toString());
 
       const endpoint = `/matches/recommendations?${queryParams.toString()}`;
@@ -65,7 +65,7 @@ class MatchingService {
 
       logger.info('Fetched pet recommendations', {
         count: response.length,
-        filters: filters ? Object.keys(filters).length : 0
+        filters: filters !== undefined ? Object.keys(filters).length : 0
       });
 
       return response;
@@ -167,7 +167,7 @@ class MatchingService {
    */
   async getMatches(limit: number = 50): Promise<MatchResult[]> {
     try {
-      const response = await api.request<MatchResult[]>(`/matching/matches?limit=${limit}`);
+      const response = await api.request<MatchResult[]>(`/matching/matches?limit=${String(limit)}`);
 
       logger.info('Fetched user matches', { count: response.length });
 
@@ -181,9 +181,9 @@ class MatchingService {
   /**
    * Get detailed compatibility analysis between two pets
    */
-  async getCompatibilityAnalysis(petId1: string, petId2: string): Promise<{ score: number; reasons: string[]; details: any } | null> {
+  async getCompatibilityAnalysis(petId1: string, petId2: string): Promise<{ score: number; reasons: string[]; details: Record<string, unknown> } | null> {
     try {
-      const response = await api.request<{ score: number; reasons: string[]; details: any }>(
+      const response = await api.request<{ score: number; reasons: string[]; details: Record<string, unknown> }>(
         '/matching/compatibility',
         {
           method: 'POST',
@@ -211,13 +211,13 @@ class MatchingService {
     return pets.filter((match: MatchResult) => {
       const pet = match.pet;
 
-      if (filters.species && pet.species !== filters.species) return false;
+      if (filters.species !== undefined && filters.species !== '' && pet.species !== filters.species) return false;
       if (filters.minAge !== undefined && pet.age < filters.minAge) return false;
       if (filters.maxAge !== undefined && pet.age > filters.maxAge) return false;
-      if (filters.size && pet.size !== filters.size) return false;
-      if (filters.intent && pet.intent !== filters.intent && pet.intent !== 'all') return false;
-      if (filters.breed && pet.breed !== filters.breed) return false;
-      if (filters.distance !== undefined && match.distance && match.distance > filters.distance) return false;
+      if (filters.size !== undefined && filters.size !== '' && pet.size !== filters.size) return false;
+      if (filters.intent !== undefined && filters.intent !== '' && pet.intent !== filters.intent && pet.intent !== 'all') return false;
+      if (filters.breed !== undefined && filters.breed !== '' && pet.breed !== filters.breed) return false;
+      if (filters.distance !== undefined && match.distance !== undefined && match.distance > filters.distance) return false;
 
       return true;
     });

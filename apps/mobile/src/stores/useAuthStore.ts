@@ -40,7 +40,7 @@ export const useAuthStore = create<AuthState>()(
       // Update user data
       setUser: (user: User | null) => set((state) => {
         state.user = user;
-        state.isAuthenticated = !!user;
+        state.isAuthenticated = user !== null;
         return state;
       }),
 

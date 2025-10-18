@@ -5,7 +5,7 @@ import { logger } from '@pawfectmatch/core';
  * Handles all admin-related API calls
  */
 
-const BASE_URL = process.env['EXPO_PUBLIC_API_URL'] || 'http://localhost:3001/api';
+const BASE_URL = process.env['EXPO_PUBLIC_API_URL'] ?? 'http://localhost:3001/api';
 
 interface AdminAPIResponse<T> {
   success: boolean;
@@ -14,12 +14,12 @@ interface AdminAPIResponse<T> {
 }
 
 interface PaginationParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  role?: string;
-  verified?: string;
+  page?: number | null;
+  limit?: number | null;
+  search?: string | null;
+  status?: string | null;
+  role?: string | null;
+  verified?: string | null;
 }
 
 interface User {
@@ -119,18 +119,18 @@ class AdminAPIService {
       const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
-          ...options.headers,
+          ...(options.headers as Record<string, string> | undefined),
         },
         ...options,
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${String(response.status)}`);
       }
 
-      return await response.json();
+      return await response.json() as AdminAPIResponse<T>;
     } catch (error) {
-      logger.error(`Admin API request failed: ${endpoint}`, { error });
+      logger.error('Admin API request failed', { endpoint, error });
       throw error;
     }
   }
@@ -146,12 +146,12 @@ class AdminAPIService {
     };
   }>> {
     const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.search) queryParams.append('search', params.search);
-    if (params.status) queryParams.append('status', params.status);
-    if (params.role) queryParams.append('role', params.role);
-    if (params.verified) queryParams.append('verified', params.verified);
+    if (params.page !== null && params.page !== undefined) queryParams.append('page', String(params.page));
+    if (params.limit !== null && params.limit !== undefined) queryParams.append('limit', String(params.limit));
+    if (params.search !== null && params.search !== undefined && params.search !== '') queryParams.append('search', params.search);
+    if (params.status !== null && params.status !== undefined && params.status !== '') queryParams.append('status', params.status);
+    if (params.role !== null && params.role !== undefined && params.role !== '') queryParams.append('role', params.role);
+    if (params.verified !== null && params.verified !== undefined && params.verified !== '') queryParams.append('verified', params.verified);
 
     return await this.request(`/admin/users?${queryParams}`);
   }
@@ -199,9 +199,9 @@ class AdminAPIService {
     };
   }>> {
     const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.status) queryParams.append('status', params.status);
+    if (params.page !== null && params.page !== undefined) queryParams.append('page', String(params.page));
+    if (params.limit !== null && params.limit !== undefined) queryParams.append('limit', String(params.limit));
+    if (params.status !== null && params.status !== undefined && params.status !== '') queryParams.append('status', params.status);
 
     return await this.request(`/admin/chats?${queryParams}`);
   }
@@ -256,9 +256,9 @@ class AdminAPIService {
     };
   }>> {
     const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.status) queryParams.append('status', params.status);
+    if (params.page !== null && params.page !== undefined) queryParams.append('page', String(params.page));
+    if (params.limit !== null && params.limit !== undefined) queryParams.append('limit', String(params.limit));
+    if (params.status !== null && params.status !== undefined && params.status !== '') queryParams.append('status', params.status);
 
     return await this.request(`/admin/uploads?${queryParams}`);
   }
@@ -301,9 +301,9 @@ class AdminAPIService {
     };
   }>> {
     const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.status) queryParams.append('status', params.status);
+    if (params.page !== null && params.page !== undefined) queryParams.append('page', String(params.page));
+    if (params.limit !== null && params.limit !== undefined) queryParams.append('limit', String(params.limit));
+    if (params.status !== null && params.status !== undefined && params.status !== '') queryParams.append('status', params.status);
 
     return await this.request(`/admin/verifications/pending?${queryParams}`);
   }
@@ -355,7 +355,7 @@ class AdminAPIService {
       recent24h: number;
     };
   }>> {
-    const queryParams = params?.period ? `?period=${params.period}` : '';
+    const queryParams = (params?.period !== undefined && params.period !== '') ? `?period=${params.period}` : '';
     return await this.request(`/admin/analytics${queryParams}`);
   }
 
@@ -386,8 +386,8 @@ class AdminAPIService {
     };
   }>> {
     const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.page !== null && params.page !== undefined) queryParams.append('page', String(params.page));
+    if (params.limit !== null && params.limit !== undefined) queryParams.append('limit', String(params.limit));
 
     return await this.request(`/admin/security/audit-logs?${queryParams}`);
   }
@@ -395,12 +395,12 @@ class AdminAPIService {
   // Security & Monitoring
   async getSecurityAlerts(params?: { page?: number; limit?: number; sort?: string; order?: string }): Promise<AdminAPIResponse<{ alerts: unknown[] }>> {
     const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.sort) queryParams.append('sort', params.sort);
-    if (params?.order) queryParams.append('order', params.order);
+    if (params?.page !== undefined) queryParams.append('page', String(params.page));
+    if (params?.limit !== undefined) queryParams.append('limit', String(params.limit));
+    if (params?.sort !== undefined && params.sort !== '') queryParams.append('sort', params.sort);
+    if (params?.order !== undefined && params.order !== '') queryParams.append('order', params.order);
     const query = queryParams.toString();
-    return await this.request(`/admin/security/alerts${query ? `?${query}` : ''}`);
+    return await this.request(`/admin/security/alerts${query !== '' ? `?${query}` : ''}`);
   }
 
   // Chat Message Management
@@ -429,10 +429,10 @@ class AdminAPIService {
     };
   }>> {
     const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.filter) queryParams.append('filter', params.filter);
-    if (params.search) queryParams.append('search', params.search);
+    if (params.page !== undefined) queryParams.append('page', String(params.page));
+    if (params.limit !== undefined) queryParams.append('limit', String(params.limit));
+    if (params.filter !== undefined && params.filter !== '') queryParams.append('filter', params.filter);
+    if (params.search !== undefined && params.search !== '') queryParams.append('search', params.search);
 
     return await this.request(`/admin/chat-messages?${queryParams}`);
   }
@@ -448,12 +448,12 @@ class AdminAPIService {
     };
   }>> {
     const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.sort) queryParams.append('sort', params.sort);
-    if (params?.order) queryParams.append('order', params.order);
+    if (params?.page !== undefined) queryParams.append('page', String(params.page));
+    if (params?.limit !== undefined) queryParams.append('limit', String(params.limit));
+    if (params?.sort !== undefined && params.sort !== '') queryParams.append('sort', params.sort);
+    if (params?.order !== undefined && params.order !== '') queryParams.append('order', params.order);
     const query = queryParams.toString();
-    return await this.request(`/admin/subscriptions${query ? `?${query}` : ''}`);
+    return await this.request(`/admin/subscriptions${query !== '' ? `?${query}` : ''}`);
   }
 
   async getBillingMetrics(): Promise<AdminAPIResponse<unknown>> {

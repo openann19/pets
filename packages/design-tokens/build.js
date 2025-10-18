@@ -5,10 +5,16 @@
  * Generates Tailwind config and React Native StyleSheet from tokens.json
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const tokens = require('./tokens.json');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const tokensPath = path.join(__dirname, 'tokens.json');
+const tokensRaw = fs.readFileSync(tokensPath, 'utf-8');
+const tokens = JSON.parse(tokensRaw);
 
 // Generate Tailwind config
 function generateTailwindConfig() {
@@ -77,10 +83,7 @@ module.exports = {
 };
 `;
 
-  fs.writeFileSync(
-    path.join(__dirname, 'dist', 'tailwind.config.js'),
-    config
-  );
+  fs.writeFileSync(path.join(__dirname, 'dist', 'tailwind.config.js'), config);
   console.log('✅ Generated Tailwind config');
 }
 
@@ -148,16 +151,14 @@ export const animation = {
 };
 `;
 
-  fs.writeFileSync(
-    path.join(__dirname, 'dist', 'react-native.ts'),
-    styles
-  );
+  fs.writeFileSync(path.join(__dirname, 'dist', 'react-native.ts'), styles);
   console.log('✅ Generated React Native styles');
 }
 
 // Create dist directory
-if (!fs.existsSync(path.join(__dirname, 'dist'))) {
-  fs.mkdirSync(path.join(__dirname, 'dist'));
+const distPath = path.join(__dirname, 'dist');
+if (!fs.existsSync(distPath)) {
+  fs.mkdirSync(distPath, { recursive: true });
 }
 
 // Build

@@ -62,6 +62,7 @@ export interface PetCreateResponse {
     updatedAt: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface PetResponse extends PetCreateResponse {
     // Same structure as create, server returns full pet object
 }
@@ -181,6 +182,7 @@ export interface UserProfileResponse {
     updatedAt: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface UserUpdateResponse extends UserProfileResponse {
     // Same structure as profile response
 }
@@ -531,6 +533,6 @@ export function isApiSuccessResponse<T>(response: unknown): response is ApiSucce
         typeof response === 'object' &&
         response !== null &&
         'success' in response &&
-        (response as ApiSuccessResponse<T>).success === true
+        (response as ApiSuccessResponse<T>).success
     );
 }

@@ -54,7 +54,7 @@ export const _getTypingUsers = (
   otherUser: User
 ): string[] => {
   return Object.keys(isTyping)
-    .filter(userId => isTyping[userId] && userId !== currentUserId)
+    .filter(userId => isTyping[userId] === true && userId !== currentUserId)
     .map(userId => {
       if (userId === otherUser._id) {
         return otherUser.firstName;

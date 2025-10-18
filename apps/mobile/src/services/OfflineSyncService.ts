@@ -12,7 +12,7 @@ interface OfflineQueueItem {
   type: 'api' | 'user_action';
   endpoint: string;
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  data?: any;
+  data?: Record<string, unknown>;
   timestamp: number;
   retryCount: number;
   priority: 'low' | 'normal' | 'high' | 'critical';
@@ -28,7 +28,7 @@ interface SyncStatus {
 }
 
 class OfflineSyncService {
-  private static instance: OfflineSyncService;
+  private static instance: OfflineSyncService | undefined;
   private queue: OfflineQueueItem[] = [];
   private isInitialized = false;
   private isOnline = false;
@@ -43,7 +43,7 @@ class OfflineSyncService {
   private constructor() {}
 
   static getInstance(): OfflineSyncService {
-    if (!OfflineSyncService.instance) {
+    if (OfflineSyncService.instance === undefined) {
       OfflineSyncService.instance = new OfflineSyncService();
     }
     return OfflineSyncService.instance;
@@ -78,12 +78,12 @@ class OfflineSyncService {
   async queueApiCall(
     endpoint: string,
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-    data?: any,
+    data?: Record<string, unknown>,
     priority: OfflineQueueItem['priority'] = 'normal',
     onConflict: OfflineQueueItem['onConflict'] = 'overwrite'
   ): Promise<string> {
     const queueItem: OfflineQueueItem = {
-      id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `${String(Date.now())}_${Math.random().toString(36).substring(2, 11)}`,
       type: 'api',
       endpoint,
       method,
@@ -106,7 +106,7 @@ class OfflineSyncService {
 
     // Try to sync immediately if online
     if (this.isOnline) {
-      this.processQueue();
+      void this.processQueue();
     }
 
     this.notifyListeners();
@@ -118,11 +118,11 @@ class OfflineSyncService {
    */
   async queueUserAction(
     actionType: string,
-    data: any,
+    data: Record<string, unknown>,
     priority: OfflineQueueItem['priority'] = 'normal'
   ): Promise<string> {
     const queueItem: OfflineQueueItem = {
-      id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `${String(Date.now())}_${Math.random().toString(36).substring(2, 11)}`,
       type: 'user_action',
       endpoint: `/actions/${actionType}`,
       method: 'POST',
@@ -143,7 +143,7 @@ class OfflineSyncService {
     });
 
     if (this.isOnline) {
-      this.processQueue();
+      void this.processQueue();
     }
 
     this.notifyListeners();
@@ -204,8 +204,8 @@ class OfflineSyncService {
   private async loadQueue(): Promise<void> {
     try {
       const storedQueue = await AsyncStorage.getItem(this.QUEUE_KEY);
-      if (storedQueue) {
-        this.queue = JSON.parse(storedQueue);
+      if (storedQueue !== null && storedQueue !== '') {
+        this.queue = JSON.parse(storedQueue) as OfflineQueueItem[];
         logger.info('Offline queue loaded', { itemCount: this.queue.length });
       }
     } catch (error) {
@@ -229,7 +229,7 @@ class OfflineSyncService {
 
       if (!wasOnline && this.isOnline) {
         logger.info('Network connection restored, starting sync');
-        this.processQueue();
+        void this.processQueue();
       } else if (wasOnline && !this.isOnline) {
         logger.info('Network connection lost');
       }
@@ -238,7 +238,7 @@ class OfflineSyncService {
     });
 
     // Get initial state
-    NetInfo.fetch().then((state: NetInfoState) => {
+    void NetInfo.fetch().then((state: NetInfoState) => {
       this.isOnline = state.isConnected ?? false;
       this.notifyListeners();
     });
@@ -247,7 +247,7 @@ class OfflineSyncService {
   private startBackgroundSync(): void {
     setInterval(() => {
       if (this.isOnline && !this.syncInProgress && this.queue.length > 0) {
-        this.processQueue();
+        void this.processQueue();
       }
     }, this.SYNC_INTERVAL);
   }
@@ -341,7 +341,7 @@ class OfflineSyncService {
         });
         break;
       default:
-        throw new Error(`Unsupported HTTP method: ${item.method}`);
+        throw new Error(`Unsupported HTTP method: ${String(item.method)}`);
     }
   }
 

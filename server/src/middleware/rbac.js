@@ -58,7 +58,7 @@ const hasPermission = (userRole, requiredPermission) => {
   }
 
   // Check wildcard permissions (e.g., 'users:*' matches 'users:read', 'users:write', etc.)
-  const [resource, action] = requiredPermission.split(':');
+  const [resource] = requiredPermission.split(':');
   if (userPermissions.includes(`${resource}:*`)) {
     return true;
   }

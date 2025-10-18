@@ -3,7 +3,6 @@
  * Handles notification preferences and delivery
  */
 
-const User = require('../models/User');
 const NotificationPreference = require('../models/NotificationPreference');
 const Notification = require('../models/Notification');
 const logger = require('../utils/logger');

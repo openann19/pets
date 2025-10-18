@@ -1,12 +1,149 @@
-import { 
-  apiClient, 
-  type Pet, 
-  type User, 
-  type Match, 
-  type Message, 
-  type PetFilters
+import {
+  apiClient,
+  type ApiClientResponse,
+  type Pet,
+  type User,
+  type Match,
+  type Message,
+  type PetFilters,
 } from '@pawfectmatch/core';
-import { API_BASE_URL, API_TIMEOUT } from '../config/environment';
+import { API_TIMEOUT } from '../config/environment';
+
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+type RequestParamValue = string | number | boolean | null | undefined;
+
+export interface ApiRequestOptions {
+  method?: HttpMethod;
+  body?: unknown;
+  headers?: Record<string, string>;
+  params?: Record<string, RequestParamValue>;
+}
+
+const buildQueryString = (params: Record<string, RequestParamValue> | undefined): string => {
+  if (params === undefined) {
+    return '';
+  }
+
+  const entries = Object.entries(params).filter(([, value]) => value !== undefined && value !== null);
+  if (entries.length === 0) {
+    return '';
+  }
+
+  return entries
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+    .join('&');
+};
+
+const appendQueryParams = (endpoint: string, params?: Record<string, RequestParamValue>): string => {
+  const query = buildQueryString(params);
+  if (query.length === 0) {
+    return endpoint;
+  }
+
+  const separator = endpoint.includes('?') ? '&' : '?';
+  return `${endpoint}${separator}${query}`;
+};
+
+const hasContentTypeHeader = (headers: Record<string, string> | undefined): boolean => {
+  if (headers === undefined) {
+    return false;
+  }
+  return Object.keys(headers).some((header) => header.toLowerCase() === 'content-type');
+};
+
+const isFormData = (value: unknown): value is FormData => {
+  return typeof FormData !== 'undefined' && value instanceof FormData;
+};
+
+const ensureSuccess = <T>(response: ApiClientResponse<T>, endpoint: string): T => {
+  if (!response.success) {
+    throw new Error(response.error ?? response.message ?? `Request to ${endpoint} failed`);
+  }
+
+  if (response.data === undefined || response.data === null) {
+    throw new Error(`Request to ${endpoint} failed: No data returned`);
+  }
+
+  return response.data;
+};
+
+const resolveData = async <T>(
+  requestPromise: Promise<ApiClientResponse<T>>,
+  errorMessage: string
+): Promise<T> => {
+  const response = await requestPromise;
+  if (!response.success) {
+    throw new Error(response.error ?? errorMessage);
+  }
+  if (response.data === undefined || response.data === null) {
+    throw new Error(errorMessage);
+  }
+  return response.data;
+};
+
+const resolveBoolean = async (
+  requestPromise: Promise<ApiClientResponse<boolean>>,
+  errorMessage: string
+): Promise<boolean> => {
+  const response = await requestPromise;
+  if (!response.success) {
+    throw new Error(response.error ?? errorMessage);
+  }
+  if (response.data === undefined) {
+    return true;
+  }
+  return response.data;
+};
+
+const buildRequestConfig = (headers: Record<string, string> | undefined) => {
+  if (headers !== undefined) {
+    return {
+      headers,
+      timeout: API_TIMEOUT,
+    };
+  }
+
+  return { timeout: API_TIMEOUT } as const;
+};
+
+export const request = async <T = unknown>(
+  endpoint: string,
+  options: ApiRequestOptions = {}
+): Promise<T> => {
+  const { method = 'GET', body, headers, params } = options;
+  const normalizedMethod = method.toUpperCase() as HttpMethod;
+  const url = appendQueryParams(endpoint, params);
+  const resolvedHeaders: Record<string, string> | undefined = (() => {
+    if (isFormData(body)) {
+      return headers;
+    }
+
+    if (!hasContentTypeHeader(headers) && body !== undefined) {
+      return {
+        ...headers,
+        'Content-Type': 'application/json',
+      };
+    }
+
+    return headers;
+  })();
+
+  switch (normalizedMethod) {
+    case 'GET':
+      return ensureSuccess(await apiClient.get<T>(url, buildRequestConfig(resolvedHeaders)), url);
+    case 'POST':
+      return ensureSuccess(await apiClient.post<T>(url, body, buildRequestConfig(resolvedHeaders)), url);
+    case 'PUT':
+      return ensureSuccess(await apiClient.put<T>(url, body, buildRequestConfig(resolvedHeaders)), url);
+    case 'PATCH':
+      return ensureSuccess(await apiClient.patch<T>(url, body, buildRequestConfig(resolvedHeaders)), url);
+    case 'DELETE':
+      return ensureSuccess(await apiClient.delete<T>(url, buildRequestConfig(resolvedHeaders)), url);
+    default:
+      throw new Error(`Unsupported HTTP method: ${String(normalizedMethod)}`);
+  }
+};
 
 // Local type definition for adoption application
 interface AdoptionApplication {
@@ -32,269 +169,174 @@ interface AdoptionApplication {
 export const matchesAPI = {
   // Get user's matches
   getMatches: async (): Promise<Match[]> => {
-    const response = await apiClient.get<Match[]>('/matches');
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch matches');
+    return resolveData(apiClient.get<Match[]>('/matches'), 'Failed to fetch matches');
   },
 
   // Get specific match details
   getMatch: async (matchId: string): Promise<Match> => {
-    const response = await apiClient.get<Match>(`/matches/${matchId}`);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch match');
+    return resolveData(apiClient.get<Match>(`/matches/${matchId}`), 'Failed to fetch match');
   },
 
   // Create a new match (like/swipe)
   createMatch: async (petId: string, targetPetId: string): Promise<Match> => {
-    const response = await apiClient.post<Match>('/matches', { petId, targetPetId });
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to create match');
+    return resolveData(apiClient.post<Match>('/matches', { petId, targetPetId }), 'Failed to create match');
   },
 
   // Get chat messages for a match
   getMessages: async (matchId: string): Promise<Message[]> => {
-    const response = await apiClient.get<Message[]>(`/matches/${matchId}/messages`);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch messages');
+    return resolveData(apiClient.get<Message[]>(`/matches/${matchId}/messages`), 'Failed to fetch messages');
   },
 
   // Send a message
   sendMessage: async (matchId: string, content: string): Promise<Message> => {
-    const response = await apiClient.post<Message>(`/matches/${matchId}/messages`, { content });
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to send message');
+    return resolveData(
+      apiClient.post<Message>(`/matches/${matchId}/messages`, { content }),
+      'Failed to send message'
+    );
   },
 
   // Get pets for swiping
   getPets: async (filters?: PetFilters): Promise<Pet[]> => {
-    const queryString = filters ? `?${new URLSearchParams(filters as Record<string, string>).toString()}` : '';
-    const response = await apiClient.get<Pet[]>(`/pets${queryString}`);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch pets');
+    const queryString = filters !== undefined ? `?${new URLSearchParams(filters as Record<string, string>).toString()}` : '';
+    return resolveData(apiClient.get<Pet[]>(`/pets${queryString}`), 'Failed to fetch pets');
   },
 
   // Get user profile
   getUserProfile: async (): Promise<User> => {
-    const response = await apiClient.get<User>('/users/me');
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch user profile');
+    return resolveData(apiClient.get<User>('/users/me'), 'Failed to fetch user profile');
   },
 
   // Update user profile
   updateUserProfile: async (profileData: Partial<User>): Promise<User> => {
-    const response = await apiClient.put<User>('/users/me', profileData);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to update user profile');
+    return resolveData(apiClient.put<User>('/users/me', profileData), 'Failed to update user profile');
   },
 
   // Upload pet photos
   uploadPetPhotos: async (petId: string, photos: FormData): Promise<Pet> => {
-    const response = await apiClient.post<Pet>(`/pets/${petId}/photos`, photos, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to upload photos');
+    return resolveData(
+      apiClient.post<Pet>(`/pets/${petId}/photos`, photos, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }),
+      'Failed to upload photos'
+    );
   },
 
   // Get pet details
   getPet: async (petId: string): Promise<Pet> => {
-    const response = await apiClient.get<Pet>(`/pets/${petId}`);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch pet');
+    return resolveData(apiClient.get<Pet>(`/pets/${petId}`), 'Failed to fetch pet');
   },
 
   // Create pet profile
   createPet: async (petData: Partial<Pet>): Promise<Pet> => {
-    const response = await apiClient.post<Pet>('/pets', petData);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to create pet');
+    return resolveData(apiClient.post<Pet>('/pets', petData), 'Failed to create pet');
   },
 
   // Update pet profile
   updatePet: async (petId: string, petData: Partial<Pet>): Promise<Pet> => {
-    const response = await apiClient.put<Pet>(`/pets/${petId}`, petData);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to update pet');
+    return resolveData(apiClient.put<Pet>(`/pets/${petId}`, petData), 'Failed to update pet');
   },
 
   // Delete pet profile
   deletePet: async (petId: string): Promise<boolean> => {
-    const response = await apiClient.delete<boolean>(`/pets/${petId}`);
-    if (response.success) {
-      return true;
-    }
-    throw new Error(response.error ?? 'Failed to delete pet');
+    return resolveBoolean(apiClient.delete<boolean>(`/pets/${petId}`), 'Failed to delete pet');
   },
 
   // Get adoption applications
   getAdoptionApplications: async (): Promise<AdoptionApplication[]> => {
-    const response = await apiClient.get<AdoptionApplication[]>('/adoption/applications');
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch adoption applications');
+    return resolveData(apiClient.get<AdoptionApplication[]>('/adoption/applications'), 'Failed to fetch adoption applications');
   },
 
   // Submit adoption application
-  submitAdoptionApplication: async (applicationData: Omit<AdoptionApplication, '_id' | 'submittedAt' | 'applicant' | 'pet'>): Promise<AdoptionApplication> => {
-    const response = await apiClient.post<AdoptionApplication>('/adoption/applications', applicationData);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to submit adoption application');
+  submitAdoptionApplication: async (
+    applicationData: Omit<AdoptionApplication, '_id' | 'submittedAt' | 'applicant' | 'pet'>
+  ): Promise<AdoptionApplication> => {
+    return resolveData(
+      apiClient.post<AdoptionApplication>('/adoption/applications', applicationData),
+      'Failed to submit adoption application'
+    );
   },
 
   // Get premium features
   getPremiumFeatures: async (): Promise<Record<string, boolean>> => {
-    const response = await apiClient.get<Record<string, boolean>>('/premium/features');
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch premium features');
+    return resolveData(apiClient.get<Record<string, boolean>>('/premium/features'), 'Failed to fetch premium features');
   },
 
   // Subscribe to premium
-  subscribeToPremium: async (subscriptionData: { plan: 'basic' | 'premium' | 'gold'; paymentMethodId: string }): Promise<{ success: boolean; subscriptionId: string }> => {
-    const response = await apiClient.post<{ success: boolean; subscriptionId: string }>('/premium/subscribe', subscriptionData);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to subscribe to premium');
+  subscribeToPremium: async (
+    subscriptionData: { plan: 'basic' | 'premium' | 'gold'; paymentMethodId: string }
+  ): Promise<{ success: boolean; subscriptionId: string }> => {
+    return resolveData(
+      apiClient.post<{ success: boolean; subscriptionId: string }>('/premium/subscribe', subscriptionData),
+      'Failed to subscribe to premium'
+    );
   },
 
   // Cancel premium subscription
   cancelPremiumSubscription: async (): Promise<boolean> => {
-    const response = await apiClient.post<boolean>('/premium/cancel');
-    if (response.success) {
-      return true;
-    }
-    throw new Error(response.error ?? 'Failed to cancel premium subscription');
+    return resolveBoolean(apiClient.post<boolean>('/premium/cancel'), 'Failed to cancel premium subscription');
   },
 
   // Get user settings
   getUserSettings: async (): Promise<User['preferences']> => {
-    const response = await apiClient.get<User['preferences']>('/users/settings');
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch user settings');
+    return resolveData(apiClient.get<User['preferences']>('/users/settings'), 'Failed to fetch user settings');
   },
 
   // Update user settings
   updateUserSettings: async (settings: User['preferences']): Promise<User['preferences']> => {
-    const response = await apiClient.put<User['preferences']>('/users/settings', settings);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to update user settings');
+    return resolveData(apiClient.put<User['preferences']>('/users/settings', settings), 'Failed to update user settings');
   },
 
   // Get notifications
   getNotifications: async (): Promise<Array<{ _id: string; type: string; title: string; message: string; read: boolean; createdAt: string }>> => {
-    const response = await apiClient.get<Array<{ _id: string; type: string; title: string; message: string; read: boolean; createdAt: string }>>('/notifications');
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch notifications');
+    return resolveData(
+      apiClient.get<Array<{ _id: string; type: string; title: string; message: string; read: boolean; createdAt: string }>>('/notifications'),
+      'Failed to fetch notifications'
+    );
   },
 
   // Mark notification as read
   markNotificationAsRead: async (notificationId: string): Promise<boolean> => {
-    const response = await apiClient.put<boolean>(`/notifications/${notificationId}/read`);
-    if (response.success) {
-      return true;
-    }
-    throw new Error(response.error ?? 'Failed to mark notification as read');
+    return resolveBoolean(apiClient.put<boolean>(`/notifications/${notificationId}/read`), 'Failed to mark notification as read');
   },
 
   // Delete notification
   deleteNotification: async (notificationId: string): Promise<boolean> => {
-    const response = await apiClient.delete<boolean>(`/notifications/${notificationId}`);
-    if (response.success) {
-      return true;
-    }
-    throw new Error(response.error ?? 'Failed to delete notification');
+    return resolveBoolean(apiClient.delete<boolean>(`/notifications/${notificationId}`), 'Failed to delete notification');
   },
 
   // Get app statistics
   getAppStatistics: async (): Promise<Record<string, number>> => {
-    const response = await apiClient.get<Record<string, number>>('/stats');
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch app statistics');
+    return resolveData(apiClient.get<Record<string, number>>('/stats'), 'Failed to fetch app statistics');
   },
 
   // Report user or content
-  reportContent: async (reportData: { type: 'user' | 'pet' | 'message'; targetId: string; reason: string; description?: string }): Promise<boolean> => {
-    const response = await apiClient.post<boolean>('/reports', reportData);
-    if (response.success) {
-      return true;
-    }
-    throw new Error(response.error ?? 'Failed to submit report');
+  reportContent: async (
+    reportData: { type: 'user' | 'pet' | 'message'; targetId: string; reason: string; description?: string }
+  ): Promise<boolean> => {
+    return resolveBoolean(apiClient.post<boolean>('/reports', reportData), 'Failed to submit report');
   },
 
   // Block user
   blockUser: async (userId: string): Promise<boolean> => {
-    const response = await apiClient.post<boolean>('/users/block', { userId });
-    if (response.success) {
-      return true;
-    }
-    throw new Error(response.error ?? 'Failed to block user');
+    return resolveBoolean(apiClient.post<boolean>('/users/block', { userId }), 'Failed to block user');
   },
 
   // Unblock user
   unblockUser: async (userId: string): Promise<boolean> => {
-    const response = await apiClient.post<boolean>('/users/unblock', { userId });
-    if (response.success) {
-      return true;
-    }
-    throw new Error(response.error ?? 'Failed to unblock user');
+    return resolveBoolean(apiClient.post<boolean>('/users/unblock', { userId }), 'Failed to unblock user');
   },
 
   // Get blocked users
   getBlockedUsers: async (): Promise<User[]> => {
-    const response = await apiClient.get<User[]>('/users/blocked');
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch blocked users');
+    return resolveData(apiClient.get<User[]>('/users/blocked'), 'Failed to fetch blocked users');
   },
 
   // Search pets
   searchPets: async (query: string, filters?: PetFilters): Promise<Pet[]> => {
-    const params = new URLSearchParams({ q: query, ...(filters as Record<string, string>) });
-    const response = await apiClient.get<Pet[]>(`/search/pets?${params.toString()}`);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to search pets');
+    const params = new URLSearchParams({ q: query, ...(filters !== undefined ? (filters as Record<string, string>) : {}) });
+    return resolveData(apiClient.get<Pet[]>(`/search/pets?${params.toString()}`), 'Failed to search pets');
   },
 
   // Get nearby pets
@@ -302,41 +344,42 @@ export const matchesAPI = {
     const params = new URLSearchParams({
       lat: latitude.toString(),
       lng: longitude.toString(),
-      ...(radius !== undefined && radius !== null && { radius: radius.toString() })
     });
-    const response = await apiClient.get<Pet[]>(`/pets/nearby?${params.toString()}`);
-    if (response.success && response.data) {
-      return response.data;
+    if (radius !== undefined) {
+      params.set('radius', radius.toString());
     }
-    throw new Error(response.error ?? 'Failed to fetch nearby pets');
+
+    return resolveData(apiClient.get<Pet[]>(`/pets/nearby?${params.toString()}`), 'Failed to fetch nearby pets');
   },
 
   // Get pet compatibility
-  getPetCompatibility: async (pet1Id: string, pet2Id: string): Promise<{ compatibility_score: number; factors: string[]; recommendation: string }> => {
-    const response = await apiClient.get<{ compatibility_score: number; factors: string[]; recommendation: string }>(`/compatibility/${pet1Id}/${pet2Id}`);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch pet compatibility');
+  getPetCompatibility: async (
+    pet1Id: string,
+    pet2Id: string
+  ): Promise<{ compatibility_score: number; factors: string[]; recommendation: string }> => {
+    return resolveData(
+      apiClient.get<{ compatibility_score: number; factors: string[]; recommendation: string }>(
+        `/compatibility/${pet1Id}/${pet2Id}`
+      ),
+      'Failed to fetch pet compatibility'
+    );
   },
 
   // Get user activity
   getUserActivity: async (): Promise<Array<{ type: string; description: string; timestamp: string }>> => {
-    const response = await apiClient.get<Array<{ type: string; description: string; timestamp: string }>>('/users/activity');
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch user activity');
+    return resolveData(
+      apiClient.get<Array<{ type: string; description: string; timestamp: string }>>('/users/activity'),
+      'Failed to fetch user activity'
+    );
   },
 
   // Get app version info
   getAppVersion: async (): Promise<{ version: string; build: string; environment: string }> => {
-    const response = await apiClient.get<{ version: string; build: string; environment: string }>('/version');
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to fetch app version');
-  }
+    return resolveData(
+      apiClient.get<{ version: string; build: string; environment: string }>('/version'),
+      'Failed to fetch app version'
+    );
+  },
 };
 
 // Export the main API service instance
@@ -357,11 +400,10 @@ export const aiAPI = {
     sentiment: { score: number; label: string };
     matchScore: number;
   }> => {
-    const response = await apiClient.post('/ai/generate-bio', data);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to generate bio');
+    return request('/ai/generate-bio', {
+      method: 'POST',
+      body: data,
+    });
   },
 
   // Analyze pet photos
@@ -385,11 +427,10 @@ export const aiAPI = {
     matchability_score: number;
     ai_insights: string[];
   }> => {
-    const response = await apiClient.post('/ai/analyze-photos', { photos });
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to analyze photos');
+    return request('/ai/analyze-photos', {
+      method: 'POST',
+      body: { photos },
+    });
   },
 
   // Enhanced compatibility analysis
@@ -413,11 +454,10 @@ export const aiAPI = {
       success_probability: number;
     };
   }> => {
-    const response = await apiClient.post('/ai/enhanced-compatibility', data);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to analyze compatibility');
+    return request('/ai/enhanced-compatibility', {
+      method: 'POST',
+      body: data,
+    });
   },
 
   // Legacy compatibility (simpler version)
@@ -434,18 +474,114 @@ export const aiAPI = {
       personality_match: boolean;
     };
   }> => {
-    const response = await apiClient.post('/ai/compatibility', data);
-    if (response.success && response.data) {
-      return response.data;
-    }
-    throw new Error(response.error ?? 'Failed to get compatibility');
+    return request('/ai/compatibility', {
+      method: 'POST',
+      body: data,
+    });
   },
 };
 
 export const api = {
   ...matchesAPI,
   ai: aiAPI,
+  request,
 };
 
 // Export adoption API (alias for now, can be extended later)
 export const adoptionAPI = matchesAPI;
+
+// ===== SECURITY CONTROLS =====
+
+/**
+ * Rate limiting for API requests
+ */
+const requestTimestamps: number[] = [];
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 100; // 100 requests per minute
+
+const checkRateLimit = (): boolean => {
+  const now = Date.now();
+
+  // Remove old timestamps outside the window
+  while (requestTimestamps.length > 0 && requestTimestamps[0] < now - RATE_LIMIT_WINDOW_MS) {
+    requestTimestamps.shift();
+  }
+
+  // Check if we're over the limit
+  if (requestTimestamps.length >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  // Add current request timestamp
+  requestTimestamps.push(now);
+  return true;
+};
+
+/**
+ * Validate API endpoint URL
+ */
+const validateEndpoint = (endpoint: string): boolean => {
+  try {
+    // Basic validation: should start with / and not contain dangerous characters
+    return endpoint.startsWith('/') &&
+           !endpoint.includes('..') &&
+           !endpoint.includes('<') &&
+           !endpoint.includes('>') &&
+           endpoint.length < 200;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Sanitize request body to prevent injection
+ */
+const sanitizeRequestBody = (body: unknown): unknown => {
+  if (typeof body === 'string') {
+    // Remove potentially dangerous content
+    return body.replace(/[<>"'`]/g, '').substring(0, 10000); // Limit size
+  }
+  if (typeof body === 'object' && body !== null) {
+    // For objects, we could implement deep sanitization, but for now just limit size
+    const serialized = JSON.stringify(body);
+    if (serialized.length > 10000) {
+      throw new Error('Request body too large');
+    }
+    return body;
+  }
+  return body;
+};
+
+/**
+ * Enhanced request function with security controls
+ */
+export const secureRequest = async <T = unknown>(
+  endpoint: string,
+  options: ApiRequestOptions = {}
+): Promise<T> => {
+  // Validate endpoint
+  if (!validateEndpoint(endpoint)) {
+    throw new Error('Invalid API endpoint');
+  }
+
+  // Check rate limit
+  if (!checkRateLimit()) {
+    throw new Error('API rate limit exceeded');
+  }
+
+  // Sanitize request body if present
+  const sanitizedOptions = { ...options };
+  if (sanitizedOptions.body !== undefined) {
+    sanitizedOptions.body = sanitizeRequestBody(sanitizedOptions.body);
+  }
+
+  // Add security headers
+  const secureHeaders = {
+    ...sanitizedOptions.headers,
+    'X-Requested-With': 'XMLHttpRequest', // Prevent CSRF
+  };
+
+  sanitizedOptions.headers = secureHeaders;
+
+  return request<T>(endpoint, sanitizedOptions);
+};

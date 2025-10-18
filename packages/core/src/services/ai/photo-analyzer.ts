@@ -24,6 +24,8 @@ export interface PhotoAnalysisResult {
   bestFor: 'profile' | 'gallery' | 'background';
 }
 
+type RawPhotoAnalysisResponse = Record<string, unknown>;
+
 export class PhotoAnalyzerService {
   /**
    * Analyze pet photo using AI
@@ -47,7 +49,7 @@ export class PhotoAnalyzerService {
    */
   async analyzeMultiplePhotos(
     photoUrls: string[],
-    petType?: string | undefined
+    petType?: string  
   ): Promise<Array<PhotoAnalysisResult & { url: string }>> {
     const analyses = await Promise.all(
       photoUrls.map(async (url) => {
@@ -63,9 +65,20 @@ export class PhotoAnalyzerService {
   /**
    * Get best photo for profile
    */
-  async getBestProfilePhoto(photoUrls: string[], petType?: string | undefined): Promise<string> {
-    const analyses = await this.analyzeMultiplePhotos(photoUrls, petType);
-    return analyses[0]?.url || photoUrls[0] || '';
+  async getBestProfilePhoto(photoUrls: string[], petType?: string  ): Promise<string> {
+    const petTypeParam = petType?.trim();
+    const analyses = await this.analyzeMultiplePhotos(photoUrls, petTypeParam);
+    const bestResult = analyses[0];
+    if (bestResult?.url != null && bestResult.url !== '') {
+      return bestResult.url;
+    }
+
+    const fallbackUrl = photoUrls[0];
+    if (typeof fallbackUrl === 'string' && fallbackUrl !== '') {
+      return fallbackUrl;
+    }
+
+    return '';
   }
 
   /**
@@ -83,7 +96,7 @@ export class PhotoAnalyzerService {
     prompt += '4. Suggestions for improvement\n';
     prompt += '5. Best use case (profile/gallery/background)\n\n';
     
-    if (petType) {
+    if (petType != null && petType.length > 0) {
       prompt += `The pet is a ${petType}.\n\n`;
     }
     
@@ -110,20 +123,20 @@ export class PhotoAnalyzerService {
     try {
       // Try to extract JSON from response
       const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+      if (jsonMatch !== null) {
+        const parsed = JSON.parse(jsonMatch[0]) as RawPhotoAnalysisResponse;
         return {
-          quality: parsed.quality || 'good',
-          score: parsed.score || 70,
-          suggestions: parsed.suggestions || [],
+          quality: (typeof parsed['quality'] === 'string' && parsed['quality'].length > 0) ? parsed['quality'] as PhotoAnalysisResult['quality'] : 'good',
+          score: (typeof parsed['score'] === 'number' && !isNaN(parsed['score'])) ? parsed['score'] : 70,
+          suggestions: Array.isArray(parsed['suggestions']) ? parsed['suggestions'] as string[] : [],
           detectedFeatures: {
-            lighting: parsed.lighting || 'good',
-            framing: parsed.framing || 'good',
-            clarity: parsed.clarity || 'good',
-            background: parsed.background || 'clean',
+            lighting: (typeof parsed['lighting'] === 'string' && parsed['lighting'].length > 0) ? parsed['lighting'] as PhotoAnalysisResult['detectedFeatures']['lighting'] : 'good',
+            framing: (typeof parsed['framing'] === 'string' && parsed['framing'].length > 0) ? parsed['framing'] as PhotoAnalysisResult['detectedFeatures']['framing'] : 'good',
+            clarity: (typeof parsed['clarity'] === 'string' && parsed['clarity'].length > 0) ? parsed['clarity'] as PhotoAnalysisResult['detectedFeatures']['clarity'] : 'good',
+            background: (typeof parsed['background'] === 'string' && parsed['background'].length > 0) ? parsed['background'] as PhotoAnalysisResult['detectedFeatures']['background'] : 'clean',
           },
-          emotions: parsed.emotions || [],
-          bestFor: parsed.bestFor || 'gallery',
+          emotions: Array.isArray(parsed['emotions']) ? parsed['emotions'] as string[] : [],
+          bestFor: (typeof parsed['bestFor'] === 'string' && parsed['bestFor'].length > 0) ? parsed['bestFor'] as PhotoAnalysisResult['bestFor'] : 'gallery',
         };
       }
     } catch (error) {

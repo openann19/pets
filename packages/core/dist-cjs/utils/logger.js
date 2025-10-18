@@ -48,7 +48,7 @@ const reportErrorToServer = async (error, context, endpoint) => {
             })
         });
     }
-    catch (e) {
+    catch {
         // Silent fail for error reporting to avoid infinite loops
     }
 };

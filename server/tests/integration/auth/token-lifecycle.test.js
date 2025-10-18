@@ -116,7 +116,7 @@ describe('JWT Token Lifecycle Tests', () => {
     // In a real app, this would be done in the frontend with axios interceptors
     
     // Mock an expired token error
-    const mockApiCall = async (token, shouldBeExpired = false) => {
+    const mockApiCall = async (shouldBeExpired = false) => {
       if (shouldBeExpired) {
         return {
           status: 401,
@@ -129,7 +129,7 @@ describe('JWT Token Lifecycle Tests', () => {
     };
     
     // Mock refresh token call
-    const mockRefreshToken = async (refreshToken) => {
+    const mockRefreshToken = async () => {
       return {
         status: 200,
         body: { data: { accessToken: 'new_token_123', refreshToken: 'new_refresh_token_123' } }
@@ -139,18 +139,17 @@ describe('JWT Token Lifecycle Tests', () => {
     // Client-side interceptor logic
     const clientApiCall = async () => {
       // First attempt with expired token
-      const initialResponse = await mockApiCall(testToken, true);
+      const initialResponse = await mockApiCall(true);
       
       if (initialResponse.status === 401 && 
           initialResponse.body.error === 'TokenExpiredError') {
         
         // Token expired, try to refresh
-        const refreshResponse = await mockRefreshToken(testRefreshToken);
+        const refreshResponse = await mockRefreshToken();
         
         if (refreshResponse.status === 200) {
           // Use new token to retry the original request
-          const newToken = refreshResponse.body.data.accessToken;
-          return await mockApiCall(newToken);
+          return await mockApiCall();
         }
       }
       

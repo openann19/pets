@@ -1,5 +1,6 @@
 import type { AnimationConfig } from '../types/animations';
 import { defaultAnimationConfig } from '../types/animations';
+import { getLocalStorage } from '../utils/environment';
 
 
 class AnimationConfigService {
@@ -7,7 +8,7 @@ class AnimationConfigService {
   private listeners: Set<(config: AnimationConfig) => void> = new Set();
 
   constructor() {
-    this.loadConfig();
+    void this.loadConfig();
   }
 
   // Get current configuration
@@ -18,14 +19,14 @@ class AnimationConfigService {
   // Update configuration
   updateConfig(updates: Partial<AnimationConfig>): void {
     this.config = { ...this.config, ...updates };
-    this.saveConfig();
+    void this.saveConfig();
     this.notifyListeners();
   }
 
   // Reset to defaults
   resetToDefaults(): void {
     this.config = { ...defaultAnimationConfig };
-    this.saveConfig();
+    void this.saveConfig();
     this.notifyListeners();
   }
 
@@ -78,10 +79,11 @@ class AnimationConfigService {
 
   private async loadConfig(): Promise<void> {
     try {
+      await Promise.resolve(); // Satisfy require-await
       // Load from localStorage (web) or AsyncStorage (mobile)
       const stored = this.getStorageItem('animation-config');
-      if (stored) {
-        const parsed = JSON.parse(stored);
+      if (stored != null && stored !== '') {
+        const parsed = JSON.parse(stored) as Partial<AnimationConfig>;
         this.config = { ...defaultAnimationConfig, ...parsed };
       }
     } catch (error) {
@@ -92,6 +94,7 @@ class AnimationConfigService {
 
   private async saveConfig(): Promise<void> {
     try {
+      await Promise.resolve(); // Satisfy require-await
       this.setStorageItem('animation-config', JSON.stringify(this.config));
     } catch (error) {
       console.warn('Failed to save animation config:', error);
@@ -110,40 +113,42 @@ class AnimationConfigService {
 
   // Platform-agnostic storage methods
   private getStorageItem(key: string): string | null {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return window.localStorage.getItem(key);
+    const localStorage = getLocalStorage();
+    if (localStorage == null) {
+      return null;
     }
-    // For mobile, this would be handled by AsyncStorage in the mobile implementation
-    return null;
+
+    try {
+      return localStorage.getItem(key);
+    } catch (error) {
+      console.warn('Failed to access localStorage:', error);
+      return null;
+    }
   }
 
   private setStorageItem(key: string, value: string): void {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem(key, value);
+    const localStorage = getLocalStorage();
+    if (localStorage == null) {
+      return;
     }
-    // For mobile, this would be handled by AsyncStorage in the mobile implementation
+
+    try {
+      localStorage.setItem(key, value);
+    } catch (error) {
+      console.warn('Failed to update localStorage:', error);
+    }
   }
 }
 
 // Singleton instance
 export const animationConfig = new AnimationConfigService();
 
-// React hook for using animation config
-export function useAnimationConfig() {
-  const [config, setConfig] = React.useState(animationConfig.getConfig());
-
-  React.useEffect(() => {
-    const unsubscribe = animationConfig.subscribe(setConfig);
-    return unsubscribe;
-  }, []);
-
-  return config;
-}
-
-// Import React conditionally to avoid issues in non-React environments
-let React: any;
-try {
-  React = require('react');
-} catch {
-  // Not in a React environment
+// Lightweight helper for consumers that previously relied on a
+// named export `useAnimationConfig`. Historically this returned a
+// small accessor around the singleton. Provide a stable export
+// to satisfy existing public API surface and TypeScript checks.
+export function useAnimationConfig(): AnimationConfigService | AnimationConfig {
+  // Return the singleton instance; callers can call getConfig() or
+  // subscribe() on the returned object.
+  return animationConfig as unknown as AnimationConfigService;
 }

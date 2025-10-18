@@ -4,10 +4,14 @@
  */
 
 const User = require('../models/User');
-const Pet = require('../models/Pet');
 const Match = require('../models/Match');
 let Message = null;
-try { Message = require('../models/Message'); } catch (e) { Message = null; }
+try {
+  Message = require('../models/Message');
+} catch (error) {
+  Message = null;
+  logger.warn?.('Message model unavailable for engagement leaderboard', { error: error?.message });
+}
 const Conversation = require('../models/Conversation');
 const LeaderboardScore = require('../models/LeaderboardScore');
 const logger = require('../utils/logger');
@@ -47,18 +51,22 @@ const getLeaderboard = async (req, res) => {
     let entries = [];
 
     switch (category) {
-      case 'overall':
+      case 'overall': {
         entries = await getOverallLeaderboard(dateRange, limit, offset);
         break;
-      case 'streak':
+      }
+      case 'streak': {
         entries = await getStreakLeaderboard(dateRange, limit, offset);
         break;
-      case 'matches':
+      }
+      case 'matches': {
         entries = await getMatchesLeaderboard(dateRange, limit, offset);
         break;
-      case 'engagement':
+      }
+      case 'engagement': {
         entries = await getEngagementLeaderboard(dateRange, limit, offset);
         break;
+      }
     }
 
     // Get current user's rank if authenticated
@@ -427,42 +435,43 @@ const getEngagementLeaderboard = async (dateRange, limit, offset) => {
  * Calculate user's score for a specific category
  */
 const calculateUserScore = async (userId, category, dateRange) => {
-  switch (category) {
-    case 'overall':
-      const overallScore = await LeaderboardScore.findOne({ userId, category });
-      return overallScore ? overallScore.score : 0;
+  if (category === 'overall') {
+    const overallScore = await LeaderboardScore.findOne({ userId, category });
+    return overallScore ? overallScore.score : 0;
+  }
 
-    case 'streak':
-      const user = await User.findById(userId);
-      return user?.analytics?.currentStreak || 0;
+  if (category === 'streak') {
+    const user = await User.findById(userId);
+    return user?.analytics?.currentStreak || 0;
+  }
 
-    case 'matches':
-      const matchCount = await Match.countDocuments({
-        $or: [{ pet1Owner: userId }, { pet2Owner: userId }],
-        status: 'matched',
+  if (category === 'matches') {
+    const matchCount = await Match.countDocuments({
+      $or: [{ pet1Owner: userId }, { pet2Owner: userId }],
+      status: 'matched',
+      createdAt: { $gte: dateRange.start, $lte: dateRange.end }
+    });
+    return matchCount;
+  }
+
+  if (category === 'engagement') {
+    if (Message) {
+      const messageCount = await Message.countDocuments({
+        senderId: userId,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end }
       });
-      return matchCount;
+      return messageCount;
+    }
 
-    case 'engagement':
-      if (Message) {
-        const messageCount = await Message.countDocuments({
-          senderId: userId,
-          createdAt: { $gte: dateRange.start, $lte: dateRange.end }
-        });
-        return messageCount;
-      } else {
-        const convAgg = await Conversation.aggregate([
-          { $unwind: '$messages' },
-          { $match: { 'messages.sender': new (require('mongoose').Types.ObjectId)(String(userId)), 'messages.sentAt': { $gte: dateRange.start, $lte: dateRange.end } } },
-          { $count: 'count' }
-        ]);
-        return convAgg[0]?.count || 0;
-      }
-
-    default:
-      return 0;
+    const convAgg = await Conversation.aggregate([
+      { $unwind: '$messages' },
+      { $match: { 'messages.sender': new (require('mongoose').Types.ObjectId)(String(userId)), 'messages.sentAt': { $gte: dateRange.start, $lte: dateRange.end } } },
+      { $count: 'count' }
+    ]);
+    return convAgg[0]?.count || 0;
   }
+
+  return 0;
 };
 
 /**
@@ -471,36 +480,33 @@ const calculateUserScore = async (userId, category, dateRange) => {
 const calculateUserRank = async (userId, category, dateRange) => {
   const userScore = await calculateUserScore(userId, category, dateRange);
 
-  let count = 0;
-  switch (category) {
-    case 'overall':
-      count = await LeaderboardScore.countDocuments({
-        category,
-        score: { $gt: userScore },
-        updatedAt: { $gte: dateRange.start, $lte: dateRange.end }
-      });
-      break;
-
-    case 'streak':
-      count = await User.countDocuments({
-        'analytics.currentStreak': { $gt: userScore },
-        isActive: true,
-        isBlocked: false
-      });
-      break;
-
-    case 'matches':
-      // This would require a more complex query to count users with more matches
-      count = 0; // Simplified for now
-      break;
-
-    case 'engagement':
-      // This would require a more complex query to count users with more messages
-      count = 0; // Simplified for now
-      break;
+  if (category === 'overall') {
+    const count = await LeaderboardScore.countDocuments({
+      category,
+      score: { $gt: userScore },
+      updatedAt: { $gte: dateRange.start, $lte: dateRange.end }
+    });
+    return count + 1;
   }
 
-  return count + 1;
+  if (category === 'streak') {
+    const count = await User.countDocuments({
+      'analytics.currentStreak': { $gt: userScore },
+      isActive: true,
+      isBlocked: false
+    });
+    return count + 1;
+  }
+
+  if (category === 'matches') {
+    return 1; // Simplified: treat user as top rank when using fallback query
+  }
+
+  if (category === 'engagement') {
+    return 1; // Simplified: requires aggregate ranking logic
+  }
+
+  return 1;
 };
 
 module.exports = {

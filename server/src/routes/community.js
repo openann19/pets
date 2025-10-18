@@ -69,7 +69,15 @@ router.get('/posts', async (req, res) => {
     ];
 
     const total = mockPosts.length;
-    const posts = mockPosts.slice((page - 1) * limit, page * limit);
+    const posts = mockPosts
+      .filter(post => {
+        if (packId && post.packId !== packId) return false;
+        if (userId && post.author._id !== userId) return false;
+        if (type && post.type !== type) return false;
+        return true;
+      })
+      .slice((page - 1) * limit, page * limit);
+    const filteredTotal = posts.length;
 
     res.json({
       success: true,
@@ -79,6 +87,12 @@ router.get('/posts', async (req, res) => {
         limit: parseInt(limit),
         total,
         pages: Math.ceil(total / parseInt(limit))
+      },
+      appliedFilters: {
+        packId: packId || null,
+        userId: userId || null,
+        type: type || null,
+        matchedCount: filteredTotal
       }
     });
   } catch (error) {
@@ -192,6 +206,7 @@ router.post('/posts/:id/comments', async (req, res) => {
       },
       content: content.trim(),
       createdAt: new Date().toISOString(),
+      postId: id,
     };
 
     res.status(201).json({
@@ -238,7 +253,8 @@ router.get('/posts/:id/comments', async (req, res) => {
         limit: parseInt(limit),
         total,
         pages: Math.ceil(total / parseInt(limit))
-      }
+      },
+      postId: id
     });
   } catch (error) {
     logger.error('Failed to fetch community comments', { error });

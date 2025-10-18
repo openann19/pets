@@ -45,6 +45,7 @@ export const _useAnalyticsStore = create<AnalyticsState>()((set, get) => ({
         data: { views: 123, matches: 45, likes: 67 }
       } as AnalyticsData;
 
+      await Promise.resolve();
       set({ userAnalytics: analyticsData, isLoading: false });
     } catch {
       set({ error: 'Failed to fetch user analytics', isLoading: false });
@@ -73,6 +74,7 @@ export const _useAnalyticsStore = create<AnalyticsState>()((set, get) => ({
         data: { views: 89, likes: 34, superlikes: 12 }
       } as AnalyticsData;
 
+      await Promise.resolve();
       set({
         petAnalytics: {
           ...get().petAnalytics,
@@ -107,6 +109,7 @@ export const _useAnalyticsStore = create<AnalyticsState>()((set, get) => ({
         data: { messageCount: 42, responseTime: 15, lastActivity: new Date().toISOString() }
       } as AnalyticsData;
 
+      await Promise.resolve();
       set({
         matchAnalytics: {
           ...get().matchAnalytics,

@@ -1,266 +1,349 @@
-/**
- * PROJECT HYPERION: PERFORMANCE MONITORING SYSTEM
- * 
- * Real-time performance monitoring for the new architecture.
- * Tracks FPS, memory usage, and animation performance.
- */
+import React from 'react';
+import { InteractionManager, Platform } from 'react-native';
+import { logger } from '@pawfectmatch/core';
 
-import { NativeModules, Platform } from 'react-native';
+// Declare global __DEV__ variable
+declare const __DEV__: boolean;
+
+/**
+ * Performance Monitoring Utility
+ * Implements P-08: Measure JS FPS with react-native-performance overlay
+ * Features:
+ * - FPS monitoring and reporting
+ * - Memory usage tracking
+ * - Interaction timing measurements
+ * - Performance metrics collection
+ * - Development-only monitoring
+ */
 
 interface PerformanceMetrics {
   fps: number;
   memoryUsage: number;
-  animationFrameTime: number;
-  gestureResponseTime: number;
-  componentRenderTime: number;
+  interactionTime: number;
+  timestamp: number;
 }
 
-type PerformanceCallback = (metrics: PerformanceMetrics) => void;
+interface InteractionTiming {
+  name: string;
+  startTime: number;
+  endTime?: number;
+  duration?: number;
+}
 
 class PerformanceMonitor {
-  private static instance: PerformanceMonitor;
-  private readonly callbacks: PerformanceCallback[] = [];
-  private isMonitoring = false;
-  private frameCount = 0;
-  private lastFrameTime = 0;
-  private readonly fpsHistory: number[] = [];
-  private readonly maxHistoryLength = 60; // 1 second at 60fps
+  private isEnabled: boolean = __DEV__;
+  private fpsCounter: number = 0;
+  private lastFrameTime: number = 0;
+  private frameCount: number = 0;
+  private currentFPS: number = 60;
+  private interactions: Map<string, InteractionTiming> = new Map();
+  private metricsHistory: PerformanceMetrics[] = [];
+  private maxHistorySize: number = 100;
 
-  private constructor() {}
-
-  static getInstance(): PerformanceMonitor {
-    if (!PerformanceMonitor.instance) {
-      PerformanceMonitor.instance = new PerformanceMonitor();
-    }
-    return PerformanceMonitor.instance;
-  }
-
-  /**
-   * Start monitoring performance metrics
-   */
-  startMonitoring(): void {
-    if (this.isMonitoring) return;
-    
-    this.isMonitoring = true;
-    this.lastFrameTime = performance.now();
-    this.measureFrame();
-  }
-
-  /**
-   * Stop monitoring performance metrics
-   */
-  stopMonitoring(): void {
-    this.isMonitoring = false;
-  }
-
-  /**
-   * Add callback for performance updates
-   */
-  addCallback(callback: PerformanceCallback): void {
-    this.callbacks.push(callback);
-  }
-
-  /**
-   * Remove callback
-   */
-  removeCallback(callback: PerformanceCallback): void {
-    const index = this.callbacks.indexOf(callback);
-    if (index > -1) {
-      this.callbacks.splice(index, 1);
+  constructor() {
+    if (this.isEnabled) {
+      this.startFPSMonitoring();
     }
   }
 
   /**
-   * Measure frame performance
+   * Enable or disable performance monitoring
    */
-  private readonly measureFrame = (): void => {
-    if (!this.isMonitoring) return;
-
-    const currentTime = performance.now();
-    const frameTime = currentTime - this.lastFrameTime;
+  public setEnabled(enabled: boolean): void {
+    this.isEnabled = enabled && __DEV__;
     
-    if (frameTime > 0) {
-      const fps = 1000 / frameTime;
-      this.fpsHistory.push(fps);
+    if (this.isEnabled) {
+      this.startFPSMonitoring();
+    }
+  }
+
+  /**
+   * Start FPS monitoring
+   */
+  private startFPSMonitoring(): void {
+    if (!this.isEnabled) return;
+
+    const measureFPS = () => {
+      const now = Date.now();
       
-      // Keep history within bounds
-      if (this.fpsHistory.length > this.maxHistoryLength) {
-        this.fpsHistory.shift();
+      if (this.lastFrameTime > 0) {
+        const deltaTime = now - this.lastFrameTime;
+        this.frameCount++;
+        
+        // Calculate FPS every second
+        if (deltaTime >= 1000) {
+          this.currentFPS = Math.round((this.frameCount * 1000) / deltaTime);
+          this.frameCount = 0;
+          this.lastFrameTime = now;
+          
+          // Log low FPS warnings
+          if (this.currentFPS < 30) {
+            logger.warn('Low FPS detected', { fps: this.currentFPS });
+          }
+          
+          this.recordMetrics();
+        }
+      } else {
+        this.lastFrameTime = now;
       }
-    }
 
-    this.lastFrameTime = currentTime;
-    this.frameCount++;
-
-    // Calculate metrics every 60 frames (1 second at 60fps)
-    if (this.frameCount % 60 === 0) {
-      this.calculateMetrics();
-    }
-
-    // Schedule next frame
-    requestAnimationFrame(this.measureFrame);
-  };
-
-  /**
-   * Calculate performance metrics
-   */
-  private calculateMetrics(): void {
-    const metrics: PerformanceMetrics = {
-      fps: this.getAverageFPS(),
-      memoryUsage: this.getMemoryUsage(),
-      animationFrameTime: this.getAverageFrameTime(),
-      gestureResponseTime: this.getGestureResponseTime(),
-      componentRenderTime: this.getComponentRenderTime(),
+      requestAnimationFrame(measureFPS);
     };
 
-    // Notify callbacks
-    this.callbacks.forEach(callback => {
-      try {
-        callback(metrics);
-      } catch (error) {
-        console.warn('Performance callback error:', error);
-      }
-    });
+    requestAnimationFrame(measureFPS);
   }
 
   /**
-   * Get average FPS over the last second
+   * Get current FPS
    */
-  private getAverageFPS(): number {
-    if (this.fpsHistory.length === 0) return 0;
-    
-    const sum = this.fpsHistory.reduce((acc, fps) => acc + fps, 0);
-    return Math.round(sum / this.fpsHistory.length);
+  public getCurrentFPS(): number {
+    return this.currentFPS;
   }
 
   /**
-   * Get average frame time
+   * Start timing an interaction
    */
-  private getAverageFrameTime(): number {
-    if (this.fpsHistory.length === 0) return 0;
-    
-    const frameTimes = this.fpsHistory.map(fps => 1000 / fps);
-    const sum = frameTimes.reduce((acc, time) => acc + time, 0);
-    return Math.round(sum / frameTimes.length);
+  public startInteraction(name: string): void {
+    if (!this.isEnabled) return;
+
+    const interaction: InteractionTiming = {
+      name,
+      startTime: Date.now(),
+    };
+
+    this.interactions.set(name, interaction);
   }
 
   /**
-   * Get memory usage (platform-specific)
+   * End timing an interaction
+   */
+  public endInteraction(name: string): number | null {
+    if (!this.isEnabled) return null;
+
+    const interaction = this.interactions.get(name);
+    if (interaction === undefined) {
+      logger.warn('Interaction was not started', { interactionName: name });
+      return null;
+    }
+
+    const endTime = Date.now();
+    const duration = endTime - interaction.startTime;
+
+    interaction.endTime = endTime;
+    interaction.duration = duration;
+
+    // Log slow interactions
+    if (duration > 100) {
+      logger.warn('Slow interaction detected', { interactionName: name, duration });
+    }
+
+    this.interactions.delete(name);
+    return duration;
+  }
+
+  /**
+   * Measure interaction with automatic timing
+   */
+  public async measureInteraction<T>(
+    name: string,
+    fn: () => Promise<T> | T
+  ): Promise<T> {
+    if (!this.isEnabled) {
+      return await fn();
+    }
+
+    this.startInteraction(name);
+    
+    try {
+      const result = await fn();
+      return result;
+    } finally {
+      this.endInteraction(name);
+    }
+  }
+
+  /**
+   * Get memory usage (approximate)
    */
   private getMemoryUsage(): number {
-    try {
-      if (Platform.OS === 'android' && NativeModules.DeviceInfo) {
-        return NativeModules.DeviceInfo.getUsedMemory?.() || 0;
-      }
-      
-      if (Platform.OS === 'ios' && NativeModules.Performance) {
-        return NativeModules.Performance.getMemoryUsage?.() || 0;
-      }
-      
-      // Fallback: estimate based on performance
-      return (performance as any).memory?.usedJSHeapSize ?? 0;
-    } catch (error) {
-      console.warn('Memory usage measurement failed:', error);
+    // Note: React Native doesn't provide direct memory access
+    // This is a placeholder for native module implementation
+    if (Platform.OS === 'ios') {
+      // On iOS, you could use a native module to get memory info
+      return 0;
+    } else {
+      // On Android, you could use a native module to get memory info
       return 0;
     }
   }
 
   /**
-   * Get gesture response time (simulated)
+   * Record current performance metrics
    */
-  private getGestureResponseTime(): number {
-    // In a real implementation, this would measure actual gesture response times
-    // For now, we'll simulate based on FPS performance
-    const avgFPS = this.getAverageFPS();
-    if (avgFPS >= 55) return 16; // Excellent
-    if (avgFPS >= 45) return 20; // Good
-    if (avgFPS >= 30) return 30; // Fair
-    return 50; // Poor
+  private recordMetrics(): void {
+    if (!this.isEnabled) return;
+
+    const metrics: PerformanceMetrics = {
+      fps: this.currentFPS,
+      memoryUsage: this.getMemoryUsage(),
+      interactionTime: this.getAverageInteractionTime(),
+      timestamp: Date.now(),
+    };
+
+    this.metricsHistory.push(metrics);
+
+    // Keep history size manageable
+    if (this.metricsHistory.length > this.maxHistorySize) {
+      this.metricsHistory.shift();
+    }
   }
 
   /**
-   * Get component render time (simulated)
+   * Get average interaction time from recent interactions
    */
-  private getComponentRenderTime(): number {
-    // In a real implementation, this would measure actual render times
-    // For now, we'll simulate based on FPS performance
-    const avgFPS = this.getAverageFPS();
-    if (avgFPS >= 55) return 8; // Excellent
-    if (avgFPS >= 45) return 12; // Good
-    if (avgFPS >= 30) return 20; // Fair
-    return 35; // Poor
+  private getAverageInteractionTime(): number {
+    const recentInteractions = Array.from(this.interactions.values())
+      .filter(interaction => interaction.duration !== undefined)
+      .slice(-10); // Last 10 interactions
+
+    if (recentInteractions.length === 0) return 0;
+
+    const totalTime = recentInteractions.reduce(
+      (sum, interaction) => sum + (interaction.duration !== undefined ? interaction.duration : 0),
+      0
+    );
+
+    return totalTime / recentInteractions.length;
   }
 
   /**
-   * Get performance grade based on metrics
+   * Get performance metrics history
    */
-  getPerformanceGrade(metrics: PerformanceMetrics): 'A+' | 'A' | 'B' | 'C' | 'D' | 'F' {
-    const { fps, animationFrameTime, gestureResponseTime } = metrics;
-
-    if (fps >= 58 && animationFrameTime <= 18 && gestureResponseTime <= 18) {
-      return 'A+';
-    }
-    if (fps >= 55 && animationFrameTime <= 20 && gestureResponseTime <= 20) {
-      return 'A';
-    }
-    if (fps >= 45 && animationFrameTime <= 25 && gestureResponseTime <= 25) {
-      return 'B';
-    }
-    if (fps >= 30 && animationFrameTime <= 35 && gestureResponseTime <= 35) {
-      return 'C';
-    }
-    if (fps >= 20 && animationFrameTime <= 50 && gestureResponseTime <= 50) {
-      return 'D';
-    }
-    return 'F';
+  public getMetricsHistory(): PerformanceMetrics[] {
+    return [...this.metricsHistory];
   }
 
   /**
-   * Get performance recommendations
+   * Get current performance summary
    */
-  getPerformanceRecommendations(metrics: PerformanceMetrics): string[] {
-    const recommendations: string[] = [];
-    const { fps, memoryUsage, animationFrameTime } = metrics;
-
-    if (fps < 50) {
-      recommendations.push('Consider reducing animation complexity');
-      recommendations.push('Check for unnecessary re-renders');
-    }
-
-    if (animationFrameTime > 20) {
-      recommendations.push('Optimize animation calculations');
-      recommendations.push('Use UI thread animations (Reanimated)');
-    }
-
-    if (memoryUsage > 100 * 1024 * 1024) { // 100MB
-      recommendations.push('Check for memory leaks');
-      recommendations.push('Implement proper cleanup in useEffect');
-    }
-
-    if (recommendations.length === 0) {
-      recommendations.push('Performance is excellent! 🎉');
-    }
-
-    return recommendations;
+  public getPerformanceSummary(): {
+    currentFPS: number;
+    averageFPS: number;
+    minFPS: number;
+    maxFPS: number;
+    memoryUsage: number;
+    activeInteractions: number;
+  } {
+    const fpsValues = this.metricsHistory.map(m => m.fps);
+    
+    return {
+      currentFPS: this.currentFPS,
+      averageFPS: fpsValues.length > 0 ? 
+        Math.round(fpsValues.reduce((a, b) => a + b, 0) / fpsValues.length) : 0,
+      minFPS: fpsValues.length > 0 ? Math.min(...fpsValues) : 0,
+      maxFPS: fpsValues.length > 0 ? Math.max(...fpsValues) : 0,
+      memoryUsage: this.getMemoryUsage(),
+      activeInteractions: this.interactions.size,
+    };
   }
 
   /**
-   * Log performance metrics to console
+   * Log performance summary to console
    */
-  logMetrics(metrics: PerformanceMetrics): void {
-    const grade = this.getPerformanceGrade(metrics);
-    const recommendations = this.getPerformanceRecommendations(metrics);
+  public logPerformanceSummary(): void {
+    if (!this.isEnabled) return;
 
-    console.log('🚀 Performance Metrics:');
-    console.log(`   FPS: ${metrics.fps}`);
-    console.log(`   Frame Time: ${metrics.animationFrameTime}ms`);
-    console.log(`   Gesture Response: ${metrics.gestureResponseTime}ms`);
-    console.log(`   Memory: ${Math.round(metrics.memoryUsage / 1024 / 1024)}MB`);
-    console.log(`   Grade: ${grade}`);
-    console.log('📋 Recommendations:');
-    recommendations.forEach(rec => console.log(`   • ${rec}`));
+    const summary = this.getPerformanceSummary();
+    logger.warn('Performance Summary', summary);
+  }
+
+  /**
+   * Clear metrics history
+   */
+  public clearHistory(): void {
+    this.metricsHistory = [];
+    this.interactions.clear();
+  }
+
+  /**
+   * Wait for interactions to complete
+   */
+  public waitForInteractions(): Promise<void> {
+    return new Promise(resolve => {
+      InteractionManager.runAfterInteractions(resolve);
+    });
   }
 }
 
-export default PerformanceMonitor;
-export type { PerformanceMetrics, PerformanceCallback };
+// Export singleton instance
+export const performanceMonitor = new PerformanceMonitor();
+
+/**
+ * React Hook for performance monitoring
+ */
+export const usePerformanceMonitor = () => {
+  const startInteraction = (name: string) => {
+    performanceMonitor.startInteraction(name);
+  };
+  const endInteraction = (name: string) => {
+    return performanceMonitor.endInteraction(name);
+  };
+  const measureInteraction = <T>(name: string, fn: () => Promise<T> | T) => 
+    performanceMonitor.measureInteraction(name, fn);
+  const getCurrentFPS = () => performanceMonitor.getCurrentFPS();
+  const getPerformanceSummary = () => performanceMonitor.getPerformanceSummary();
+
+  return {
+    startInteraction,
+    endInteraction,
+    measureInteraction,
+    getCurrentFPS,
+    getPerformanceSummary,
+  };
+};
+
+/**
+ * Performance monitoring decorator for class methods
+ */
+export const withPerformanceMonitoring = (_name: string) => {
+  return (target: Record<string, unknown>, propertyKey: string, descriptor: PropertyDescriptor) => {
+    const originalMethod = descriptor.value as (...args: unknown[]) => unknown;
+
+    descriptor.value = async function (...args: unknown[]): Promise<unknown> {
+      return performanceMonitor.measureInteraction(
+        `${target.constructor.name}.${propertyKey}`,
+        () => originalMethod.apply(this, args)
+      );
+    };
+
+    return descriptor;
+  };
+};
+
+/**
+ * Performance monitoring HOC for React components
+ */
+export const withComponentPerformanceMonitoring = <P extends object>(
+  Component: React.ComponentType<P>,
+  componentName?: string
+): React.FC<P> => {
+  const WrappedComponent: React.FC<P> = (props) => {
+    const name = componentName ?? Component.displayName ?? Component.name;
+    
+    React.useEffect(() => {
+      performanceMonitor.startInteraction(`${name}.mount`);
+      
+      return () => {
+        performanceMonitor.endInteraction(`${name}.mount`);
+      };
+    }, [name]);
+
+    return React.createElement(Component, props);
+  };
+
+  WrappedComponent.displayName = `withPerformanceMonitoring(${Component.displayName !== undefined && Component.displayName !== '' ? Component.displayName : Component.name})`;
+  
+  return WrappedComponent;
+};
+
+export default performanceMonitor;

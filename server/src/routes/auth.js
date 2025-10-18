@@ -34,7 +34,7 @@ const authLimiter = rateLimit({
   message: 'Too many authentication attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.NODE_ENV === 'test' // Skip in test environment
+  skip: () => process.env.NODE_ENV === 'test' // Skip in test environment
 });
 
 const passwordResetLimiter = rateLimit({

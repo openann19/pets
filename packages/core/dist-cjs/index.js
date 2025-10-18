@@ -19,10 +19,16 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports._VERSION = exports.errorHandler = exports.AccountService = exports.useAnimationConfig = exports.animationConfig = void 0;
+exports._VERSION = exports.errorHandler = exports.AccountService = exports.useAnimationConfig = exports.animationConfig = exports.SETTINGS = exports.HAPTIC_SETTINGS = exports.HAPTICS = void 0;
 // Export all types
 __exportStar(require("./schemas"), exports);
 __exportStar(require("./types"), exports);
+__exportStar(require("./types/haptics"), exports);
+// Export constants
+var constants_1 = require("./constants");
+Object.defineProperty(exports, "HAPTICS", { enumerable: true, get: function () { return constants_1.HAPTICS; } });
+Object.defineProperty(exports, "HAPTIC_SETTINGS", { enumerable: true, get: function () { return constants_1.HAPTIC_SETTINGS; } });
+Object.defineProperty(exports, "SETTINGS", { enumerable: true, get: function () { return constants_1.SETTINGS; } });
 // Export animation configuration
 var animationConfig_1 = require("./services/animationConfig");
 Object.defineProperty(exports, "animationConfig", { enumerable: true, get: function () { return animationConfig_1.animationConfig; } });

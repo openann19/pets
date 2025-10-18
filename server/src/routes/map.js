@@ -2,7 +2,6 @@ const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
 const Pet = require('../models/Pet');
 const Match = require('../models/Match');
-const User = require('../models/User');
 
 const router = express.Router();
 
@@ -67,17 +66,12 @@ router.post('/nearby', authenticateToken, async (req, res) => {
       });
     }
 
-    // Calculate bounding box for MongoDB geospatial query
-    const earthRadius = 6371000; // Earth's radius in meters
-    const latRange = radius / earthRadius * (180 / Math.PI);
-    const lngRange = radius / earthRadius * (180 / Math.PI) / Math.cos(latitude * Math.PI / 180);
-
     const pets = await Pet.find({
       'location.coordinates': {
         $geoWithin: {
           $centerSphere: [
             [longitude, latitude],
-            radius / earthRadius
+            radius / 6371000
           ]
         }
       }

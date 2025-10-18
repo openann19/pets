@@ -100,7 +100,7 @@ export function formatDisplayName(user: User): string {
 export function formatPetAge(age: number): string {
   if (age < 1) return 'Puppy/Kitten';
   if (age === 1) return '1 year old';
-  return `${age} years old`;
+  return `${String(age)} years old`;
 }
 
 // Validate email format
@@ -126,9 +126,9 @@ export function formatRelativeTime(date: string): string {
   const diffInSeconds = Math.floor((now.getTime() - messageDate.getTime()) / 1000);
 
   if (diffInSeconds < 60) return 'Just now';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  if (diffInSeconds < 3600) return `${String(Math.floor(diffInSeconds / 60))}m ago`;
+  if (diffInSeconds < 86400) return `${String(Math.floor(diffInSeconds / 3600))}h ago`;
+  if (diffInSeconds < 604800) return `${String(Math.floor(diffInSeconds / 86400))}d ago`;
 
   return messageDate.toLocaleDateString();
 }

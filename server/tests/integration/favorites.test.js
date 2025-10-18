@@ -221,7 +221,7 @@ describe('DELETE /api/favorites/:petId', () => {
         });
 
         // Try to delete using testUser's token
-        const response = await request(app)
+        await request(app)
             .delete(`/api/favorites/${testPet._id}`)
             .set('Authorization', `Bearer ${authToken}`)
             .expect(404);

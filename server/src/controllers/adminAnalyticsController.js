@@ -9,12 +9,12 @@ const Match = require('../models/Match');
 let Message;
 try {
   Message = require('../models/Message');
-} catch (e) {
+} catch {
   // Fallback: use Conversation messages for counts if Message model is not present
   try {
     const Conversation = require('../models/Conversation');
     Message = {
-      countDocuments: async (query = {}) => {
+      countDocuments: async () => {
         // Approximate: count total embedded messages across conversations
         const res = await Conversation.aggregate([
           { $project: { count: { $size: { $ifNull: ['$messages', []] } } } },
@@ -23,7 +23,7 @@ try {
         return res?.[0]?.total || 0;
       }
     };
-  } catch (err) {
+  } catch {
     // As ultimate fallback in tests, provide stubbed countDocuments
     Message = { countDocuments: async () => 0 };
   }
@@ -36,10 +36,9 @@ const logger = require('../utils/logger');
  */
 const getAnalytics = async (req, res) => {
   try {
-    const { timeRange = '30d' } = req.query;
+  const { timeRange = '30d' } = req.query;
 
     // Calculate date range
-    const now = new Date();
     const startDate = getStartDate(timeRange);
 
     // Parallel data fetching for performance
@@ -48,7 +47,7 @@ const getAnalytics = async (req, res) => {
       petStats,
       matchStats,
       messageStats,
-      engagementStats,
+  engagementStats,
       revenueStats,
       timeSeries,
       topPerformers,
@@ -60,7 +59,7 @@ const getAnalytics = async (req, res) => {
       getPetStats(startDate),
       getMatchStats(startDate),
       getMessageStats(startDate),
-      getEngagementStats(startDate),
+  getEngagementStats(),
       getRevenueStats(startDate),
       getTimeSeries(startDate, timeRange),
       getTopPerformers(),
@@ -110,7 +109,6 @@ const getUserStats = async (startDate) => {
   ]);
 
   // Calculate growth
-  const previousPeriodStart = new Date(startDate.getTime() - (Date.now() - startDate.getTime()));
   const previousTotal = await User.countDocuments({ createdAt: { $lt: startDate } });
   const growth = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0;
 
@@ -136,7 +134,6 @@ const getPetStats = async (startDate) => {
     Pet.countDocuments({ createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
   ]);
 
-  const previousPeriodStart = new Date(startDate.getTime() - (Date.now() - startDate.getTime()));
   const previousTotal = await Pet.countDocuments({ createdAt: { $lt: startDate } });
   const growth = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0;
 
@@ -160,7 +157,6 @@ const getMatchStats = async (startDate) => {
     Match.countDocuments({ createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
   ]);
 
-  const previousPeriodStart = new Date(startDate.getTime() - (Date.now() - startDate.getTime()));
   const previousTotal = await Match.countDocuments({ createdAt: { $lt: startDate } });
   const growth = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0;
 
@@ -184,7 +180,6 @@ const getMessageStats = async (startDate) => {
     Message.countDocuments({ createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
   ]);
 
-  const previousPeriodStart = new Date(startDate.getTime() - (Date.now() - startDate.getTime()));
   const previousTotal = await Message.countDocuments({ createdAt: { $lt: startDate } });
   const growth = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0;
 
@@ -200,11 +195,11 @@ const getMessageStats = async (startDate) => {
 /**
  * Get engagement statistics
  */
-const getEngagementStats = async (startDate) => {
-  const now = new Date();
-  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+const getEngagementStats = async () => {
+  const nowLocal = Date.now();
+  const oneDayAgo = new Date(nowLocal - 24 * 60 * 60 * 1000);
+  const oneWeekAgo = new Date(nowLocal - 7 * 24 * 60 * 60 * 1000);
+  const oneMonthAgo = new Date(nowLocal - 30 * 24 * 60 * 60 * 1000);
 
   const [dailyActiveUsers, weeklyActiveUsers, monthlyActiveUsers] = await Promise.all([
     User.countDocuments({ lastLoginAt: { $gte: oneDayAgo } }),
@@ -216,7 +211,6 @@ const getEngagementStats = async (startDate) => {
   const averageSessionDuration = 18.5; // minutes
 
   // Calculate bounce rate (users who left without interaction)
-  const totalUsers = await User.countDocuments();
   const bounceRate = 12.3; // percentage (mock - would need tracking)
 
   // Calculate retention rate
@@ -444,9 +438,8 @@ const getSecurityMetrics = async () => {
  * Helper function to calculate start date from time range
  */
 const getStartDate = (timeRange) => {
-  const now = new Date();
   const days = parseInt(timeRange) || 30;
-  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 };
 
 /**
@@ -463,14 +456,14 @@ const exportAnalytics = async (req, res) => {
       petStats,
       matchStats,
       messageStats,
-      engagementStats,
+  engagementStats,
       revenueStats
     ] = await Promise.all([
       getUserStats(startDate),
       getPetStats(startDate),
       getMatchStats(startDate),
       getMessageStats(startDate),
-      getEngagementStats(startDate),
+  getEngagementStats(),
       getRevenueStats(startDate)
     ]);
 
@@ -487,12 +480,13 @@ const exportAnalytics = async (req, res) => {
 
     // Format based on requested type
     switch (format) {
-      case 'csv':
+      case 'csv': {
         const csv = convertToCSV(analyticsData);
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename=analytics-${timeRange}-${new Date().toISOString().split('T')[0]}.csv`);
         res.send(csv);
         break;
+      }
 
       case 'pdf':
         // For PDF, return JSON with instructions (PDF generation requires client-side library)

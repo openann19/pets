@@ -4,6 +4,8 @@
  */
 import { AccessibilityInfo, Platform } from 'react-native';
 
+import { logger } from './logger';
+
 interface AccessibilityConfig {
   isScreenReaderEnabled: boolean;
   isBoldTextEnabled: boolean;
@@ -15,7 +17,7 @@ interface AccessibilityConfig {
 }
 
 class AccessibilityService {
-  private static instance: AccessibilityService;
+  private static instance: AccessibilityService | undefined;
   private config: AccessibilityConfig = {
     isScreenReaderEnabled: false,
     isBoldTextEnabled: false,
@@ -27,11 +29,11 @@ class AccessibilityService {
   };
 
   private constructor() {
-    this.initializeAccessibility();
+    void this.initializeAccessibility();
   }
 
   static getInstance(): AccessibilityService {
-    if (!AccessibilityService.instance) {
+    if (AccessibilityService.instance === undefined) {
       AccessibilityService.instance = new AccessibilityService();
     }
     return AccessibilityService.instance;
@@ -52,11 +54,11 @@ class AccessibilityService {
         reduceTransparencyEnabled,
       ] = await Promise.all([
         AccessibilityInfo.isScreenReaderEnabled(),
-        AccessibilityInfo.isBoldTextEnabled?.() ?? false,
-        AccessibilityInfo.isGrayscaleEnabled?.() ?? false,
-        AccessibilityInfo.isInvertColorsEnabled?.() ?? false,
+        AccessibilityInfo.isBoldTextEnabled(),
+        AccessibilityInfo.isGrayscaleEnabled(),
+        AccessibilityInfo.isInvertColorsEnabled(),
         AccessibilityInfo.isReduceMotionEnabled(),
-        AccessibilityInfo.isReduceTransparencyEnabled?.() ?? false,
+        AccessibilityInfo.isReduceTransparencyEnabled(),
       ]);
 
       this.config = {
@@ -72,7 +74,7 @@ class AccessibilityService {
       // Set up change listeners
       this.setupAccessibilityListeners();
     } catch (error) {
-      console.warn('Failed to initialize accessibility:', error);
+      logger.warn('Failed to initialize accessibility', { error });
     }
   }
 
@@ -156,18 +158,18 @@ class AccessibilityService {
   /**
    * Announce content to screen readers
    */
-  async announceForAccessibility(message: string): Promise<void> {
+  announceForAccessibility(message: string): void {
     try {
       AccessibilityInfo.announceForAccessibility(message);
     } catch (error) {
-      console.warn('Failed to announce for accessibility:', error);
+      logger.warn('Failed to announce for accessibility', { error });
     }
   }
 
   /**
    * Set accessibility focus
    */
-  async setAccessibilityFocus(ref: any): Promise<void> {
+  setAccessibilityFocus(ref: unknown): void {
     try {
       if (Platform.OS === 'ios') {
         // iOS specific focus
@@ -177,7 +179,7 @@ class AccessibilityService {
         // Would need additional implementation
       }
     } catch (error) {
-      console.warn('Failed to set accessibility focus:', error);
+      logger.warn('Failed to set accessibility focus', { error });
     }
   }
 
@@ -201,7 +203,7 @@ class AccessibilityService {
       'accessibilityExtraExtraExtraLarge': 2.0,
     };
 
-    return multipliers[this.config.preferredContentSizeCategory] || 1.0;
+    return multipliers[this.config.preferredContentSizeCategory] ?? 1.0;
   }
 
   /**
@@ -283,7 +285,7 @@ class AccessibilityService {
       try {
         listener(config);
       } catch (error) {
-        console.warn('Error notifying accessibility listener:', error);
+        logger.warn('Error notifying accessibility listener', { error });
       }
     });
   }

@@ -1,67 +1,23 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.base.json",
+  "display": "Pawfect Match - Monorepo Root",
   "compilerOptions": {
-    // === Language & Environment ===
-    "target": "ES2022",
-    "lib": [
-      "ES2023",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
+    // Monorepo-wide module resolution and paths
     "baseUrl": ".",
     "paths": {
-      "@pawfectmatch/ui/*": [
-        "packages/ui/src/"
-      ],
-      "@pawfectmatch/core": [
-        "packages/core/dist/index.d.ts",
-        "packages/core/dist/index.js"
-      ],
-      "@pawfectmatch/core/*": [
-        "packages/core/dist/*"
-      ]
+      "@pawfectmatch/ui": ["packages/ui/src/index.ts"],
+      "@pawfectmatch/ui/*": ["packages/ui/src/*"],
+      "@pawfectmatch/core": ["packages/core/dist/index.d.ts"],
+      "@pawfectmatch/core/*": ["packages/core/dist/*"]
     },
-    // === Module Resolution ===
-    "allowImportingTsExtensions": false,
-    "resolveJsonModule": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    // === Emit ===
-    "noEmit": true,
-    "incremental": true,
-    // === Type Checking - STRICTEST 2025 SETTINGS ===
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    // === Strict Mode Flags (enabled by strict: true, but explicit for clarity) ===
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    // "strictPropertyInitialization": true, // Removed to prevent inheritance error
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    // === Code Quality ===
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    // === Performance ===
-    "skipLibCheck": true,
-    // === Other ===
-    "types": []
+    // React JSX defaults for TS tooling
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    // Root should not emit
+    "noEmit": true
   },
+  "include": ["**/*.ts", "**/*.tsx"],
   "exclude": [
     "node_modules",
     ".github",

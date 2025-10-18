@@ -81,7 +81,7 @@ class BiometricService {
       }
 
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: reason || 'Authenticate to access PawfectMatch',
+        promptMessage: reason !== undefined && reason !== '' ? reason : 'Authenticate to access PawfectMatch',
         fallbackLabel: 'Use PIN',
         cancelLabel: 'Cancel',
         disableDeviceFallback: false,
@@ -96,7 +96,7 @@ class BiometricService {
           biometricType,
         };
       } else {
-        const error = result.error || 'Authentication failed';
+        const error = result.error !== '' ? result.error : 'Authentication failed';
         logger.warn('Biometric authentication failed', { error, biometricType });
         return {
           success: false,
@@ -129,7 +129,7 @@ class BiometricService {
       await SecureStore.setItemAsync(BiometricService.BIOMETRIC_ENABLED_KEY, 'true');
       await SecureStore.setItemAsync(
         BiometricService.BIOMETRIC_TYPE_KEY,
-        authResult.biometricType || 'unknown'
+        authResult.biometricType !== undefined ? authResult.biometricType : 'unknown'
       );
 
       logger.info('Biometric authentication enabled', { type: authResult.biometricType });
@@ -203,7 +203,7 @@ class BiometricService {
    * Note: This is a placeholder - actual implementation would require
    * platform-specific keychain/keystore integration
    */
-  async encryptWithBiometric(data: string): Promise<string> {
+  encryptWithBiometric(data: string): string {
     // This would require native module implementation
     // For now, return the data as-is with a warning
     logger.warn('Biometric encryption not implemented - using fallback');

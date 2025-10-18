@@ -1,4 +1,9 @@
 import { useEffect, useRef, useCallback } from 'react';
+import {
+  addEventListenerSafely,
+  getDocumentElement,
+  removeEventListenerSafely,
+} from '../utils/environment';
 
 interface Position {
   x: number;
@@ -19,7 +24,7 @@ export function useGesture(
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (e.touches.length > 0) {
       const touch = e.touches[0];
-      if (touch) {
+      if (touch != null) {
         startPos.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
         currentPos.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
         lastPos.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
@@ -30,7 +35,7 @@ export function useGesture(
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (e.touches.length > 0) {
       const touch = e.touches[0];
-      if (touch) {
+      if (touch != null) {
         lastPos.current = currentPos.current;
         currentPos.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
       }
@@ -54,32 +59,35 @@ export function useGesture(
     // Determine primary direction
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       // Horizontal swipe
-      if (deltaX > 0 && onSwipeRight) {
+      if (deltaX > 0 && onSwipeRight != null) {
         onSwipeRight();
-      } else if (deltaX < 0 && onSwipeLeft) {
+      } else if (deltaX < 0 && onSwipeLeft != null) {
         onSwipeLeft();
       }
     } else {
       // Vertical swipe
-      if (deltaY > 0 && onSwipeDown) {
+      if (deltaY > 0 && onSwipeDown != null) {
         onSwipeDown();
-      } else if (deltaY < 0 && onSwipeUp) {
+      } else if (deltaY < 0 && onSwipeUp != null) {
         onSwipeUp();
       }
     }
   }, [onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown]);
 
   useEffect(() => {
-    const element = document.documentElement;
-    
-    element.addEventListener('touchstart', handleTouchStart as EventListener);
-    element.addEventListener('touchmove', handleTouchMove as EventListener);
-    element.addEventListener('touchend', handleTouchEnd as EventListener);
-    
+    const element = getDocumentElement();
+    if (element == null) {
+      return undefined;
+    }
+
+    addEventListenerSafely(element, 'touchstart', handleTouchStart as EventListener);
+    addEventListenerSafely(element, 'touchmove', handleTouchMove as EventListener);
+    addEventListenerSafely(element, 'touchend', handleTouchEnd as EventListener);
+
     return () => {
-      element.removeEventListener('touchstart', handleTouchStart as EventListener);
-      element.removeEventListener('touchmove', handleTouchMove as EventListener);
-      element.removeEventListener('touchend', handleTouchEnd as EventListener);
+      removeEventListenerSafely(element, 'touchstart', handleTouchStart as EventListener);
+      removeEventListenerSafely(element, 'touchmove', handleTouchMove as EventListener);
+      removeEventListenerSafely(element, 'touchend', handleTouchEnd as EventListener);
     };
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 

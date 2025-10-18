@@ -10,7 +10,10 @@ module.exports = {
       ],
       setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
       moduleNameMapper: {
-        '^@pawfectmatch/(.*)$': '<rootDir>/../$1/src/index.ts'
+        '^@pawfectmatch/core$': '<rootDir>/../core/src/index.ts',
+        '^@pawfectmatch/core/(.*)$': '<rootDir>/../core/src/$1',
+        '^@pawfectmatch/ui$': '<rootDir>/src/index.ts',
+        '^@pawfectmatch/ui/(.*)$': '<rootDir>/src/$1'
       },
       collectCoverageFrom: [
         'src/**/*.{ts,tsx}',
@@ -23,10 +26,10 @@ module.exports = {
       coverageReporters: ['lcov', 'text', 'html'],
       coverageThreshold: {
         global: {
-          branches: 80,
-          functions: 80,
-          lines: 80,
-          statements: 80
+          branches: 85,
+          functions: 85,
+          lines: 85,
+          statements: 85
         }
       }
     },
@@ -38,13 +41,25 @@ module.exports = {
         '**/__tests__/**/*.test.(ts|tsx)',
         '**/*.(test|spec).(ts|tsx)'
       ],
+      moduleNameMapper: {
+        '^@pawfectmatch/core$': '<rootDir>/src/index.ts',
+        '^@pawfectmatch/core/(.*)$': '<rootDir>/src/$1'
+      },
       collectCoverageFrom: [
         'src/**/*.{ts,tsx}',
         '!src/**/*.d.ts',
         '!src/**/index.ts',
         '!src/**/types/**'
       ],
-      coverageDirectory: 'coverage'
+      coverageDirectory: 'coverage',
+      coverageThreshold: {
+        global: {
+          branches: 85,
+          functions: 85,
+          lines: 85,
+          statements: 85
+        }
+      }
     },
     {
       displayName: 'web-app',
@@ -57,7 +72,26 @@ module.exports = {
       setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
-        '^@pawfectmatch/(.*)$': '<rootDir>/../../packages/$1/src/index.ts'
+        '^@pawfectmatch/ui$': '<rootDir>/../../packages/ui/src/index.ts',
+        '^@pawfectmatch/ui/(.*)$': '<rootDir>/../../packages/ui/src/$1',
+        '^@pawfectmatch/core$': '<rootDir>/../../packages/core/src/index.ts',
+        '^@pawfectmatch/core/(.*)$': '<rootDir>/../../packages/core/src/$1'
+      },
+      coverageDirectory: 'coverage',
+      collectCoverageFrom: [
+        'src/**/*.{ts,tsx,js,jsx}',
+        '!**/__tests__/**',
+        '!**/*.d.ts',
+        '!**/*.stories.*',
+        '!**/test-utils/**'
+      ],
+      coverageThreshold: {
+        global: {
+          branches: 85,
+          functions: 85,
+          lines: 85,
+          statements: 85
+        }
       }
     },
     {
@@ -68,7 +102,28 @@ module.exports = {
         '**/__tests__/**/*.test.(ts|tsx)',
         '**/*.(test|spec).(ts|tsx)'
       ],
-      preset: 'jest-expo'
+      preset: 'jest-expo',
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/src/$1',
+        '^@pawfectmatch/core$': '<rootDir>/../../packages/core/src',
+        '^@pawfectmatch/core/(.*)$': '<rootDir>/../../packages/core/src/$1'
+      },
+      coverageDirectory: 'coverage',
+      collectCoverageFrom: [
+        'src/**/*.{ts,tsx,js,jsx}',
+        '!src/**/*.d.ts',
+        '!src/**/__tests__/**',
+        '!src/**/*.stories.{ts,tsx}',
+        '!src/test-utils/**'
+      ],
+      coverageThreshold: {
+        global: {
+          branches: 85,
+          functions: 85,
+          lines: 85,
+          statements: 85
+        }
+      }
     }
   ]
 };

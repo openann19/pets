@@ -113,13 +113,8 @@ jobs:
             ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
 
-      - name: Run ESLint
-        run: |
-          pnpm run lint --max-warnings=0
-          if [ $? -ne 0 ]; then
-            echo "::error::ESLint found errors or warnings"
-            exit 1
-          fi
+      - name: Run ESLint (zero warnings)
+        run: pnpm lint -- --max-warnings 0
 
   # Job 4: Prettier Formatting Check
   format:

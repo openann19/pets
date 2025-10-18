@@ -111,20 +111,20 @@ export class PetMatchingService {
   /**
    * Analyze pet photos using AI vision
    */
-  public async analyzePetPhotos(photos: string[]): Promise<unknown[]> {
-    if (!this.config.enablePhotoAnalysis) {
+  public async analyzePetPhotos(photos: string[]): Promise<Array<Record<string, unknown>>> {
+    if (this.config.enablePhotoAnalysis === false) {
       return [];
     }
 
-    const analyses = [];
+  const analyses: Array<Record<string, unknown>> = [];
 
     for (const photo of photos) {
       try {
-        const response = await this.deepSeekService.analyzePetPhoto(photo);
-        const analysis = this.parsePhotoAnalysisResponse(response);
-        analyses.push(analysis);
-      } catch (error) {
-        logger.error('Photo analysis failed', { error, photo });
+    const response = await this.deepSeekService.analyzePetPhoto(photo);
+    const analysis = this.parsePhotoAnalysisResponse(response);
+    analyses.push(typeof analysis === 'object' && analysis !== null ? analysis as Record<string, unknown> : {});
+      } catch (_error) {
+        logger.error('Photo analysis failed', { photo });
         // Continue with other photos
       }
     }
@@ -132,13 +132,11 @@ export class PetMatchingService {
     return analyses;
   }
 
-  /**
-   * Generate AI-powered pet bio
-   */
   public async generatePetBio(pet: PetProfile): Promise<string> {
     try {
       const response = await this.deepSeekService.generatePetBio(pet);
-      return response.choices[0]?.message?.content || '';
+      const content = response.choices[0]?.message?.content;
+      return content ?? '';
     } catch (error) {
       logger.error('Bio generation failed', { error, petId: pet._id });
       return this.generateFallbackBio(pet);
@@ -151,16 +149,17 @@ export class PetMatchingService {
   public async analyzeBehavior(
     behaviorData: unknown,
     context: string
-  ): Promise<any> {
-    if (!this.config.enableBehaviorAnalysis) {
+  ): Promise<Record<string, unknown> | null> {
+    if (this.config.enableBehaviorAnalysis === false) {
       return null;
     }
 
     try {
-      const response = await this.deepSeekService.analyzeBehavior(behaviorData, context);
-      return this.parseBehaviorAnalysisResponse(response);
-    } catch (error) {
-      logger.error('Behavior analysis failed', { error, context });
+    const response = await this.deepSeekService.analyzeBehavior(behaviorData, context);
+    const parsed = this.parseBehaviorAnalysisResponse(response);
+    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : null;
+    } catch (_error) {
+      logger.error('Behavior analysis failed', { context });
       return null;
     }
   }
@@ -170,15 +169,23 @@ export class PetMatchingService {
    */
   private parseCompatibilityResponse(response: DeepSeekResponse): CompatibilityShape {
     try {
-      const content = response.choices?.[0]?.message?.content;
-      if (!content) {
+      if (response.choices.length === 0) {
+        throw new Error('No choices in AI response');
+      }
+      const choice = response.choices[0] as NonNullable<typeof response.choices[number]>;
+      if (choice.message === undefined) {
         throw new Error('No content in AI response');
+      }
+      const content = choice.message.content;
+      if (content === '') {
+        throw new Error('Empty content in AI response');
       }
 
       // Try to parse JSON from AI response
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+      if (jsonMatch !== null) {
+        const parsed = JSON.parse(jsonMatch[0]) as Partial<CompatibilityShape>;
+        return this.normalizeCompatibilityShape(parsed);
       }
 
       // Fallback parsing
@@ -189,19 +196,23 @@ export class PetMatchingService {
     }
   }
 
-  /**
-   * Parse AI photo analysis response
-   */
   private parsePhotoAnalysisResponse(response: DeepSeekResponse): unknown {
     try {
-      const content = response.choices?.[0]?.message?.content;
-      if (!content) {
+      if (response.choices.length === 0) {
+        throw new Error('No choices in AI response');
+      }
+      const choice = response.choices[0] as NonNullable<typeof response.choices[number]>;
+      if (choice.message === undefined || choice.message.content === '') {
+        throw new Error('Invalid AI response structure');
+      }
+      const content = choice.message.content;
+      if (content === '') {
         throw new Error('No content in AI response');
       }
 
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+      if (jsonMatch !== null) {
+        return JSON.parse(jsonMatch[0]) as unknown;
       }
 
       return this.parseTextPhotoAnalysis(content);
@@ -211,19 +222,23 @@ export class PetMatchingService {
     }
   }
 
-  /**
-   * Parse AI behavior analysis response
-   */
   private parseBehaviorAnalysisResponse(response: DeepSeekResponse): unknown {
     try {
-      const content = response.choices?.[0]?.message?.content;
-      if (!content) {
+      if (response.choices.length === 0) {
+        throw new Error('No choices in AI response');
+      }
+      const choice = response.choices[0] as NonNullable<typeof response.choices[number]>;
+      if (choice.message === undefined || choice.message.content === '') {
+        throw new Error('Invalid AI response structure');
+      }
+      const content = choice.message.content;
+      if (content === '') {
         throw new Error('No content in AI response');
       }
 
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+      if (jsonMatch !== null) {
+        return JSON.parse(jsonMatch[0]) as unknown;
       }
 
       return this.parseTextBehaviorAnalysis(content);
@@ -233,13 +248,10 @@ export class PetMatchingService {
     }
   }
 
-  /**
-   * Parse text-based AI response
-   */
   private parseTextResponse(_content: string): CompatibilityShape {
     // Extract scores and information from text response
-    const scoreMatch = _content.match(/(\d+)\s*%/);
-    const score = scoreMatch?.[1] ? parseInt(scoreMatch[1], 10) : 50;
+  const scoreMatch = _content.match(/(\d+)\s*%/);
+  const score = scoreMatch !== null && scoreMatch[1] !== undefined ? parseInt(scoreMatch[1], 10) : 50;
 
     return {
       compatibilityScore: score,
@@ -328,28 +340,33 @@ export class PetMatchingService {
     const [minAge, maxAge] = userPreferences.ageRange;
     if (pet.age >= minAge && pet.age <= maxAge) {
       score += 15;
-      reasons.push(`Age within preferred range: ${pet.age} years old`);
+      reasons.push(`Age within preferred range: ${String(pet.age)} years old`);
     } else if (pet.age < minAge) {
       score += 5;
-      concerns.push(`Pet is younger than preferred: ${pet.age} < ${minAge}`);
+      concerns.push(`Pet is younger than preferred: ${String(pet.age)} < ${String(minAge)}`);
       recommendations.push('Consider if you can handle a younger pet');
     } else {
       score += 5;
-      concerns.push(`Pet is older than preferred: ${pet.age} > ${maxAge}`);
+      concerns.push(`Pet is older than preferred: ${String(pet.age)} > ${String(maxAge)}`);
       recommendations.push('Older pets can be great companions with established personalities');
     }
 
     // Location compatibility (10 points)
-    if ((pet as any).location && (userPreferences as any).location) {
+    const petLocation = (pet as unknown as { location?: unknown }).location;
+    const userLocation = (userPreferences as unknown as { location?: unknown }).location;
+    const hasLocation =
+      petLocation !== undefined && petLocation !== null &&
+      userLocation !== undefined && userLocation !== null;
+    if (hasLocation) {
       // Simple distance calculation (would be more sophisticated in real implementation)
       score += 10;
       reasons.push('Location compatibility available');
     }
 
     // Personality tags compatibility (10 points)
-    if ((pet as any).personalityTags && (userPreferences as any).personalityPreferences) {
-      const matchingTags = (pet as any).personalityTags.filter((tag: string) => 
-        (userPreferences as any).personalityPreferences.includes(tag)
+    if (pet.temperament.length > 0 && userPreferences.temperamentPreferences.length > 0) {
+      const matchingTags = pet.temperament.filter((tag: string) => 
+        userPreferences.temperamentPreferences.includes(tag)
       );
       if (matchingTags.length > 0) {
         score += Math.min(10, matchingTags.length * 3);
@@ -358,21 +375,19 @@ export class PetMatchingService {
     }
 
     // Special needs consideration (5 points)
-    if (pet.specialNeeds && pet.specialNeeds.length > 0) {
+    if (Array.isArray(pet.specialNeeds) && pet.specialNeeds.length > 0) {
       score += 5;
       concerns.push(`Special needs: ${pet.specialNeeds.join(', ')}`);
       recommendations.push('Ensure you can provide the necessary care for special needs');
     }
 
     // Activity level compatibility (5 points)
-    if ((pet as any).activityLevel && (userPreferences as any).activityLevel) {
-      const activityMatch = Math.abs((pet as any).activityLevel - (userPreferences as any).activityLevel) <= 1;
-      if (activityMatch) {
-        score += 5;
-        reasons.push('Compatible activity levels');
-      } else {
-        concerns.push('Activity level mismatch - consider lifestyle compatibility');
-      }
+    const [minActivity, maxActivity] = userPreferences.activityLevelRange;
+    if (pet.activityLevel >= minActivity && pet.activityLevel <= maxActivity) {
+      score += 5;
+      reasons.push('Compatible activity levels');
+    } else {
+      concerns.push('Activity level mismatch - consider lifestyle compatibility');
     }
 
     // Generate intelligent recommendations
@@ -393,11 +408,11 @@ export class PetMatchingService {
         species: speciesMatch ? 100 : 0,
         breed: breedMatch ? 100 : (userPreferences.breedPreferences.length > 0 ? 25 : 75),
         age: (pet.age >= minAge && pet.age <= maxAge) ? 100 : 50,
-        temperament: (pet as any).personalityTags ? 75 : 50,
-        activity: (pet as any).activityLevel ? 75 : 50,
-        location: (pet as any).location ? 80 : 50,
+        temperament: Array.isArray(pet.temperament) ? 75 : 50,
+        activity: (pet.activityLevel >= minActivity && pet.activityLevel <= maxActivity) ? 100 : 50,
+        location: hasLocation ? 80 : 50,
         lifestyle: 60,
-        specialNeeds: pet.specialNeeds && pet.specialNeeds.length > 0 ? 30 : 80,
+        specialNeeds: Array.isArray(pet.specialNeeds) && pet.specialNeeds.length > 0 ? 30 : 80,
       },
       reasons,
       concerns,
@@ -405,11 +420,36 @@ export class PetMatchingService {
     };
   }
 
+  // Normalize possibly partial structures from AI into CompatibilityShape
+  private normalizeCompatibilityShape(input: Partial<CompatibilityShape>): CompatibilityShape {
+    const clamp = (n: number, min: number, max: number): number => Math.max(min, Math.min(max, n));
+    const asScore = (n: unknown, fallback = 50): number => (typeof n === 'number' && Number.isFinite(n) ? clamp(n, 0, 100) : fallback);
+
+    const score = asScore((input as { compatibilityScore?: unknown }).compatibilityScore, 50);
+    const bd = input.breakdown as Partial<CompatibilityShape['breakdown']> | undefined;
+    return {
+      compatibilityScore: score,
+      breakdown: {
+        species: asScore(bd?.species, score),
+        breed: asScore(bd?.breed, score),
+        age: asScore(bd?.age, score),
+        temperament: asScore(bd?.temperament, score),
+        activity: asScore(bd?.activity, score),
+        location: asScore(bd?.location, score),
+        lifestyle: asScore(bd?.lifestyle, score),
+        specialNeeds: asScore(bd?.specialNeeds, 0),
+      },
+      reasons: Array.isArray(input.reasons) ? input.reasons.filter((r): r is string => typeof r === 'string') : ['AI analysis completed'],
+      concerns: Array.isArray(input.concerns) ? input.concerns.filter((r): r is string => typeof r === 'string') : [],
+      recommendations: Array.isArray(input.recommendations) ? input.recommendations.filter((r): r is string => typeof r === 'string') : ['Consider AI insights'],
+    };
+  }
+
   /**
    * Generate fallback bio
    */
   private generateFallbackBio(pet: PetProfile): string {
-    return `${pet.name} is a ${pet.age}-year-old ${pet.breed} looking for a loving home. This ${pet.species} has a wonderful personality and would make a great companion.`;
+    return `${pet.name} is a ${String(pet.age)}-year-old ${pet.breed} looking for a loving home. This ${pet.species} has a wonderful personality and would make a great companion.`;
   }
 
   /**
@@ -460,12 +500,12 @@ export class PetMatchingService {
   /**
    * Get service status
    */
-  public getStatus(): unknown {
+  public getStatus(): Record<string, boolean> {
     return {
       deepSeekConnected: true,
-      photoAnalysisEnabled: this.config.enablePhotoAnalysis,
-      behaviorAnalysisEnabled: this.config.enableBehaviorAnalysis,
-      compatibilityScoringEnabled: this.config.enableCompatibilityScoring,
+      photoAnalysisEnabled: Boolean(this.config.enablePhotoAnalysis),
+      behaviorAnalysisEnabled: Boolean(this.config.enableBehaviorAnalysis),
+      compatibilityScoringEnabled: Boolean(this.config.enableCompatibilityScoring),
     };
   }
 }

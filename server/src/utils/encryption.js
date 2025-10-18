@@ -193,7 +193,7 @@ function isEncrypted(value) {
     // Check minimum length and version byte
     return data.length >= (2 + SALT_LENGTH + IV_LENGTH + TAG_LENGTH) && 
            data.readUInt8(0) === VERSION;
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -216,8 +216,8 @@ function getEncryptionInfo(encryptedData) {
       keyVersion: data.readUInt8(1),
       contentLength: data.length - (2 + SALT_LENGTH + IV_LENGTH + TAG_LENGTH)
     };
-  } catch (e) {
-    return { isEncrypted: false, error: e.message };
+  } catch {
+    return { isEncrypted: false };
   }
 }
 

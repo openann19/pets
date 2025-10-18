@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports._useAnalyticsStore = void 0;
 const zustand_1 = require("zustand");
-const hooks_1 = require("../api/hooks");
+const client_1 = require("../api/client");
 exports._useAnalyticsStore = (0, zustand_1.create)()((set, get) => ({
     userAnalytics: null,
     petAnalytics: {},
@@ -25,11 +25,12 @@ exports._useAnalyticsStore = (0, zustand_1.create)()((set, get) => ({
             set({ error: 'Failed to fetch user analytics', isLoading: false });
         }
     },
-    trackUserEvent: async (_eventType, _metadata) => {
+    trackUserEvent: async (eventType, metadata) => {
         try {
-            await (0, hooks_1.useTrackUserEvent)();
+            await client_1.apiClient.post('/analytics/user', { eventType, metadata });
             // Refresh user analytics after tracking event
-            get().fetchUserAnalytics();
+            const { fetchUserAnalytics } = get();
+            await fetchUserAnalytics();
         }
         catch {
             set({ error: 'Failed to track user event' });
@@ -57,11 +58,12 @@ exports._useAnalyticsStore = (0, zustand_1.create)()((set, get) => ({
             set({ error: `Failed to fetch pet analytics for ${petId}`, isLoading: false });
         }
     },
-    trackPetEvent: async (petId, _eventType, _metadata) => {
+    trackPetEvent: async (petId, eventType, metadata) => {
         try {
-            await (0, hooks_1.useTrackPetEvent)();
+            await client_1.apiClient.post('/analytics/pet', { petId, eventType, metadata });
             // Refresh pet analytics after tracking event
-            get().fetchPetAnalytics(petId);
+            const { fetchPetAnalytics } = get();
+            await fetchPetAnalytics(petId);
         }
         catch {
             set({ error: `Failed to track pet event for ${petId}` });
@@ -89,11 +91,12 @@ exports._useAnalyticsStore = (0, zustand_1.create)()((set, get) => ({
             set({ error: `Failed to fetch match analytics for ${matchId}`, isLoading: false });
         }
     },
-    trackMatchEvent: async (matchId, _eventType, _metadata) => {
+    trackMatchEvent: async (matchId, eventType, metadata) => {
         try {
-            await (0, hooks_1.useTrackMatchEvent)();
+            await client_1.apiClient.post('/analytics/match', { matchId, eventType, metadata });
             // Refresh match analytics after tracking event
-            get().fetchMatchAnalytics(matchId);
+            const { fetchMatchAnalytics } = get();
+            await fetchMatchAnalytics(matchId);
         }
         catch {
             set({ error: `Failed to track match event for ${matchId}` });

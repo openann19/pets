@@ -121,6 +121,7 @@ const moderationAdminRoutes = require('./src/routes/moderationAdmin');
 const communityRoutes = require('./src/routes/community'); // Import community routes
 const aiModerationRoutes = require('./src/routes/aiModeration');
 const aiModerationAdminRoutes = require('./src/routes/aiModerationAdmin');
+const adminModerationRoutes = require('./src/routes/adminModeration');
 const favoritesRoutes = require('./routes/favorites'); // Import favorites routes
 const storiesRoutes = require('./routes/stories');
 const conversationsRoutes = require('./src/routes/conversations');
@@ -522,6 +523,9 @@ app.use('/api/notifications', notificationRoutes);
 
 // Admin Enhanced Features Routes
 app.use('/api/admin/enhanced-features', adminEnhancedFeaturesRoutes);
+
+// Admin Moderation Routes
+app.use('/api/admin/moderation', authenticateToken, requireAdmin, adminModerationRoutes);
 
 // Webhooks - no auth required, verification handled within the route handlers
 app.use('/api/webhooks', webhookRoutes);

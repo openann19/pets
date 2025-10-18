@@ -181,7 +181,7 @@ const requireAdmin = (req, res, next) => {
 };
 
 // Refresh token middleware
-const refreshAccessToken = async (req, res, next) => {
+const refreshAccessToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
 
@@ -278,7 +278,7 @@ const optionalAuth = async (req, res, next) => {
     }
 
     next();
-  } catch (error) {
+  } catch {
     // Silently continue without authentication
     next();
   }

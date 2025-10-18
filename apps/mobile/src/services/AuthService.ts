@@ -616,7 +616,7 @@ class AuthService {
 
 // Custom error class for authentication errors
 export class AuthError extends Error {
-  constructor(message: string, public originalError?: any) {
+  constructor(message: string, public originalError?: unknown) {
     super(message);
     this.name = 'AuthError';
   }

@@ -10,6 +10,7 @@ describe('PetPhotoAnalysis', () => {
     const res: AnalysisResult = await analysis.analyzePhoto('BASE64');
 
     expect(res.success).toBe(false);
+    expect(res.error).toBeDefined();
     expect(res.error).toMatch(/not initialized/i);
   });
 

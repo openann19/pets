@@ -8,9 +8,8 @@ const isTestEnv = process.env.NODE_ENV === 'test';
 
 // Optional dependency: allow running without ioredis (e.g., in tests/CI)
 try {
-  // eslint-disable-next-line import/no-extraneous-dependencies, global-require
   Redis = require('ioredis');
-} catch (err) {
+} catch {
   Redis = null;
   if (!isTestEnv) logger.warn('ioredis not installed; Redis features will be disabled in this environment');
 }
@@ -58,8 +57,8 @@ function initRedis() {
       if (!isTestEnv) logger.info('Redis client ready');
     });
 
-    redisClient.on('error', (err) => {
-      logger.error('Redis client error', { error: err.message });
+    redisClient.on('error', (error) => {
+      logger.error('Redis client error', { error: error.message });
     });
 
     redisClient.on('close', () => {

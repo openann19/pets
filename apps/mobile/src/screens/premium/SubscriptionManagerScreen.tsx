@@ -52,7 +52,7 @@ const createCheckoutSession = async <T extends { url: string }>(
   }
 ): Promise<T> => {
   const response = await fetch(
-    `${process.env['EXPO_PUBLIC_API_BASE_URL']}/subscriptions/checkout-session`,
+    `${String(process.env['EXPO_PUBLIC_API_BASE_URL'])}/subscriptions/checkout-session`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -81,14 +81,14 @@ export const SubscriptionManagerScreen = () => {
       setIsLoading(true);
       setError(null);
       // Fetch current subscription using the core SDK
-      const subscriptionData = await subscriptionApi.getCurrentSubscription();
-      setSubscription(subscriptionData as Subscription | null);
+      const subscriptionData = await (subscriptionApi as { getCurrentSubscription: () => Promise<Subscription | null> }).getCurrentSubscription();
+      setSubscription(subscriptionData);
 
       // Fetch usage stats
-      const usageData = await fetch(`${process.env['EXPO_PUBLIC_API_BASE_URL']}/subscriptions/usage`, {
+      const usageData = await fetch(`${String(process.env['EXPO_PUBLIC_API_BASE_URL'])}/subscriptions/usage`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-      }).then(res => res.json());
+      }).then(res => res.json()) as UsageStats;
       setUsageStats(usageData);
     } catch (err) {
       logger.error('Failed to fetch subscription data:', { error: err });
@@ -100,15 +100,15 @@ export const SubscriptionManagerScreen = () => {
   };
 
   useEffect(() => {
-    fetchSubscriptionData();
+    void fetchSubscriptionData();
   }, []);
 
   const handleRefresh = (): void => {
     setIsRefreshing(true);
-    fetchSubscriptionData();
+    void fetchSubscriptionData();
   };
 
-  const handleCancelSubscription = async () => {
+  const handleCancelSubscription = () => {
     Alert.alert(
       'Cancel Subscription',
       'Are you sure you want to cancel your subscription? You can continue to use premium features until the end of your billing period.',
@@ -117,31 +117,33 @@ export const SubscriptionManagerScreen = () => {
         {
           text: 'Yes, Cancel',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              setIsLoading(true);
-              if (subscription?.id) {
-                await fetch(`${process.env['EXPO_PUBLIC_API_BASE_URL']}/subscriptions/cancel`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ subscriptionId: subscription.id }),
-                });
+          onPress: () => {
+            void (async () => {
+              try {
+                setIsLoading(true);
+                if (subscription?.id !== undefined && subscription.id !== '') {
+                  await fetch(`${String(process.env['EXPO_PUBLIC_API_BASE_URL'])}/subscriptions/cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subscriptionId: subscription.id }),
+                  });
+                  Alert.alert(
+                    'Subscription Canceled',
+                    'Your subscription has been canceled. You can continue using premium features until the end of your current billing period.'
+                  );
+                  // Refresh data to show updated status
+                  void fetchSubscriptionData();
+                }
+              } catch (err) {
+                logger.error('Failed to cancel subscription:', { error: err });
                 Alert.alert(
-                  'Subscription Canceled',
-                  'Your subscription has been canceled. You can continue using premium features until the end of your current billing period.'
+                  'Error',
+                  'Failed to cancel your subscription. Please try again later.'
                 );
-                // Refresh data to show updated status
-                fetchSubscriptionData();
+              } finally {
+                setIsLoading(false);
               }
-            } catch (err) {
-              logger.error('Failed to cancel subscription:', { error: err });
-              Alert.alert(
-                'Error',
-                'Failed to cancel your subscription. Please try again later.'
-              );
-            } finally {
-              setIsLoading(false);
-            }
+            })();
           },
         },
       ]
@@ -151,8 +153,8 @@ export const SubscriptionManagerScreen = () => {
   const handleReactivateSubscription = async () => {
     try {
       setIsLoading(true);
-      if (subscription?.id) {
-        await fetch(`${process.env['EXPO_PUBLIC_API_BASE_URL']}/subscriptions/reactivate`, {
+      if (subscription?.id !== undefined && subscription.id !== '') {
+        await fetch(`${String(process.env['EXPO_PUBLIC_API_BASE_URL'])}/subscriptions/reactivate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ subscriptionId: subscription.id }),
@@ -162,7 +164,7 @@ export const SubscriptionManagerScreen = () => {
           'Your subscription has been successfully reactivated.'
         );
         // Refresh data to show updated status
-        fetchSubscriptionData();
+        void fetchSubscriptionData();
       }
     } catch (err) {
       logger.error('Failed to reactivate subscription:', { error: err });
@@ -181,17 +183,17 @@ export const SubscriptionManagerScreen = () => {
 
       // Create checkout session for updating payment method
       const session = await createCheckoutSession<{ url: string }>({
-        priceId: subscription?.plan?.id || '',
+        priceId: subscription?.plan.id !== undefined && subscription.plan.id !== '' ? subscription.plan.id : '',
         successUrl: 'pawfectmatch://subscription/update-success',
         cancelUrl: 'pawfectmatch://subscription/update-cancel',
         metadata: {
           action: 'update_payment',
-          subscriptionId: subscription?.id
+          subscriptionId: subscription?.id !== undefined ? subscription.id : undefined
         }
       });
 
       // Open Stripe checkout in browser
-      if (session?.url) {
+      if (session.url !== '') {
         await Linking.openURL(session.url);
       }
     } catch (err) {
@@ -207,7 +209,7 @@ export const SubscriptionManagerScreen = () => {
 
   // Format date string
   const formatDate = (dateString?: string): string => {
-    if (!dateString) return 'N/A';
+    if (dateString === undefined || dateString === '') return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -259,27 +261,27 @@ export const SubscriptionManagerScreen = () => {
         <Text style={styles.headerTitle}>Subscription Details</Text>
       </LinearGradient>
 
-      {error ? (
+      {error !== null && error !== '' ? (
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={24} color="#D92D20" />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={fetchSubscriptionData}
+            onPress={() => void fetchSubscriptionData()}
           >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
-      ) : !subscription ? (
+      ) : subscription === null ? (
         <View style={styles.noSubscriptionContainer}>
           <Ionicons name="information-circle-outline" size={64} color="#6D28D9" />
           <Text style={styles.noSubscriptionTitle}>No Active Subscription</Text>
           <Text style={styles.noSubscriptionText}>
-            You don't have an active subscription. Upgrade to Premium to unlock exclusive features!
+            You don&apos;t have an active subscription. Upgrade to Premium to unlock exclusive features!
           </Text>
           <TouchableOpacity
             style={styles.upgradeButton}
-            onPress={() => navigation.navigate('Premium')}
+            onPress={() => { navigation.navigate('Premium'); }}
           >
             <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
           </TouchableOpacity>
@@ -320,7 +322,7 @@ export const SubscriptionManagerScreen = () => {
               </Text>
             </View> : null}
 
-            {subscription.trialEnd ? <View style={styles.detailRow}>
+            {subscription.trialEnd !== undefined ? <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Trial Ends</Text>
               <Text style={styles.detailValueHighlight}>
                 {formatDate(subscription.trialEnd)}
@@ -329,7 +331,7 @@ export const SubscriptionManagerScreen = () => {
           </View>
 
           {/* Usage Stats Card */}
-          {usageStats ? <View style={styles.card}>
+          {usageStats !== null ? <View style={styles.card}>
             <Text style={styles.cardTitle}>Usage</Text>
 
             <View style={styles.usageItem}>
@@ -339,7 +341,7 @@ export const SubscriptionManagerScreen = () => {
                   style={[
                     styles.usageProgress,
                     {
-                      width: `${Math.round((usageStats.swipesRemaining / usageStats.totalSwipes) * 100)}%`,
+                      width: `${String(Math.round((usageStats.swipesRemaining / usageStats.totalSwipes) * 100))}%`,
                       backgroundColor: '#7C3AED'
                     }
                   ]}
@@ -357,7 +359,7 @@ export const SubscriptionManagerScreen = () => {
                   style={[
                     styles.usageProgress,
                     {
-                      width: `${Math.round((usageStats.superLikesRemaining / usageStats.totalSuperLikes) * 100)}%`,
+                      width: `${String(Math.round((usageStats.superLikesRemaining / usageStats.totalSuperLikes) * 100))}%`,
                       backgroundColor: '#0EA5E9'
                     }
                   ]}
@@ -375,7 +377,7 @@ export const SubscriptionManagerScreen = () => {
                   style={[
                     styles.usageProgress,
                     {
-                      width: `${Math.round((usageStats.boostsRemaining / usageStats.totalBoosts) * 100)}%`,
+                      width: `${String(Math.round((usageStats.boostsRemaining / usageStats.totalBoosts) * 100))}%`,
                       backgroundColor: '#F97316'
                     }
                   ]}
@@ -398,7 +400,7 @@ export const SubscriptionManagerScreen = () => {
             {subscription.status === 'active' && !subscription.cancelAtPeriodEnd && (
               <TouchableOpacity
                 style={styles.actionButton}
-                onPress={handleCancelSubscription}
+                onPress={() => { handleCancelSubscription(); }}
               >
                 <Ionicons name="close-circle-outline" size={24} color="#D92D20" />
                 <Text style={[styles.actionButtonText, { color: '#D92D20' }]}>
@@ -410,7 +412,7 @@ export const SubscriptionManagerScreen = () => {
             {subscription.status === 'canceled' || subscription.cancelAtPeriodEnd ? (
               <TouchableOpacity
                 style={[styles.actionButton, styles.reactivateButton]}
-                onPress={handleReactivateSubscription}
+                onPress={() => void handleReactivateSubscription()}
               >
                 <Ionicons name="refresh-outline" size={24} color="#FFFFFF" />
                 <Text style={[styles.actionButtonText, { color: '#FFFFFF' }]}>
@@ -421,7 +423,7 @@ export const SubscriptionManagerScreen = () => {
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={handleUpdatePaymentMethod}
+              onPress={() => void handleUpdatePaymentMethod()}
             >
               <Ionicons name="card-outline" size={24} color="#6D28D9" />
               <Text style={[styles.actionButtonText, { color: '#6D28D9' }]}>
@@ -431,7 +433,7 @@ export const SubscriptionManagerScreen = () => {
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => navigation.navigate('Premium')}
+              onPress={() => { navigation.navigate('Premium'); }}
             >
               <Ionicons name="pricetag-outline" size={24} color="#6D28D9" />
               <Text style={[styles.actionButtonText, { color: '#6D28D9' }]}>

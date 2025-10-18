@@ -19,7 +19,7 @@ const handleStripeWebhook = async (req, res) => {
     // Build payload for signature verification; in test env fallback to req.body (already parsed)
     let payloadForVerification = req.rawBody;
     if (!payloadForVerification && process.env.NODE_ENV === 'test') {
-      try { payloadForVerification = JSON.stringify(req.body || {}); } catch (_) { payloadForVerification = '{}'; }
+      try { payloadForVerification = JSON.stringify(req.body || {}); } catch { payloadForVerification = '{}'; }
     }
     try {
       event = stripe.webhooks.constructEvent(

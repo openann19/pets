@@ -1,128 +1,209 @@
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  Animated,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
-} from 'react-native';
+import { View, TextInput, StyleSheet, Alert } from 'react-native';
+import { Animated } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { EliteButton } from '../EliteButton';
+import { GlassContainer } from '../GlassContainer';
+import { PremiumBody } from '../PremiumBody';
+import { tokens } from '@pawfectmatch/design-tokens';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface MessageInputProps {
-  onSendMessage: (message: string) => void;
-  placeholder?: string;
-  disabled?: boolean;
+  value: string;
+  onChangeText: (text: string) => void;
+  onSend: () => void;
+  onTypingChange?: (isTyping: boolean) => void;
+  isSending?: boolean;
   maxLength?: number;
-  showCharacterCount?: boolean;
+  placeholder?: string;
+  inputRef?: React.RefObject<TextInput>;
 }
 
-/**
- * Optimized Message Input Component
- * Handles text input, character counting, and send functionality
- */
-export const MessageInput: React.FC<MessageInputProps> = ({
-  onSendMessage,
-  placeholder = 'Type a message...',
-  disabled = false,
-  maxLength = 500,
-  showCharacterCount = false
-}) => {
-  const { isDark } = useTheme();
-  const [inputText, setInputText] = useState('');
-  const [characterCount, setCharacterCount] = useState(0);
-  const [isFocused, setIsFocused] = useState(false);
+const MAX_MESSAGE_LENGTH = 500;
 
-  const inputRef = useRef<TextInput>(null);
+export const MessageInput: React.FC<MessageInputProps> = ({
+  value,
+  onChangeText,
+  onSend,
+  onTypingChange,
+  isSending = false,
+  maxLength = MAX_MESSAGE_LENGTH,
+  placeholder = "Type a message...",
+  inputRef,
+}) => {
+  const { colors } = useTheme();
+  const [characterCount, setCharacterCount] = useState(0);
+  const [isTyping, setIsTyping] = useState(false);
+  
+  const messageEntryAnimation = useRef(new Animated.Value(0)).current;
   const sendButtonScale = useRef(new Animated.Value(1)).current;
 
   const handleTextChange = useCallback((text: string) => {
-    setInputText(text);
+    onChangeText(text);
     setCharacterCount(text.length);
-  }, []);
+    
+    // Notify parent about typing state
+    const wasTyping = isTyping;
+    const nowTyping = text.length > 0;
+    
+    if (wasTyping !== nowTyping) {
+      setIsTyping(nowTyping);
+      onTypingChange?.(nowTyping);
+    }
+  }, [onChangeText, isTyping, onTypingChange]);
+
+  const handleFocus = useCallback(() => {
+    setIsTyping(true);
+    onTypingChange?.(true);
+    Animated.timing(messageEntryAnimation, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [messageEntryAnimation, onTypingChange]);
+
+  const handleBlur = useCallback(() => {
+    setIsTyping(false);
+    onTypingChange?.(false);
+    Animated.timing(messageEntryAnimation, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [messageEntryAnimation, onTypingChange]);
 
   const handleSend = useCallback(() => {
-    const trimmedText = inputText.trim();
-    if (!trimmedText || disabled) return;
+    if (!value.trim() || isSending) return;
 
-    // Haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
+    // Haptic feedback for send action
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
     // Animate send button
     Animated.sequence([
       Animated.timing(sendButtonScale, {
-        toValue: 0.9,
+        toValue: 0.8,
         duration: 100,
-        useNativeDriver: true
+        useNativeDriver: true,
       }),
       Animated.timing(sendButtonScale, {
         toValue: 1,
         duration: 100,
-        useNativeDriver: true
+        useNativeDriver: true,
       }),
     ]).start();
 
-    // Send message
-    onSendMessage(trimmedText);
+    onSend();
+  }, [value, isSending, onSend, sendButtonScale]);
 
-    // Clear input
-    setInputText('');
-    setCharacterCount(0);
-    inputRef.current?.blur();
-  }, [inputText, disabled, onSendMessage, sendButtonScale]);
+  const handleAttachPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert('Attach Media', 'Photo and file sharing coming soon!');
+  }, []);
 
-  const canSend = inputText.trim().length > 0 && !disabled;
+  const handleEmojiPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert('Emoji Picker', 'Emoji picker coming soon! 😊');
+  }, []);
+
   const isNearLimit = characterCount > maxLength * 0.9;
+  const isOverLimit = characterCount > maxLength;
 
   return (
-    <View style={[styles.container, isDark ? styles.containerDark : styles.containerLight]}>
-      <View style={[styles.inputContainer, isFocused && styles.inputContainerFocused]}>
-        <TextInput
-          ref={inputRef}
-          style={[styles.input, isDark ? styles.inputDark : styles.inputLight]}
-          value={inputText}
-          onChangeText={handleTextChange}
-          placeholder={placeholder}
-          placeholderTextColor={isDark ? '#666' : '#999'}
-          multiline
-          maxLength={maxLength}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          editable={!disabled}
-          returnKeyType="send"
-          onSubmitEditing={canSend ? handleSend : undefined}
-          blurOnSubmit={false}
+    <GlassContainer intensity="heavy" transparency="medium" border="light" shadow="medium">
+      <View style={styles.container}>
+        <EliteButton
+          title=""
+          variant="glass"
+          size="sm"
+          icon="add"
+          magnetic={true}
+          ripple={true}
+          onPress={handleAttachPress}
         />
-
-        {showCharacterCount ? <Text style={[
-          styles.characterCount,
-          isNearLimit && styles.characterCountWarning
-        ]}>
-          {characterCount}/{maxLength}
-        </Text> : null}
-      </View>
-
-      <Animated.View style={{ transform: [{ scale: sendButtonScale as any }] }}>
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            canSend ? styles.sendButtonActive : styles.sendButtonDisabled
-          ]}
-          onPress={handleSend}
-          disabled={!canSend}
-          accessibilityLabel="Send message"
-          accessibilityRole="button"
-        >
-          <Ionicons
-            name="send"
-            size={20}
-            color={canSend ? '#FFFFFF' : (isDark ? '#666' : '#CCC')}
+        
+        <View style={styles.inputWrapper}>
+          <TextInput
+            ref={inputRef}
+            style={[
+              styles.textInput,
+              { 
+                backgroundColor: 'rgba(255,255,255,0.1)', 
+                borderColor: 'rgba(255,255,255,0.2)', 
+                color: '#fff' 
+              },
+              isTyping && [
+                styles.textInputFocused, 
+                { 
+                  borderColor: colors.primary, 
+                  backgroundColor: 'rgba(255,255,255,0.2)' 
+                }
+              ],
+              isNearLimit && [
+                styles.textInputWarning, 
+                { 
+                  borderColor: colors.warning, 
+                  backgroundColor: 'rgba(245,158,11,0.1)' 
+                }
+              ]
+            ]}
+            value={value}
+            onChangeText={handleTextChange}
+            placeholder={placeholder}
+            placeholderTextColor="rgba(255,255,255,0.6)"
+            multiline
+            maxLength={maxLength}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            returnKeyType="send"
+            onSubmitEditing={handleSend}
+            blurOnSubmit={false}
           />
-        </TouchableOpacity>
-      </Animated.View>
-    </View>
+          
+          {/* Character Counter */}
+          {characterCount > maxLength * 0.8 && (
+            <Animated.View 
+              style={[
+                styles.characterCountContainer,
+                { opacity: messageEntryAnimation }
+              ]}
+            >
+              <PremiumBody 
+                size="xs" 
+                weight="regular"
+                style={{ color: isOverLimit ? colors.error : colors.gray500 }}
+              >
+                {characterCount}/{maxLength}
+              </PremiumBody>
+            </Animated.View>
+          )}
+        </View>
+        
+        <EliteButton
+          title=""
+          variant="glass"
+          size="sm"
+          icon="happy-outline"
+          magnetic={true}
+          ripple={true}
+          onPress={handleEmojiPress}
+        />
+        
+        <Animated.View style={{ transform: [{ scale: sendButtonScale }] }}>
+          <EliteButton
+            title=""
+            variant={value.trim() ? "primary" : "glass"}
+            size="sm"
+            icon={isSending ? "hourglass" : "send"}
+            magnetic={true}
+            ripple={true}
+            glow={value.trim()}
+            shimmer={isSending}
+            onPress={handleSend}
+            disabled={!value.trim() || isSending}
+          />
+        </Animated.View>
+      </View>
+    </GlassContainer>
   );
 };
 
@@ -130,73 +211,42 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.sm,
+    gap: tokens.spacing.sm,
   },
-  containerLight: {
-    backgroundColor: '#FFFFFF',
-    borderTopColor: '#E0E0E0',
-  },
-  containerDark: {
-    backgroundColor: '#1E1E1E',
-    borderTopColor: '#333333',
-  },
-  inputContainer: {
+  inputWrapper: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 20,
-    marginRight: 12,
-    minHeight: 40,
-    maxHeight: 100,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    position: 'relative',
+    minHeight: 36,
+    maxHeight: 120,
   },
-  inputContainerFocused: {
-    backgroundColor: '#FFFFFF',
+  textInput: {
+    borderRadius: tokens.borderRadius.xl,
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.sm,
+    fontSize: tokens.typography.body.fontSize,
+    lineHeight: tokens.typography.body.lineHeight,
     borderWidth: 1,
-    borderColor: '#FF6B6B',
+    textAlignVertical: 'center',
   },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    lineHeight: 20,
-    minHeight: 24,
-    maxHeight: 72,
-    paddingTop: 0,
-    paddingBottom: 0,
+  textInputFocused: {
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  inputLight: {
-    color: '#1A1A1A',
+  textInputWarning: {
+    // Warning styles handled by theme colors
   },
-  inputDark: {
-    color: '#E0E0E0',
-    backgroundColor: '#2A2A2A',
-  },
-  characterCount: {
-    fontSize: 12,
-    color: '#999',
-    marginLeft: 8,
-    alignSelf: 'flex-end',
-  },
-  characterCountWarning: {
-    color: '#FF6B6B',
-  },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendButtonActive: {
-    backgroundColor: '#FF6B6B',
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#F0F0F0',
+  characterCountContainer: {
+    position: 'absolute',
+    bottom: tokens.spacing.xs,
+    right: tokens.spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    paddingHorizontal: tokens.spacing.xs,
+    paddingVertical: tokens.spacing.xs,
+    borderRadius: tokens.borderRadius.sm,
   },
 });
-
-export default MessageInput;

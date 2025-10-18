@@ -4,7 +4,7 @@ let Message;
 try {
   // Optional dependency: some environments/tests don't ship a standalone Message model
   Message = require('../models/Message');
-} catch (e) {
+} catch {
   Message = null;
 }
 const Conversation = require('../models/Conversation');

@@ -1,5 +1,7 @@
+import { logger } from '@pawfectmatch/core';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { StateStorage } from 'zustand/middleware';
+import type { StateStorage } from 'zustand/middleware';
 
 /**
  * Secure storage adapter for Zustand persist middleware
@@ -12,25 +14,28 @@ export const createSecureStorage = (): StateStorage => {
       try {
         const value = await SecureStore.getItemAsync(name);
         return value;
-      } catch (error) {
-        console.error(`Error getting item ${name} from secure storage:`, error);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        logger.error('secure-storage.getItem.failed', { name, message });
         return null;
       }
     },
     setItem: async (name: string, value: string): Promise<void> => {
       try {
         await SecureStore.setItemAsync(name, value);
-      } catch (error) {
-        console.error(`Error setting item ${name} in secure storage:`, error);
-        throw error;
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error('Failed to set secure item');
+        logger.error('secure-storage.setItem.failed', { name, message: err.message });
+        throw err;
       }
     },
     removeItem: async (name: string): Promise<void> => {
       try {
         await SecureStore.deleteItemAsync(name);
-      } catch (error) {
-        console.error(`Error removing item ${name} from secure storage:`, error);
-        throw error;
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error('Failed to remove secure item');
+        logger.error('secure-storage.removeItem.failed', { name, message: err.message });
+        throw err;
       }
     },
   };
@@ -41,33 +46,33 @@ export const createSecureStorage = (): StateStorage => {
  * Used for preferences, theme settings, etc.
  */
 export const createAsyncStorage = (): StateStorage => {
-  // Use require instead of dynamic import for React Native compatibility
-  const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-  
   return {
     getItem: async (name: string): Promise<string | null> => {
       try {
         const value = await AsyncStorage.getItem(name);
         return value;
-      } catch (error) {
-        console.error(`Error getting item ${name} from async storage:`, error);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        logger.error('async-storage.getItem.failed', { name, message });
         return null;
       }
     },
     setItem: async (name: string, value: string): Promise<void> => {
       try {
         await AsyncStorage.setItem(name, value);
-      } catch (error) {
-        console.error(`Error setting item ${name} in async storage:`, error);
-        throw error;
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error('Failed to set async item');
+        logger.error('async-storage.setItem.failed', { name, message: err.message });
+        throw err;
       }
     },
     removeItem: async (name: string): Promise<void> => {
       try {
         await AsyncStorage.removeItem(name);
-      } catch (error) {
-        console.error(`Error removing item ${name} from async storage:`, error);
-        throw error;
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error('Failed to remove async item');
+        logger.error('async-storage.removeItem.failed', { name, message: err.message });
+        throw err;
       }
     },
   };

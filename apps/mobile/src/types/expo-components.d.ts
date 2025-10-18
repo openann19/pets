@@ -160,7 +160,10 @@ declare module 'react-native-reanimated' {
     children?: React.ReactNode;
   }
 
-  export interface AnimatedImageProps extends ImageProps {}
+  export interface AnimatedImageProps extends ImageProps {
+    // Additional animated image specific props can be added here
+    animated?: boolean;
+  }
 
   export interface AnimatedScrollViewProps extends ScrollViewProps {
     children?: React.ReactNode;
@@ -200,6 +203,6 @@ declare module 'react-native-reanimated' {
 }
 
 // Utility type for React Navigation screens
-export type ScreenComponentType<P = {}> = React.ComponentType<P> & {
+export type ScreenComponentType<P = Record<string, unknown>> = React.ComponentType<P> & {
   displayName?: string;
 };

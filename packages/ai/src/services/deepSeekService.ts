@@ -18,7 +18,7 @@ export interface DeepSeekResponse {
   model: string;
   choices: Array<{
     index: number;
-    message: {
+    message?: {
       role: string;
       content: string;
     };
@@ -54,7 +54,7 @@ export class DeepSeekService {
       maxTokens: 1000,
       ...config,
     };
-    this.baseUrl = this.config.baseUrl!;
+    this.baseUrl = this.config.baseUrl ?? 'https://api.deepseek.com/v1';
   }
 
   /**
@@ -91,7 +91,7 @@ export class DeepSeekService {
     }
     `;
 
-    const response = await this.makeRequest('/chat/completions', {
+  const response = await this.makeRequest<DeepSeekResponse>('/chat/completions', {
       model: 'deepseek-vision',
       messages: [
         {
@@ -99,7 +99,7 @@ export class DeepSeekService {
           content: [
             {
               type: 'text',
-              text: prompt || defaultPrompt,
+              text: prompt ?? defaultPrompt,
             },
             {
               type: 'image_url',
@@ -114,7 +114,7 @@ export class DeepSeekService {
       max_tokens: this.config.maxTokens,
     });
 
-    return response as DeepSeekResponse;
+    return response;
   }
 
   /**
@@ -149,7 +149,7 @@ export class DeepSeekService {
     }
     `;
 
-    const response = await this.makeRequest('/chat/completions', {
+  const response = await this.makeRequest<DeepSeekResponse>('/chat/completions', {
       model: this.config.model,
       messages: [
         {
@@ -161,7 +161,7 @@ export class DeepSeekService {
       max_tokens: this.config.maxTokens,
     });
 
-    return response as DeepSeekResponse;
+    return response;
   }
 
   /**
@@ -184,7 +184,7 @@ export class DeepSeekService {
     Return only the bio text, no additional formatting.
     `;
 
-    const response = await this.makeRequest('/chat/completions', {
+  const response = await this.makeRequest<DeepSeekResponse>('/chat/completions', {
       model: this.config.model,
       messages: [
         {
@@ -196,7 +196,7 @@ export class DeepSeekService {
       max_tokens: 200,
     });
 
-    return response as DeepSeekResponse;
+    return response;
   }
 
   /**
@@ -242,29 +242,23 @@ export class DeepSeekService {
   /**
    * Make HTTP request to DeepSeek API
    */
-  private async makeRequest(endpoint: string, data: unknown): Promise<any> {
+  private async makeRequest<T>(endpoint: string, data: unknown): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json() as DeepSeekError;
-        throw new Error(`DeepSeek API Error: ${errorData.error.message}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('DeepSeek API Request Failed:', error);
-      throw error;
+    if (!response.ok) {
+      const errorData = (await response.json()) as DeepSeekError;
+      throw new Error(`DeepSeek API Error: ${errorData.error.message}`);
     }
+
+    return (await response.json()) as T;
   }
 
   /**
@@ -283,9 +277,10 @@ export class DeepSeekService {
         max_tokens: 10,
       });
 
-      return response.choices && response.choices.length > 0;
-    } catch (error) {
-      console.error('DeepSeek connection test failed:', error);
+  const result = response as DeepSeekResponse;
+  return Array.isArray(result.choices) && result.choices.length > 0;
+    } catch (_error) {
+      // Surface as boolean false without logging to console
       return false;
     }
   }
@@ -293,24 +288,19 @@ export class DeepSeekService {
   /**
    * Get API usage statistics
    */
-  public async getUsageStats(): Promise<any> {
-    try {
-      const response = await fetch(`${this.baseUrl}/usage`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
-        },
-      });
+  public async getUsageStats(): Promise<unknown> {
+    const response = await fetch(`${this.baseUrl}/usage`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${this.config.apiKey}`,
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch usage stats: ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to get usage stats:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error(`Failed to fetch usage stats: ${response.statusText}`);
     }
+
+    return (await response.json()) as unknown;
   }
 }
 

@@ -1,12 +1,13 @@
 const Match = require('../models/Match');
+const logger = require('../utils/logger');
 let Message;
 try {
   Message = require('../models/Message');
-} catch (e) {
+} catch (error) {
   Message = null;
+  logger.warn?.('Message model unavailable', { error: error?.message });
 }
 const Conversation = require('../models/Conversation');
-const logger = require('../utils/logger');
 
 /**
  * @typedef {Object} MemoryNode
@@ -75,11 +76,8 @@ const getMemories = async (req, res) => {
     }
 
     // Convert messages to memory nodes
-    const memories = messages.map((message, index) => {
+    const memories = messages.map((message) => {
       const sender = message.sender;
-      const otherUser = match.user1.toString() === message.sender._id.toString()
-        ? match.user2
-        : match.user1;
 
       // Generate different types of memories based on message content
       let type = 'text';

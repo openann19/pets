@@ -3,8 +3,6 @@ const mongoose = require('mongoose');
 const { app, httpServer } = require('../server');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const User = require('../src/models/User');
-const stripe = require('stripe');
-
 // Mock the Stripe library
 jest.mock('stripe', () => {
   return jest.fn(() => ({

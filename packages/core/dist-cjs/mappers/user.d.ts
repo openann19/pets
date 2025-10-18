@@ -1,3 +1,4 @@
+import type { User } from '../types';
 export interface LegacyWebUser {
     id: string;
     email: string;
@@ -6,6 +7,5 @@ export interface LegacyWebUser {
     isPremium?: boolean;
     preferences?: Record<string, unknown>;
 }
-import type { User } from '../types';
 export declare function toCoreUser(legacy: LegacyWebUser): User;
 //# sourceMappingURL=user.d.ts.map

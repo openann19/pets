@@ -5,6 +5,8 @@
  */
 export * from './schemas';
 export * from './types';
+export * from './types/haptics';
+export { HAPTICS, HAPTIC_SETTINGS, SETTINGS } from './constants';
 export { animationConfig, useAnimationConfig } from './services/animationConfig';
 export * from './types/animations';
 export * from './utils';

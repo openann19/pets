@@ -49,7 +49,7 @@ class ImageCompressionService {
 
       // Get original file info
       const originalInfo = await FileSystem.getInfoAsync(imageUri);
-      const originalSize = originalInfo.exists ? originalInfo.size || 0 : 0;
+      const originalSize = originalInfo.exists ? originalInfo.size : 0;
 
       // Perform image manipulation
       const manipulatedImage = await ImageManipulator.manipulateAsync(
@@ -70,7 +70,7 @@ class ImageCompressionService {
 
       // Get compressed file info
       const compressedInfo = await FileSystem.getInfoAsync(manipulatedImage.uri);
-      const compressedSize = compressedInfo.exists ? compressedInfo.size || 0 : 0;
+      const compressedSize = compressedInfo.exists ? compressedInfo.size : 0;
 
       const compressionRatio = originalSize > 0 ? (originalSize - compressedSize) / originalSize : 0;
 
@@ -87,7 +87,7 @@ class ImageCompressionService {
         originalSize: this.formatFileSize(originalSize),
         compressedSize: this.formatFileSize(compressedSize),
         compressionRatio: `${(compressionRatio * 100).toFixed(1)}%`,
-        dimensions: `${manipulatedImage.width}x${manipulatedImage.height}`,
+        dimensions: `${String(manipulatedImage.width)}x${String(manipulatedImage.height)}`,
       });
 
       return result;
@@ -193,7 +193,7 @@ class ImageCompressionService {
 
       // Check file size (max 20MB)
       const maxSize = 20 * 1024 * 1024; // 20MB
-      if (info.size && info.size > maxSize) {
+      if (info.size > maxSize) {
         return { isValid: false, error: 'Image file is too large (max 20MB)' };
       }
 

@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "pawfectmatch",
-    "platforms": ["ios", "android"],
+    "platforms": ["ios", "android", "web"],
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -90,15 +90,15 @@
       "url": "https://u.expo.dev/your-project-id"
     },
     "runtimeVersion": "1.0.0",
-    "plugins": [
-      "expo-camera",
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow PawfectMatch to use your location to find pets near you and suggest nearby meetup locations."
-        }
-      ]
-    ],
+  "plugins": [
+    "expo-camera",
+    [
+      "expo-location",
+      {
+        "locationAlwaysAndWhenInUsePermission": "Allow PawfectMatch to use your location to find pets near you and suggest nearby meetup locations."
+      }
+    ]
+  ],
     "extra": {
       "eas": {
         "projectId": "your-expo-project-id"

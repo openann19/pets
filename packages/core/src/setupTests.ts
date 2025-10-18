@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import { jest } from '@jest/globals';
 
 // Mock localStorage
 const localStorageMock = {
@@ -13,37 +14,23 @@ Object.defineProperty(window, 'localStorage', {
 });
 
 // Mock IntersectionObserver
-(global as unknown).IntersectionObserver = class IntersectionObserver {
-  root = null;
+globalThis.IntersectionObserver = class IntersectionObserver {
+  root: Element | null = null;
   rootMargin = '';
-  thresholds = [];
-  constructor() {}
-  observe() {
-    return null;
-  }
-  disconnect() {
-    return null;
-  }
-  unobserve() {
-    return null;
-  }
-  takeRecords() {
+  thresholds: ReadonlyArray<number> = [];
+  observe(): void {}
+  disconnect(): void {}
+  unobserve(): void {}
+  takeRecords(): IntersectionObserverEntry[] {
     return [];
   }
 };
 
 // Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
-  constructor() {}
-  observe() {
-    return null;
-  }
-  disconnect() {
-    return null;
-  }
-  unobserve() {
-    return null;
-  }
+globalThis.ResizeObserver = class ResizeObserver {
+  observe(): void {}
+  disconnect(): void {}
+  unobserve(): void {}
 };
 
 // Mock matchMedia
@@ -68,12 +55,19 @@ Object.defineProperty(window, 'scrollTo', {
 });
 
 // Mock requestAnimationFrame
-global.requestAnimationFrame = jest.fn((cb: unknown) => {
-  setTimeout(cb, 16);
-  return 1;
-}) as unknown;
+Object.defineProperty(window, 'requestAnimationFrame', {
+  writable: true,
+  value: jest.fn((callback: FrameRequestCallback) => {
+    return window.setTimeout(callback, 16);
+  }),
+});
 
-global.cancelAnimationFrame = jest.fn();
+Object.defineProperty(window, 'cancelAnimationFrame', {
+  writable: true,
+  value: jest.fn((handle: number) => {
+    window.clearTimeout(handle);
+  }),
+});
 
 // Setup MSW (Mock Service Worker) for API mocking
 // import {  } from '../src/__mocks__/server';

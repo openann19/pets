@@ -1,125 +1,57 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+import React from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import { Animated } from 'react-native';
+import { tokens } from '@pawfectmatch/design-tokens';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface TypingIndicatorProps {
-  isVisible: boolean;
-  typingUsers?: string[];
+  typingUsers: string[];
+  animationValue?: Animated.Value;
 }
 
-/**
- * Animated Typing Indicator Component
- * Shows when other users are typing with smooth animations
- */
 export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
-  isVisible,
-  typingUsers = []
+  typingUsers,
+  animationValue,
 }) => {
-  const { isDark } = useTheme();
-  const dot1 = useSharedValue(0);
-  const dot2 = useSharedValue(0);
-  const dot3 = useSharedValue(0);
-
-  useEffect(() => {
-    if (isVisible) {
-      dot1.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 400 }),
-          withDelay(600, withTiming(0, { duration: 400 }))
-        ),
-        -1,
-        false
-      );
-      dot2.value = withRepeat(
-        withSequence(
-          withDelay(200, withTiming(1, { duration: 400 })),
-          withDelay(600, withTiming(0, { duration: 400 }))
-        ),
-        -1,
-        false
-      );
-      dot3.value = withRepeat(
-        withSequence(
-          withDelay(400, withTiming(1, { duration: 400 })),
-          withDelay(600, withTiming(0, { duration: 400 }))
-        ),
-        -1,
-        false
-      );
-    } else {
-      dot1.value = withTiming(0, { duration: 200 });
-      dot2.value = withTiming(0, { duration: 200 });
-      dot3.value = withTiming(0, { duration: 200 });
-    }
-  }, [isVisible, dot1, dot2, dot3]);
-
-  const getTypingText = () => {
-    if (typingUsers.length === 1) {
-      return 'Someone is typing...';
-    } else if (typingUsers.length > 1) {
-      return `${typingUsers.length} people are typing...`;
-    }
-    return 'Typing...';
-  };
-
-  const animatedStyle1 = useAnimatedStyle(() => ({
-    transform: [{ scaleY: 0.6 + (dot1.value * 0.4) }],
-  }));
-
-  const animatedStyle2 = useAnimatedStyle(() => ({
-    transform: [{ scaleY: 0.6 + (dot2.value * 0.4) }],
-  }));
-
-  const animatedStyle3 = useAnimatedStyle(() => ({
-    transform: [{ scaleY: 0.6 + (dot3.value * 0.4) }],
-  }));
-
-  if (!isVisible) return null;
+  const { colors } = useTheme();
+  
+  if (typingUsers.length === 0) return null;
 
   return (
     <View style={styles.container}>
-      <View style={[styles.bubble, isDark ? styles.bubbleDark : styles.bubbleLight]}>
-        <View style={styles.dotsContainer}>
-          <Animated.View
-            style={[
-              styles.dot,
-              isDark ? styles.dotDark : styles.dotLight,
-              animatedStyle1,
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.dot,
-              isDark ? styles.dotDark : styles.dotLight,
-              animatedStyle2,
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.dot,
-              isDark ? styles.dotDark : styles.dotLight,
-              animatedStyle3,
-            ]}
-          />
+      <Image 
+        source={{ uri: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=100' }} 
+        style={styles.avatar} 
+      />
+      <View style={[styles.typingBubble, { backgroundColor: colors.white, borderColor: colors.gray200 }]}>
+        <View style={styles.typingDots}>
+          {[0, 1, 2].map((i) => (
+            <Animated.View
+              key={i}
+              style={[
+                styles.typingDot,
+                {
+                  backgroundColor: colors.gray500,
+                  opacity: animationValue?.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0.3, 1, 0.3],
+                  }) ?? 0.5,
+                  transform: [{
+                    translateY: animationValue?.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0, -3, 0],
+                    }) ?? 0,
+                  }],
+                },
+              ]}
+            />
+          ))}
         </View>
-      </View>
-      <View style={styles.textContainer}>
-        <Text
-          style={[
-            styles.typingText,
-            isDark ? styles.typingTextDark : styles.typingTextLight,
-          ]}
-        >
-          {getTypingText()}
-        </Text>
+        {typingUsers.length > 1 && (
+          <Text style={[styles.typingText, { color: colors.gray500 }]}>
+            {typingUsers.length} people are typing...
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -128,46 +60,38 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    alignItems: 'flex-end',
+    paddingHorizontal: tokens.spacing.lg,
+    marginBottom: tokens.spacing.sm,
   },
-  bubble: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#fff',
   },
-  bubbleLight: {
-    backgroundColor: '#F0F0F0',
+  typingBubble: {
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.sm,
+    borderRadius: tokens.borderRadius.xl,
+    borderBottomLeftRadius: tokens.borderRadius.sm,
+    marginLeft: tokens.spacing.xs,
+    borderWidth: 0.5,
   },
-  bubbleDark: {
-    backgroundColor: '#2C2C2C',
-  },
-  dotsContainer: {
+  typingDots: {
     flexDirection: 'row',
-    gap: 4,
+    alignItems: 'center',
+    gap: tokens.spacing.xs,
   },
-  dot: {
+  typingDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
   },
-  dotLight: {
-    backgroundColor: '#666',
-  },
-  dotDark: {
-    backgroundColor: '#CCC',
-  },
-  textContainer: {
-    marginLeft: 8,
-  },
   typingText: {
-    fontSize: 12,
-  },
-  typingTextLight: {
-    color: '#666',
-  },
-  typingTextDark: {
-    color: '#CCC',
+    fontSize: tokens.typography.caption.fontSize,
+    fontStyle: 'italic',
+    marginTop: tokens.spacing.xs,
   },
 });

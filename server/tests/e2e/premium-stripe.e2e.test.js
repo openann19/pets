@@ -474,6 +474,9 @@ describe('Premium Features and Stripe Integration E2E Tests', () => {
           }
         });
 
+      expect(pet2Response.status).toBe(200);
+      expect(pet2Response.body.success).toBe(true);
+
       // Like multiple pets
       for (let i = 0; i < 10; i++) {
         const response = await request(app)

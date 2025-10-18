@@ -1,9 +1,10 @@
-import {  } from 'msw';
-import {  } from 'msw/node';
+import { rest } from 'msw';
+import { setupServer } from 'msw/node';
 
 const handlers = [
   // Auth endpoints
   rest.post('/api/auth/login', (req, res, ctx) => {
+    void req;
     return res(ctx.json({
       success: true,
       data: {
@@ -19,6 +20,7 @@ const handlers = [
   }),
 
   rest.post('/api/auth/register', (req, res, ctx) => {
+    void req;
     return res(ctx.json({
       success: true,
       data: {
@@ -34,6 +36,7 @@ const handlers = [
   }),
 
   rest.post('/api/auth/logout', (req, res, ctx) => {
+    void req;
     return res(ctx.json({
       success: true,
       message: 'Logged out successfully'
@@ -42,6 +45,7 @@ const handlers = [
 
   // Pet endpoints
   rest.get('/api/pets', (req, res, ctx) => {
+    void req;
     return res(ctx.json({
       success: true,
       data: [
@@ -58,6 +62,7 @@ const handlers = [
   }),
 
   rest.post('/api/pets', (req, res, ctx) => {
+    void req;
     return res(ctx.json({
       success: true,
       data: {
@@ -73,6 +78,7 @@ const handlers = [
 
   // AI endpoints
   rest.post('/api/ai/generate-bio', (req, res, ctx) => {
+    void req;
     return res(ctx.json({
       success: true,
       bio: 'Buddy is a friendly Golden Retriever who loves playing fetch and going for long walks in the park.'
@@ -80,6 +86,7 @@ const handlers = [
   }),
 
   rest.post('/api/ai/analyze-photos', (req, res, ctx) => {
+    void req;
     return res(ctx.json({
       success: true,
       results: [
@@ -103,6 +110,7 @@ const handlers = [
   }),
 
   rest.post('/api/ai/compatibility', (req, res, ctx) => {
+    void req;
     return res(ctx.json({
       success: true,
       score: 85,
@@ -115,6 +123,7 @@ const handlers = [
   }),
 
   rest.post('/api/ai/assist-application', (req, res, ctx) => {
+    void req;
     return res(ctx.json({
       success: true,
       content: 'I am excited to provide a loving home for this wonderful pet. With my experience and stable home environment...'
@@ -123,11 +132,13 @@ const handlers = [
 
   // Default handler for unhandled requests
   rest.get('*', (req, res, ctx) => {
+    void req;
     console.error(`Unhandled ${req.method} ${req.url}`);
     return res(ctx.status(404), ctx.json({ error: 'Not found' }));
   }),
 
   rest.post('*', (req, res, ctx) => {
+    void req;
     console.error(`Unhandled ${req.method} ${req.url}`);
     return res(ctx.status(404), ctx.json({ error: 'Not found' }));
   })

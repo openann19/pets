@@ -103,12 +103,14 @@ const analyzeWithDeepSeek = async (text, apiKey) => {
  * Fallback mock analysis for testing
  */
 const analyzeMock = async (text) => {
+    const seed = Math.abs((text || '').length || 1);
+    const random = (offset) => (Math.sin(seed + offset) + 1) / 4; // deterministic-ish 0-0.5
     const scores = {
-        toxicity: Math.random() * 0.5,
-        hate_speech: Math.random() * 0.3,
-        sexual_content: Math.random() * 0.2,
-        violence: Math.random() * 0.3,
-        spam: Math.random() * 0.4,
+        toxicity: random(0),
+        hate_speech: random(1),
+        sexual_content: random(2),
+        violence: random(3),
+        spam: random(4),
     };
 
     const flagged = Object.entries(scores).some(([, score]) => score > 0.7);
@@ -142,11 +144,13 @@ const analyzeTextContent = async (text, provider = 'mock', apiKey = null) => {
  */
 const analyzeImageContent = async (imageUrl) => {
     // Mock for now - integrate AWS Rekognition or similar
+    const seed = Math.abs((imageUrl || '').length || 1);
+    const random = (offset) => (Math.cos(seed + offset) + 1) / 3; // deterministic-ish 0-0.66
     const scores = {
-        explicit: Math.random() * 0.3,
-        suggestive: Math.random() * 0.4,
-        violence: Math.random() * 0.2,
-        gore: Math.random() * 0.1,
+        explicit: random(0),
+        suggestive: random(1),
+        violence: random(2) / 1.5,
+        gore: random(3) / 2,
     };
 
     const flagged = Object.entries(scores).some(([, score]) => score > 0.75);
@@ -160,13 +164,15 @@ const analyzeImageContent = async (imageUrl) => {
 };
 
 const textModerationSchema = z.object({
-    text: z.string().min(1).max(10000),
     context: z.enum(['pet_description', 'message', 'profile_bio', 'comment', 'other']).optional(),
+}).extend({
+    text: z.string().min(1).max(10000),
 });
 
 const imageModerationSchema = z.object({
-    imageUrl: z.string().url(),
     context: z.enum(['pet_photo', 'profile_photo', 'chat_image', 'other']).optional(),
+}).extend({
+    imageUrl: z.string().url(),
 });
 
 exports.moderateText = async (req, res) => {

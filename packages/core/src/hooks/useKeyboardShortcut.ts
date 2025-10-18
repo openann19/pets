@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
-
-// KeyCode type removed as it was unused
+import {
+  addEventListenerSafely,
+  getDocumentObject,
+  removeEventListenerSafely,
+} from '../utils/environment';
 
 interface KeyCombo {
   key: string;
@@ -14,42 +17,46 @@ export function useKeyboardShortcut(
   keyCombo: KeyCombo,
   handler: () => void
 ) {
-  const formattedCombo = useRef(formatKeyCombo(keyCombo));
   const handlerRef = useRef(handler);
 
   useEffect(() => {
     handlerRef.current = handler;
   }, [handler]);
 
-  // Keep the formatted combo in sync when keyCombo changes without re-subscribing listeners
   useEffect(() => {
-    formattedCombo.current = formatKeyCombo(keyCombo);
-  }, [keyCombo]);
+    const handleKeyDown = (event: Event) => {
+      if (!isKeyboardEvent(event)) {
+        return;
+      }
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
       const pressedCombo = formatPressedKeys(event);
-      if (pressedCombo === formattedCombo.current) {
+      const formattedCombo = formatKeyCombo(keyCombo);
+      if (pressedCombo === formattedCombo) {
         event.preventDefault();
         handlerRef.current();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    const documentObject = getDocumentObject();
+    if (documentObject == null) {
+      return undefined;
+    }
+
+    addEventListenerSafely(documentObject, 'keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      removeEventListenerSafely(documentObject, 'keydown', handleKeyDown);
     };
   }, [keyCombo, handler]);
 
-  return formattedCombo.current;
+  return formatKeyCombo(keyCombo);
 }
 
 function formatKeyCombo(combo: KeyCombo): string {
   const modifiers = [];
-  if (combo.ctrl) modifiers.push('Ctrl');
-  if (combo.shift) modifiers.push('Shift');
-  if (combo.alt) modifiers.push('Alt');
-  if (combo.meta) modifiers.push('Meta');
+  if (combo.ctrl === true) modifiers.push('Ctrl');
+  if (combo.shift === true) modifiers.push('Shift');
+  if (combo.alt === true) modifiers.push('Alt');
+  if (combo.meta === true) modifiers.push('Meta');
 
   return [...modifiers, combo.key].join('+');
 }
@@ -63,3 +70,7 @@ function formatPressedKeys(event: KeyboardEvent): string {
 
   return [...modifiers, event.key].join('+');
 }
+
+const isKeyboardEvent = (event: Event): event is KeyboardEvent => {
+  return 'key' in event;
+};

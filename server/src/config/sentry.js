@@ -53,7 +53,7 @@ function initSentry(app) {
     integrations,
 
     // Filter out sensitive data
-    beforeSend(event, hint) {
+  beforeSend(event) {
       // Don't send if explicitly disabled
       if (process.env.SENTRY_ENABLED === 'false') {
         return null;

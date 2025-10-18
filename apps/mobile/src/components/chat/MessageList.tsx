@@ -1,92 +1,74 @@
-import type { Message } from '@pawfectmatch/core';
-import React, { useEffect, useRef } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-import { MessageBubble } from './MessageBubble';
+import React, { useCallback } from 'react';
+import { FlatList, View, StyleSheet } from 'react-native';
+import { Message } from '../hooks/useChatData';
+import { MessageItem } from './MessageItem';
 import { TypingIndicator } from './TypingIndicator';
+import { tokens } from '@pawfectmatch/design-tokens';
 
 interface MessageListProps {
   messages: Message[];
-  userId?: string;
   typingUsers: string[];
-  onMessageRead?: (messageId: string) => void;
+  isOnline: boolean;
+  onMessagePress?: (message: Message) => void;
+  onMessageLongPress?: (message: Message) => void;
+  onRetryMessage?: (messageId: string) => void;
+  flatListRef?: React.RefObject<FlatList>;
+  onScroll?: (event: any) => void;
 }
 
-/**
- * Optimized Message List Component
- * Handles message rendering, scrolling, and typing indicators
- */
 export const MessageList: React.FC<MessageListProps> = ({
   messages,
-  userId,
   typingUsers,
-  onMessageRead
+  isOnline,
+  onMessagePress,
+  onMessageLongPress,
+  onRetryMessage,
+  flatListRef,
+  onScroll,
 }) => {
-  const flatListRef = useRef<FlatList>(null);
+  const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => (
+    <MessageItem
+      message={item}
+      index={index}
+      messages={messages}
+      isOnline={isOnline}
+      onPress={onMessagePress}
+      onLongPress={onMessageLongPress}
+      onRetry={onRetryMessage}
+    />
+  ), [messages, isOnline, onMessagePress, onMessageLongPress, onRetryMessage]);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    }
-  }, [messages.length]);
+  const renderTypingIndicator = useCallback(() => (
+    <TypingIndicator typingUsers={typingUsers} />
+  ), [typingUsers]);
 
-  const renderMessage = ({ item }: { item: Message }) => {
-    const isOwnMessage = item.sender._id === userId;
+  const keyExtractor = useCallback((item: Message) => item._id, []);
 
-    // Mark message as read if it's not from current user
-    if (!isOwnMessage && onMessageRead) {
-      const isRead = item.readBy.some(receipt => receipt.user === userId);
-      if (!isRead) {
-        onMessageRead(item._id);
-      }
-    }
-
-    return (
-      <View style={styles.messageWrapper}>
-        <MessageBubble
-          message={item}
-          isOwnMessage={isOwnMessage}
-          showStatus={isOwnMessage}
-          currentUserId={userId || ''}
-        />
-      </View>
-    );
-  };
-
-  const renderTypingIndicator = () => {
-    if (typingUsers.length === 0) return null;
-
-    return (
-      <View style={styles.typingWrapper}>
-        <TypingIndicator
-          isVisible
-          typingUsers={typingUsers}
-        />
-      </View>
-    );
-  };
+  const getItemLayout = useCallback((data: Message[] | null | undefined, index: number) => ({
+    length: 80, // Approximate message height
+    offset: 80 * index,
+    index,
+  }), []);
 
   return (
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
         data={messages}
-        keyExtractor={(item) => item._id}
         renderItem={renderMessage}
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
+        keyExtractor={keyExtractor}
         showsVerticalScrollIndicator={false}
-        inverted={false}
-        onContentSizeChange={() => {
-          // Auto-scroll when content size changes
-          setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-          }, 100);
-        }}
+        contentContainerStyle={styles.contentContainer}
+        onScroll={onScroll}
+        scrollEventThrottle={100}
+        initialNumToRender={20}
+        windowSize={10}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        removeClippedSubviews={true}
+        getItemLayout={getItemLayout}
+        ListFooterComponent={renderTypingIndicator}
       />
-      {renderTypingIndicator()}
     </View>
   );
 };
@@ -95,19 +77,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  messageWrapper: {
-    marginBottom: 8,
-  },
-  typingWrapper: {
-    marginTop: 8,
+  contentContainer: {
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.sm,
+    paddingBottom: tokens.spacing.lg,
   },
 });
-
-export default MessageList;

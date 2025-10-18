@@ -1,3 +1,4 @@
+import { describe, test, expect } from '@jest/globals';
 import { AIMatchingAlgorithm, type PetProfile, type UserPreferences } from '../algorithm';
 
 describe('AIMatchingAlgorithm', () => {
@@ -42,7 +43,7 @@ describe('AIMatchingAlgorithm', () => {
   test('calculates match score with detailed breakdown and insights', () => {
     const result = algo.calculateMatchScore(pet, prefs);
 
-    expect(typeof result.compatibilityScore).toBe('number');
+    expect(Number.isFinite(result.compatibilityScore)).toBe(true);
     expect(result.compatibilityScore).toBeGreaterThan(0);
 
     // Breakdown has all categories
@@ -52,7 +53,7 @@ describe('AIMatchingAlgorithm', () => {
 
     // Each breakdown value is in a reasonable number range
     for (const key of Object.keys(result.breakdown) as (keyof typeof result.breakdown)[]) {
-      expect(typeof result.breakdown[key]).toBe('number');
+      expect(Number.isFinite(result.breakdown[key])).toBe(true);
     }
 
     // Reasons/concerns/recommendations are arrays (not necessarily non-empty)

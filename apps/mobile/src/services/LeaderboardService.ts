@@ -84,7 +84,7 @@ class LeaderboardService {
   private cacheExpiration: number = 5 * 60 * 1000; // 5 minutes
 
   constructor() {
-    this.baseUrl = process.env['EXPO_PUBLIC_API_URL'] || 'https://api.pawfectmatch.com';
+    this.baseUrl = process.env['EXPO_PUBLIC_API_URL'] ?? 'https://api.pawfectmatch.com';
   }
 
   /**
@@ -96,10 +96,10 @@ class LeaderboardService {
     limit = 20
   ): Promise<LeaderboardResponse> {
     try {
-      const cacheKey = `leaderboard-${JSON.stringify(filter)}-${page}-${limit}`;
-      const cached = this.getCachedData<LeaderboardResponse>(cacheKey);
+      const cacheKey = `leaderboard-${JSON.stringify(filter)}-${page.toString()}-${limit.toString()}`;
+      const cached = this.getCachedData(cacheKey) as LeaderboardResponse | null;
 
-      if (cached) {
+      if (cached !== null) {
         return cached;
       }
 
@@ -111,7 +111,7 @@ class LeaderboardService {
         ...filter as Record<string, string>
       });
 
-      const response = await fetch(`${this.baseUrl}/api/leaderboard?${params}`, {
+      const response = await fetch(`${this.baseUrl}/api/leaderboard?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -120,15 +120,15 @@ class LeaderboardService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as LeaderboardResponse;
       this.setCachedData(cacheKey, data);
 
       return data;
     } catch (error) {
-      logger.error('Failed to get leaderboard:', { error });
+      logger.error('Failed to get leaderboard', { error });
       throw error;
     }
   }
@@ -138,14 +138,14 @@ class LeaderboardService {
    */
   async getUserRank(category?: string): Promise<{ rank: number; entry: LeaderboardEntry | null }> {
     try {
-      const cacheKey = `user-rank-${category || 'all'}`;
-      const cached = this.getCachedData<{ rank: number; entry: LeaderboardEntry | null }>(cacheKey);
+      const cacheKey = `user-rank-${category ?? 'all'}`;
+      const cached = this.getCachedData(cacheKey) as { rank: number; entry: LeaderboardEntry | null } | null;
 
-      if (cached) {
+      if (cached !== null) {
         return cached;
       }
 
-      const params = category ? `?category=${category}` : '';
+      const params = category !== undefined ? `?category=${category}` : '';
       const response = await fetch(`${this.baseUrl}/api/leaderboard/user-rank${params}`, {
         method: 'GET',
         headers: {
@@ -155,15 +155,15 @@ class LeaderboardService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { rank: number; entry: LeaderboardEntry | null };
       this.setCachedData(cacheKey, data);
 
       return data;
     } catch (error) {
-      logger.error('Failed to get user rank:', { error });
+      logger.error('Failed to get user rank', { error });
       throw error;
     }
   }
@@ -174,9 +174,9 @@ class LeaderboardService {
   async getCategories(): Promise<LeaderboardCategory[]> {
     try {
       const cacheKey = 'leaderboard-categories';
-      const cached = this.getCachedData<LeaderboardCategory[]>(cacheKey);
+      const cached = this.getCachedData(cacheKey) as LeaderboardCategory[] | null;
 
-      if (cached) {
+      if (cached !== null) {
         return cached;
       }
 
@@ -189,15 +189,15 @@ class LeaderboardService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as LeaderboardCategory[];
       this.setCachedData(cacheKey, data);
 
       return data;
     } catch (error) {
-      logger.error('Failed to get categories:', { error });
+      logger.error('Failed to get categories', { error });
       throw error;
     }
   }
@@ -208,9 +208,9 @@ class LeaderboardService {
   async getUserBadges(): Promise<Badge[]> {
     try {
       const cacheKey = 'user-badges';
-      const cached = this.getCachedData<Badge[]>(cacheKey);
+      const cached = this.getCachedData(cacheKey) as Badge[] | null;
 
-      if (cached) {
+      if (cached !== null) {
         return cached;
       }
 
@@ -223,15 +223,15 @@ class LeaderboardService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as Badge[];
       this.setCachedData(cacheKey, data);
 
       return data;
     } catch (error) {
-      logger.error('Failed to get user badges:', { error });
+      logger.error('Failed to get user badges', { error });
       throw error;
     }
   }
@@ -242,9 +242,9 @@ class LeaderboardService {
   async getPetStats(petId: string): Promise<LeaderboardStats> {
     try {
       const cacheKey = `pet-stats-${petId}`;
-      const cached = this.getCachedData<LeaderboardStats>(cacheKey);
+      const cached = this.getCachedData(cacheKey) as LeaderboardStats | null;
 
-      if (cached) {
+      if (cached !== null) {
         return cached;
       }
 
@@ -257,15 +257,15 @@ class LeaderboardService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as LeaderboardStats;
       this.setCachedData(cacheKey, data);
 
       return data;
     } catch (error) {
-      logger.error('Failed to get pet stats:', { error });
+      logger.error('Failed to get pet stats', { error });
       throw error;
     }
   }
@@ -295,7 +295,7 @@ class LeaderboardService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
       }
 
       // Clear relevant cache entries
@@ -303,7 +303,7 @@ class LeaderboardService {
       this.clearCacheByPattern('user-rank');
       this.clearCacheByPattern(`pet-stats-${petId}`);
     } catch (error) {
-      logger.error('Failed to update score:', { error });
+      logger.error('Failed to update score', { error });
       throw error;
     }
   }
@@ -317,10 +317,10 @@ class LeaderboardService {
     weeks = 4
   ): Promise<{ date: string; rank: number; score: number }[]> {
     try {
-      const cacheKey = `leaderboard-history-${category}-${period}-${weeks}`;
-      const cached = this.getCachedData<{ date: string; rank: number; score: number }[]>(cacheKey);
+      const cacheKey = `leaderboard-history-${category}-${period}-${weeks.toString()}`;
+      const cached = this.getCachedData(cacheKey) as { date: string; rank: number; score: number }[] | null;
 
-      if (cached) {
+      if (cached !== null) {
         return cached;
       }
 
@@ -339,15 +339,15 @@ class LeaderboardService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { date: string; rank: number; score: number }[];
       this.setCachedData(cacheKey, data);
 
       return data;
     } catch (error) {
-      logger.error('Failed to get leaderboard history:', { error });
+      logger.error('Failed to get leaderboard history', { error });
       throw error;
     }
   }
@@ -361,10 +361,10 @@ class LeaderboardService {
     radius = 10
   ): Promise<LeaderboardEntry[]> {
     try {
-      const cacheKey = `nearby-leaders-${latitude}-${longitude}-${radius}`;
-      const cached = this.getCachedData<LeaderboardEntry[]>(cacheKey);
+      const cacheKey = `nearby-leaders-${latitude.toString()}-${longitude.toString()}-${radius.toString()}`;
+      const cached = this.getCachedData(cacheKey) as LeaderboardEntry[] | null;
 
-      if (cached) {
+      if (cached !== null) {
         return cached;
       }
 
@@ -383,15 +383,15 @@ class LeaderboardService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as LeaderboardEntry[];
       this.setCachedData(cacheKey, data);
 
       return data;
     } catch (error) {
-      logger.error('Failed to get nearby leaders:', { error });
+      logger.error('Failed to get nearby leaders', { error });
       throw error;
     }
   }
@@ -409,16 +409,16 @@ class LeaderboardService {
   }> {
     try {
       const cacheKey = 'achievement-progress';
-      const cached = this.getCachedData<{
+      const cached = this.getCachedData(cacheKey) as {
         completed: Badge[];
         inProgress: {
           badge: Badge;
           progress: number;
           target: number;
         }[];
-      }>(cacheKey);
+      } | null;
 
-      if (cached) {
+      if (cached !== null) {
         return cached;
       }
 
@@ -431,15 +431,22 @@ class LeaderboardService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as {
+        completed: Badge[];
+        inProgress: {
+          badge: Badge;
+          progress: number;
+          target: number;
+        }[];
+      };
       this.setCachedData(cacheKey, data);
 
       return data;
     } catch (error) {
-      logger.error('Failed to get achievement progress:', { error });
+      logger.error('Failed to get achievement progress', { error });
       throw error;
     }
   }
@@ -462,13 +469,13 @@ class LeaderboardService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status.toString()}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { shareUrl: string };
       return data.shareUrl;
     } catch (error) {
-      logger.error('Failed to share achievement:', { error });
+      logger.error('Failed to share achievement', { error });
       throw error;
     }
   }
@@ -476,10 +483,10 @@ class LeaderboardService {
   /**
    * Get cached data
    */
-  private getCachedData<T>(key: string): T | null {
+  private getCachedData(key: string): unknown {
     const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.timestamp < this.cacheExpiration) {
-      return cached.data as T;
+    if (cached !== undefined && Date.now() - cached.timestamp < this.cacheExpiration) {
+      return cached.data;
     }
     return null;
   }
@@ -487,7 +494,7 @@ class LeaderboardService {
   /**
    * Set cached data
    */
-  private setCachedData<T>(key: string, data: T): void {
+  private setCachedData(key: string, data: unknown): void {
     this.cache.set(key, {
       data,
       timestamp: Date.now()
@@ -510,7 +517,7 @@ class LeaderboardService {
    */
   private async getAuthToken(): Promise<string> {
     const token = await authService.getAccessToken();
-    if (!token) {
+    if (token === null) {
       throw new Error('Authentication required for leaderboard access');
     }
     return token;

@@ -49,8 +49,7 @@ const { app, httpServer } = require('../../../server');
 const User = require('../../../src/models/User');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
-const stripe = require('stripe');
-const nock = require('nock');
+
 
 let mongoServer;
 
@@ -94,7 +93,6 @@ describe('Stripe Checkout Flow Tests', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-    nock.cleanAll();
   });
 
   it('should create a Stripe checkout session successfully', async () => {

@@ -71,8 +71,8 @@ export class BioGeneratorService {
     let prompt = `Write a ${tone} and engaging bio for a pet with the following details:\n\n`;
     prompt += `Name: ${petName}\n`;
     prompt += `Species: ${species}\n`;
-    if (breed) prompt += `Breed: ${breed}\n`;
-    if (age) prompt += `Age: ${age} years old\n`;
+    if (breed != null && breed.length > 0) prompt += `Breed: ${breed}\n`;
+    if (age != null && !isNaN(age) && age > 0) prompt += `Age: ${String(age)} years old\n`;
     if (personality.length > 0) prompt += `Personality: ${personality.join(', ')}\n`;
     if (keywords.length > 0) prompt += `Keywords to include: ${keywords.join(', ')}\n`;
     
@@ -95,7 +95,7 @@ export class BioGeneratorService {
   private extractBio(response: string): string {
     // Remove tags section
     const bioText = response.split('TAGS:')[0]?.trim();
-    return bioText || '';
+    return bioText ?? '';
   }
 
   /**
@@ -103,12 +103,13 @@ export class BioGeneratorService {
    */
   private extractTags(response: string): string[] {
     const tagsSection = response.split('TAGS:')[1];
-    if (!tagsSection) return [];
+    if (tagsSection == null || tagsSection.length === 0) return [];
     
     // Extract hashtags
-    const tags = tagsSection
-      .match(/#\w+/g)
-      ?.map(tag => tag.replace('#', '')) || [];
+    const matchResult = tagsSection.match(/#\w+/g);
+    const tags = matchResult != null
+      ? matchResult.map(tag => tag.replace('#', ''))
+      : [];
     
     return tags.slice(0, 5); // Max 5 tags
   }
@@ -119,7 +120,7 @@ export class BioGeneratorService {
   private generateFallbackBio(request: BioGenerationRequest): BioGenerationResponse {
     const { petName, species, personality = [], age } = request;
     
-    let bio = `Meet ${petName}, a wonderful ${age ? `${age}-year-old ` : ''}${species}! `;
+    let bio = `Meet ${petName}, a wonderful ${age != null && !isNaN(age) ? `${String(age)}-year-old ` : ''}${species}! `;
     
     if (personality.length > 0) {
       bio += `${petName} is known for being ${personality.join(', ')}. `;

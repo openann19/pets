@@ -1,31 +1,31 @@
-# Backend Dockerfile
-FROM node:18-alpine
+# Back-end service container
+FROM node:22-alpine
+
+ENV NODE_ENV=production
 
 WORKDIR /app
 
-# Copy package files
+RUN apk add --no-cache curl
+
+# Copy package manifests first for better layer caching
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install production dependencies only
+RUN npm ci --omit=dev
 
 # Copy source code
 COPY . .
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+# Ensure correct ownership for non-root execution
+RUN addgroup -g 1001 -S nodejs \
+  && adduser -S nodejs -u 1001 -G nodejs \
+  && chown -R nodejs:nodejs /app
 
-# Change ownership
-RUN chown -R nodejs:nodejs /app
 USER nodejs
 
-# Expose port
 EXPOSE 5000
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:5000/api/health || exit 1
 
-# Start the application
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

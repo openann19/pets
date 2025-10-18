@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const { authenticateToken, requirePremiumFeature } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ async function callEnhancedAIService(endpoint, data, options = {}) {
     const cacheKey = getCacheKey(endpoint, data);
     const cached = getCachedResponse(cacheKey);
     if (cached) {
-      console.log(`Cache hit for ${endpoint}`);
+      logger.info('Cache hit', { endpoint });
       return cached;
     }
   }
@@ -66,11 +67,11 @@ async function callEnhancedAIService(endpoint, data, options = {}) {
 
     return result;
   } catch (error) {
-    console.error(`Enhanced AI Service error (${endpoint}):`, error.message);
+    logger.error('Enhanced AI Service error', { endpoint, error: error.message });
     
     // Fallback to direct DeepSeek if AI service is unavailable
     if (error.code === 'ECONNREFUSED' || error.code === 'TIMEOUT') {
-      console.log(`Falling back to direct API for ${endpoint}`);
+      logger.info('Falling back to direct API', { endpoint });
       return await callDeepSeekAPIFallback(data, endpoint);
     }
     
@@ -111,7 +112,7 @@ async function callDeepSeekAPIFallback(data, endpoint) {
 
     return { bio: response.data.choices[0].message.content };
   } catch (error) {
-    console.error('Direct DeepSeek API error:', error.message);
+    logger.error('Direct DeepSeek API error', { error: error.message });
     throw new Error('AI service temporarily unavailable');
   }
 }
@@ -171,7 +172,7 @@ router.post('/generate-bio', authenticateToken, [
       include_call_to_action: true
     };
 
-    console.log(`Generating bio for ${petName} with tone: ${tone}, length: ${length}`);
+    logger.info('Generating bio', { petName, tone, length });
     
     const result = await callEnhancedAIService('generate-bio', requestData);
 
@@ -188,7 +189,7 @@ router.post('/generate-bio', authenticateToken, [
     });
 
   } catch (error) {
-    console.error('Enhanced bio generation error:', error);
+    logger.error('Enhanced bio generation error', { error: error.message });
     res.status(500).json({
       success: false,
       message: 'Failed to generate bio',
@@ -223,7 +224,7 @@ router.post('/analyze-photos', authenticateToken, [
       });
     }
 
-    console.log(`Analyzing ${photoUrls.length} photos for pet: ${petName || 'Unknown'}`);
+    logger.info('Analyzing photos', { photoCount: photoUrls.length, petName: petName || 'Unknown' });
 
     const results = [];
 
@@ -266,7 +267,7 @@ router.post('/analyze-photos', authenticateToken, [
 
         results.push(enhancedResult);
       } catch (error) {
-        console.warn(`Failed to analyze photo ${url} with AI service:`, error.message);
+        logger.warn('Failed to analyze photo with AI service', { photoUrl: url, error: error.message });
         
         // Fallback to basic analysis
         const fallbackResult = {
@@ -319,7 +320,7 @@ router.post('/analyze-photos', authenticateToken, [
     });
 
   } catch (error) {
-    console.error('Enhanced photo analysis error:', error);
+    logger.error('Enhanced photo analysis error', { error: error.message });
     res.status(500).json({
       success: false,
       message: 'Failed to analyze photos',
@@ -346,7 +347,11 @@ router.post('/enhanced-compatibility', authenticateToken, requirePremiumFeature(
 
     const { pet1, pet2, interaction_type = 'playdate' } = req.body;
 
-    console.log(`Enhanced compatibility analysis between ${pet1.name || 'Pet1'} and ${pet2.name || 'Pet2'}`);
+    logger.info('Enhanced compatibility analysis', { 
+      pet1: pet1.name || 'Pet1', 
+      pet2: pet2.name || 'Pet2',
+      interactionType: interaction_type 
+    });
 
     // Prepare request for enhanced AI service
     const requestData = {
@@ -402,7 +407,7 @@ router.post('/enhanced-compatibility', authenticateToken, requirePremiumFeature(
     });
 
   } catch (error) {
-    console.error('Enhanced compatibility analysis error:', error);
+    logger.error('Enhanced compatibility analysis error', { error: error.message });
     res.status(500).json({
       success: false,
       message: 'Failed to analyze compatibility',
@@ -428,15 +433,12 @@ router.post('/compatibility', authenticateToken, [
 
     const { pet1, pet2 } = req.body;
 
-    console.log(`Legacy compatibility analysis between ${pet1.name || 'Pet1'} and ${pet2.name || 'Pet2'}`);
+    logger.info('Legacy compatibility analysis', { 
+      pet1: pet1.name || 'Pet1', 
+      pet2: pet2.name || 'Pet2' 
+    });
 
     try {
-      // Try enhanced analysis first
-      const enhancedRequest = {
-        ...req.body,
-        interaction_type: 'playdate'
-      };
-      
       // Call our enhanced endpoint internally  
       const enhancedResult = await callEnhancedAIService('enhanced-compatibility', {
         pet1: {
@@ -480,7 +482,7 @@ router.post('/compatibility', authenticateToken, [
       });
 
     } catch (enhancedError) {
-      console.warn('Enhanced analysis failed, using fallback:', enhancedError.message);
+      logger.warn('Enhanced analysis failed, using fallback', { error: enhancedError.message });
       
       // Fallback to simple analysis
       const analysis = `Compatibility analysis for ${pet1.species} and ${pet2.species}. Consider their size difference, age gap of ${Math.abs((pet1.age || 1) - (pet2.age || 1))} years, and personality traits.`;
@@ -500,7 +502,7 @@ router.post('/compatibility', authenticateToken, [
     }
 
   } catch (error) {
-    console.error('Legacy compatibility analysis error:', error);
+    logger.error('Legacy compatibility analysis error', { error: error.message });
     res.status(500).json({
       success: false,
       message: 'Failed to analyze compatibility',
@@ -551,7 +553,17 @@ Write a professional, enthusiastic application that highlights why this person w
       }
     ];
 
-    const application = await callDeepSeekAPI(messages, 600);
+    const application = await axios.post(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+      model: 'deepseek-chat',
+      messages: messages,
+      max_tokens: 600,
+      temperature: 0.7
+    }, {
+      headers: {
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    }).then(response => response.data.choices[0].message.content);
 
     res.json({
       success: true,
@@ -559,7 +571,7 @@ Write a professional, enthusiastic application that highlights why this person w
     });
 
   } catch (error) {
-    console.error('Application assistance error:', error);
+    logger.error('Application assistance error', { error: error.message });
     res.status(500).json({
       success: false,
       message: 'Failed to generate application content',
@@ -584,7 +596,7 @@ router.get('/cache/stats', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Cache stats error:', error);
+    logger.error('Cache stats error', { error: error.message });
     res.status(500).json({
       success: false,
       message: 'Failed to get cache stats',
@@ -604,7 +616,7 @@ router.post('/cache/clear', authenticateToken, async (req, res) => {
       entries_cleared: entriesCleared
     });
   } catch (error) {
-    console.error('Cache clear error:', error);
+    logger.error('Cache clear error', { error: error.message });
     res.status(500).json({
       success: false,
       message: 'Failed to clear cache',
@@ -638,7 +650,7 @@ router.get('/health', async (req, res) => {
     try {
       await callEnhancedAIService('health', {}, { useCache: false, timeout: 5000 });
       healthCheck.ai_service = 'connected';
-    } catch (error) {
+    } catch {
       healthCheck.ai_service = 'unreachable';
       healthCheck.fallback = 'direct_api_available';
     }
@@ -649,7 +661,7 @@ router.get('/health', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Health check error:', error);
+    logger.error('Health check error', { error: error.message });
     res.status(500).json({
       success: false,
       message: 'Health check failed',

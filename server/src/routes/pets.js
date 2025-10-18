@@ -2,14 +2,20 @@ const express = require('express');
 const { body } = require('express-validator');
 const multer = require('multer');
 const { validate } = require('../middleware/validation');
-const { requirePremiumFeature } = require('../middleware/auth');
+const { authenticateToken, requirePremiumFeature } = require('../middleware/auth');
 const {
+  getCompletePetProfile,
   createPet,
+  createPetAdvanced,
   discoverPets,
   swipePet,
   getMyPets,
   getPet,
   updatePet,
+  updatePetAdvanced,
+  getPetAnalytics,
+  duplicatePet,
+  togglePetArchive,
   deletePet
 } = require('../controllers/petController');
 
@@ -31,31 +37,37 @@ const upload = multer({
   }
 });
 
+// Apply authentication to all routes
+router.use(authenticateToken);
+
 // Validation rules
 const createPetValidation = [
-  body('name').trim().isLength({ min: 1, max: 50 }).withMessage('Pet name is required and must be less than 50 characters'),
+  body('name').trim().isLength({ min: 2, max: 50 }).withMessage('Name must be 2-50 characters'),
   body('species').isIn(['dog', 'cat', 'bird', 'rabbit', 'other']).withMessage('Invalid species'),
-  body('breed').trim().isLength({ min: 1, max: 100 }).withMessage('Breed is required and must be less than 100 characters'),
-  body('age').isInt({ min: 0, max: 30 }).withMessage('Age must be between 0 and 30 years'),
-  body('gender').isIn(['male', 'female']).withMessage('Gender must be male or female'),
-  body('size').isIn(['tiny', 'small', 'medium', 'large', 'extra-large']).withMessage('Invalid size'),
-  body('intent').isIn(['adoption', 'mating', 'playdate', 'all']).withMessage('Invalid intent'),
-  body('weight').optional().isFloat({ min: 0, max: 200 }).withMessage('Weight must be between 0 and 200kg'),
-  body('description').optional().isLength({ max: 1000 }).withMessage('Description cannot exceed 1000 characters')
+  body('age').isInt({ min: 0, max: 30 }).withMessage('Age must be 0-30'),
+  body('gender').optional().isIn(['male', 'female']).withMessage('Invalid gender'),
+  body('size').optional().isIn(['small', 'medium', 'large', 'extra-large']).withMessage('Invalid size'),
+  body('description').optional().trim().isLength({ max: 1000 }).withMessage('Description too long')
 ];
 
 const swipeValidation = [
   body('action').isIn(['like', 'pass', 'superlike']).withMessage('Invalid swipe action')
 ];
 
-// Routes
-router.post('/', upload.array('photos', 10), createPetValidation, validate, createPet);
+// Pet management routes
 router.get('/discover', discoverPets);
 router.get('/my-pets', getMyPets);
+router.post('/', upload.array('photos', 10), createPetValidation, validate, createPet);
+router.post('/advanced', upload.array('photos', 10), createPetAdvanced);
 router.get('/:id', getPet);
-router.put('/:id', upload.array('photos', 10), updatePet);
+router.get('/:id/complete', getCompletePetProfile);
+router.get('/:id/analytics', getPetAnalytics);
+router.put('/:id', upload.array('photos', 5), updatePet);
+router.put('/:id/advanced', upload.array('photos', 5), updatePetAdvanced);
+router.post('/:id/archive', togglePetArchive);
+router.post('/:id/duplicate', duplicatePet);
+router.post('/:id/swipe', swipeValidation, validate, swipePet);
 router.delete('/:id', deletePet);
-router.post('/:petId/swipe', swipeValidation, validate, swipePet);
 
 // Premium features
 router.get('/discover/premium', requirePremiumFeature('advancedFilters'), discoverPets);

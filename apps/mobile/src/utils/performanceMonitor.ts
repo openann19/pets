@@ -1,6 +1,9 @@
 import React from 'react';
 import { InteractionManager, Platform } from 'react-native';
-import { PerformanceMetric, AsyncFunction } from '../types/common';
+import { logger } from '@pawfectmatch/core';
+
+// Declare global __DEV__ variable
+declare const __DEV__: boolean;
 
 /**
  * Performance Monitoring Utility
@@ -75,7 +78,7 @@ class PerformanceMonitor {
           
           // Log low FPS warnings
           if (this.currentFPS < 30) {
-            console.warn(`Low FPS detected: ${this.currentFPS}`);
+            logger.warn('Low FPS detected', { fps: this.currentFPS });
           }
           
           this.recordMetrics();
@@ -118,8 +121,8 @@ class PerformanceMonitor {
     if (!this.isEnabled) return null;
 
     const interaction = this.interactions.get(name);
-    if (!interaction) {
-      console.warn(`Interaction "${name}" was not started`);
+    if (interaction === undefined) {
+      logger.warn('Interaction was not started', { interactionName: name });
       return null;
     }
 
@@ -131,7 +134,7 @@ class PerformanceMonitor {
 
     // Log slow interactions
     if (duration > 100) {
-      console.warn(`Slow interaction detected: ${name} took ${duration}ms`);
+      logger.warn('Slow interaction detected', { interactionName: name, duration });
     }
 
     this.interactions.delete(name);
@@ -206,7 +209,7 @@ class PerformanceMonitor {
     if (recentInteractions.length === 0) return 0;
 
     const totalTime = recentInteractions.reduce(
-      (sum, interaction) => sum + (interaction.duration || 0),
+      (sum, interaction) => sum + (interaction.duration !== undefined ? interaction.duration : 0),
       0
     );
 
@@ -251,7 +254,7 @@ class PerformanceMonitor {
     if (!this.isEnabled) return;
 
     const summary = this.getPerformanceSummary();
-    console.log('Performance Summary:', summary);
+    logger.warn('Performance Summary', summary);
   }
 
   /**
@@ -279,8 +282,12 @@ export const performanceMonitor = new PerformanceMonitor();
  * React Hook for performance monitoring
  */
 export const usePerformanceMonitor = () => {
-  const startInteraction = (name: string) => performanceMonitor.startInteraction(name);
-  const endInteraction = (name: string) => performanceMonitor.endInteraction(name);
+  const startInteraction = (name: string) => {
+    performanceMonitor.startInteraction(name);
+  };
+  const endInteraction = (name: string) => {
+    return performanceMonitor.endInteraction(name);
+  };
   const measureInteraction = <T>(name: string, fn: () => Promise<T> | T) => 
     performanceMonitor.measureInteraction(name, fn);
   const getCurrentFPS = () => performanceMonitor.getCurrentFPS();
@@ -298,11 +305,11 @@ export const usePerformanceMonitor = () => {
 /**
  * Performance monitoring decorator for class methods
  */
-export const withPerformanceMonitoring = (name: string) => {
+export const withPerformanceMonitoring = (_name: string) => {
   return (target: Record<string, unknown>, propertyKey: string, descriptor: PropertyDescriptor) => {
-    const originalMethod = descriptor.value;
+    const originalMethod = descriptor.value as (...args: unknown[]) => unknown;
 
-    descriptor.value = async function (...args: unknown[]) {
+    descriptor.value = async function (...args: unknown[]): Promise<unknown> {
       return performanceMonitor.measureInteraction(
         `${target.constructor.name}.${propertyKey}`,
         () => originalMethod.apply(this, args)
@@ -321,7 +328,7 @@ export const withComponentPerformanceMonitoring = <P extends object>(
   componentName?: string
 ): React.FC<P> => {
   const WrappedComponent: React.FC<P> = (props) => {
-    const name = componentName || Component.displayName || Component.name || 'Component';
+    const name = componentName ?? Component.displayName ?? Component.name;
     
     React.useEffect(() => {
       performanceMonitor.startInteraction(`${name}.mount`);
@@ -334,7 +341,7 @@ export const withComponentPerformanceMonitoring = <P extends object>(
     return React.createElement(Component, props);
   };
 
-  WrappedComponent.displayName = `withPerformanceMonitoring(${Component.displayName || Component.name})`;
+  WrappedComponent.displayName = `withPerformanceMonitoring(${Component.displayName !== undefined && Component.displayName !== '' ? Component.displayName : Component.name})`;
   
   return WrappedComponent;
 };
