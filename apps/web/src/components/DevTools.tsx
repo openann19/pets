@@ -1,19 +1,17 @@
 'use client';
 
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 
 // Dynamically import React Query Devtools only when available
 const ReactQueryDevtools = lazy(() =>
-  import('@tanstack/react-query-devtools')
-    .then((d) => ({
-      default: d.ReactQueryDevtools,
-    }))
-    .catch(() => ({
-      default: () => null, // Fallback if devtools not available
-    })),
+  import('@tanstack/react-query-devtools').then((d) => ({
+    default: d.ReactQueryDevtools,
+  })).catch(() => ({
+    default: () => null, // Fallback if devtools not available
+  }))
 );
 
-export function DevTools(): JSX.Element | null {
+export function DevTools() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

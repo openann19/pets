@@ -94,6 +94,17 @@ const schemas = {
       .optional()
       .isString()
       .withMessage('billingAccount must be a string')
+  ],
+  
+  settings: [
+    body('STORY_DAILY_CAP')
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage('STORY_DAILY_CAP must be a non-negative integer'),
+    body('REDIS_URL')
+      .optional()
+      .matches(patterns.url)
+      .withMessage('REDIS_URL must be a valid URL')
   ]
 };
 

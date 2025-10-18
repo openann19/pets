@@ -1,10 +1,11 @@
+import { render } from '@testing-library/react-native';
 import React from 'react';
-import {  } from '@testing-library/react-native';
-import {  } from 'react-native';
-import {  } from '../ThemeContext';
+import { Text } from 'react-native';
+
+import { ThemeProvider, useTheme } from '../ThemeContext';
 
 // Test component that uses the theme
-const TestComponent = (): JSX.Element => {
+const TestComponent = () => {
   const { colors, isDark } = useTheme();
   return <Text testID="theme-test">{isDark ? 'dark' : 'light'}</Text>;
 };

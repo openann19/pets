@@ -2,6 +2,183 @@ const Match = require('../models/Match');
 const User = require('../models/User');
 const Pet = require('../models/Pet');
 const { sendEmail } = require('../services/emailService');
+const { getAIRecommendations } = require('../services/aiService');
+
+// @desc    Get pet recommendations for swiping
+// @route   GET /api/matches/recommendations
+// @access  Private
+const getRecommendations = async (req, res) => {
+  try {
+    const {
+      species,
+      minAge,
+      maxAge,
+      size,
+      intent,
+      distance,
+      breed,
+      limit = 20
+    } = req.query;
+
+    // Build filter object
+    const filters = {};
+    if (species) filters.species = species;
+    if (minAge) filters.minAge = parseInt(minAge);
+    if (maxAge) filters.maxAge = parseInt(maxAge);
+    if (size) filters.size = size;
+    if (intent) filters.intent = intent;
+    if (distance) filters.distance = parseInt(distance);
+    if (breed) filters.breed = breed;
+
+    // Get AI-powered recommendations
+    const recommendations = await getAIRecommendations(req.userId, Object.keys(filters).length > 0 ? filters : null, parseInt(limit));
+
+    res.json({
+      success: true,
+      data: recommendations,
+      count: recommendations.length
+    });
+
+  } catch (error) {
+    console.error('Get recommendations error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get recommendations'
+    });
+  }
+};
+
+// @desc    Record swipe action
+// @route   POST /api/matches/swipe
+// @access  Private
+const recordSwipe = async (req, res) => {
+  try {
+    const { petId, action } = req.body;
+
+    if (!['like', 'pass', 'superlike'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid action. Must be like, pass, or superlike'
+      });
+    }
+
+    // Check premium limits for swipes
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check swipe limits for non-premium users
+    if (!user.premium?.isActive && !user.premium?.features?.unlimitedLikes) {
+      if (user.premium?.usage?.swipesUsed >= user.premium?.usage?.swipesLimit) {
+        return res.status(403).json({
+          success: false,
+          message: 'Daily swipe limit reached. Upgrade to premium for unlimited swipes.',
+          code: 'SWIPE_LIMIT_EXCEEDED'
+        });
+      }
+    }
+
+    // Check superlike limits for non-premium users
+    if (action === 'superlike' && !user.premium?.features?.unlimitedLikes) {
+      if (user.premium?.usage?.superLikesUsed >= user.premium?.usage?.superLikesLimit) {
+        return res.status(403).json({
+          success: false,
+          message: 'Superlike limit reached. Upgrade to premium for more superlikes.',
+          code: 'SUPERLIKE_LIMIT_EXCEEDED'
+        });
+      }
+    }
+
+    // Record the swipe in user's preferences/analytics
+    const updateData = {
+      $push: {
+        'analytics.events': {
+          type: 'swipe',
+          petId,
+          action,
+          timestamp: new Date()
+        }
+      },
+      $inc: {
+        'analytics.totalSwipes': 1,
+        [`analytics.total${action.charAt(0).toUpperCase() + action.slice(1)}s`]: 1,
+        'premium.usage.swipesUsed': action !== 'superlike' ? 1 : 0,
+        'premium.usage.superLikesUsed': action === 'superlike' ? 1 : 0
+      },
+      $set: {
+        'analytics.lastActive': new Date()
+      }
+    };
+
+    await User.findByIdAndUpdate(req.userId, updateData);
+
+    // If it's a like or superlike, check for mutual match
+    let matchCreated = false;
+    let matchId = null;
+
+    if (action === 'like' || action === 'superlike') {
+      // Check if the pet's owner has liked this user back
+      // This is a simplified version - in production you'd have a more complex matching algorithm
+      const pet = await Pet.findById(petId).populate('owner');
+      if (pet && pet.owner) {
+        const existingLike = await User.findOne({
+          _id: pet.owner._id,
+          'swipedPets.petId': req.userId,
+          'swipedPets.action': { $in: ['like', 'superlike'] }
+        });
+
+        if (existingLike) {
+          // Create a match
+          const match = new Match({
+            pet1: petId,
+            user1: pet.owner._id,
+            pet2: req.user.pets[0], // Assuming first pet for simplicity
+            user2: req.userId,
+            initiatedBy: req.userId,
+            status: 'active'
+          });
+
+          await match.save();
+
+          matchCreated = true;
+          matchId = match._id;
+
+          // Update both users
+          await User.findByIdAndUpdate(pet.owner._id, {
+            $push: { matches: match._id },
+            $inc: { 'analytics.totalMatches': 1 }
+          });
+
+          await User.findByIdAndUpdate(req.userId, {
+            $push: { matches: match._id },
+            $inc: { 'analytics.totalMatches': 1 }
+          });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        action,
+        petId,
+        matchCreated,
+        matchId
+      }
+    });
+
+  } catch (error) {
+    console.error('Record swipe error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to record swipe'
+    });
+  }
+};
 
 // @desc    Get user's matches
 // @route   GET /api/matches
@@ -22,7 +199,6 @@ const getMatches = async (req, res) => {
     };
 
     // Check if user has archived matches (don't show archived by default)
-    const userKey = 'user1'; // We'll determine the correct key in the aggregation
     if (status === 'active') {
       // We'll filter archived matches in the aggregation pipeline
     }
@@ -502,6 +678,8 @@ const getMatchStats = async (req, res) => {
 };
 
 module.exports = {
+  getRecommendations,
+  recordSwipe,
   getMatches,
   getMatch,
   getMessages,

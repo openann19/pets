@@ -28,6 +28,7 @@
     "analyze:bundle": "echo 'Bundle analysis not applicable for UI package'"
   },
   "dependencies": {
+    "@pawfectmatch/core": "workspace:*",
     "@react-aria/button": "^3.9.2",
     "@react-aria/dialog": "^3.5.7",
     "@react-aria/focus": "^3.15.0",

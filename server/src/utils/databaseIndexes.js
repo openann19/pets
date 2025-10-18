@@ -3,12 +3,14 @@
  * Creates indexes for all frequently queried fields to eliminate N+1 queries
  */
 
-const User = require('./models/User');
-const Pet = require('./models/Pet');
-const Match = require('./models/Match');
-const Message = require('./models/Message');
-const AuditLog = require('./models/AuditLog');
-const logger = require('./utils/logger');
+const User = require('../models/User');
+const Pet = require('../models/Pet');
+const Match = require('../models/Match');
+let Message;
+try { Message = require('../models/Message'); } catch { }
+let AuditLog;
+try { AuditLog = require('../models/AdminActivityLog'); } catch { }
+const logger = require('../utils/logger');
 
 const createIndexes = async () => {
   try {
@@ -40,26 +42,33 @@ const createIndexes = async () => {
     await Match.collection.createIndex({ pet1: 1, pet2: 1 });
 
     // Message indexes (critical for chat performance)
-    await Message.collection.createIndex({ matchId: 1 });
-    await Message.collection.createIndex({ sender: 1 });
-    await Message.collection.createIndex({ receiver: 1 });
-    await Message.collection.createIndex({ createdAt: -1 });
-    await Message.collection.createIndex({ matchId: 1, createdAt: -1 });
+    // Message indexes (if standalone Message model exists)
+    if (Message && Message.collection) {
+      await Message.collection.createIndex({ matchId: 1 });
+      await Message.collection.createIndex({ sender: 1 });
+      await Message.collection.createIndex({ receiver: 1 });
+      await Message.collection.createIndex({ createdAt: -1 });
+      await Message.collection.createIndex({ matchId: 1, createdAt: -1 });
+    }
 
     // AuditLog indexes
-    await AuditLog.collection.createIndex({ adminId: 1 });
-    await AuditLog.collection.createIndex({ userId: 1 });
-    await AuditLog.collection.createIndex({ action: 1 });
-    await AuditLog.collection.createIndex({ resourceType: 1 });
-    await AuditLog.collection.createIndex({ createdAt: -1 });
-    await AuditLog.collection.createIndex({ adminId: 1, createdAt: -1 });
-    await AuditLog.collection.createIndex({ userId: 1, createdAt: -1 });
+    if (AuditLog && AuditLog.collection) {
+      await AuditLog.collection.createIndex({ adminId: 1 });
+      await AuditLog.collection.createIndex({ userId: 1 });
+      await AuditLog.collection.createIndex({ action: 1 });
+      await AuditLog.collection.createIndex({ resourceType: 1 });
+      await AuditLog.collection.createIndex({ createdAt: -1 });
+      await AuditLog.collection.createIndex({ adminId: 1, createdAt: -1 });
+      await AuditLog.collection.createIndex({ userId: 1, createdAt: -1 });
+    }
 
     // Compound indexes for complex queries
     await User.collection.createIndex({ role: 1, status: 1 });
     await User.collection.createIndex({ isVerified: 1, createdAt: -1 });
     await Match.collection.createIndex({ status: 1, createdAt: -1 });
-    await Message.collection.createIndex({ matchId: 1, read: 1, createdAt: -1 });
+    if (Message && Message.collection) {
+      await Message.collection.createIndex({ matchId: 1, read: 1, createdAt: -1 });
+    }
 
     logger.info('Database indexes created successfully');
   } catch (error) {
@@ -72,7 +81,7 @@ const dropIndexes = async () => {
   try {
     logger.info('Dropping database indexes...');
 
-    const collections = [User, Pet, Match, Message, AuditLog];
+    const collections = [User, Pet, Match, Message, AuditLog].filter(Boolean);
 
     for (const Model of collections) {
       const indexes = await Model.collection.indexes();
@@ -98,9 +107,9 @@ const getIndexStats = async () => {
       { model: User, name: 'users' },
       { model: Pet, name: 'pets' },
       { model: Match, name: 'matches' },
-      { model: Message, name: 'messages' },
-      { model: AuditLog, name: 'auditlogs' }
-    ];
+      Message && { model: Message, name: 'messages' },
+      AuditLog && { model: AuditLog, name: 'auditlogs' }
+    ].filter(Boolean);
 
     for (const { model, name } of collections) {
       const indexes = await model.collection.indexes();

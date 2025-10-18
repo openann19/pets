@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
-  withSequence,
+  useSharedValue,
   withDelay,
-  withTiming,
   withRepeat,
+  withSequence,
+  withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -61,8 +61,6 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
     }
   }, [isVisible, dot1, dot2, dot3]);
 
-  if (!isVisible) return null;
-
   const getTypingText = () => {
     if (typingUsers.length === 1) {
       return 'Someone is typing...';
@@ -83,6 +81,8 @@ export const TypingIndicator: React.FC<TypingIndicatorProps> = ({
   const animatedStyle3 = useAnimatedStyle(() => ({
     transform: [{ scaleY: 0.6 + (dot3.value * 0.4) }],
   }));
+
+  if (!isVisible) return null;
 
   return (
     <View style={styles.container}>

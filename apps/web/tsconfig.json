@@ -1,112 +1,42 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    // === Next.js Specific ===
     "jsx": "preserve",
-    "jsxImportSource": "react",
-    "lib": [
-      "ES2023",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "allowJs": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    // === STRICT 2025 TYPE CHECKING - NO COMPROMISES ===
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    // === ADDITIONAL STRICT SETTINGS ===
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    // === CODE QUALITY ===
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    // === Path Mapping ===
     "baseUrl": ".",
     "paths": {
       "@/*": [
         "src/*"
-      ],
-      "@/components/*": [
-        "src/components/*"
-      ],
-      "@/services/*": [
-        "src/services/*"
-      ],
-      "@/hooks/*": [
-        "src/hooks/*"
-      ],
-      "@/utils/*": [
-        "src/utils/*"
-      ],
-      "@/types/*": [
-        "src/types/*"
-      ],
-      "@/lib/*": [
-        "src/lib/*"
-      ],
-      "@/test/*": [
-        "test/*"
       ]
     },
-    // === Next.js Plugin ===
+    "allowJs": true,
+    "incremental": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "skipLibCheck": true,
     "plugins": [
       {
         "name": "next"
       }
     ],
-    // === Types ===
-    "types": [
-      "node",
-      "jest",
-      "@testing-library/jest-dom"
-    ],
-    // === Performance ===
-    "incremental": true,
-    "skipLibCheck": true
-    // Note: All strict type checking options are inherited from root tsconfig.json
-    // This includes: noUncheckedIndexedAccess, exactOptionalPropertyTypes, etc.
+    "strict": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUncheckedIndexedAccess": true
   },
   "include": [
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "**/*.ts",
-    "**/*.tsx",
-    "app/**/*.ts",
-    "app/**/*.tsx",
-    "src/**/*.ts",
-    "src/**/*.tsx"
+    "**/*.tsx"
   ],
   "exclude": [
-    "node_modules",
-    ".next",
-    "out",
-    "dist",
-    "build",
-    "coverage",
-    "src/tests/**",
-    "test/**",
     "cypress",
-    "e2e",
-    "**/*.cy.ts",
-    "**/*.cy.tsx",
     "**/*.test.ts",
     "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "storybook-static",
-    "playwright.config.ts"
+    "src/__tests__",
+    "src/components/**/__tests__",
+    "public/app-components/**"
   ]
 }

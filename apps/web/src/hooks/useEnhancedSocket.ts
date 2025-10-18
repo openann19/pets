@@ -5,8 +5,8 @@
 
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { io, type Socket } from 'socket.io-client';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../lib/auth-store';
 import { logger } from '../services/logger';
 
@@ -28,30 +28,27 @@ interface EnhancedSocketHook {
   socket: Socket | null;
   state: SocketState;
   typingUsers: TypingUser[];
-
+  
   // Connection methods
   connect: () => void;
   disconnect: () => void;
-
+  
   // Messaging methods
-  sendMessage: (
-    matchId: string,
-    message: { content: string; type?: string; attachments?: unknown[] },
-  ) => void;
+  sendMessage: (matchId: string, message: any) => void;
   joinMatch: (matchId: string) => void;
   leaveMatch: (matchId: string) => void;
-
+  
   // Typing methods (fixed inconsistency)
   startTyping: (matchId: string) => void;
   stopTyping: (matchId: string) => void;
-
+  
   // Presence methods
   updatePresence: (status: 'online' | 'away' | 'offline') => void;
-
+  
   // Event subscription
-  on: (event: string, callback: (...args: unknown[]) => void) => void;
-  off: (event: string, callback: (...args: unknown[]) => void) => void;
-  emit: (event: string, data?: unknown) => void;
+  on: (event: string, callback: (...args: any[]) => void) => void;
+  off: (event: string, callback: (...args: any[]) => void) => void;
+  emit: (event: string, data?: any) => void;
 }
 
 export const useEnhancedSocket = (): EnhancedSocketHook => {
@@ -61,8 +58,6 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const latencyHistoryRef = useRef<number[]>([]);
-  const stopLatencyMonitoringRef = useRef<() => void>(() => { });
-  const clearReconnectTimeoutRef = useRef<() => void>(() => { });
 
   const [state, setState] = useState<SocketState>({
     isConnected: false,
@@ -70,22 +65,21 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
     latency: 0,
     reconnectAttempts: 0,
   });
-
+  
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
 
   // Enhanced connection quality calculation
   const updateConnectionQuality = useCallback(() => {
-    const avgLatency =
-      latencyHistoryRef.current.reduce((a, b) => a + b, 0) / latencyHistoryRef.current.length;
-
+    const avgLatency = latencyHistoryRef.current.reduce((a, b) => a + b, 0) / latencyHistoryRef.current.length;
+    
     let quality: SocketState['connectionQuality'] = 'offline';
     if (state.isConnected) {
       if (avgLatency < 100) quality = 'excellent';
       else if (avgLatency < 300) quality = 'good';
       else quality = 'poor';
     }
-
-    setState((prev) => ({ ...prev, connectionQuality: quality, latency: avgLatency }));
+    
+    setState(prev => ({ ...prev, connectionQuality: quality, latency: avgLatency }));
   }, [state.isConnected]);
 
   // Initialize socket connection
@@ -100,8 +94,8 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
       socketRef.current.disconnect();
     }
 
-    const socketUrl = process.env['NEXT_PUBLIC_SOCKET_URL'] || 'wss://api.pawfectmatch.com';
-
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5001';
+    
     logger.info('Connecting to enhanced socket', { url: socketUrl, userId: user.id });
 
     socketRef.current = io(socketUrl, {
@@ -121,29 +115,29 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
     // Enhanced connection handlers
     socket.on('connect', () => {
       logger.info('Socket connected successfully', { id: socket.id });
-      setState((prev) => ({
-        ...prev,
-        isConnected: true,
-        reconnectAttempts: 0,
+      setState(prev => ({ 
+        ...prev, 
+        isConnected: true, 
+        reconnectAttempts: 0 
       }));
-
+      
       // Start latency monitoring
       startLatencyMonitoring();
-
+      
       // Join user's personal room
       socket.emit('join_user_room', { userId: user.id });
     });
 
     socket.on('disconnect', (reason) => {
       logger.warn('Socket disconnected', { reason });
-      setState((prev) => ({
-        ...prev,
-        isConnected: false,
-        connectionQuality: 'offline',
+      setState(prev => ({ 
+        ...prev, 
+        isConnected: false, 
+        connectionQuality: 'offline' 
       }));
-
+      
       stopLatencyMonitoring();
-
+      
       // Attempt intelligent reconnection
       if (reason === 'io server disconnect') {
         scheduleReconnect();
@@ -151,46 +145,38 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
     });
 
     socket.on('connect_error', (error) => {
-      logger.error('Socket connection error', { error: error.message });
-      setState((prev) => ({
-        ...prev,
-        reconnectAttempts: prev.reconnectAttempts + 1,
+      logger.error('Socket connection error', error);
+      setState(prev => ({ 
+        ...prev, 
+        reconnectAttempts: prev.reconnectAttempts + 1 
       }));
     });
 
     // Enhanced typing handlers (fixes identified inconsistency)
-    socket.on(
-      'user_typing',
-      (data: { userId: string; userName: string; matchId: string; isTyping: boolean }) => {
-        if (data.isTyping) {
-          setTypingUsers((prev) => {
-            const filtered = prev.filter(
-              (u) => !(u.userId === data.userId && u.matchId === data.matchId),
-            );
-            return [
-              ...filtered,
-              {
-                userId: data.userId,
-                userName: data.userName,
-                matchId: data.matchId,
-                timestamp: Date.now(),
-              },
-            ];
-          });
-        } else {
-          setTypingUsers((prev) =>
-            prev.filter((u) => !(u.userId === data.userId && u.matchId === data.matchId)),
-          );
-        }
-      },
-    );
+    socket.on('user_typing', (data: { userId: string; userName: string; matchId: string; isTyping: boolean }) => {
+      if (data.isTyping) {
+        setTypingUsers(prev => {
+          const filtered = prev.filter(u => !(u.userId === data.userId && u.matchId === data.matchId));
+          return [...filtered, {
+            userId: data.userId,
+            userName: data.userName,
+            matchId: data.matchId,
+            timestamp: Date.now(),
+          }];
+        });
+      } else {
+        setTypingUsers(prev => 
+          prev.filter(u => !(u.userId === data.userId && u.matchId === data.matchId))
+        );
+      }
+    });
 
     // Enhanced message handlers
     socket.on('new_message', (data) => {
       logger.info('New message received', { matchId: data.matchId });
       // Trigger notification sound/vibration if page not visible
       if (document.hidden) {
-        triggerNotification();
+        triggerNotification('New message received!');
       }
     });
 
@@ -202,6 +188,7 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
       }
       updateConnectionQuality();
     });
+
   }, [accessToken, user, updateConnectionQuality]);
 
   // Disconnect socket
@@ -210,18 +197,12 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
       socketRef.current.disconnect();
       socketRef.current = null;
     }
-
-    // These functions are stable refs so they don't need to be dependencies
-    if (stopLatencyMonitoringRef.current) {
-      stopLatencyMonitoringRef.current();
-    }
-    if (clearReconnectTimeoutRef.current) {
-      clearReconnectTimeoutRef.current();
-    }
+    stopLatencyMonitoring();
+    clearReconnectTimeout();
   }, []);
 
   // Enhanced messaging methods
-  const sendMessage = useCallback((matchId: string, message: { content: string; type?: string; attachments?: unknown[] }) => {
+  const sendMessage = useCallback((matchId: string, message: any) => {
     if (!socketRef.current?.connected) {
       logger.warn('Cannot send message - socket not connected');
       return;
@@ -230,9 +211,7 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
     const messageData = {
       matchId,
       message: {
-        content: message.content,
-        type: message.type,
-        attachments: message.attachments,
+        ...message,
         timestamp: new Date().toISOString(),
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       },
@@ -244,98 +223,78 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
 
   const joinMatch = useCallback((matchId: string) => {
     if (!socketRef.current?.connected) return;
-
+    
     socketRef.current.emit('join_match', { matchId });
     logger.debug('Joined match room', { matchId });
   }, []);
 
   const leaveMatch = useCallback((matchId: string) => {
     if (!socketRef.current?.connected) return;
-
+    
     socketRef.current.emit('leave_match', { matchId });
     logger.debug('Left match room', { matchId });
   }, []);
 
   // Fixed typing indicators (addresses architecture gap)
-  const startTyping = useCallback(
-    (matchId: string) => {
-      if (!socketRef.current?.connected) return;
+  const startTyping = useCallback((matchId: string) => {
+    if (!socketRef.current?.connected) return;
+    
+    socketRef.current.emit('typing', { 
+      matchId, 
+      isTyping: true,
+      userId: user?.id,
+      userName: user?.name || 'User',
+    });
+    
+    // Auto-stop typing after 3 seconds
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      stopTyping(matchId);
+    }, 3000);
+  }, [user]);
 
-      socketRef.current.emit('typing', {
-        matchId,
-        isTyping: true,
-        userId: user?.id,
-        userName: user ? `${user.firstName} ${user.lastName}` : 'User',
-      });
-
-      // Auto-stop typing after 3 seconds
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = null;
-      }
-
-      typingTimeoutRef.current = setTimeout(() => {
-        if (socketRef.current?.connected) {
-          socketRef.current.emit('typing', {
-            matchId,
-            isTyping: false,
-            userId: user?.id,
-            userName: user ? `${user.firstName} ${user.lastName}` : 'User',
-          });
-        }
-        typingTimeoutRef.current = null;
-      }, 3000);
-    },
-    [user],
-  );
-
-  const stopTyping = useCallback(
-    (matchId: string) => {
-      // First clear any existing timeout to prevent race conditions
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = null;
-      }
-
-      // Then send the stop typing event if connected
-      if (!socketRef.current?.connected) return;
-
-      socketRef.current.emit('typing', {
-        matchId,
-        isTyping: false,
-        userId: user?.id,
-        userName: user ? `${user.firstName} ${user.lastName}` : 'User',
-      });
-    },
-    [user],
-  );
+  const stopTyping = useCallback((matchId: string) => {
+    if (!socketRef.current?.connected) return;
+    
+    socketRef.current.emit('typing', { 
+      matchId, 
+      isTyping: false,
+      userId: user?.id,
+      userName: user?.name || 'User',
+    });
+    
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+  }, [user]);
 
   // Presence updates
-  const updatePresence = useCallback(
-    (status: 'online' | 'away' | 'offline') => {
-      if (!socketRef.current?.connected) return;
-
-      socketRef.current.emit('presence_update', {
-        userId: user?.id,
-        status,
-        timestamp: new Date().toISOString(),
-      });
-    },
-    [user],
-  );
+  const updatePresence = useCallback((status: 'online' | 'away' | 'offline') => {
+    if (!socketRef.current?.connected) return;
+    
+    socketRef.current.emit('presence_update', { 
+      userId: user?.id,
+      status,
+      timestamp: new Date().toISOString(),
+    });
+  }, [user]);
 
   // Event subscription methods
-  const on = useCallback((event: string, callback: (...args: unknown[]) => void) => {
+  const on = useCallback((event: string, callback: (...args: any[]) => void) => {
     if (!socketRef.current) return;
     socketRef.current.on(event, callback);
   }, []);
 
-  const off = useCallback((event: string, callback: (...args: unknown[]) => void) => {
+  const off = useCallback((event: string, callback: (...args: any[]) => void) => {
     if (!socketRef.current) return;
     socketRef.current.off(event, callback);
   }, []);
 
-  const emit = useCallback((event: string, data?: unknown) => {
+  const emit = useCallback((event: string, data?: any) => {
     if (!socketRef.current?.connected) {
       logger.warn(`Cannot emit ${event} - socket not connected`);
       return;
@@ -344,82 +303,62 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
   }, []);
 
   // Helper methods
-  const stopLatencyMonitoring = useCallback(() => {
-    if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current);
-      pingIntervalRef.current = null;
-    }
-  }, []);
-
-  const startLatencyMonitoring = useCallback(() => {
-    // Clear existing interval first to prevent duplicates
-    if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current);
-      pingIntervalRef.current = null;
-    }
-
-    // Create a new monitoring interval
+  const startLatencyMonitoring = () => {
+    if (pingIntervalRef.current) return;
+    
     pingIntervalRef.current = setInterval(() => {
       if (socketRef.current?.connected) {
         const start = Date.now();
         socketRef.current.emit('ping', () => {
           const latency = Date.now() - start;
-          setState((prev) => ({ ...prev, latency }));
+          setState(prev => ({ ...prev, latency }));
         });
-      } else {
-        // Auto-cleanup if socket disconnected
-        stopLatencyMonitoring();
       }
     }, 5000);
-  }, [stopLatencyMonitoring]);
+  };
 
-  // Store function reference for use in disconnect
-  useEffect(() => {
-    stopLatencyMonitoringRef.current = stopLatencyMonitoring;
-  }, [stopLatencyMonitoring]);
-
-  const clearReconnectTimeout = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
+  const stopLatencyMonitoring = () => {
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current);
+      pingIntervalRef.current = null;
     }
-  }, []);
+  };
 
-  const scheduleReconnect = useCallback(() => {
-    // Clear any existing reconnection timeout first
-    clearReconnectTimeout();
-
-    // Use exponential backoff for reconnection attempts
+  const scheduleReconnect = () => {
+    if (reconnectTimeoutRef.current) return;
+    
     const delay = Math.min(1000 * Math.pow(2, state.reconnectAttempts), 30000);
-
+    
     reconnectTimeoutRef.current = setTimeout(() => {
       logger.info('Attempting socket reconnection', { attempt: state.reconnectAttempts + 1 });
       connect();
       reconnectTimeoutRef.current = null;
     }, delay);
-  }, [state.reconnectAttempts, connect, clearReconnectTimeout]);
+  };
 
-  // Store function reference for use in disconnect
-  useEffect(() => {
-    clearReconnectTimeoutRef.current = clearReconnectTimeout;
-  }, [clearReconnectTimeout]);
+  const clearReconnectTimeout = () => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  };
 
-  const triggerNotification = (): void => {
+  const triggerNotification = (message: string) => {
     try {
       // Web vibration
       if ('vibrate' in navigator) {
         navigator.vibrate([200, 100, 200]);
       }
-
+      
       // Browser notification (if permission granted)
       if (Notification.permission === 'granted') {
         new Notification('PawfectMatch', {
-          body: 'New message received!',
+          body: message,
           icon: '/icons/paw-icon.png',
           badge: '/icons/paw-badge.png',
         });
       }
-
+      
       // Audio notification
       const audio = new Audio('/sounds/notification.mp3');
       audio.volume = 0.3;
@@ -427,74 +366,36 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
         // Audio failed, that's ok
       });
     } catch (error) {
-      logger.debug('Notification failed', { error });
+      console.debug('Notification failed:', error);
     }
   };
 
-  // Auto-connect on mount with comprehensive cleanup
+  // Auto-connect on mount
   useEffect(() => {
     if (accessToken && user) {
       connect();
     }
-
-    // Complete cleanup on component unmount
+    
     return () => {
-      // Disconnect socket
       disconnect();
-
-      // Ensure all intervals and timeouts are cleared
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = null;
-      }
-
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-        pingIntervalRef.current = null;
-      }
-
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
-
-      // Reset state
-      setState({
-        isConnected: false,
-        connectionQuality: 'offline',
-        latency: 0,
-        reconnectAttempts: 0,
-      });
-
-      setTypingUsers([]);
     };
   }, [accessToken, user, connect, disconnect]);
 
   // Cleanup typing users (remove stale entries)
   useEffect(() => {
-    // Create a named interval reference for proper cleanup
-    const cleanupInterval = setInterval(() => {
+    const cleanup = setInterval(() => {
       const now = Date.now();
-      setTypingUsers(
-        (prev) => prev.filter((user) => now - user.timestamp < 5000), // Remove after 5 seconds
+      setTypingUsers(prev => 
+        prev.filter(user => now - user.timestamp < 5000) // Remove after 5 seconds
       );
     }, 1000);
 
-    // Return comprehensive cleanup function
-    return () => {
-      clearInterval(cleanupInterval);
-
-      // Also ensure typing timeout is cleared on unmount
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = null;
-      }
-    };
-  }, [setTypingUsers]);
+    return () => clearInterval(cleanup);
+  }, []);
 
   // Page visibility handling
   useEffect(() => {
-    const handleVisibilityChange = (): void => {
+    const handleVisibilityChange = () => {
       if (document.hidden) {
         updatePresence('away');
       } else {
@@ -503,7 +404,7 @@ export const useEnhancedSocket = (): EnhancedSocketHook => {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
+    
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };

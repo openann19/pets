@@ -2,8 +2,18 @@
  * Redis configuration for caching and rate limiting
  */
 
-const Redis = require('ioredis');
+let Redis;
 const logger = require('../utils/logger');
+const isTestEnv = process.env.NODE_ENV === 'test';
+
+// Optional dependency: allow running without ioredis (e.g., in tests/CI)
+try {
+  // eslint-disable-next-line import/no-extraneous-dependencies, global-require
+  Redis = require('ioredis');
+} catch (err) {
+  Redis = null;
+  if (!isTestEnv) logger.warn('ioredis not installed; Redis features will be disabled in this environment');
+}
 
 let redisClient = null;
 
@@ -12,9 +22,14 @@ let redisClient = null;
  */
 function initRedis() {
   const redisUrl = process.env.REDIS_URL;
-  
+
+  if (!Redis) {
+    // ioredis package not available (tests or minimal installs)
+    return null;
+  }
+
   if (!redisUrl) {
-    logger.warn('REDIS_URL not configured, Redis features will be disabled');
+    if (!isTestEnv) logger.warn('REDIS_URL not configured, Redis features will be disabled');
     return null;
   }
 
@@ -36,11 +51,11 @@ function initRedis() {
     });
 
     redisClient.on('connect', () => {
-      logger.info('Redis client connected');
+      if (!isTestEnv) logger.info('Redis client connected');
     });
 
     redisClient.on('ready', () => {
-      logger.info('Redis client ready');
+      if (!isTestEnv) logger.info('Redis client ready');
     });
 
     redisClient.on('error', (err) => {
@@ -48,11 +63,11 @@ function initRedis() {
     });
 
     redisClient.on('close', () => {
-      logger.warn('Redis client connection closed');
+      if (!isTestEnv) logger.warn('Redis client connection closed');
     });
 
     redisClient.on('reconnecting', () => {
-      logger.info('Redis client reconnecting');
+      if (!isTestEnv) logger.info('Redis client reconnecting');
     });
 
     return redisClient;
@@ -79,7 +94,7 @@ async function closeRedis() {
   if (redisClient) {
     await redisClient.quit();
     redisClient = null;
-    logger.info('Redis connection closed');
+    if (!isTestEnv) logger.info('Redis connection closed');
   }
 }
 
@@ -92,7 +107,7 @@ const cache = {
    */
   async get(key) {
     if (!redisClient) return null;
-    
+
     try {
       const value = await redisClient.get(key);
       return value ? JSON.parse(value) : null;
@@ -107,7 +122,7 @@ const cache = {
    */
   async set(key, value, ttl = 3600) {
     if (!redisClient) return false;
-    
+
     try {
       const serialized = JSON.stringify(value);
       if (ttl) {
@@ -127,7 +142,7 @@ const cache = {
    */
   async del(key) {
     if (!redisClient) return false;
-    
+
     try {
       await redisClient.del(key);
       return true;
@@ -142,7 +157,7 @@ const cache = {
    */
   async exists(key) {
     if (!redisClient) return false;
-    
+
     try {
       const result = await redisClient.exists(key);
       return result === 1;
@@ -157,7 +172,7 @@ const cache = {
    */
   async expire(key, ttl) {
     if (!redisClient) return false;
-    
+
     try {
       await redisClient.expire(key, ttl);
       return true;
@@ -172,7 +187,7 @@ const cache = {
    */
   async incr(key) {
     if (!redisClient) return 0;
-    
+
     try {
       return await redisClient.incr(key);
     } catch (error) {
@@ -186,10 +201,10 @@ const cache = {
    */
   async flush() {
     if (!redisClient) return false;
-    
+
     try {
       await redisClient.flushdb();
-      logger.warn('Cache flushed');
+      if (!isTestEnv) logger.warn('Cache flushed');
       return true;
     } catch (error) {
       logger.error('Cache flush error', { error: error.message });
@@ -198,10 +213,13 @@ const cache = {
   },
 };
 
-// Initialize Redis on module load
+// Initialize Redis on module load (safe no-op if Redis not available)
 const client = initRedis();
 
-module.exports = client;
+// Always export a non-null object to allow attaching helper properties
+const exported = client || { isReady: false };
+
+module.exports = exported;
 module.exports.getRedisClient = getRedisClient;
 module.exports.closeRedis = closeRedis;
 module.exports.cache = cache;

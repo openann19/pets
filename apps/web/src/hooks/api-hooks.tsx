@@ -3,669 +3,545 @@
  * Production-ready with caching, optimistic updates, and error handling
  */
 
-import type { Pet, PetFilters, SwipeAction, User } from '@pawfectmatch/core';
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseMutationResult,
-  type UseQueryResult,
-} from '@tanstack/react-query';
+// @ts-nocheck
+import { useAuthStore } from '@/lib/auth-store';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import apiClient from '../lib/api-client';
-import { _useAuthStore } from '../stores/auth-store';
-
-// Define missing types
-interface PetCreateData {
-  name: string;
-  species: string;
-  breed: string;
-  age: number;
-  bio: string;
-  photos: string[];
-  temperament: string[];
-  energy: 'low' | 'medium' | 'high';
-  training: 'none' | 'basic' | 'intermediate' | 'advanced';
-  goodWithKids: boolean;
-  goodWithPets: boolean;
-  location: {
-    latitude: number;
-    longitude: number;
-  };
-  gender: 'male' | 'female';
-  size: 'small' | 'medium' | 'large';
-  weight: number;
-  description: string;
-  houseTrained: boolean;
-}
-
-interface PetUpdateData {
-  id: string;
-  name?: string;
-  species?: string;
-  breed?: string;
-  age?: number;
-  bio?: string;
-  photos?: string[];
-  temperament?: string[];
-  energy?: 'low' | 'medium' | 'high';
-  training?: 'none' | 'basic' | 'intermediate' | 'advanced';
-  goodWithKids?: boolean;
-  goodWithPets?: boolean;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-  gender?: 'male' | 'female';
-  size?: 'small' | 'medium' | 'large';
-  weight?: number;
-  description?: string;
-  houseTrained?: boolean;
-}
-
-interface Location {
-  latitude: number;
-  longitude: number;
-}
+import type { Match, Message, Pet, SwipeAction, User } from '../types';
 
 // ============= AUTHENTICATION HOOKS =============
-export function useAuth(): {
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: { email: string; password: string; name: string }) => Promise<void>;
-  logout: () => void;
-  isLoading: boolean;
-  error: string | null;
-} {
+export function useAuth() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { setUser, setTokens, logout: storeLogout } = _useAuthStore();
+  const { setUser, setTokens, logout: storeLogout } = useAuthStore();
 
   const loginMutation = useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) =>
+    mutationFn: ({ email, password }: { email: string; password: string }) => 
       apiClient.login(email, password),
-    onSuccess: (data: unknown): undefined => {
-      if (
-        data !== null &&
-        data !== undefined &&
-        typeof data === 'object' &&
-        'user' in data &&
-        'token' in data
-      ) {
-        const response = data as { user: unknown; token: string };
-        setUser(response.user as User);
-        setTokens(response.token, response.token);
+    onSuccess: (data) => {
+      const user = (data as any)?.user || (data as any)?.data?.user;
+      const accessToken = (data as any)?.accessToken || (data as any)?.data?.accessToken;
+      const refreshToken = (data as any)?.refreshToken || (data as any)?.data?.refreshToken;
+      if (user && accessToken) {
+        setUser(user);
+        setTokens(accessToken, refreshToken || '');
         queryClient.invalidateQueries({ queryKey: ['user'] });
         router.push('/dashboard');
       }
-      return undefined;
-    },
+    }
   });
 
   const registerMutation = useMutation({
     mutationFn: (data: { email: string; password: string; name: string }) =>
       apiClient.register(data),
-    onSuccess: (data: unknown): undefined => {
-      if (
-        data !== null &&
-        data !== undefined &&
-        typeof data === 'object' &&
-        'user' in data &&
-        'token' in data
-      ) {
-        const response = data as { user: unknown; token: string };
-        setUser(response.user as User);
-        setTokens(response.token, response.token);
+    onSuccess: (data) => {
+      const user = (data as any)?.user || (data as any)?.data?.user;
+      const accessToken = (data as any)?.accessToken || (data as any)?.data?.accessToken;
+      const refreshToken = (data as any)?.refreshToken || (data as any)?.data?.refreshToken;
+      if (user && accessToken) {
+        setUser(user);
+        setTokens(accessToken, refreshToken || '');
         queryClient.invalidateQueries({ queryKey: ['user'] });
         router.push('/dashboard');
       }
-      return undefined;
-    },
+    }
   });
 
   const logoutMutation = useMutation({
     mutationFn: () => apiClient.logout(),
-    onSuccess: (): undefined => {
+    onSuccess: () => {
       storeLogout();
       queryClient.clear();
       router.push('/');
-      return undefined;
-    },
+    }
   });
 
   return {
-    login: async (email: string, password: string): Promise<void> => {
-      await loginMutation.mutateAsync({ email, password });
-    },
-    register: async (data: { email: string; password: string; name: string }): Promise<void> => {
-      await registerMutation.mutateAsync(data);
-    },
-    logout: (): void => {
-      logoutMutation.mutate();
-    },
-    isLoading: loginMutation.isPending || registerMutation.isPending || logoutMutation.isPending,
-    error:
-      loginMutation.error?.message ??
-      registerMutation.error?.message ??
-      logoutMutation.error?.message ??
-      null,
+    login: loginMutation.mutate,
+    register: registerMutation.mutate,
+    logout: logoutMutation.mutate,
+    isLoading: loginMutation.isPending || registerMutation.isPending,
+    error: loginMutation.error || registerMutation.error
   };
 }
 
-export function useUser(): UseQueryResult {
+// ============= USER PROFILE HOOKS =============
+export function useCurrentUser() {
+  const { setUser, isAuthenticated } = useAuthStore();
+  
   return useQuery({
-    queryKey: ['user'],
-    queryFn: () => apiClient.getCurrentUser(),
+    queryKey: ['user', 'current'],
+    queryFn: async () => {
+      const response = await apiClient.getCurrentUser();
+      if (response.success && response.data) {
+        setUser(response.data);
+        return response.data;
+      }
+      throw new Error(response.error || 'Failed to fetch user');
+    },
+    enabled: isAuthenticated, // Only fetch when authenticated
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
-export function useUpdateProfile(): UseMutationResult<unknown, Error, User> {
+export function useUpdateProfile() {
   const queryClient = useQueryClient();
+  const { setUser } = useAuthStore();
 
   return useMutation({
-    mutationFn: (userData: User) => {
-      // Convert User to PetCreateData format
-      const petData: PetCreateData = {
-        name: `${userData.firstName} ${userData.lastName}`,
-        species: 'dog', // Default value
-        breed: 'Mixed', // Default value
-        age: 0, // Default value
-        bio: userData.bio ?? '',
-        photos: [],
-        temperament: [],
-        energy: 'medium',
-        training: 'none',
-        goodWithKids: false,
-        goodWithPets: false,
-        location: {
-          latitude: 0,
-          longitude: 0,
-        },
-        gender: 'male',
-        size: 'medium',
-        weight: 0,
-        description: userData.bio ?? '',
-        houseTrained: false,
-      };
-      return apiClient.updatePetProfile(petData);
-    },
-    onSuccess: (response: unknown): undefined => {
-      if (
-        response !== null &&
-        response !== undefined &&
-        typeof response === 'object' &&
-        'success' in response
-      ) {
-        const successResponse = response as { success: boolean };
-        if (successResponse.success) {
-          queryClient.invalidateQueries({ queryKey: ['user'] });
-        }
+    mutationFn: (data: Partial<User>) => apiClient.updateProfile(data),
+    onSuccess: (response) => {
+      if (response.success && response.data) {
+        setUser(response.data);
+        queryClient.invalidateQueries({ queryKey: ['user'] });
       }
-      return undefined;
-    },
+    }
   });
 }
 
-// ============= PET HOOKS =============
-export function usePets(): UseQueryResult {
+// ============= PETS HOOKS =============
+export function usePets() {
   return useQuery({
     queryKey: ['pets'],
-    queryFn: () => apiClient.getPets(),
+    queryFn: async () => {
+      const response = await apiClient.getPets();
+      if (response.success) return response.data;
+      throw new Error(response.error);
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
 
-export function useCreatePet(): UseMutationResult<unknown, Error, PetCreateData> {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (petData: PetCreateData) => apiClient.createPet(petData),
-    onSuccess: (): undefined => {
-      queryClient.invalidateQueries({ queryKey: ['pets'] });
-      return undefined;
+export function useMyPets() {
+  const { isAuthenticated } = useAuthStore();
+  
+  return useQuery({
+    queryKey: ['pets', 'my'],
+    queryFn: async () => {
+      const response = await apiClient.getMyPets();
+      if (response.success) return response.data;
+      throw new Error(response.error);
     },
+    enabled: isAuthenticated, // Only fetch when authenticated
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useUpdatePet(): UseMutationResult<
-  unknown,
-  Error,
-  { id: string; data: PetUpdateData }
-> {
+// Alias for useMyPets to match the import in MyPetsPage
+export const useUserPets = useMyPets;
+
+export function useCreatePet() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: PetUpdateData }) =>
+    mutationFn: (data: Omit<Pet, 'id'>) => apiClient.createPet(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pets'] });
+    }
+  });
+}
+
+export function useUpdatePet() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Pet> }) => 
       apiClient.updatePet(id, data),
-    onSuccess: (): undefined => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pets'] });
-      return undefined;
-    },
+    }
   });
 }
 
-// ============= MATCHING HOOKS =============
-export function useMatches(filters?: PetFilters): UseQueryResult {
-  return useQuery({
-    queryKey: ['matches', filters],
-    queryFn: () => apiClient.getMatches(filters),
-    staleTime: 30 * 1000, // 30 seconds
-  });
-}
-
-export function useSwipe(): UseMutationResult<unknown, Error, SwipeAction> {
+export function useDeletePet() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (action: SwipeAction) => apiClient.swipe(action.petId, action.action),
-    onSuccess: (response: unknown): undefined => {
-      if (
-        response !== null &&
-        response !== undefined &&
-        typeof response === 'object' &&
-        'success' in response
-      ) {
-        const successResponse = response as { success: boolean };
-        if (successResponse.success) {
-          queryClient.invalidateQueries({ queryKey: ['matches'] });
-          queryClient.invalidateQueries({ queryKey: ['pets'] });
+    mutationFn: (id: string) => apiClient.deletePet(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pets'] });
+      queryClient.invalidateQueries({ queryKey: ['pets', 'my'] });
+    }
+  });
+}
+
+// ============= SWIPE & MATCHING HOOKS =============
+export function useSwipeQueue() {
+  const { isAuthenticated } = useAuthStore();
+  
+  return useQuery({
+    queryKey: ['swipe', 'queue'],
+    queryFn: async () => {
+      const response = await apiClient.getSwipeQueue();
+      if (response.success) return response.data;
+      throw new Error(response.error);
+    },
+    enabled: isAuthenticated, // Only fetch when authenticated
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+}
+
+export function useSwipe() {
+  const queryClient = useQueryClient();
+  const [lastMatch, setLastMatch] = useState<Match | null>(null);
+
+  const swipeMutation = useMutation({
+    mutationFn: (action: SwipeAction) => apiClient.swipe(action),
+    onSuccess: (response) => {
+      if (response.success && response.data) {
+        if (response.data.isMatch && response.data.match) {
+          setLastMatch(response.data.match);
         }
+        queryClient.invalidateQueries({ queryKey: ['swipe', 'queue'] });
+        queryClient.invalidateQueries({ queryKey: ['matches'] });
       }
-      return undefined;
-    },
+    }
   });
+
+  return {
+    swipe: swipeMutation.mutate,
+    isLoading: swipeMutation.isPending,
+    lastMatch,
+    clearMatch: () => setLastMatch(null)
+  };
 }
 
-export function useConversations(): UseQueryResult {
+export function useMatches() {
+  const { isAuthenticated } = useAuthStore();
+  
   return useQuery({
-    queryKey: ['conversations'],
-    queryFn: () => apiClient.getMessages(''),
+    queryKey: ['matches'],
+    queryFn: async () => {
+      const response = await apiClient.getMatches();
+      if (response.success) return response.data;
+      throw new Error(response.error);
+    },
+    enabled: isAuthenticated, // Only fetch when authenticated
     staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every minute
   });
 }
 
-// ============= MESSAGING HOOKS =============
-export function useMessages(): UseQueryResult {
+export function useMatch(matchId: string) {
   return useQuery({
-    queryKey: ['messages'],
-    queryFn: () => apiClient.getMessages(''),
-    staleTime: 10 * 1000, // 10 seconds
+    queryKey: ['matches', matchId],
+    queryFn: async () => {
+      const response = await apiClient.getMatch(matchId);
+      if (response.success) return response.data;
+      throw new Error(response.error);
+    },
+    enabled: !!matchId,
   });
 }
 
-export function useSendMessage(): UseMutationResult<
-  unknown,
-  Error,
-  { matchId: string; message: string }
-> {
+// ============= CHAT & MESSAGING HOOKS =============
+export function useMessages(matchId: string) {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ['messages', matchId],
+    queryFn: async () => {
+      const response = await apiClient.getMessages(matchId);
+      if (response.success) return response.data;
+      throw new Error(response.error);
+    },
+    enabled: !!matchId,
+    refetchInterval: 5000, // Refetch every 5 seconds
+  });
+
+  // Setup WebSocket listeners
+  useEffect(() => {
+    if (!matchId) return;
+
+    const handleNewMessage = (message: Message) => {
+      if (message.matchId === matchId) {
+        queryClient.setQueryData(['messages', matchId], (old: Message[] = []) => 
+          [...old, message]
+        );
+      }
+    };
+
+    apiClient.onSocketEvent('new-message', handleNewMessage);
+
+    return () => {
+      // Cleanup would go here if we had removeListener
+    };
+  }, [matchId, queryClient]);
+
+  return query;
+}
+
+export function useSendMessage(matchId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ matchId, message }: { matchId: string; message: string }) =>
-      apiClient.sendMessage(matchId, message),
-    onSuccess: (): undefined => {
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
-      return undefined;
+    mutationFn: (content: string) => apiClient.sendMessage(matchId, content),
+    onMutate: async (content) => {
+      // Optimistic update
+      const tempMessage: Message = {
+        id: `temp-${Date.now()}`,
+        matchId,
+        senderId: 'current-user', // This should come from auth
+        content,
+        timestamp: new Date().toISOString(),
+        read: true
+      };
+
+      queryClient.setQueryData(['messages', matchId], (old: Message[] = []) => 
+        [...old, tempMessage]
+      );
+
+      return { tempMessage };
     },
+    onSuccess: (response, _, context) => {
+      if (response.success && response.data) {
+        // Replace temp message with real one
+        queryClient.setQueryData(['messages', matchId], (old: Message[] = []) =>
+          old.map(msg => 
+            msg.id === context?.tempMessage.id ? response.data! : msg
+          )
+        );
+      }
+    }
   });
 }
 
-export function useMarkAsRead(): UseMutationResult<unknown, Error, string> {
+export function useMarkMessagesAsRead(matchId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (_conversationId: string) => apiClient.sendMessage('', ''),
-    onSuccess: (): undefined => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      return undefined;
-    },
+    mutationFn: () => apiClient.markMessagesAsRead(matchId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+    }
   });
 }
 
-// ============= AI HOOKS =============
-export function useAIBio(): UseMutationResult<unknown, Error, { keywords: string[] }> {
+// ============= AI SERVICE HOOKS =============
+export function useGenerateBio() {
   return useMutation({
-    mutationFn: (_request: { keywords: string[] }) => {
-      const petData: PetCreateData = {
-        name: '',
-        species: '',
-        breed: '',
-        age: 0,
-        bio: '',
-        photos: [],
-        temperament: [],
-        energy: 'medium',
-        training: 'none',
-        goodWithKids: false,
-        goodWithPets: false,
-        location: {
-          latitude: 0,
-          longitude: 0,
-        },
-        gender: 'male',
-        size: 'medium',
-        weight: 0,
-        description: '',
-        houseTrained: false,
-      };
-      return apiClient.createPet(petData);
-    },
+    mutationFn: (request: AIBioRequest) => apiClient.generateBio(request),
   });
 }
 
-export function usePhotoAnalysis(): UseMutationResult<unknown, Error, string> {
+export function useAnalyzePhoto() {
   return useMutation({
-    mutationFn: (photoUrl: string) => {
-      const petData: PetCreateData = {
-        name: '',
-        species: '',
-        breed: '',
-        age: 0,
-        bio: '',
-        photos: [photoUrl],
-        temperament: [],
-        energy: 'medium',
-        training: 'none',
-        goodWithKids: false,
-        goodWithPets: false,
-        location: {
-          latitude: 0,
-          longitude: 0,
-        },
-        gender: 'male',
-        size: 'medium',
-        weight: 0,
-        description: '',
-        houseTrained: false,
-      };
-      return apiClient.createPet(petData);
-    },
+    mutationFn: (photoUrl: string) => apiClient.analyzePhoto(photoUrl),
   });
 }
 
-export function useCompatibilityAnalysis(): UseMutationResult<
-  unknown,
-  Error,
-  { pet1: Pet; pet2: Pet }
-> {
+export function useCalculateCompatibility() {
   return useMutation({
-    mutationFn: ({ pet1: _pet1, pet2: _pet2 }: { pet1: Pet; pet2: Pet }) => {
-      const petData: PetCreateData = {
-        name: '',
-        species: '',
-        breed: '',
-        age: 0,
-        bio: '',
-        photos: [],
-        temperament: [],
-        energy: 'medium',
-        training: 'none',
-        goodWithKids: false,
-        goodWithPets: false,
-        location: {
-          latitude: 0,
-          longitude: 0,
-        },
-        gender: 'male',
-        size: 'medium',
-        weight: 0,
-        description: '',
-        houseTrained: false,
-      };
-      return apiClient.createPet(petData);
-    },
+    mutationFn: ({ pet1, pet2 }: { pet1: Pet; pet2: Pet }) => 
+      apiClient.calculateCompatibility(pet1, pet2),
   });
 }
 
-// ============= PREMIUM HOOKS =============
-export function useBoostProfile(): UseMutationResult<unknown, Error, string> {
+export function useSuggestImprovements() {
   return useMutation({
-    mutationFn: (_petId: string) => {
-      const petData: PetCreateData = {
-        name: '',
-        species: '',
-        breed: '',
-        age: 0,
-        bio: '',
-        photos: [],
-        temperament: [],
-        energy: 'medium',
-        training: 'none',
-        goodWithKids: false,
-        goodWithPets: false,
-        location: {
-          latitude: 0,
-          longitude: 0,
-        },
-        gender: 'male',
-        size: 'medium',
-        weight: 0,
-        description: '',
-        houseTrained: false,
-      };
-      return apiClient.createPet(petData);
-    },
+    mutationFn: (pet: Pet) => apiClient.suggestProfileImprovements(pet),
   });
 }
 
-// ============= NOTIFICATION HOOKS =============
-export function useNotifications(): UseQueryResult {
+// ============= SUBSCRIPTION HOOKS =============
+export function useSubscription() {
+  const { isAuthenticated } = useAuthStore();
+  
   return useQuery({
-    queryKey: ['notifications'],
-    queryFn: () => apiClient.getCurrentUser(),
-    staleTime: 30 * 1000, // 30 seconds
+    queryKey: ['subscription'],
+    queryFn: async () => {
+      const response = await apiClient.getSubscription();
+      if (response.success) return response.data;
+      return null; // No subscription
+    },
+    enabled: isAuthenticated, // Only fetch when authenticated
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 
-export function useMarkNotificationRead(): UseMutationResult<unknown, Error, string> {
+export function useCreateSubscription() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (_notificationId: string) => {
-      const petData: PetCreateData = {
-        name: '',
-        species: '',
-        breed: '',
-        age: 0,
-        bio: '',
-        photos: [],
-        temperament: [],
-        energy: 'medium',
-        training: 'none',
-        goodWithKids: false,
-        goodWithPets: false,
-        location: {
-          latitude: 0,
-          longitude: 0,
-        },
-        gender: 'male',
-        size: 'medium',
-        weight: 0,
-        description: '',
-        houseTrained: false,
-      };
-      return apiClient.createPet(petData);
-    },
-    onSuccess: (): undefined => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      return undefined;
-    },
+    mutationFn: (plan: string) => apiClient.createSubscription(plan),
+    onSuccess: (response) => {
+      if (response.success && response.data?.checkoutUrl) {
+        window.location.href = response.data.checkoutUrl;
+      }
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+    }
+  });
+}
+
+export function useCancelSubscription() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => apiClient.cancelSubscription(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    }
   });
 }
 
 // ============= LOCATION HOOKS =============
-export function useUpdateLocation(): UseMutationResult<unknown, Error, Location> {
+export function useUpdateLocation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (location: Location) =>
-      apiClient.updateLocation(location.latitude, location.longitude),
-    onSuccess: (): undefined => {
-      queryClient.invalidateQueries({ queryKey: ['nearby-pets'] });
-      return undefined;
+    mutationFn: (location: Location) => apiClient.updateLocation(location),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    }
+  });
+}
+
+export function useNearbyPets(radius: number = 10) {
+  return useQuery({
+    queryKey: ['pets', 'nearby', radius],
+    queryFn: async () => {
+      const response = await apiClient.getNearbyPets(radius);
+      if (response.success) return response.data;
+      throw new Error(response.error);
     },
+    staleTime: 2 * 60 * 1000,
   });
 }
 
-export function useNearbyPets(): UseQueryResult {
+// ============= NOTIFICATION HOOKS =============
+export function useNotifications() {
+  const { isAuthenticated } = useAuthStore();
+  
   return useQuery({
-    queryKey: ['nearby-pets'],
-    queryFn: () => apiClient.getPets(),
-    staleTime: 60 * 1000, // 1 minute
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const response = await apiClient.getNotifications();
+      if (response.success) return response.data;
+      throw new Error(response.error);
+    },
+    enabled: isAuthenticated, // Only fetch when authenticated
+    refetchInterval: 30 * 1000, // Refetch every 30 seconds
   });
 }
 
-// ============= ANALYTICS HOOKS =============
-export function useAnalytics(): UseQueryResult {
-  return useQuery({
-    queryKey: ['analytics'],
-    queryFn: () => apiClient.getCurrentUser(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-}
-
-// ============= ACCOUNT HOOKS =============
-export function useDeleteAccount(): UseMutationResult<unknown, Error, void> {
-  const router = useRouter();
+export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => apiClient.logout(),
-    onSuccess: (): undefined => {
-      queryClient.clear();
-      router.push('/');
-      return undefined;
-    },
+    mutationFn: (id: string) => apiClient.markNotificationRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    }
   });
 }
 
-// ============= SOCKET HOOKS =============
-export function useSocket(): unknown {
-  const [socket, setSocket] = useState<unknown>(null);
+// ============= WEBSOCKET HOOKS =============
+export function useWebSocket(userId?: string) {
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initialize socket connection
-    const _socket = apiClient.getCurrentUser();
-    setSocket(_socket);
-
-    return (): void => {
-      // Cleanup logic if needed
+    if (!userId) return;
+    
+    console.log('[WebSocket] Initializing connection for user:', userId);
+    
+    // Connect to WebSocket
+    const connectSocket = async () => {
+      try {
+        const socket = await apiClient.connectWebSocket(userId);
+        if (socket) {
+          setIsConnected(true);
+          setConnectionError(null);
+          console.log('[WebSocket] Connected successfully');
+        }
+      } catch (error) {
+        console.error('[WebSocket] Connection failed:', error);
+        setConnectionError(error instanceof Error ? error.message : 'Connection failed');
+        setIsConnected(false);
+      }
     };
-  }, []);
 
-  return socket;
+    connectSocket();
+    
+    // Cleanup on unmount or userId change
+    return () => {
+      console.log('[WebSocket] Cleaning up connection');
+      apiClient.disconnectWebSocket();
+      setIsConnected(false);
+      setConnectionError(null);
+    };
+  }, [userId]);
+
+  return {
+    isConnected,
+    connectionError,
+    isWebSocketConnected: apiClient.isWebSocketConnected,
+    joinMatchRoom: apiClient.joinMatchRoom,
+    leaveMatchRoom: apiClient.leaveMatchRoom,
+    sendChatMessage: apiClient.sendChatMessage,
+    sendTypingIndicator: apiClient.sendTypingIndicator,
+    markMessagesAsRead: apiClient.markMessagesAsRead,
+    performMatchAction: apiClient.performMatchAction,
+    onWebSocketEvent: apiClient.onWebSocketEvent,
+  };
 }
 
-// ============= COMPOSITE HOOKS =============
-export function useAppData(): {
-  user: unknown;
-  pets: unknown;
-  matches: unknown;
-  notifications: unknown;
-  subscription: unknown;
-  isLoading: boolean;
-  error: unknown;
-} {
-  const user = useUser();
-  const pets = usePets();
+// ============= COMBINED HOOKS =============
+export function useDashboardData() {
+  const user = useCurrentUser();
+  const pets = useMyPets();
   const matches = useMatches();
   const notifications = useNotifications();
-  const subscription = useQuery({
-    queryKey: ['subscription'],
-    queryFn: () => apiClient.getCurrentUser(),
-    staleTime: 5 * 60 * 1000,
-  });
+  const subscription = useSubscription();
 
   return {
     user: user.data,
-    pets: pets.data,
-    matches: matches.data,
-    notifications: notifications.data,
+    pets: pets.data || [],
+    matches: matches.data || [],
+    notifications: notifications.data || [],
     subscription: subscription.data,
-    isLoading:
-      user.isLoading ||
-      pets.isLoading ||
-      matches.isLoading ||
-      notifications.isLoading ||
-      subscription.isLoading,
-    error: user.error ?? pets.error ?? matches.error ?? notifications.error ?? subscription.error,
+    isLoading: user.isLoading || pets.isLoading || matches.isLoading,
+    error: user.error || pets.error || matches.error
   };
 }
 
-interface SwipeMatch {
-  petId: string;
-  matchId: string;
-  id: string;
-  pets: Pet[];
-  users: User[];
-}
-
-export function useSwipeData(): {
-  pets: Pet[];
-  currentPet: Pet | undefined;
-  swipe: (direction: 'like' | 'pass' | 'superlike') => void;
-  isLoading: boolean;
-  lastMatch: SwipeMatch | null;
-  clearMatch: () => void;
-  isPremium: boolean;
-  refetch: () => void;
-} {
-  const pets = usePets();
-  const currentPet =
-    Array.isArray(pets.data) && pets.data.length > 0 ? (pets.data[0] as Pet) : undefined;
-  const swipeMutation = useSwipe();
-  const { isLoading } = pets;
-  const lastMatch: SwipeMatch | null = null; // This would come from swipe mutation result
-  const clearMatch = (): void => {
-    // Clear match logic
-  };
-
-  const swipe = (direction: 'like' | 'pass' | 'superlike') => {
-    if (!currentPet || typeof currentPet !== 'object' || !('_id' in currentPet)) return;
-
-    const action: SwipeAction = {
-      petId: (currentPet as { _id: string })._id,
-      action: direction,
-    };
-
-    swipeMutation.mutate(action);
-  };
+export function useSwipeData() {
+  const queue = useSwipeQueue();
+  const { swipe, isLoading, lastMatch, clearMatch } = useSwipe();
+  const user = useCurrentUser();
 
   return {
-    pets: (pets.data as Pet[]) || [],
-    currentPet,
+    pets: queue.data || [],
+    currentPet: queue.data?.[0],
     swipe,
-    isLoading,
+    isLoading: queue.isLoading || isLoading,
     lastMatch,
     clearMatch,
-    isPremium: false, // This would come from user data
-    refetch: () => {
-      pets.refetch();
-    },
+    isPremium: user.data?.isPremium || false,
+    refetch: queue.refetch
   };
 }
 
-export function useChatData(): {
-  match: unknown;
-  messages: unknown;
-  sendMessage: (variables: { matchId: string; message: string }) => void;
-  isLoading: boolean;
-  isSending: boolean;
-} {
-  const match = useMatches();
-  const messages = useMessages();
-  const sendMessageMutation = useSendMessage();
-  const { isLoading } = match;
-  const isSending = sendMessageMutation.isPending;
+export function useChatData(matchId: string) {
+  const match = useMatch(matchId);
+  const messages = useMessages(matchId);
+  const sendMessage = useSendMessage(matchId);
+  const markAsRead = useMarkMessagesAsRead(matchId);
+
+  useEffect(() => {
+    if (matchId && messages.data) {
+      markAsRead.mutate();
+    }
+  }, [matchId, messages.data]);
 
   return {
     match: match.data,
-    messages: messages.data,
-    sendMessage: (variables: { matchId: string; message: string }) => {
-      sendMessageMutation.mutate(variables);
-    },
-    isLoading,
-    isSending,
+    messages: messages.data || [],
+    sendMessage: sendMessage.mutate,
+    isLoading: match.isLoading || messages.isLoading,
+    isSending: sendMessage.isPending
   };
 }

@@ -1,6 +1,16 @@
-import { Dimensions, Platform, StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+// Lazy load dimensions to avoid issues in test environment
+const getScreenDimensions = () => {
+  try {
+    return Dimensions.get('window');
+  } catch (error) {
+    // Fallback for test environment
+    return { width: 375, height: 812 };
+  }
+};
+
+const { width: screenWidth, height: screenHeight } = getScreenDimensions();
 
 // === ELITE DESIGN TOKENS ===
 export const Colors = {
@@ -55,13 +65,13 @@ export const Colors = {
   gradientWarning: ['#fffbeb', '#fef3c7', '#fde68a'],
   gradientError: ['#fef2f2', '#fecaca', '#fca5a5'],
   
-  // UI Component Colors
-  text: '#111827', // Default text color (gray900)
-  textSecondary: '#4b5563', // Secondary text color (gray600)
-  card: '#ffffff', // Card background color
-  background: '#f9fafb', // Background color (gray50)
-  border: '#e5e7eb', // Border color (gray200)
-  inputBackground: '#f9fafb', // Input background color (gray50)
+  // Additional UI Colors
+  background: '#ffffff',
+  surface: '#f9fafb',
+  text: '#111827',
+  textSecondary: '#6b7280',
+  border: '#e5e7eb',
+  borderLight: '#f3f4f6',
 };
 
 export const Typography = {
@@ -239,7 +249,7 @@ export const GlobalStyles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1000,
-    paddingTop: Platform.OS === 'ios' ? 0 : 24,
+    paddingTop: (Platform?.OS === 'ios') ? 0 : 24,
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.glassDark,
   },
@@ -615,7 +625,7 @@ export const GlobalStyles = StyleSheet.create({
 });
 
 // === ANIMATION CONFIGS ===
-export const _AnimationConfigs = {
+export const AnimationConfigs = {
   spring: {
     damping: 20,
     stiffness: 400,
@@ -646,14 +656,14 @@ export const _AnimationConfigs = {
 };
 
 // === DEVICE UTILITIES ===
-export const _Device = {
+export const Device = {
   width: screenWidth,
   height: screenHeight,
   isSmall: screenWidth < 375,
   isMedium: screenWidth >= 375 && screenWidth < 414,
   isLarge: screenWidth >= 414,
-  isIOS: Platform.OS === 'ios',
-  isAndroid: Platform.OS === 'android',
+  isIOS: (Platform?.OS === 'ios'),
+  isAndroid: (Platform?.OS === 'android'),
 };
 
 export default GlobalStyles;

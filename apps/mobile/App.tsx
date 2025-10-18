@@ -6,14 +6,18 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
-import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { lazy, useEffect, useState } from 'react';
+import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import EnhancedTabBar from './src/components/EnhancedTabBar';
 import CallManager from './src/components/calling/CallManager';
 import { NotificationProvider } from './src/contexts/NotificationContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import type { OnboardingStackParamList, RootStackParamList, TabParamList } from './src/navigation/types';
+
+// Initialize offline sync service
+import { preloadCriticalAssets } from './src/services/AssetPreloader';
+import { offlineSync } from './src/services/OfflineSyncService';
 
 // Create a React Query client
 const queryClient = new QueryClient();
@@ -24,6 +28,44 @@ interface AuthStackParamList {
   Register: undefined;
   [key: string]: undefined;
 }
+
+// Lazy load main screens
+const HomeScreen = lazy(() => import('./src/screens/HomeScreen'));
+const SwipeScreen = lazy(() => import('./src/screens/SwipeScreen'));
+const MapScreen = lazy(() => import('./src/screens/MapScreen'));
+const MatchesScreen = lazy(() => import('./src/screens/MatchesScreen'));
+const ProfileScreen = lazy(() => import('./src/screens/ProfileScreen'));
+const AdoptionManagerScreen = lazy(() => import('./src/screens/adoption/AdoptionManagerScreen'));
+const PremiumScreen = lazy(() => import('./src/screens/PremiumScreen'));
+
+// Lazy load secondary screens
+const ChatScreen = lazy(() => import('./src/screens/ChatScreen'));
+const PrivacySettingsScreen = lazy(() => import('./src/screens/PrivacySettingsScreen'));
+const BlockedUsersScreen = lazy(() => import('./src/screens/BlockedUsersScreen'));
+const SafetyCenterScreen = lazy(() => import('./src/screens/SafetyCenterScreen'));
+const NotificationPreferencesScreen = lazy(() => import('./src/screens/NotificationPreferencesScreen'));
+const HelpSupportScreen = lazy(() => import('./src/screens/HelpSupportScreen'));
+const AboutTermsPrivacyScreen = lazy(() => import('./src/screens/AboutTermsPrivacyScreen'));
+const DeactivateAccountScreen = lazy(() => import('./src/screens/DeactivateAccountScreen'));
+const AdvancedFiltersScreen = lazy(() => import('./src/screens/AdvancedFiltersScreen'));
+const ModerationToolsScreen = lazy(() => import('./src/screens/ModerationToolsScreen'));
+const EditProfileScreen = lazy(() => import('./src/screens/EditProfileScreen'));
+
+// Lazy load premium screens
+const SubscriptionManagerScreen = lazy(() => import('./src/screens/premium/SubscriptionManagerScreen'));
+const SubscriptionSuccessScreen = lazy(() => import('./src/screens/premium/SubscriptionSuccessScreen'));
+
+// Lazy load AI screens
+const AIBioScreen = lazy(() => import('./src/screens/AIBioScreen'));
+const AICompatibilityScreen = lazy(() => import('./src/screens/ai/AICompatibilityScreen'));
+const AIPhotoAnalyzerScreen = lazy(() => import('./src/screens/ai/AIPhotoAnalyzerScreen'));
+
+// Lazy load adoption screens
+const AdoptionApplicationScreen = lazy(() => import('./src/screens/adoption/AdoptionApplicationScreen'));
+const CreateListingScreen = lazy(() => import('./src/screens/adoption/CreateListingScreen'));
+
+// Lazy load admin navigator
+const AdminNavigator = lazy(() => import('./src/navigation/AdminNavigator'));
 
 // @ts-ignore - React Navigation v7 has complex typing issues with Expo
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -116,7 +158,7 @@ const MainTabNavigator = () => {
       />
     </MainTabs.Navigator>
   );
-}
+};
 
 const RootNavigator = () => {
   const { user } = useAuthStore();
@@ -278,8 +320,11 @@ export default function App() {
   useEffect(() => {
     const prepare = async () => {
       try {
-        // Pre-load fonts, make any API calls you need to do here
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Preload critical assets for instant UX
+        await preloadCriticalAssets();
+
+        // Initialize offline sync service
+        await offlineSync.initialize();
       } catch (e) {
         logger.warn('App preparation failed', { error: e });
       } finally {

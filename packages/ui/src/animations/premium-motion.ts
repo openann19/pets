@@ -4,7 +4,8 @@
  * Consistent across web and mobile platforms
  */
 
-import type { Variants, Transition } from 'framer-motion';
+import type { Transition, Variants } from 'framer-motion';
+import { makeHover, makeTap, makeTransition } from '../utils/motionTypes';
 
 // Motion configuration constants
 const MOTION_CONFIG = {
@@ -37,38 +38,38 @@ const TIMING = {
 // ====== CORE TRANSITIONS ======
 export const transitions = {
   // Standard spring (most common)
-  spring: MOTION_CONFIG.spring,
-  
+  spring: makeTransition(MOTION_CONFIG.spring),
+
   // Micro-interactions (buttons, hovers)
-  micro: MOTION_CONFIG.micro,
-  
+  micro: makeTransition(MOTION_CONFIG.micro),
+
   // Smooth (large movements)
-  smooth: MOTION_CONFIG.smooth,
-  
+  smooth: makeTransition(MOTION_CONFIG.smooth),
+
   // Bouncy (playful interactions)
-  bouncy: MOTION_CONFIG.bouncy,
-  
+  bouncy: makeTransition(MOTION_CONFIG.bouncy),
+
   // Layout animations
-  layout: MOTION_CONFIG.layout,
+  layout: makeTransition(MOTION_CONFIG.layout),
 } as const;
 
 // ====== ENTRANCE ANIMATIONS ======
 export const entranceVariants: Record<string, Variants> = {
   // Standard fade in up
   fadeInUp: {
-    initial: { 
-      opacity: 0, 
+    initial: {
+      opacity: 0,
       y: 24,
-      scale: 0.95 
+      scale: 0.95
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       y: 0,
       scale: 1,
       transition: transitions.spring,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       y: -12,
       scale: 1.02,
       transition: transitions.smooth,
@@ -78,13 +79,13 @@ export const entranceVariants: Record<string, Variants> = {
   // Slide in from different directions
   slideInLeft: {
     initial: { opacity: 0, x: -100 },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       x: 0,
       transition: transitions.spring,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       x: 100,
       transition: transitions.smooth,
     },
@@ -92,13 +93,13 @@ export const entranceVariants: Record<string, Variants> = {
 
   slideInRight: {
     initial: { opacity: 0, x: 100 },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       x: 0,
       transition: transitions.spring,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       x: -100,
       transition: transitions.smooth,
     },
@@ -106,13 +107,13 @@ export const entranceVariants: Record<string, Variants> = {
 
   slideInUp: {
     initial: { opacity: 0, y: 100 },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       y: 0,
       transition: transitions.spring,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       y: -100,
       transition: transitions.smooth,
     },
@@ -120,13 +121,13 @@ export const entranceVariants: Record<string, Variants> = {
 
   slideInDown: {
     initial: { opacity: 0, y: -100 },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       y: 0,
       transition: transitions.spring,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       y: 100,
       transition: transitions.smooth,
     },
@@ -134,17 +135,17 @@ export const entranceVariants: Record<string, Variants> = {
 
   // Scale animations
   scaleIn: {
-    initial: { 
-      opacity: 0, 
-      scale: 0.8 
+    initial: {
+      opacity: 0,
+      scale: 0.8
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       scale: 1,
       transition: transitions.bouncy,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       scale: 0.9,
       transition: transitions.smooth,
     },
@@ -152,19 +153,19 @@ export const entranceVariants: Record<string, Variants> = {
 
   // Premium pop-in effect
   popIn: {
-    initial: { 
-      opacity: 0, 
+    initial: {
+      opacity: 0,
       scale: 0.3,
       y: 40,
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       scale: 1,
       y: 0,
       transition: transitions.bouncy,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       scale: 0.8,
       y: -20,
       transition: transitions.smooth,
@@ -173,36 +174,36 @@ export const entranceVariants: Record<string, Variants> = {
 
   // Flip animations
   flipInX: {
-    initial: { 
-      opacity: 0, 
+    initial: {
+      opacity: 0,
       rotateX: -90,
       transformPerspective: 1000,
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       rotateX: 0,
       transition: transitions.spring,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       rotateX: 90,
       transition: transitions.smooth,
     },
   },
 
   flipInY: {
-    initial: { 
-      opacity: 0, 
+    initial: {
+      opacity: 0,
       rotateY: -90,
       transformPerspective: 1000,
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       rotateY: 0,
       transition: transitions.spring,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       rotateY: 90,
       transition: transitions.smooth,
     },
@@ -210,97 +211,97 @@ export const entranceVariants: Record<string, Variants> = {
 };
 
 // ====== HOVER ANIMATIONS ======
-export const hoverVariants: Record<string, unknown> = {
+export const hoverVariants = {
   // Standard lift
-  lift: {
+  lift: makeHover({
     scale: 1.02,
     y: -4,
     transition: transitions.micro,
-  },
+  }),
 
   // Gentle lift
-  gentleLift: {
+  gentleLift: makeHover({
     scale: 1.01,
     y: -2,
     transition: transitions.micro,
-  },
+  }),
 
   // Strong lift
-  strongLift: {
+  strongLift: makeHover({
     scale: 1.05,
     y: -8,
     transition: transitions.micro,
-  },
+  }),
 
   // 3D perspective
-  perspective: {
+  perspective: makeHover({
     scale: 1.02,
     rotateY: 5,
     rotateX: 5,
     transition: transitions.micro,
-  },
+  }),
 
   // Glow effect (for buttons)
-  glow: {
+  glow: makeHover({
     scale: 1.02,
     y: -2,
     boxShadow: "0 20px 40px -12px rgba(236, 72, 153, 0.5)",
     transition: transitions.micro,
-  },
+  }),
 
   // Bounce
-  bounce: {
+  bounce: makeHover({
     scale: 1.1,
     transition: transitions.bouncy,
-  },
+  }),
 
   // Rotate
-  rotate: {
+  rotate: makeHover({
     rotate: 5,
     transition: transitions.micro,
-  },
+  }),
 
   // Tilt
-  tilt: {
+  tilt: makeHover({
     rotateZ: 2,
     scale: 1.02,
     transition: transitions.micro,
-  },
-};
+  }),
+} as const;
 
 // ====== TAP ANIMATIONS ======
-export const tapVariants: Record<string, unknown> = {
+export const tapVariants = {
   // Standard press
-  press: {
+  press: makeTap({
     scale: 0.95,
     transition: transitions.micro,
-  },
+  }),
 
   // Gentle press
-  gentlePress: {
+  gentlePress: makeTap({
     scale: 0.98,
     transition: transitions.micro,
-  },
+  }),
 
   // Strong press
-  strongPress: {
+  strongPress: makeTap({
     scale: 0.9,
     transition: transitions.micro,
-  },
+  }),
 
   // Rotate press
-  rotatePress: {
+  rotatePress: makeTap({
     scale: 0.95,
     rotate: -2,
     transition: transitions.micro,
-  },
+  }),
 
   // Bounce press
-  bouncePress: {
+  bouncePress: makeTap({
     scale: 0.9,
     transition: transitions.bouncy,
-  },
-};
+  }),
+} as const;
 
 // ====== STAGGER ANIMATIONS ======
 export const staggerVariants: Record<string, Variants> = {
@@ -335,8 +336,8 @@ export const staggerVariants: Record<string, Variants> = {
   // Items for staggered containers
   item: {
     initial: { opacity: 0, y: 20 },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       y: 0,
       transition: transitions.spring,
     },
@@ -344,8 +345,8 @@ export const staggerVariants: Record<string, Variants> = {
 
   itemSlide: {
     initial: { opacity: 0, x: -30 },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       x: 0,
       transition: transitions.spring,
     },
@@ -353,8 +354,8 @@ export const staggerVariants: Record<string, Variants> = {
 
   itemScale: {
     initial: { opacity: 0, scale: 0.8 },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       scale: 1,
       transition: transitions.spring,
     },
@@ -365,19 +366,19 @@ export const staggerVariants: Record<string, Variants> = {
 export const pageVariants: Record<string, Variants> = {
   // Standard page transition
   default: {
-    initial: { 
-      opacity: 0, 
+    initial: {
+      opacity: 0,
       y: 20,
       scale: 0.98,
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       y: 0,
       scale: 1,
       transition: transitions.smooth,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       y: -20,
       scale: 1.02,
       transition: transitions.smooth,
@@ -387,11 +388,11 @@ export const pageVariants: Record<string, Variants> = {
   // Slide page transitions
   slideLeft: {
     initial: { x: "100%" },
-    animate: { 
+    animate: {
       x: 0,
       transition: transitions.smooth,
     },
-    exit: { 
+    exit: {
       x: "-100%",
       transition: transitions.smooth,
     },
@@ -399,11 +400,11 @@ export const pageVariants: Record<string, Variants> = {
 
   slideRight: {
     initial: { x: "-100%" },
-    animate: { 
+    animate: {
       x: 0,
       transition: transitions.smooth,
     },
-    exit: { 
+    exit: {
       x: "100%",
       transition: transitions.smooth,
     },
@@ -411,17 +412,17 @@ export const pageVariants: Record<string, Variants> = {
 
   // Scale page transition
   scale: {
-    initial: { 
-      opacity: 0, 
-      scale: 1.1 
+    initial: {
+      opacity: 0,
+      scale: 1.1
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       scale: 1,
       transition: transitions.smooth,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       scale: 0.9,
       transition: transitions.smooth,
     },
@@ -429,17 +430,17 @@ export const pageVariants: Record<string, Variants> = {
 
   // Blur transition
   blur: {
-    initial: { 
-      opacity: 0, 
-      filter: "blur(10px)" 
+    initial: {
+      opacity: 0,
+      filter: "blur(10px)"
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       filter: "blur(0px)",
       transition: transitions.smooth,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       filter: "blur(10px)",
       transition: transitions.smooth,
     },
@@ -451,11 +452,11 @@ export const modalVariants: Record<string, Variants> = {
   // Backdrop
   backdrop: {
     initial: { opacity: 0 },
-    animate: { 
+    animate: {
       opacity: 1,
       transition: { duration: TIMING.duration.fast },
     },
-    exit: { 
+    exit: {
       opacity: 0,
       transition: { duration: TIMING.duration.fast },
     },
@@ -463,19 +464,19 @@ export const modalVariants: Record<string, Variants> = {
 
   // Modal content
   modal: {
-    initial: { 
-      opacity: 0, 
+    initial: {
+      opacity: 0,
       scale: 0.75,
       y: 100,
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       scale: 1,
       y: 0,
       transition: transitions.spring,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       scale: 0.8,
       y: 50,
       transition: transitions.smooth,
@@ -484,17 +485,17 @@ export const modalVariants: Record<string, Variants> = {
 
   // Slide up modal
   slideUp: {
-    initial: { 
-      opacity: 0, 
+    initial: {
+      opacity: 0,
       y: "100%",
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       y: 0,
       transition: transitions.spring,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       y: "100%",
       transition: transitions.smooth,
     },
@@ -502,17 +503,17 @@ export const modalVariants: Record<string, Variants> = {
 
   // Side sheet
   sideSheet: {
-    initial: { 
-      opacity: 0, 
+    initial: {
+      opacity: 0,
       x: "100%",
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       x: 0,
       transition: transitions.smooth,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       x: "100%",
       transition: transitions.smooth,
     },
@@ -575,19 +576,19 @@ export const loadingVariants: Record<string, Variants> = {
 export const notificationVariants: Record<string, Variants> = {
   // Toast from top
   toastTop: {
-    initial: { 
-      opacity: 0, 
+    initial: {
+      opacity: 0,
       y: -100,
       scale: 0.9,
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       y: 0,
       scale: 1,
       transition: transitions.bouncy,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       y: -50,
       scale: 0.95,
       transition: transitions.smooth,
@@ -596,19 +597,19 @@ export const notificationVariants: Record<string, Variants> = {
 
   // Toast from bottom
   toastBottom: {
-    initial: { 
-      opacity: 0, 
+    initial: {
+      opacity: 0,
       y: 100,
       scale: 0.9,
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       y: 0,
       scale: 1,
       transition: transitions.bouncy,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       y: 50,
       scale: 0.95,
       transition: transitions.smooth,
@@ -617,19 +618,19 @@ export const notificationVariants: Record<string, Variants> = {
 
   // Toast from right
   toastRight: {
-    initial: { 
-      opacity: 0, 
+    initial: {
+      opacity: 0,
       x: 400,
       scale: 0.9,
     },
-    animate: { 
-      opacity: 1, 
+    animate: {
+      opacity: 1,
       x: 0,
       scale: 1,
       transition: transitions.spring,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       x: 400,
       scale: 0.95,
       transition: transitions.smooth,
@@ -663,20 +664,20 @@ export const _motionUtils = {
     from: { x?: number; y?: number; scale?: number; rotate?: number },
     transition: Transition = transitions.spring
   ): Variants => ({
-    initial: { 
-      opacity: 0, 
-      ...from 
+    initial: {
+      opacity: 0,
+      ...from
     },
-    animate: { 
-      opacity: 1, 
-      x: 0, 
-      y: 0, 
-      scale: 1, 
+    animate: {
+      opacity: 1,
+      x: 0,
+      y: 0,
+      scale: 1,
       rotate: 0,
       transition,
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       ...from,
       transition: transitions.smooth,
     },

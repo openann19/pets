@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema({
     type: Date,
     required: [true, 'Date of birth is required']
   },
-  
+
   // Profile
   avatar: {
     type: String,
@@ -46,7 +46,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     match: [/^\+?[\d\s-()]+$/, 'Please enter a valid phone number']
   },
-  
+
   // Location
   location: {
     type: {
@@ -66,7 +66,7 @@ const userSchema = new mongoose.Schema({
       country: { type: String, default: 'US' }
     }
   },
-  
+
   // Preferences
   preferences: {
     maxDistance: { type: Number, default: 50 }, // km
@@ -83,7 +83,7 @@ const userSchema = new mongoose.Schema({
       messages: { type: Boolean, default: true }
     }
   },
-  
+
   // Premium Features
   premium: {
     isActive: { type: Boolean, default: false },
@@ -112,13 +112,13 @@ const userSchema = new mongoose.Schema({
       profileViews: { type: Number, default: 0 }
     }
   },
-  
+
   // Activity
   pets: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Pet'
   }],
-  
+
   swipedPets: [{
     petId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -135,12 +135,12 @@ const userSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
-  
+
   matches: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Match'
   }],
-  
+
   // Analytics
   analytics: {
     totalSwipes: { type: Number, default: 0 },
@@ -159,7 +159,7 @@ const userSchema = new mongoose.Schema({
       metadata: Object
     }]
   },
-  
+
   // Account Status
   isEmailVerified: { type: Boolean, default: false },
   isPhoneVerified: { type: Boolean, default: false },
@@ -170,26 +170,38 @@ const userSchema = new mongoose.Schema({
     enum: ['active', 'suspended', 'banned', 'pending'],
     default: 'active'
   },
-  
+
   // Admin & Roles
   role: {
     type: String,
     enum: ['user', 'premium', 'administrator', 'moderator', 'support', 'analyst', 'billing_admin'],
     default: 'user',
-    select: false // Don't include by default for security
+    // select: false // Temporarily disabled for testing
   },
-  
+
   // Security
   refreshTokens: [String],
+  tokensInvalidatedAt: { type: Date, default: null },
+  revokedJtis: [String], // Array of revoked JWT jtis for individual session logout
   passwordResetToken: String,
   passwordResetExpires: Date,
   emailVerificationToken: String,
   emailVerificationExpires: Date,
   lastLoginAt: { type: Date },
   lastLoginIP: { type: String },
+  // Two-Factor Authentication
+  twoFactorEnabled: { type: Boolean, default: false },
+  twoFactorSecret: String, // For TOTP
+  twoFactorMethod: { type: String, enum: ['sms', 'email', 'totp'], default: null },
+  twoFactorCode: String, // Temporary code for SMS/Email
+  twoFactorCodeExpiry: Date, // Expiry for SMS/Email codes
+  // Biometric authentication
+  biometricEnabled: { type: Boolean, default: false },
+  biometricToken: String,
+  biometricTokenExpiry: Date,
   // WebAuthn challenge (temporary storage during registration)
   webauthnChallenge: { type: String, default: null }
-  
+
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -198,24 +210,23 @@ const userSchema = new mongoose.Schema({
 
 // Indexes for performance
 userSchema.index({ location: '2dsphere' });
-userSchema.index({ email: 1 });
 userSchema.index({ 'analytics.lastActive': -1 });
 userSchema.index({ 'premium.isActive': 1, 'premium.expiresAt': 1 });
 
 // Virtual for age
-userSchema.virtual('age').get(function() {
+userSchema.virtual('age').get(function () {
   return Math.floor((new Date() - this.dateOfBirth) / (365.25 * 24 * 60 * 60 * 1000));
 });
 
 // Virtual for full name
-userSchema.virtual('fullName').get(function() {
+userSchema.virtual('fullName').get(function () {
   return `${this.firstName} ${this.lastName}`;
 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  
+
   try {
     const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
@@ -226,7 +237,7 @@ userSchema.pre('save', async function(next) {
 });
 
 // Update lastActive on any update
-userSchema.pre('save', function(next) {
+userSchema.pre('save', function (next) {
   if (this.isModified() && !this.isNew) {
     this.analytics.lastActive = new Date();
   }
@@ -234,11 +245,11 @@ userSchema.pre('save', function(next) {
 });
 
 // Instance methods
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-userSchema.methods.toJSON = function() {
+userSchema.methods.toJSON = function () {
   const user = this.toObject();
   delete user.password;
   delete user.refreshTokens;
@@ -250,12 +261,12 @@ userSchema.methods.toJSON = function() {
 };
 
 // Static methods
-userSchema.statics.findActiveUsers = function() {
+userSchema.statics.findActiveUsers = function () {
   return this.find({ isActive: true, isBlocked: false });
 };
 
-userSchema.statics.findPremiumUsers = function() {
-  return this.find({ 
+userSchema.statics.findPremiumUsers = function () {
+  return this.find({
     'premium.isActive': true,
     'premium.expiresAt': { $gt: new Date() }
   });

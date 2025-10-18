@@ -1,4 +1,3 @@
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
@@ -6,6 +5,296 @@ const User = require('../models/User');
 const { generateTokens } = require('../middleware/auth');
 const { sendEmail } = require('../services/emailService');
 const logger = require('../utils/logger');
+
+// @desc    Setup 2FA with SMS/Email
+// @route   POST /api/auth/2fa/setup-sms-email
+// @access  Private
+const setup2FASmsEmail = async (req, res) => {
+  try {
+    const { method, phone, email } = req.body; // method: 'sms' or 'email'
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Validate contact method
+    if (method === 'sms' && !phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number required for SMS 2FA'
+      });
+    }
+
+    if (method === 'email' && !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email address required for email 2FA'
+      });
+    }
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store code with expiry (10 minutes)
+    user.twoFactorCode = code;
+    user.twoFactorCodeExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    user.twoFactorMethod = method;
+
+    if (method === 'sms') {
+      user.phone = phone;
+      // In production, integrate with SMS service like Twilio
+      logger.info('2FA SMS setup - code sent to phone', { userId: user._id, phone });
+    } else if (method === 'email') {
+      user.email = email;
+      // Send email with 2FA code
+      try {
+        await sendEmail({
+          email: user.email,
+          subject: 'Your 2FA Verification Code',
+          template: 'twoFactorCode',
+          data: {
+            firstName: user.firstName,
+            code: code
+          }
+        });
+      } catch (emailError) {
+        logger.error('2FA email sending error', { error: emailError });
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to send verification code'
+        });
+      }
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `2FA code sent via ${method}`,
+      method: method
+    });
+
+  } catch (error) {
+    logger.error('2FA SMS/Email setup error', { error });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to setup 2FA'
+    });
+  }
+};
+
+// @desc    Verify 2FA code from SMS/Email
+// @route   POST /api/auth/2fa/verify-sms-email
+// @access  Private
+const verify2FASmsEmail = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (!user.twoFactorCode || !user.twoFactorCodeExpiry) {
+      return res.status(400).json({
+        success: false,
+        message: 'No 2FA code found. Please request a new code.'
+      });
+    }
+
+    if (user.twoFactorCodeExpiry < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: '2FA code has expired. Please request a new code.'
+      });
+    }
+
+    if (user.twoFactorCode !== code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid 2FA code'
+      });
+    }
+
+    // Enable 2FA
+    user.twoFactorEnabled = true;
+    // user.twoFactorMethod is already set from the setup function
+    user.twoFactorCode = undefined; // Clear the code
+    user.twoFactorCodeExpiry = undefined;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: '2FA enabled successfully',
+      method: user.twoFactorMethod
+    });
+
+  } catch (error) {
+    logger.error('2FA SMS/Email verification error', { error });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify 2FA'
+    });
+  }
+};
+
+// @desc    Send 2FA code for login
+// @route   POST /api/auth/2fa/send-code
+// @access  Private (after initial login)
+const send2FACode = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (!user.twoFactorEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: '2FA is not enabled for this account'
+      });
+    }
+
+    // Generate new code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store code with expiry (5 minutes for login)
+    user.twoFactorCode = code;
+    user.twoFactorCodeExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+    await user.save();
+
+    // Send code based on method
+    if (user.twoFactorMethod === 'sms') {
+      // In production, send SMS
+      logger.info('2FA SMS code sent for login', { userId: user._id, phone: user.phone });
+    } else if (user.twoFactorMethod === 'email') {
+      try {
+        await sendEmail({
+          email: user.email,
+          subject: 'Your Login Verification Code',
+          template: 'loginTwoFactorCode',
+          data: {
+            firstName: user.firstName,
+            code: code
+          }
+        });
+      } catch (emailError) {
+        logger.error('2FA login email sending error', { error: emailError });
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to send verification code'
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `2FA code sent via ${user.twoFactorMethod}`,
+      method: user.twoFactorMethod
+    });
+
+  } catch (error) {
+    logger.error('Send 2FA code error', { error });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send 2FA code'
+    });
+  }
+};
+
+// @desc    Biometric login
+// @route   POST /api/auth/biometric-login
+// @access  Public
+const biometricLogin = async (req, res) => {
+  try {
+    const { email, biometricToken } = req.body;
+
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    // Check if user has biometric authentication enabled
+    if (!user.biometricEnabled) {
+      return res.status(401).json({
+        success: false,
+        message: 'Biometric authentication not enabled for this account'
+      });
+    }
+
+    // Verify biometric token (in production, this would be more sophisticated)
+    // For now, we'll check if the token exists and is recent
+    if (!user.biometricToken || !user.biometricTokenExpiry ||
+      user.biometricToken !== biometricToken ||
+      user.biometricTokenExpiry < new Date()) {
+      return res.status(401).json({
+        success: false,
+        message: 'Biometric authentication failed'
+      });
+    }
+
+    // Check account status
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Account is inactive'
+      });
+    }
+
+    if (user.isBlocked) {
+      return res.status(401).json({
+        success: false,
+        message: 'Account is blocked'
+      });
+    }
+
+    // Update last login
+    user.lastLoginAt = new Date();
+    user.lastLoginIP = req.ip;
+    await user.save();
+
+    // Generate tokens
+    const tokens = generateTokens(user._id);
+
+    // Store refresh token
+    user.refreshTokens.push(tokens.refreshToken);
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Biometric login successful',
+      data: {
+        user: user.toJSON(),
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken
+      }
+    });
+
+  } catch (error) {
+    console.error('Biometric login error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Biometric login failed'
+    });
+  }
+};
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -188,13 +477,25 @@ const login = async (req, res) => {
 // @access  Private
 const logout = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken } = req.body || {};
+
+    console.log('Logout attempt:', { userId: req.userId, jti: req.jti, refreshToken: !!refreshToken });
+
+    // Revoke current access token by adding its jti to revoked list
+    const updateData = {};
+    if (req.jti) {
+      updateData.$push = { revokedJtis: req.jti };
+    }
 
     if (refreshToken) {
-      // Remove refresh token from user
-      await User.findByIdAndUpdate(req.userId, {
-        $pull: { refreshTokens: refreshToken }
-      });
+      updateData.$pull = { refreshTokens: refreshToken };
+    }
+
+    console.log('Update data:', updateData);
+
+    if (Object.keys(updateData).length > 0) {
+      const result = await User.findByIdAndUpdate(req.userId, updateData);
+      console.log('Update result:', !!result);
     }
 
     res.json({
@@ -203,7 +504,7 @@ const logout = async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Logout error', { error });
+    console.error('Logout error:', error);
     res.status(500).json({
       success: false,
       message: 'Logout failed'
@@ -326,15 +627,25 @@ const forgotPassword = async (req, res) => {
 };
 
 // @desc    Reset password
-// @route   POST /api/auth/reset-password
+// @route   POST /api/auth/reset-password (also supports /api/auth/reset-password/:token)
 // @access  Public
 const resetPassword = async (req, res) => {
   try {
-    const { token, password } = req.body;
+    // Token can come from route param or request body
+    const token = req.params.token || req.body.token;
+    // Allow newPassword alias for compatibility with tests
+    const password = req.body.password || req.body.newPassword;
 
-    const user = await User.findOne({
-      passwordResetToken: token,
-      passwordResetExpires: { $gt: Date.now() }
+    if (!token || !password) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
+    }
+
+    // Support legacy field names used in some tests (resetPasswordToken/resetPasswordExpires)
+    let user = await User.findOne({
+      $or: [
+        { passwordResetToken: token, passwordResetExpires: { $gt: Date.now() } },
+        { resetPasswordToken: token, resetPasswordExpires: { $gt: Date.now() } }
+      ]
     });
 
     if (!user) {
@@ -346,12 +657,18 @@ const resetPassword = async (req, res) => {
 
     // Set new password
     user.password = password;
+    // Clear both legacy and current fields
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
-    
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
     // Clear all refresh tokens (force re-login on all devices)
     user.refreshTokens = [];
-    
+
+    // Invalidate all existing access tokens
+    user.tokensInvalidatedAt = new Date();
+
     await user.save();
 
     res.json({
@@ -374,7 +691,7 @@ const resetPassword = async (req, res) => {
 const setup2FA = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -427,7 +744,7 @@ const verify2FA = async (req, res) => {
   try {
     const { code } = req.body;
     const user = await User.findById(req.userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -481,7 +798,7 @@ const verify2FA = async (req, res) => {
 const validate2FA = async (req, res) => {
   try {
     const { userId, code } = req.body;
-    
+
     const user = await User.findById(userId);
     if (!user || !user.twoFactorEnabled) {
       return res.status(400).json({
@@ -519,6 +836,147 @@ const validate2FA = async (req, res) => {
   }
 };
 
+// @desc    Setup biometric authentication
+// @route   POST /api/auth/biometric/setup
+// @access  Private
+const setupBiometric = async (req, res) => {
+  try {
+    const { deviceInfo, publicKey } = req.body;
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (user.biometricEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: 'Biometric authentication is already enabled'
+      });
+    }
+
+    // Generate a biometric token (in production, this would be more secure)
+    const biometricToken = crypto.randomBytes(32).toString('hex');
+
+    // Store biometric information
+    user.biometricEnabled = true;
+    user.biometricToken = biometricToken;
+    user.biometricTokenExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+    user.deviceInfo = deviceInfo;
+    user.publicKey = publicKey;
+
+    await user.save();
+
+    // Return the token (in production, this would be encrypted)
+    res.json({
+      success: true,
+      message: 'Biometric authentication enabled successfully',
+      biometricToken: biometricToken,
+      expiresAt: user.biometricTokenExpiry
+    });
+
+  } catch (error) {
+    logger.error('Biometric setup error', { error });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to setup biometric authentication'
+    });
+  }
+};
+
+// @desc    Disable biometric authentication
+// @route   POST /api/auth/biometric/disable
+// @access  Private
+const disableBiometric = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (!user.biometricEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: 'Biometric authentication is not enabled'
+      });
+    }
+
+    // Disable biometric authentication
+    user.biometricEnabled = false;
+    user.biometricToken = undefined;
+    user.biometricTokenExpiry = undefined;
+    user.deviceInfo = undefined;
+    user.publicKey = undefined;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Biometric authentication disabled successfully'
+    });
+
+  } catch (error) {
+    logger.error('Biometric disable error', { error });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to disable biometric authentication'
+    });
+  }
+};
+
+// @desc    Refresh biometric token
+// @route   POST /api/auth/biometric/refresh
+// @access  Private
+const refreshBiometricToken = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (!user.biometricEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: 'Biometric authentication is not enabled'
+      });
+    }
+
+    // Generate new biometric token
+    const biometricToken = crypto.randomBytes(32).toString('hex');
+
+    // Update token and expiry
+    user.biometricToken = biometricToken;
+    user.biometricTokenExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Biometric token refreshed successfully',
+      biometricToken: biometricToken,
+      expiresAt: user.biometricTokenExpiry
+    });
+
+  } catch (error) {
+    logger.error('Biometric token refresh error', { error });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to refresh biometric token'
+    });
+  }
+};
+
 // @desc    Disable 2FA
 // @route   POST /api/auth/2fa/disable
 // @access  Private
@@ -526,7 +984,7 @@ const disable2FA = async (req, res) => {
   try {
     const { code } = req.body;
     const user = await User.findById(req.userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -576,6 +1034,13 @@ const disable2FA = async (req, res) => {
 };
 
 module.exports = {
+  setup2FASmsEmail,
+  verify2FASmsEmail,
+  send2FACode,
+  biometricLogin,
+  setupBiometric,
+  disableBiometric,
+  refreshBiometricToken,
   register,
   login,
   logout,

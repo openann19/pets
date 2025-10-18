@@ -6,10 +6,13 @@ interface ProtectedLayoutProps {
   showHeader?: boolean;
 }
 
-const ProtectedLayout = ({ children, showHeader = true }: ProtectedLayoutProps) => {
+const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ 
+  children, 
+  showHeader = true 
+}) => {
   return (
     <>
-      {showHeader !== undefined && <Header />}
+      {showHeader && <Header />}
       {children}
     </>
   );

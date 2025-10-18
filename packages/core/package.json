@@ -5,7 +5,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && pnpm build:cjs && pnpm build:merge-cjs",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:merge-cjs": "node -e \"require('fs').cpSync('dist-cjs','dist',{recursive:true});\"",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "clean:all": "rm -rf dist node_modules/.cache",
@@ -46,7 +48,7 @@
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.0",
     "@types/jest": "^29.5.0",
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.17",
     "@types/react": "19.2.1",
     "@types/react-dom": "19.2.1",
     "axios-mock-adapter": "^1.21.0",
@@ -61,12 +63,45 @@
     "react-dom": "^18.2.0 || ^19.0.0"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./types": "./dist/types/index.js",
-    "./schemas": "./dist/schemas/index.js",
-    "./api": "./dist/api/index.js",
-    "./services": "./dist/services/index.js",
-    "./utils": "./dist/utils/index.js",
-    "./stores": "./dist/stores/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./schemas": {
+      "types": "./dist/schemas/index.d.ts",
+      "import": "./dist/schemas/index.js",
+      "require": "./dist/schemas/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.js"
+    },
+    "./api": {
+      "types": "./dist/api/index.d.ts",
+      "import": "./dist/api/index.js",
+      "require": "./dist/api/index.js"
+    },
+    "./services": {
+      "types": "./dist/services/index.d.ts",
+      "import": "./dist/services/index.js",
+      "require": "./dist/services/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js",
+      "require": "./dist/utils/index.js"
+    },
+    "./stores": {
+      "types": "./dist/stores/index.d.ts",
+      "import": "./dist/stores/index.js",
+      "require": "./dist/stores/index.js"
+    },
+    "./mappers": {
+      "types": "./dist/mappers/index.d.ts",
+      "import": "./dist/mappers/index.js",
+      "require": "./dist/mappers/index.js"
+    }
   }
 }

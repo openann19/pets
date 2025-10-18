@@ -1,5 +1,11 @@
 const Match = require('../models/Match');
-const Message = require('../models/Message');
+let Message;
+try {
+  Message = require('../models/Message');
+} catch (e) {
+  Message = null;
+}
+const Conversation = require('../models/Conversation');
 const logger = require('../utils/logger');
 
 /**
@@ -39,13 +45,34 @@ const getMemories = async (req, res) => {
     }
 
     // Get messages for this match
-    const messages = await Message.find({
-      match: matchId,
-      isDeleted: { $ne: true }
-    })
-    .populate('sender', 'firstName lastName')
-    .sort({ createdAt: 1 })
-    .limit(50); // Limit to prevent too many memories
+    let messages = [];
+    if (Message && typeof Message.find === 'function') {
+      messages = await Message.find({
+        match: matchId,
+        isDeleted: { $ne: true }
+      })
+        .populate('sender', 'firstName lastName')
+        .sort({ createdAt: 1 })
+        .limit(50); // Limit to prevent too many memories
+    } else {
+      // Fallback: derive messages from Conversation between the two users
+      const participants = [match.user1, match.user2].map(id => id.toString());
+      const convo = await Conversation.findOne({ participants: { $all: participants, $size: 2 } })
+        .lean();
+      if (convo && Array.isArray(convo.messages)) {
+        // Mimic Message shape minimally
+        messages = convo.messages
+          .slice()
+          .sort((a, b) => new Date(a.sentAt || a.createdAt) - new Date(b.sentAt || b.createdAt))
+          .slice(0, 50)
+          .map(m => ({
+            _id: m._id,
+            content: m.content,
+            createdAt: m.sentAt || m.createdAt || new Date(),
+            sender: { _id: m.sender, firstName: '', lastName: '' }
+          }));
+      }
+    }
 
     // Convert messages to memory nodes
     const memories = messages.map((message, index) => {
@@ -61,28 +88,28 @@ const getMemories = async (req, res) => {
 
       // Analyze message content to determine memory type
       if (message.content.toLowerCase().includes('photo') ||
-          message.content.toLowerCase().includes('picture')) {
+        message.content.toLowerCase().includes('picture')) {
         type = 'image';
         title = `Shared a photo`;
         emotion = 'happy';
       } else if (message.content.toLowerCase().includes('location') ||
-                 message.content.toLowerCase().includes('meet')) {
+        message.content.toLowerCase().includes('meet')) {
         type = 'location';
         title = `Suggested meeting up`;
         emotion = 'excited';
       } else if (message.content.toLowerCase().includes('love') ||
-                 message.content.toLowerCase().includes('cute') ||
-                 message.content.toLowerCase().includes('adorable')) {
+        message.content.toLowerCase().includes('cute') ||
+        message.content.toLowerCase().includes('adorable')) {
         emotion = 'love';
         title = `Expressed affection`;
       } else if (message.content.toLowerCase().includes('play') ||
-                 message.content.toLowerCase().includes('fun') ||
-                 message.content.toLowerCase().includes('excited')) {
+        message.content.toLowerCase().includes('fun') ||
+        message.content.toLowerCase().includes('excited')) {
         emotion = 'playful';
         title = `Shared playful moment`;
       } else if (message.content.toLowerCase().includes('happy') ||
-                 message.content.toLowerCase().includes('great') ||
-                 message.content.toLowerCase().includes('awesome')) {
+        message.content.toLowerCase().includes('great') ||
+        message.content.toLowerCase().includes('awesome')) {
         emotion = 'happy';
         title = `Shared happy news`;
       } else {

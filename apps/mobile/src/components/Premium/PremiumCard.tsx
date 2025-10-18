@@ -7,16 +7,19 @@
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
+import type {
+  ViewStyle} from 'react-native';
 import {
-  PanResponder,
-  Animated as RNAnimated,
-  StyleSheet,
-  TouchableOpacity,
   View,
-  type ViewStyle
+  StyleSheet,
+  Animated,
+  PanResponder,
+  Dimensions,
+  TouchableOpacity,
 } from 'react-native';
-import { MOBILE_RADIUS, MOBILE_SHADOWS, MOBILE_SPACING, MOBILE_VARIANTS } from '../../constants/design-tokens';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface PremiumCardProps {
   children: React.ReactNode;
@@ -34,7 +37,7 @@ interface PremiumCardProps {
 export const PremiumCard: React.FC<PremiumCardProps> = ({
   children,
   variant = 'default',
-  hover: _hover = true,
+  hover = true,
   tilt = false,
   glow = false,
   padding = 'md',
@@ -43,11 +46,11 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
   disabled = false,
   haptic = true,
 }) => {
-  const animatedScale = useRef(new RNAnimated.Value(1)).current;
-  const animatedRotateX = useRef(new RNAnimated.Value(0)).current;
-  const animatedRotateY = useRef(new RNAnimated.Value(0)).current;
-  const animatedElevation = useRef(new RNAnimated.Value(4)).current;
-  const animatedGlow = useRef(new RNAnimated.Value(0)).current;
+  const animatedScale = useRef(new Animated.Value(1)).current;
+  const animatedRotateX = useRef(new Animated.Value(0)).current;
+  const animatedRotateY = useRef(new Animated.Value(0)).current;
+  const animatedElevation = useRef(new Animated.Value(4)).current;
+  const animatedGlow = useRef(new Animated.Value(0)).current;
 
   // Enhanced 3D tilt effect with PanResponder
   const panResponder = useRef(
@@ -55,24 +58,24 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
       onMoveShouldSetPanResponder: () => tilt && !disabled,
       onPanResponderGrant: () => {
         if (haptic) {
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
       },
-      onPanResponderMove: (_evt, gestureState) => {
+      onPanResponderMove: (evt, gestureState) => {
         if (!tilt) return;
-
+        
         const { dx, dy } = gestureState;
         const maxTilt = 15;
-
+        
         // Calculate tilt based on gesture
         const tiltX = Math.max(-maxTilt, Math.min(maxTilt, (dy / 100) * maxTilt));
         const tiltY = Math.max(-maxTilt, Math.min(maxTilt, -(dx / 100) * maxTilt));
-
+        
         animatedRotateX.setValue(tiltX);
         animatedRotateY.setValue(tiltY);
-
+        
         // Enhance elevation on interaction
-        RNAnimated.timing(animatedElevation, {
+        Animated.timing(animatedElevation, {
           toValue: 8,
           duration: 150,
           useNativeDriver: false,
@@ -80,141 +83,165 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
       },
       onPanResponderRelease: () => {
         // Return to center
-        // Sequence springs and timing since RNAnimated.parallel typing is problematic under strict types
-        RNAnimated.spring(animatedRotateX, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 300,
-          friction: 10,
-        }).start();
-        RNAnimated.spring(animatedRotateY, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 300,
-          friction: 10,
-        }).start();
-        RNAnimated.timing(animatedElevation, {
-          toValue: 4,
-          duration: 200,
-          useNativeDriver: false,
-        }).start();
+        Animated.parallel([
+          Animated.spring(animatedRotateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 300,
+            friction: 10,
+          }),
+          Animated.spring(animatedRotateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 300,
+            friction: 10,
+          }),
+          Animated.timing(animatedElevation, {
+            toValue: 4,
+            duration: 200,
+            useNativeDriver: false,
+          }),
+        ]).start();
       },
     })
   ).current;
 
   // Enhanced press handling
-  const handlePressIn = (): void => {
+  const handlePressIn = () => {
     if (disabled) return;
-
+    
     if (haptic) {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-
+    
     const animations = [
-      RNAnimated.spring(animatedScale, {
+      Animated.spring(animatedScale, {
         toValue: 0.98,
         useNativeDriver: true,
         tension: 300,
         friction: 10,
       }),
     ];
-
+    
     if (glow) {
-      animations.push(RNAnimated.timing(animatedGlow, {
+      animations.push(Animated.timing(animatedGlow, {
         toValue: 1,
         duration: 150,
         useNativeDriver: false,
       }));
     }
-
-    // Run animations individually to avoid parallel typing issues
-    animations.forEach(a => a.start());
+    
+    Animated.parallel(animations).start();
   };
 
-  const handlePressOut = (): void => {
+  const handlePressOut = () => {
     const animations = [
-      RNAnimated.spring(animatedScale, {
+      Animated.spring(animatedScale, {
         toValue: 1,
         useNativeDriver: true,
         tension: 300,
         friction: 8,
       }),
     ];
-
+    
     if (glow) {
-      animations.push(RNAnimated.timing(animatedGlow, {
+      animations.push(Animated.timing(animatedGlow, {
         toValue: 0,
         duration: 200,
         useNativeDriver: false,
       }));
     }
-
-    animations.forEach(a => a.start());
+    
+    Animated.parallel(animations).start();
   };
 
-  const handlePress = (): void => {
+  const handlePress = () => {
     if (disabled) return;
-
+    
     if (haptic) {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-
+    
     onPress?.();
+  };
+
+  // Get variant styles
+  const getVariantStyles = () => {
+    const variants = {
+      default: {
+        colors: ['#ffffff', '#f8fafc'],
+        shadowColor: '#000000',
+      },
+      glass: {
+        colors: ['transparent', 'transparent'],
+        shadowColor: '#000000',
+      },
+      elevated: {
+        colors: ['#ffffff', '#f8fafc'],
+        shadowColor: '#000000',
+      },
+      gradient: {
+        colors: ['#667eea', '#764ba2'],
+        shadowColor: '#667eea',
+      },
+      neon: {
+        colors: ['#1a1a1a', '#1a1a1a'],
+        shadowColor: '#ec4899',
+      },
+      holographic: {
+        colors: ['#ff6b6b', '#4ecdc4', '#45b7b8', '#96ceb4', '#ffeaa7'],
+        shadowColor: '#ff6b6b',
+      },
+    };
+    
+    return variants[variant] || variants.default;
   };
 
   // Entrance animation
   useEffect(() => {
-    RNAnimated.sequence([
-      RNAnimated.timing(animatedScale, {
+    Animated.sequence([
+      Animated.timing(animatedScale, {
         toValue: 0.9,
         duration: 0,
         useNativeDriver: true,
       }),
-      RNAnimated.spring(animatedScale, {
+      Animated.spring(animatedScale, {
         toValue: 1,
         useNativeDriver: true,
         tension: 300,
         friction: 10,
       }),
     ]).start();
-  }, [animatedScale]);
+  }, []);
 
-  // Get variant styles - FIXED: Now returns actual style object instead of Promise
-  const getVariantStyles = useCallback(() => {
-    const styles = (MOBILE_VARIANTS as any).card?.[variant] ?? (MOBILE_VARIANTS as any).card?.default ?? {};
-    return styles as any;
-  }, [variant]);
+  // Get variant styles
+  const getVariantContainerStyle = (): ViewStyle => {
+    const baseStyle: ViewStyle = {
+      borderRadius: 16,
+      overflow: 'hidden',
+    };
 
-  // Get padding values
-  const getPaddingValue = useCallback((): number => {
     const paddingValues = {
       none: 0,
-      sm: MOBILE_SPACING[3],
-      md: MOBILE_SPACING[5],
-      lg: MOBILE_SPACING[7],
-      xl: MOBILE_SPACING[9],
+      sm: 12,
+      md: 20,
+      lg: 28,
+      xl: 36,
     };
-    return paddingValues[padding];
-  }, [padding]);
-
-  // Get variant container style
-  const getVariantContainerStyle = useMemo(() => {
-    const baseStyle: ViewStyle = {
-      borderRadius: MOBILE_RADIUS['2xl'],
-      overflow: 'hidden',
-      padding: getPaddingValue(),
-    };
-
-    const variantStyle = getVariantStyles();
 
     switch (variant) {
       case 'elevated':
         return {
           ...baseStyle,
-          backgroundColor: variantStyle.backgroundColor ?? '#ffffff',
-          ...MOBILE_SHADOWS['2xl'],
+          backgroundColor: '#ffffff',
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.15,
+          shadowRadius: 16,
+          elevation: 8,
+          padding: paddingValues[padding],
         };
-
+      
       case 'neon':
         return {
           ...baseStyle,
@@ -226,65 +253,62 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
           shadowOpacity: 0.4,
           shadowRadius: 12,
           elevation: 6,
+          padding: paddingValues[padding],
         };
-
+      
       case 'gradient':
         return {
           ...baseStyle,
-          ...MOBILE_SHADOWS.xl,
+          shadowColor: '#667eea',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.3,
+          shadowRadius: 12,
+          elevation: 6,
+          padding: paddingValues[padding],
         };
-
-      case 'glass':
-        return {
-          ...baseStyle,
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          borderWidth: 1,
-          borderColor: 'rgba(255, 255, 255, 0.2)',
-          ...MOBILE_SHADOWS.glass,
-        };
-
+      
       default:
         return {
           ...baseStyle,
-          backgroundColor: variantStyle.backgroundColor ?? '#ffffff',
-          ...MOBILE_SHADOWS.lg,
+          backgroundColor: '#ffffff',
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 4,
+          padding: paddingValues[padding],
         };
     }
-  }, [variant, getPaddingValue, getVariantStyles]);
+  };
 
-  const containerStyle = getVariantContainerStyle as unknown as ViewStyle;
-  const variantStyles = getVariantStyles() as any;
+  const containerStyle = getVariantContainerStyle();
 
   // Glass morphism implementation
   if (variant === 'glass') {
     return (
-      <RNAnimated.View
+      <Animated.View
         style={[
-          containerStyle as any,
+          containerStyle,
           {
             transform: [
-              { scale: animatedScale as any },
-              {
-                rotateX: (animatedRotateX as any).interpolate({
-                  inputRange: [-15, 15],
-                  outputRange: ['-15deg', '15deg'],
-                })
-              },
-              {
-                rotateY: (animatedRotateY as any).interpolate({
-                  inputRange: [-15, 15],
-                  outputRange: ['-15deg', '15deg'],
-                })
-              },
+              { scale: animatedScale },
+              { rotateX: animatedRotateX.interpolate({
+                inputRange: [-15, 15],
+                outputRange: ['-15deg', '15deg'],
+              }) },
+              { rotateY: animatedRotateY.interpolate({
+                inputRange: [-15, 15],
+                outputRange: ['-15deg', '15deg'],
+              }) },
             ],
           },
           style,
-        ] as any}
+        ]}
         {...(tilt ? panResponder.panHandlers : {})}
       >
         <BlurView intensity={30} style={StyleSheet.absoluteFillObject} />
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
-
+        
         {onPress ? (
           <TouchableOpacity
             onPress={handlePress}
@@ -301,48 +325,44 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
             {children}
           </View>
         )}
-      </RNAnimated.View>
+      </Animated.View>
     );
   }
 
   // Gradient implementation
   if (variant === 'gradient' || variant === 'holographic') {
-    const gradientColors: [string, string, ...string[]] = (variant === 'holographic'
+    const gradientColors = variant === 'holographic' 
       ? ['#ff6b6b', '#4ecdc4', '#45b7b8', '#96ceb4', '#ffeaa7']
-      : (variantStyles.colors ?? ['#667eea', '#764ba2', '#f093fb'])) as [string, string, ...string[]];
+      : getVariantStyles().colors;
 
     return (
-      <RNAnimated.View
+      <Animated.View
         style={[
           containerStyle,
           {
             transform: [
               { scale: animatedScale },
-              {
-                rotateX: animatedRotateX.interpolate({
-                  inputRange: [-15, 15],
-                  outputRange: ['-15deg', '15deg'],
-                })
-              },
-              {
-                rotateY: animatedRotateY.interpolate({
-                  inputRange: [-15, 15],
-                  outputRange: ['-15deg', '15deg'],
-                })
-              },
+              { rotateX: animatedRotateX.interpolate({
+                inputRange: [-15, 15],
+                outputRange: ['-15deg', '15deg'],
+              }) },
+              { rotateY: animatedRotateY.interpolate({
+                inputRange: [-15, 15],
+                outputRange: ['-15deg', '15deg'],
+              }) },
             ],
           },
           style,
-        ] as any}
+        ]}
         {...(tilt ? panResponder.panHandlers : {})}
       >
         <LinearGradient
           colors={gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[StyleSheet.absoluteFillObject, { borderRadius: (containerStyle as any).borderRadius }]}
+          style={[StyleSheet.absoluteFillObject, { borderRadius: containerStyle.borderRadius }]}
         />
-
+        
         {onPress ? (
           <TouchableOpacity
             onPress={handlePress}
@@ -361,48 +381,46 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
         )}
 
         {/* Glow overlay */}
-        {glow ? <RNAnimated.View
-          style={[
-            StyleSheet.absoluteFillObject,
-            {
-              borderRadius: (containerStyle as any).borderRadius,
-              backgroundColor: (variantStyles as any).shadowColor ?? '#ec4899',
-              opacity: (animatedGlow as any).interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, 0.2],
-              }),
-            },
-          ]}
-          pointerEvents="none"
-        /> : null}
-      </RNAnimated.View>
+        {glow && (
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                borderRadius: containerStyle.borderRadius,
+                backgroundColor: getVariantStyles().shadowColor,
+                opacity: animatedGlow.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.2],
+                }),
+              },
+            ]}
+            pointerEvents="none"
+          />
+        )}
+      </Animated.View>
     );
   }
 
   // Default implementation
   return (
-    <RNAnimated.View
+    <Animated.View
       style={[
-        containerStyle as any,
+        containerStyle,
         {
           transform: [
-            { scale: animatedScale as any },
-            {
-              rotateX: (animatedRotateX as any).interpolate({
-                inputRange: [-15, 15],
-                outputRange: ['-15deg', '15deg'],
-              })
-            },
-            {
-              rotateY: (animatedRotateY as any).interpolate({
-                inputRange: [-15, 15],
-                outputRange: ['-15deg', '15deg'],
-              })
-            },
+            { scale: animatedScale },
+            { rotateX: animatedRotateX.interpolate({
+              inputRange: [-15, 15],
+              outputRange: ['-15deg', '15deg'],
+            }) },
+            { rotateY: animatedRotateY.interpolate({
+              inputRange: [-15, 15],
+              outputRange: ['-15deg', '15deg'],
+            }) },
           ],
         },
         style,
-      ] as any}
+      ]}
       {...(tilt ? panResponder.panHandlers : {})}
     >
       {onPress ? (
@@ -421,7 +439,7 @@ export const PremiumCard: React.FC<PremiumCardProps> = ({
           {children}
         </View>
       )}
-    </RNAnimated.View>
+    </Animated.View>
   );
 };
 

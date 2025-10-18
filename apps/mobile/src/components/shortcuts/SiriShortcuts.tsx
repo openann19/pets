@@ -8,7 +8,7 @@ let ExpoSiriShortcuts: any = null;
 if (Platform.OS === 'ios') {
   try {
     ExpoSiriShortcuts = require('expo-siri-shortcuts');
-  } catch (e) {
+  } catch {
     ExpoSiriShortcuts = null;
   }
 }

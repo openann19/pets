@@ -1,9 +1,10 @@
+import { useAuthStore } from '@pawfectmatch/core';
+import { fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
-import {  } from '@testing-library/react-native';
-import {  } from 'react-native';
+import { Alert } from 'react-native';
+
+import { useCallManager } from '../../components/calling/CallManager';
 import ChatScreen from '../ChatScreen';
-import {  } from '../../components/calling/CallManager';
-import {  } from '@pawfectmatch/core';
 
 // Mock dependencies
 jest.mock('../../components/calling/CallManager');
@@ -17,14 +18,20 @@ jest.mock('../../services/api', () => ({
 }));
 
 jest.mock('react-native', () => ({
-  ...jest.requireActual('react-native'),
   Alert: {
     alert: jest.fn(),
   },
+  View: 'View',
+  Text: 'Text',
+  TouchableOpacity: 'TouchableOpacity',
+  ScrollView: 'ScrollView',
+  StyleSheet: {
+    create: jest.fn((styles) => styles),
+  },
 }));
 
-const mockUseCallManager = useCallManager;
-const mockUseAuthStore = useAuthStore;
+const mockUseCallManager = useCallManager as jest.MockedFunction<typeof useCallManager>;
+const mockUseAuthStore = useAuthStore as jest.MockedFunction<typeof useAuthStore>;
 
 const mockNavigation = {
   navigate: jest.fn(),
@@ -58,7 +65,7 @@ describe('ChatScreen - Calling Features', () => {
         firstName: 'Test',
         lastName: 'User',
       },
-    } as unknown);
+    } as any);
 
     mockIsCallActive.mockReturnValue(false);
   });
@@ -94,7 +101,7 @@ describe('ChatScreen - Calling Features', () => {
 
     // Simulate user confirming the call
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-    const confirmButton = alertCall[2].find((button: unknown) => button.text === 'Call');
+    const confirmButton = alertCall[2].find((button: any) => button.text === 'Call');
     
     await confirmButton.onPress();
 
@@ -123,7 +130,7 @@ describe('ChatScreen - Calling Features', () => {
 
     // Simulate user confirming the call
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-    const confirmButton = alertCall[2].find((button: unknown) => button.text === 'Call');
+    const confirmButton = alertCall[2].find((button: any) => button.text === 'Call');
     
     await confirmButton.onPress();
 
@@ -142,7 +149,7 @@ describe('ChatScreen - Calling Features', () => {
 
     // Confirm the call
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-    const confirmButton = alertCall[2].find((button: unknown) => button.text === 'Call');
+    const confirmButton = alertCall[2].find((button: any) => button.text === 'Call');
     
     await confirmButton.onPress();
 
@@ -195,7 +202,7 @@ describe('ChatScreen - Calling Features', () => {
 
     // Simulate user canceling the call
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
-    const cancelButton = alertCall[2].find((button: unknown) => button.text === 'Cancel');
+    const cancelButton = alertCall[2].find((button: any) => button.text === 'Cancel');
     
     if (cancelButton.onPress) {
       cancelButton.onPress();

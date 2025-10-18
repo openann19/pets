@@ -1,7 +1,8 @@
+import { act, fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
-import {  } from '@testing-library/react-native';
+
+import type { CallState } from '../../../services/WebRTCService';
 import ActiveCallScreen from '../ActiveCallScreen';
-import {  } from '../../../services/WebRTCService';
 
 // Mock dependencies
 jest.mock('react-native-webrtc', () => ({
@@ -16,10 +17,9 @@ jest.mock('expo-blur', () => ({
   BlurView: 'BlurView',
 }));
 
+// React Native is already mocked in jest.setup.ts
 jest.mock('react-native', () => ({
-  ...jest.requireActual('react-native'),
   Animated: {
-    ...jest.requireActual('react-native').Animated,
     timing: jest.fn(() => ({ start: jest.fn() })),
     Value: jest.fn(() => ({
       interpolate: jest.fn(() => 0),
@@ -48,8 +48,8 @@ const mockCallState: CallState = {
     callType: 'video',
     timestamp: Date.now(),
   },
-  localStream: {} as unknown,
-  remoteStream: {} as unknown,
+  localStream: {} as any,
+  remoteStream: {} as any,
   isMuted: false,
   isVideoEnabled: true,
   callDuration: 120, // 2 minutes

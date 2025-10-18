@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import {  } from '../../hooks/useTheme';
-import {  } from '../../hooks/useAnimation';
+import React, { useEffect, useState } from 'react';
+import { useAnimation } from '../../hooks/useAnimation';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface PetRecommendation {
   id: string;
@@ -20,37 +20,37 @@ export interface PersonalizedRecommendationsProps {
    * User ID for personalized recommendations
    */
   userId: string;
-  
+
   /**
    * Title for the recommendations section
    */
   title?: string;
-  
+
   /**
    * Maximum number of recommendations to show
    */
   maxRecommendations?: number;
-  
+
   /**
    * Whether to enable explanations for each recommendation
    */
   showExplanations?: boolean;
-  
+
   /**
    * Callback when a recommendation is clicked
    */
   onRecommendationClick?: (recommendation: PetRecommendation) => void;
-  
+
   /**
    * Whether to auto-refresh recommendations
    */
   autoRefresh?: boolean;
-  
+
   /**
    * Auto-refresh interval in milliseconds
    */
   refreshInterval?: number;
-  
+
   /**
    * Additional CSS classes
    */
@@ -83,27 +83,27 @@ export const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsPr
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentHover, setCurrentHover] = useState<string | null>(null);
-  
+
   // Fetch recommendations based on user behavior and preferences
   useEffect(() => {
     const fetchRecommendations = async (): Promise<void> => {
       try {
         setLoading(true);
         setError(null);
-        
+
         // If mock data is provided, use it instead of fetching
         if (mockData !== null && mockData !== undefined) {
           setRecommendations(mockData.slice(0, maxRecommendations));
           setLoading(false);
           return;
         }
-        
+
         // In a real implementation, this would be an API call to a recommendation engine
         // For example: const response = await fetch(`/api/recommendations/${userId}`);
-        
+
         // Simulating API response for demo purposes
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         const demoRecommendations: PetRecommendation[] = [
           {
             id: '1',
@@ -166,7 +166,7 @@ export const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsPr
             distance: 2.1
           }
         ];
-        
+
         // Limit the recommendations to maxRecommendations
         setRecommendations(demoRecommendations.slice(0, maxRecommendations));
         setLoading(false);
@@ -176,19 +176,19 @@ export const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsPr
         console.error('Error fetching recommendations:', err);
       }
     };
-    
+
     fetchRecommendations();
-    
+
     // Set up auto-refresh if enabled
-    let refreshTimer: NodeJS.Timeout | null = null;
-    if (autoRefresh !== null && autoRefresh !== undefined) {
+    let refreshTimer: ReturnType<typeof setInterval> | null = null;
+    if (autoRefresh) {
       refreshTimer = setInterval(() => {
         fetchRecommendations();
       }, refreshInterval);
     }
-    
+
     return () => {
-      if (refreshTimer !== null && refreshTimer !== undefined) {
+      if (refreshTimer !== null) {
         clearInterval(refreshTimer);
       }
     };
@@ -198,30 +198,30 @@ export const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsPr
     setCurrentHover(id);
     animate('scale');
   };
-  
+
   const handleCardClick = (recommendation: PetRecommendation): void => {
     if (onRecommendationClick !== null && onRecommendationClick !== undefined) {
       onRecommendationClick(recommendation);
     }
   };
-  
+
   // Generate background gradient based on match score
   const getMatchScoreGradient = (score: number): string => {
     if (score >= 90) {
-      return isDarkMode 
-        ? 'from-emerald-700/80 to-emerald-900/80' 
+      return isDarkMode
+        ? 'from-emerald-700/80 to-emerald-900/80'
         : 'from-emerald-400/90 to-emerald-600/90';
     } else if (score >= 80) {
-      return isDarkMode 
-        ? 'from-blue-700/80 to-blue-900/80' 
+      return isDarkMode
+        ? 'from-blue-700/80 to-blue-900/80'
         : 'from-blue-400/90 to-blue-600/90';
     } else if (score >= 70) {
-      return isDarkMode 
-        ? 'from-violet-700/80 to-violet-900/80' 
+      return isDarkMode
+        ? 'from-violet-700/80 to-violet-900/80'
         : 'from-violet-400/90 to-violet-600/90';
     } else {
-      return isDarkMode 
-        ? 'from-amber-700/80 to-amber-900/80' 
+      return isDarkMode
+        ? 'from-amber-700/80 to-amber-900/80'
         : 'from-amber-400/90 to-amber-600/90';
     }
   };
@@ -237,9 +237,9 @@ export const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsPr
           View all
         </div>
       </div>
-      
+
       {/* Loading state */}
-      {loading !== undefined &&  (
+      {loading !== undefined && (
         <div className="w-full flex justify-center items-center py-16">
           <div className="animate-pulse flex space-x-4">
             <div className="rounded-full bg-slate-300 dark:bg-slate-700 h-10 w-10" />
@@ -251,12 +251,12 @@ export const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsPr
           </div>
         </div>
       )}
-      
+
       {/* Error state */}
-      {error !== undefined &&  (
+      {error !== undefined && (
         <div className={`w-full rounded-lg p-4 text-center ${isDarkMode ? 'bg-red-900/30 text-red-200' : 'bg-red-50 text-red-600'}`}>
           {error}
-          <button 
+          <button
             className={`ml-4 px-3 py-1 rounded-md ${isDarkMode ? 'bg-red-800 hover:bg-red-700' : 'bg-red-100 hover:bg-red-200'}`}
             onClick={() => { setError(null); }}
           >
@@ -264,12 +264,12 @@ export const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsPr
           </button>
         </div>
       )}
-      
+
       {/* Recommendations grid */}
       {!loading && !error && recommendations.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {recommendations.map((recommendation) => (
-            <div 
+            <div
               key={recommendation.id}
               className={`
                 rounded-xl overflow-hidden shadow-lg transition-all duration-300
@@ -283,12 +283,12 @@ export const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsPr
             >
               {/* Pet image */}
               <div className="relative h-48 w-full overflow-hidden">
-                <img 
+                <img
                   src={recommendation.imageUrl}
                   alt={recommendation.name}
                   className="w-full h-full object-cover"
                 />
-                
+
                 {/* Match score badge */}
                 <div className={`
                   absolute top-3 right-3 rounded-full px-3 py-1
@@ -301,26 +301,25 @@ export const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsPr
                   {recommendation.matchScore}% Match
                 </div>
               </div>
-              
+
               {/* Pet info */}
               <div className="p-4">
                 <div className="flex justify-between items-start">
                   <h3 className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                     {recommendation.name}
                   </h3>
-                  <span className={`text-xs font-medium px-2 py-1 rounded-md ${
-                    recommendation.type === 'dog' 
-                      ? isDarkMode ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-100 text-blue-800'
-                      : isDarkMode ? 'bg-amber-900/40 text-amber-200' : 'bg-amber-100 text-amber-800'
-                  }`}>
+                  <span className={`text-xs font-medium px-2 py-1 rounded-md ${recommendation.type === 'dog'
+                    ? isDarkMode ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-100 text-blue-800'
+                    : isDarkMode ? 'bg-amber-900/40 text-amber-200' : 'bg-amber-100 text-amber-800'
+                    }`}>
                     {recommendation.type.charAt(0).toUpperCase() + recommendation.type.slice(1)}
                   </span>
                 </div>
-                
+
                 <div className={`mt-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   {recommendation.breed} • {recommendation.age}
                 </div>
-                
+
                 <div className={`mt-2 flex items-center text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -328,9 +327,9 @@ export const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsPr
                   </svg>
                   {recommendation.location} ({recommendation.distance} miles away)
                 </div>
-                
+
                 {/* Match reasons */}
-                {showExplanations !== undefined &&  (
+                {showExplanations !== undefined && (
                   <div className="mt-3">
                     <div className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                       Why we recommended {recommendation.name}:
@@ -352,7 +351,7 @@ export const PersonalizedRecommendations: React.FC<PersonalizedRecommendationsPr
           ))}
         </div>
       )}
-      
+
       {/* No recommendations state */}
       {!loading && !error && recommendations.length === 0 && (
         <div className={`

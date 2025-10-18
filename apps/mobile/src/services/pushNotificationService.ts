@@ -563,13 +563,8 @@ class PushNotificationService {
    * Get notification count
    */
   public async getNotificationCount(): Promise<number> {
-    try {
-      // Shim doesn't include getDisplayedNotifications; return 0 as fallback.
-      return 0;
-    } catch (error) {
-      logger.error('Failed to get notification count:', { error });
-      return 0;
-    }
+    // Shim doesn't include getDisplayedNotifications; return 0 as fallback.
+    return 0;
   }
 }
 

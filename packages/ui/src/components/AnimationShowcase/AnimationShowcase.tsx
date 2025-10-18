@@ -4,7 +4,7 @@ import { usePawfectAnimations } from '../../hooks/usePawfectAnimations';
 export const AnimationShowcase: React.FC = () => {
   const { triggerAnimation } = usePawfectAnimations();
   const [selectedAnimation, setSelectedAnimation] = useState('fade');
-  
+
   const animations = [
     { id: 'fade', name: 'Fade In/Out' },
     { id: 'scale', name: 'Scale Up' },
@@ -19,11 +19,12 @@ export const AnimationShowcase: React.FC = () => {
     { id: 'wave', name: 'Wave (Premium)' },
     { id: 'confetti', name: 'Confetti (Premium)' }
   ];
-  
-  const handleAnimation = (animationType: string) => {
+
+  type AnimationId = 'fade' | 'scale' | 'slide' | 'bounce' | 'pulse' | 'shake' | 'flip' | 'rotate' | 'morph' | 'glow' | 'wave' | 'confetti';
+  const handleAnimation = (animationType: AnimationId) => {
     setSelectedAnimation(animationType);
     triggerAnimation('showcase-box', {
-      type: animationType as unknown,
+      type: animationType,
       duration: 600,
       onComplete: () => {
         // Reset to default animation after completion
@@ -36,23 +37,23 @@ export const AnimationShowcase: React.FC = () => {
       }
     });
   };
-  
+
   return (
     <div className="animation-showcase">
       <h2 className="showcase-title">Animation Showcase</h2>
-      
+
       <div className="animation-controls">
         {animations.map((animation) => (
           <button
             key={animation.id}
-            onClick={() => { handleAnimation(animation.id); }}
+            onClick={() => { handleAnimation(animation.id as AnimationId); }}
             className={`animation-button ${selectedAnimation === animation.id ? 'active' : ''}`}
           >
             {animation.name}
           </button>
         ))}
       </div>
-      
+
       <div id="showcase-box" className="showcase-box">
         <h3>Animation Preview</h3>
         <p>Currently demonstrating: {selectedAnimation}</p>
@@ -60,8 +61,8 @@ export const AnimationShowcase: React.FC = () => {
           <div className="indicator-dot" />
         </div>
       </div>
-      
-      <style jsx>{`
+
+      <style>{`
         .animation-showcase {
           padding: 2rem;
           max-width: 800px;

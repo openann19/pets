@@ -1,22 +1,9 @@
 'use client';
 
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import type { Socket } from 'socket.io-client';
-import { io } from 'socket.io-client';
+import React, { createContext, useContext, useEffect, useRef, useCallback, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { useAuthStore } from '@/lib/auth-store';
 import { logger } from '../services/logger';
-import { _useAuthStore } from '../stores/auth-store';
-
-// Event types
-type UserTypingEvent = { matchId: string; userId: string; isTyping: boolean };
-type NewMessageEvent = { id: string; matchId: string; content: string };
-type MessageReadEvent = { matchId: string; messageId: string; userId: string };
-type NewMatchEvent = { id: string; petName: string };
-type SocketErrorEvent = { message: string; code?: string };
-type SocketResponse<T = unknown> = { error?: string; data?: T };
-type JoinMatchRequest = { matchId: string };
-type LeaveMatchRequest = { matchId: string };
-type SendMessageRequest = { matchId: string; message: string };
-type MarkReadRequest = { matchId: string; messageId: string };
 
 interface SocketContextType {
   socket: Socket | null;
@@ -50,18 +37,16 @@ export const useSocket = () => useContext(SocketContext);
  * Production-ready WebSocket provider with automatic reconnection,
  * connection quality monitoring, and comprehensive error handling
  */
-export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
+export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const socketRef = useRef<Socket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const pingIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const pingIntervalRef = useRef<NodeJS.Timeout>();
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUsers, setTypingUsers] = useState<Map<string, Set<string>>>(new Map());
-  const [connectionQuality, setConnectionQuality] = useState<
-    'excellent' | 'good' | 'poor' | 'offline'
-  >('offline');
-  const { accessToken, user } = _useAuthStore();
-
+  const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor' | 'offline'>('offline');
+  const { accessToken, user } = useAuthStore();
+  
   // Latency monitoring
   const latencyRef = useRef<number[]>([]);
   const maxLatencyHistory = 10;
@@ -105,8 +90,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       socketRef.current.disconnect();
     }
 
-    const socketUrl = process.env['NEXT_PUBLIC_SOCKET_URL'] || 'http://localhost:3001';
-
+    const socketUrl = process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5001';
+    
     socketRef.current = io(socketUrl, {
       auth: {
         token: accessToken,
@@ -121,22 +106,16 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     const socket = socketRef.current;
 
-    // Guard against null socket
-    if (!socket) {
-      logger.error('Socket not initialized');
-      return;
-    }
-
     // Connection handlers
     socket.on('connect', () => {
       logger.info('Socket connected', { id: socket.id });
       setIsConnected(true);
-
+      
       // Start monitoring connection quality
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
       }
-
+      
       pingIntervalRef.current = setInterval(() => {
         const start = Date.now();
         socket.emit('ping', () => {
@@ -154,7 +133,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       logger.warn('Socket disconnected', { reason });
       setIsConnected(false);
       setConnectionQuality('offline');
-
+      
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
       }
@@ -169,18 +148,18 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     socket.on('connect_error', (error) => {
-      logger.error('Socket connection error', { error });
+      logger.error('Socket connection error', error);
       setConnectionQuality('offline');
     });
 
     // User status events
     socket.on('user_online', (userId: string) => {
-      setOnlineUsers((prev) => new Set([...prev, userId]));
+      setOnlineUsers(prev => new Set([...prev, userId]));
       logger.debug('User came online', { userId });
     });
 
     socket.on('user_offline', (userId: string) => {
-      setOnlineUsers((prev) => {
+      setOnlineUsers(prev => {
         const newSet = new Set(prev);
         newSet.delete(userId);
         return newSet;
@@ -194,46 +173,44 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     // Typing indicators
-    socket.on('user_typing', ({ matchId, userId, isTyping }: UserTypingEvent) => {
-      setTypingUsers((prev) => {
+    socket.on('user_typing', ({ matchId, userId, isTyping }: any) => {
+      setTypingUsers(prev => {
         const newMap = new Map(prev);
         const matchTypers = newMap.get(matchId) || new Set();
-
+        
         if (isTyping) {
           matchTypers.add(userId);
         } else {
           matchTypers.delete(userId);
         }
-
+        
         if (matchTypers.size === 0) {
           newMap.delete(matchId);
         } else {
           newMap.set(matchId, matchTypers);
         }
-
+        
         return newMap;
       });
     });
 
     // Message events
-    socket.on('new_message', (message: NewMessageEvent) => {
+    socket.on('new_message', (message: any) => {
       logger.debug('New message received', { messageId: message.id });
       // Message handling is done in the chat hooks/components
       window.dispatchEvent(new CustomEvent('socket:new_message', { detail: message }));
     });
 
-    socket.on('message_read', ({ matchId, messageId, userId }: MessageReadEvent) => {
+    socket.on('message_read', ({ matchId, messageId, userId }: any) => {
       logger.debug('Message read', { matchId, messageId, userId });
-      window.dispatchEvent(
-        new CustomEvent('socket:message_read', { detail: { matchId, messageId, userId } }),
-      );
+      window.dispatchEvent(new CustomEvent('socket:message_read', { detail: { matchId, messageId, userId } }));
     });
 
     // Match events
-    socket.on('new_match', (match: NewMatchEvent) => {
+    socket.on('new_match', (match: any) => {
       logger.info('New match received', { matchId: match.id });
       window.dispatchEvent(new CustomEvent('socket:new_match', { detail: match }));
-
+      
       // Show notification if supported
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('New Match! 🎉', {
@@ -245,8 +222,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     // Error handling
-    socket.on('error', (error: SocketErrorEvent) => {
-      logger.error('Socket error', { error });
+    socket.on('error', (error: any) => {
+      logger.error('Socket error', error);
       window.dispatchEvent(new CustomEvent('socket:error', { detail: error }));
     });
 
@@ -262,7 +239,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    socketRef.current.emit('join_match', matchId, (response: SocketResponse<JoinMatchRequest>) => {
+    socketRef.current.emit('join_match', matchId, (response: any) => {
       if (response?.error) {
         logger.error('Failed to join match', { matchId, error: response.error });
       } else {
@@ -277,17 +254,13 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const leaveMatch = useCallback((matchId: string) => {
     if (!socketRef.current?.connected) return;
 
-    socketRef.current.emit(
-      'leave_match',
-      matchId,
-      (response: SocketResponse<LeaveMatchRequest>) => {
-        if (response?.error) {
-          logger.error('Failed to leave match', { matchId, error: response.error });
-        } else {
-          logger.debug('Left match room', { matchId });
-        }
-      },
-    );
+    socketRef.current.emit('leave_match', matchId, (response: any) => {
+      if (response?.error) {
+        logger.error('Failed to leave match', { matchId, error: response.error });
+      } else {
+        logger.debug('Left match room', { matchId });
+      }
+    });
   }, []);
 
   /**
@@ -299,18 +272,14 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       throw new Error('Not connected to chat server');
     }
 
-    socketRef.current.emit(
-      'send_message',
-      { matchId, message },
-      (response: SocketResponse<SendMessageRequest>) => {
-        if (response?.error) {
-          logger.error('Failed to send message', { matchId, error: response.error });
-          throw new Error(response.error || 'Failed to send message');
-        } else {
-          logger.debug('Message sent', { matchId });
-        }
-      },
-    );
+    socketRef.current.emit('send_message', { matchId, message }, (response: any) => {
+      if (response?.error) {
+        logger.error('Failed to send message', { matchId, error: response.error });
+        throw new Error(response.error || 'Failed to send message');
+      } else {
+        logger.debug('Message sent', { matchId });
+      }
+    });
   }, []);
 
   /**
@@ -328,25 +297,30 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const markMessageRead = useCallback((matchId: string, messageId: string) => {
     if (!socketRef.current?.connected) return;
 
-    socketRef.current.emit(
-      'mark_read',
-      { matchId, messageId },
-      (response: SocketResponse<MarkReadRequest>) => {
-        if (response?.error) {
-          logger.error('Failed to mark message as read', {
-            matchId,
-            messageId,
-            error: response.error,
-          });
-        }
-      },
-    );
+    socketRef.current.emit('mark_read', { matchId, messageId }, (response: any) => {
+      if (response?.error) {
+        logger.error('Failed to mark message as read', { matchId, messageId, error: response.error });
+      }
+    });
   }, []);
 
   // Initialize socket when auth changes
   useEffect(() => {
     if (accessToken && user) {
-      initSocket();
+      const socket = initSocket();
+      
+      return () => {
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+        }
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+        }
+        if (socket) {
+          socket.disconnect();
+          socketRef.current = null;
+        }
+      };
     } else {
       // Clean up socket if no auth
       if (socketRef.current) {
@@ -361,7 +335,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   // Request notification permissions on mount
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then((permission) => {
+      Notification.requestPermission().then(permission => {
         logger.info('Notification permission', { permission });
       });
     }

@@ -136,13 +136,13 @@ export class AIMatchingAlgorithm {
     if (preferences.species.includes(pet.species)) {
       return 100;
     }
-    
+
     // Partial credit for related species
     const relatedSpecies = this.getRelatedSpecies(pet.species);
-    const hasRelated = preferences.species.some(species => 
+    const hasRelated = preferences.species.some(species =>
       relatedSpecies.includes(species)
     );
-    
+
     return hasRelated ? 60 : 0;
   }
 
@@ -153,13 +153,13 @@ export class AIMatchingAlgorithm {
     if (preferences.breedPreferences.includes(pet.breed)) {
       return 100;
     }
-    
+
     // Check for breed groups/families
     const breedGroup = this.getBreedGroup(pet.breed);
     const hasGroupMatch = preferences.breedPreferences.some(breed =>
       this.getBreedGroup(breed) === breedGroup
     );
-    
+
     return hasGroupMatch ? 70 : 50; // Default 50% for any breed
   }
 
@@ -168,17 +168,17 @@ export class AIMatchingAlgorithm {
    */
   private calculateAgeScore(pet: PetProfile, preferences: UserPreferences): number {
     const [minAge, maxAge] = preferences.ageRange;
-    
+
     if (pet.age >= minAge && pet.age <= maxAge) {
       return 100;
     }
-    
+
     // Gradual penalty for age outside range
     const ageDiff = Math.min(
       Math.abs(pet.age - minAge),
       Math.abs(pet.age - maxAge)
     );
-    
+
     return Math.max(0, 100 - (ageDiff * 10));
   }
 
@@ -189,19 +189,19 @@ export class AIMatchingAlgorithm {
     if (pet.temperament.length === 0) {
       return 50; // Neutral score for unknown temperament
     }
-    
+
     const matchingTraits = pet.temperament.filter(trait =>
       preferences.temperamentPreferences.includes(trait)
     );
-    
+
     const matchRatio = matchingTraits.length / pet.temperament.length;
-    
+
     // Bonus for high match ratio
     if (matchRatio >= 0.8) return 100;
     if (matchRatio >= 0.6) return 80;
     if (matchRatio >= 0.4) return 60;
     if (matchRatio >= 0.2) return 40;
-    
+
     return 20;
   }
 
@@ -210,24 +210,24 @@ export class AIMatchingAlgorithm {
    */
   private calculateActivityScore(pet: PetProfile, preferences: UserPreferences): number {
     const [minActivity, maxActivity] = preferences.activityLevelRange;
-    
+
     if (pet.activityLevel >= minActivity && pet.activityLevel <= maxActivity) {
       return 100;
     }
-    
+
     // Calculate distance from preferred range
     const distance = Math.min(
       Math.abs(pet.activityLevel - minActivity),
       Math.abs(pet.activityLevel - maxActivity)
     );
-    
+
     return Math.max(0, 100 - (distance * 15));
   }
 
   /**
    * Location compatibility scoring
    */
-  private calculateLocationScore(pet: PetProfile, preferences: UserPreferences): number {
+  private calculateLocationScore(_pet: PetProfile, _preferences: UserPreferences): number {
     // This would typically use geolocation services
     // For now, return a base score
     return 80; // Assume reasonable proximity
@@ -238,24 +238,24 @@ export class AIMatchingAlgorithm {
    */
   private calculateLifestyleScore(pet: PetProfile, preferences: UserPreferences): number {
     let score = 50; // Base score
-    
+
     // Check lifestyle compatibility
     if (preferences.lifestyleFactors.hasOtherPets === pet.preferences.otherPets) {
       score += 15;
     }
-    
+
     if (preferences.lifestyleFactors.hasChildren === pet.preferences.children) {
       score += 15;
     }
-    
+
     if (preferences.lifestyleFactors.apartmentLiving === pet.preferences.apartment) {
       score += 10;
     }
-    
+
     if (preferences.lifestyleFactors.hasYard === pet.preferences.yard) {
       score += 10;
     }
-    
+
     return Math.min(100, score);
   }
 
@@ -266,11 +266,11 @@ export class AIMatchingAlgorithm {
     if (pet.specialNeeds.length === 0) {
       return 0; // No special needs, no bonus/penalty
     }
-    
+
     if (preferences.specialNeedsTolerance) {
       return 20; // Bonus for being able to handle special needs
     }
-    
+
     return -30; // Penalty for special needs without tolerance
   }
 
@@ -283,34 +283,34 @@ export class AIMatchingAlgorithm {
     breakdown: MatchResult['breakdown']
   ): string[] {
     const reasons: string[] = [];
-    
+
     if (breakdown.species >= 80) {
       reasons.push(`${pet.species} matches your preferred species`);
     }
-    
+
     if (breakdown.breed >= 80) {
       reasons.push(`${pet.breed} is one of your preferred breeds`);
     }
-    
+
     if (breakdown.age >= 80) {
       reasons.push(`Age ${pet.age} fits your preferred age range`);
     }
-    
+
     if (breakdown.temperament >= 80) {
       const matchingTraits = pet.temperament.filter(trait =>
         preferences.temperamentPreferences.includes(trait)
       );
       reasons.push(`Shares ${matchingTraits.length} temperament traits you prefer`);
     }
-    
+
     if (breakdown.activity >= 80) {
       reasons.push(`Activity level ${pet.activityLevel}/10 matches your lifestyle`);
     }
-    
+
     if (breakdown.lifestyle >= 80) {
       reasons.push(`Lifestyle preferences align well`);
     }
-    
+
     return reasons;
   }
 
@@ -319,31 +319,31 @@ export class AIMatchingAlgorithm {
    */
   private generateConcerns(
     pet: PetProfile,
-    preferences: UserPreferences,
+    _preferences: UserPreferences,
     breakdown: MatchResult['breakdown']
   ): string[] {
     const concerns: string[] = [];
-    
+
     if (breakdown.age < 50) {
       concerns.push(`Age ${pet.age} may not match your preferences`);
     }
-    
+
     if (breakdown.temperament < 50) {
       concerns.push(`Temperament may not align with your preferences`);
     }
-    
+
     if (breakdown.activity < 50) {
       concerns.push(`Activity level may be too ${pet.activityLevel > 5 ? 'high' : 'low'} for your lifestyle`);
     }
-    
+
     if (breakdown.specialNeeds < 0) {
       concerns.push(`Has special needs that may require extra care`);
     }
-    
+
     if (pet.medicalHistory.length > 0) {
       concerns.push(`Has medical history that may require ongoing care`);
     }
-    
+
     return concerns;
   }
 
@@ -356,23 +356,23 @@ export class AIMatchingAlgorithm {
     breakdown: MatchResult['breakdown']
   ): string[] {
     const recommendations: string[] = [];
-    
+
     if (breakdown.activity < 70) {
       recommendations.push(`Consider if you can provide ${pet.activityLevel > 5 ? 'high' : 'low'} activity level care`);
     }
-    
+
     if (pet.specialNeeds.length > 0) {
       recommendations.push(`Research care requirements for: ${pet.specialNeeds.join(', ')}`);
     }
-    
+
     if (preferences.experienceLevel === 'beginner' && pet.ownerExperience === 'advanced') {
       recommendations.push(`May require more experience than you currently have`);
     }
-    
+
     if (pet.timeCommitment === 'high' && preferences.timeCommitment === 'low') {
       recommendations.push(`Requires significant time commitment`);
     }
-    
+
     return recommendations;
   }
 
@@ -387,7 +387,7 @@ export class AIMatchingAlgorithm {
       fish: ['goldfish', 'tropical', 'saltwater'],
       reptile: ['lizard', 'snake', 'turtle'],
     };
-    
+
     return relatedMap[species] || [];
   }
 
@@ -404,13 +404,13 @@ export class AIMatchingAlgorithm {
       'hound': ['beagle', 'bloodhound', 'greyhound'],
       'terrier': ['jack_russell', 'scottish_terrier', 'bull_terrier'],
     };
-    
+
     for (const [group, breeds] of Object.entries(breedGroups)) {
       if (breeds.includes(breed.toLowerCase())) {
         return group;
       }
     }
-    
+
     return 'mixed';
   }
 }

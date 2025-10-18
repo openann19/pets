@@ -1,92 +1,115 @@
-import React, { Component, type ErrorInfo, type ReactNode } from 'react'
-import { logger } from '@pawfectmatch/core';
+'use client';
+
+import React, { Component, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
-  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
-  error: Error | null;
+  error?: Error;
+  errorInfo?: React.ErrorInfo;
 }
 
-/**
- * Error Boundary for React Web Applications
- */
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Log to centralized error handler
-    logger.error('React Error Boundary caught an error', {
-      error: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-      timestamp: new Date().toISOString()
+  override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    this.setState({
+      error,
+      errorInfo
     });
 
-    if (this.props.onError !== undefined) {
-      this.props.onError(error, errorInfo);
+    // Log to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
     }
+
+    // You could also log to an error reporting service here
+    // logErrorToService(error, errorInfo);
   }
 
-  override render(): ReactNode {
+  handleRetry = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined } as any);
+  };
+
+  handleRefresh = () => {
+    window.location.reload();
+  };
+
+  render() {
     if (this.state.hasError) {
-      if (this.props.fallback !== undefined) {
+      if (this.props.fallback != null) {
         return this.props.fallback;
       }
 
       return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-          <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center">
-            <div className="mb-4">
-              <svg
-                className="mx-auto h-12 w-12 text-red-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-                />
-              </svg>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+            <div className="mb-6">
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <svg
+                  className="w-8 h-8 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                Oops! Something went wrong
+              </h1>
+              <p className="text-gray-600 mb-6">
+                We encountered an unexpected error. Please try refreshing the page or contact support if the problem persists.
+              </p>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Something went wrong
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              We're sorry for the inconvenience. Please refresh the page or contact support.
-            </p>
-            <button
-              onClick={(): void => {
-                window.location.reload();
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Refresh Page
-            </button>
-            {process.env['NODE_ENV'] === 'development' && this.state.error !== null ? (
-              <details className="mt-4 text-left">
-                <summary className="cursor-pointer text-sm text-gray-500">
-                  Error Details (Dev Only)
-                </summary>
-                <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-auto">
-                  {this.state.error.stack ?? ''}
-                </pre>
-              </details>
-            ) : null}
+
+            {/* Error details in development */}
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-left">
+                <h3 className="text-sm font-medium text-red-800 mb-2">Error Details (Development)</h3>
+                <p className="text-sm text-red-700 font-mono mb-2">
+                  {this.state.error.message}
+                </p>
+                {this.state.error.stack != null && (
+                  <details className="text-xs text-red-600 font-mono">
+                    <summary className="cursor-pointer hover:text-red-800">Stack Trace</summary>
+                    <pre className="mt-2 whitespace-pre-wrap">{this.state.error.stack}</pre>
+                  </details>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={this.handleRetry}
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={this.handleRefresh}
+                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                Refresh Page
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -95,112 +118,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-
-/**
- * Hook for error handling in React components
- */
-export const useErrorHandler = (): {
-  handleError: (error: Error | string, context?: string) => { message: string; canRetry: boolean };
-  handleAsyncError: <T>(
-    operation: () => Promise<T>,
-    context?: string,
-    maxRetries?: number,
-  ) => Promise<T>;
-} => {
-  const handleError = React.useCallback(
-    (error: Error | string, context?: string): { message: string; canRetry: boolean } => {
-      const errorMessage = typeof error === 'string' ? error : error.message;
-
-      logger.error('Error handled by useErrorHandler', {
-        message: errorMessage,
-        context,
-        stack: typeof error === 'object' && error instanceof Error ? error.stack : undefined,
-      });
-
-      // Show user-friendly notification (you can integrate with your notification system)
-      console.error(`Error in ${context ?? 'unknown context'}:`, errorMessage);
-
-      return {
-        message: errorMessage,
-        canRetry: isRetryableError(error instanceof Error ? error : { message: errorMessage }),
-      };
-    },
-    [],
-  );
-
-  const handleAsyncError = React.useCallback(
-    async <T,>(operation: () => Promise<T>, context?: string, maxRetries = 3): Promise<T> => {
-      let lastError: Error;
-
-      const attemptOperation = async (attempt: number): Promise<T> => {
-        try {
-          return await operation();
-        } catch (error) {
-          lastError = error instanceof Error ? error : new Error(String(error));
-
-          if (!isRetryableError(lastError) || attempt === maxRetries) {
-            handleError(
-              lastError,
-              `${context ?? 'unknown'} (attempt ${String(attempt)}/${String(maxRetries)})`,
-            );
-            throw lastError;
-          }
-
-          // Exponential backoff
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-          await new Promise<void>((resolve) => {
-            setTimeout(resolve, delay);
-          });
-
-          return await attemptOperation(attempt + 1);
-        }
-      };
-
-      return await attemptOperation(1);
-    },
-    [handleError],
-  );
-
-  return {
-    handleError,
-    handleAsyncError,
-  };
-};
-
-/**
- * Determine if an error is retryable
- */
-function isRetryableError(error: Error | Record<string, unknown>): boolean {
-  // Network errors are usually retryable
-  if (error instanceof Error) {
-    if (error.name === 'NetworkError' || error.name === 'TypeError') {
-      return true;
-    }
-  }
-
-  // Check for error-like objects
-  if (typeof error === 'object') {
-    const errorObj = error as { name?: string; status?: number };
-
-    if (errorObj.name === 'NetworkError' || errorObj.name === 'TypeError') {
-      return true;
-    }
-
-    // HTTP errors that are retryable
-    const retryableStatusCodes = [408, 429, 500, 502, 503, 504];
-    if (typeof errorObj.status === 'number' && retryableStatusCodes.includes(errorObj.status)) {
-      return true;
-    }
-
-    // Don't retry authentication or validation errors
-    const nonRetryableStatusCodes = [400, 401, 403, 404];
-    if (typeof errorObj.status === 'number' && nonRetryableStatusCodes.includes(errorObj.status)) {
-      return false;
-    }
-  }
-
-  // Default to retryable for unknown errors
-  return true;
-}
-
-export default ErrorBoundary;

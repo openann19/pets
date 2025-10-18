@@ -1,132 +1,107 @@
-'use client';
-
-import { DraggableMotionDiv, MotionButton, MotionDiv } from '@/components/ui/motion-helper';
+"use client";
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import { HeartIcon, XMarkIcon, SparklesIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 import { SPRING_CONFIG } from '@/constants/animations';
-import type { Pet } from '@/types';
-import type { SwipePet } from '@/types/pet-types';
-import { createComponent } from '@/types/react-types';
-import { HeartIcon, MapPinIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartSolidIcon, SparklesIcon } from '@heroicons/react/24/solid';
-import type { PanInfo } from 'framer-motion';
-import { useMotionValue, useTransform } from 'framer-motion';
-import React, { memo, useState } from 'react';
-import { LazyImage } from '../Performance/LazyImage';
-import { withErrorBoundary } from '../providers/AppErrorBoundary';
+import { Pet } from '@/types';
 
 interface SwipeCardProps {
-  pet: Pet | SwipePet;
+  pet: Pet;
   onSwipe: (direction: 'like' | 'pass' | 'superlike') => void;
   onCardClick?: () => void;
   isLiked?: boolean;
   isPassed?: boolean;
   style?: React.CSSProperties;
-  dragConstraints?:
-  | false
-  | Partial<{ top: number; right: number; bottom: number; left: number }>
-  | React.RefObject<Element>;
+  dragConstraints?: any;
   hapticFeedback?: boolean;
   soundEffects?: boolean;
   premiumEffects?: boolean;
-  accessibilityEnabled?: boolean;
-  isLoading?: boolean;
-  ariaLabel?: string;
 }
 
-const SwipeCardBase = ({
+const SwipeCard: React.FC<SwipeCardProps> = ({
   pet,
   onSwipe,
   onCardClick,
   style,
   dragConstraints,
   premiumEffects = true,
-  ariaLabel,
-}: SwipeCardProps) => {
+}) => {
   const cardRef = React.useRef<HTMLDivElement>(null);
   const [isExiting, setIsExiting] = useState(false);
   const [showParticles] = useState(false);
 
-  // Motion values
+  // Enhanced motion values for smooth interactions
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rotate = useTransform(x, [-300, 300], [-15, 15]);
+  const rotate = useTransform(x, [-300, 300], [-30, 30]);
   const opacity = useTransform(x, [-300, -150, 0, 150, 300], [0, 1, 1, 1, 0]);
 
-  // Overlay opacities derived from motion values
+  // Overlay opacities derived from motion values (no setState on drag)
   const likeOverlayOpacity = useTransform(x, [60, 140], [0, 1]);
   const passOverlayOpacity = useTransform(x, [-140, -60], [1, 0]);
+  // const superLikeOverlayOpacity = useTransform(y, [-160, -80], [1, 0]);
 
-  // Cleanup for timers
-  const swipeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  React.useEffect(() => {
-    return () => {
-      if (swipeTimeoutRef.current) {
-        clearTimeout(swipeTimeoutRef.current);
-        swipeTimeoutRef.current = null;
-      }
-    };
-  }, []);
+  // onDrag not needed; rely on motion values
 
-  const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium'): void => {
-    if ('vibrate' in navigator) {
-      const patterns = {
-        light: [10],
-        medium: [20],
-        heavy: [30, 10, 30],
-      } as const;
-      navigator.vibrate(patterns[type]);
-    }
-  };
-
-  const handleDragEnd = (
-    _event: MouseEvent | TouchEvent | PointerEvent,
-    info: PanInfo,
-  ): void => {
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const threshold = 100;
     const superThreshold = 120;
     const velocity = info.velocity.x;
     const offset = info.offset.x;
     const yOffset = info.offset.y;
 
-    if (swipeTimeoutRef.current) {
-      clearTimeout(swipeTimeoutRef.current);
-      swipeTimeoutRef.current = null;
-    }
+    // Enhanced haptic feedback for swipe actions
+    const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium') => {
+      if ('vibrate' in navigator) {
+        const patterns = {
+          light: [10],
+          medium: [20],
+          heavy: [30, 10, 30]
+        };
+        navigator.vibrate(patterns[type]);
+      }
+    };
 
+    // Check for super like (swipe up) - Enhanced with haptics
     if (yOffset < -superThreshold && Math.abs(offset) < 50) {
       triggerHaptic('heavy');
       setIsExiting(true);
-      swipeTimeoutRef.current = setTimeout(() => {
-        onSwipe('superlike');
-        swipeTimeoutRef.current = null;
-      }, 200);
-    } else if (Math.abs(velocity) > 500 || Math.abs(offset) > threshold) {
+      setTimeout(() => onSwipe('superlike'), 200);
+    } 
+    // Strong swipe or drag beyond threshold - Enhanced with haptics
+    else if (Math.abs(velocity) > 500 || Math.abs(offset) > threshold) {
       triggerHaptic('medium');
       setIsExiting(true);
-
+      
       if (offset > 0 || velocity > 0) {
-        swipeTimeoutRef.current = setTimeout(() => {
-          onSwipe('like');
-          swipeTimeoutRef.current = null;
-        }, 200);
+        setTimeout(() => onSwipe('like'), 200);
       } else {
-        swipeTimeoutRef.current = setTimeout(() => {
-          onSwipe('pass');
-          swipeTimeoutRef.current = null;
-        }, 200);
+        setTimeout(() => onSwipe('pass'), 200);
       }
     } else {
+      // Snap back with light haptic
       triggerHaptic('light');
       x.set(0);
       y.set(0);
     }
   };
 
-  const handleButtonClick = (action: 'like' | 'pass' | 'superlike'): void => {
-    if (swipeTimeoutRef.current) {
-      clearTimeout(swipeTimeoutRef.current);
-      swipeTimeoutRef.current = null;
-    }
+  const handleButtonClick = (action: 'like' | 'pass' | 'superlike') => {
+    // Enhanced haptic feedback for button clicks
+    const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium') => {
+      if ('vibrate' in navigator) {
+        const patterns = {
+          light: [10],
+          medium: [20],
+          heavy: [30, 10, 30]
+        };
+        navigator.vibrate(patterns[type]);
+      }
+    };
 
+    // Different haptic patterns for different actions
     if (action === 'superlike') {
       triggerHaptic('heavy');
     } else {
@@ -134,331 +109,308 @@ const SwipeCardBase = ({
     }
 
     setIsExiting(true);
-    swipeTimeoutRef.current = setTimeout(() => {
-      onSwipe(action);
-      swipeTimeoutRef.current = null;
-    }, 200);
+    setTimeout(() => onSwipe(action), 200);
   };
 
-  const primaryPhoto = pet.photos.find((photo) => photo.isPrimary === true) || pet.photos[0];
+  // Helper retained for compatibility (not used with motion values)
+
+  // Get primary photo
+  const primaryPhoto = pet.photos.find((photo) => photo.isPrimary) || pet.photos[0];
   const photoUrl = primaryPhoto?.url || 'https://via.placeholder.com/400x500?text=No+Photo';
 
+  // Calculate age display
   const ageText = pet.age < 1 ? `${Math.round(pet.age * 12)} months` : `${pet.age} years`;
-
-  // optional info / placeholder distance
-  const distanceText = (pet as any)?.distance ? `${Math.round((pet as any).distance)} km away` : 'Nearby';
-
-  const motionStyle: Record<string, unknown> = {
-    ...(style || {}),
-    x,
-    y,
-    rotate,
-    opacity,
-  };
+  
+  // Get owner info
+  const owner = typeof pet.owner === 'object' ? pet.owner : null;
+  const distance = owner?.location ? '2.5 km away' : 'Location unknown'; // Placeholder distance
 
   return (
     <div className="relative">
-      {premiumEffects !== undefined && showParticles && (
+      {/* Particle effects for premium interactions (kept minimal, gated) */}
+      {premiumEffects && showParticles && (
         <div className="absolute inset-0 pointer-events-none z-50">
           {[...Array(8)].map((_, i) => (
-            <MotionDiv
+            <motion.div
               key={i}
               className="absolute w-3 h-3 rounded-full"
               style={{
                 background: 'linear-gradient(135deg, rgba(14,165,233,0.8), rgba(56,189,248,0.6))',
               }}
-              initial={{ x: '50%', y: '50%', opacity: 1, scale: 0 }}
+              initial={{
+                x: '50%',
+                y: '50%',
+                opacity: 1,
+                scale: 0,
+              }}
               animate={{
                 x: `${50 + (Math.random() - 0.5) * 300}%`,
                 y: `${50 + (Math.random() - 0.5) * 300}%`,
                 opacity: 0,
                 scale: 1,
               }}
-              transition={{ duration: 0.8, delay: i * 0.1, ease: 'easeOut' }}
+              transition={{
+                duration: 0.8,
+                delay: i * 0.1,
+                ease: 'easeOut',
+              }}
             />
           ))}
         </div>
       )}
 
-      <DraggableMotionDiv
-        ref={cardRef as React.RefObject<HTMLDivElement>}
-        drag={true}
-        dragConstraints={
-          (dragConstraints as
-            | false
-            | Partial<{ top: number; right: number; bottom: number; left: number }>
-            | React.RefObject<Element>
-            | undefined)
-        }
+      <motion.div
+        ref={cardRef}
+        drag
+        dragConstraints={dragConstraints}
         dragElastic={0.15}
-        onDragEnd={handleDragEnd as unknown as (
-          event: MouseEvent | TouchEvent | PointerEvent,
-          info: PanInfo,
-        ) => void}
+        // Derive overlays from motion values; no state in onDrag
+        onDragEnd={handleDragEnd}
         className="absolute inset-0"
-        style={motionStyle as React.CSSProperties}
-        animate={{ scale: isExiting ? 0.8 : 1, opacity: isExiting ? 0 : 1 }}
+        style={{ 
+          x, 
+          y, 
+          rotate, 
+          opacity,
+          ...style 
+        }}
+        animate={{
+          scale: isExiting ? 0.8 : 1,
+          opacity: isExiting ? 0 : 1,
+        }}
         transition={SPRING_CONFIG}
         whileTap={{ scale: 0.98 }}
-        whileHover={
-          premiumEffects
-            ? ({
-              scale: 1.02,
-              y: -5,
-              // rotateY is a valid motion transform but not in CSSProperties types
-              ...({ rotateY: 2 } as unknown as React.CSSProperties),
-              transition: { type: 'spring', stiffness: 400, damping: 25 },
-            } as unknown as React.CSSProperties)
-            : {}
-        }
+        whileHover={premiumEffects ? { 
+          scale: 1.02, 
+          y: -5,
+          rotateY: 2,
+          transition: { type: "spring", stiffness: 400, damping: 25 }
+        } : {}}
       >
-        <div
+        <div 
           className="w-full h-full rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing relative transform-gpu"
           onClick={onCardClick}
           style={{
-            background: 'rgba(255, 255, 255, 0.06)',
-            backdropFilter: 'blur(12px) saturate(140%)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            boxShadow: '0 20px 40px -16px rgba(0, 0, 0, 0.35)',
-          }}
-          role="article"
-          aria-label={
-            ariaLabel ?? `${pet.name}${pet.breed ? `, ${pet.breed}` : ''} — ${ageText}`
-          }
-          tabIndex={0}
-          onKeyDown={(e: React.KeyboardEvent) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              e.stopPropagation();
-              onCardClick?.();
-            }
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
           }}
         >
-          <MotionDiv
-            className="absolute top-6 left-6 z-20 px-5 py-2 rounded-full font-bold text-sm shadow-lg backdrop-blur-md border border-white/10 bg-white/10 text-white"
-            style={{ opacity: likeOverlayOpacity as unknown as number }}
-          >
-            <div className="flex items-center gap-2">
-              <HeartSolidIcon className="w-5 h-5" />
-              <span>LIKE</span>
-            </div>
-          </MotionDiv>
-
-          <MotionDiv
-            className="absolute top-6 right-6 z-20 px-5 py-2 rounded-full font-bold text-sm shadow-lg backdrop-blur-md border border-white/10 bg-white/10 text-white"
-            style={{ opacity: passOverlayOpacity as unknown as number }}
-          >
-            <div className="flex items-center gap-2">
-              <XMarkIcon className="w-5 h-5" />
-              <span>PASS</span>
-            </div>
-          </MotionDiv>
-
-          <div className="relative h-2/3">
-            <LazyImage
-              src={photoUrl}
-              alt={pet.name}
-              width={480}
-              height={640}
-              className="object-cover w-full h-full"
-              priority={false}
-              placeholder="blur"
-              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-            />
-
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-            {(pet as Pet & { featured?: { isFeatured: boolean } }).featured?.isFeatured && (
-              <div className="absolute top-4 left-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center space-x-1 shadow-lg">
-                <SparklesIcon className="w-4 h-4" />
-                <span>Featured</span>
-              </div>
-            )}
-
-            {pet.photos.length > 1 && (
-              <div className="absolute top-4 right-4 flex space-x-1">
-                {pet.photos.map((_, index: number) => (
-                  <div
-                    key={index}
-                    className={`w-2 h-2 rounded-full ${index === 0 ? 'bg-white' : 'bg-white/50'}`}
-                  />
-                ))}
-              </div>
-            )}
-
-            <div className="absolute bottom-4 left-4 right-4 text-white">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="text-2xl font-bold">{pet.name}</h3>
-                  <p className="text-lg opacity-90">{ageText}</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-3xl">
-                    {(pet as Pet & { species?: string }).species === 'dog'
-                      ? '🐕'
-                      : (pet as Pet & { species?: string }).species === 'cat'
-                        ? '🐱'
-                        : '🐾'}
-                  </span>
-                </div>
-              </div>
-            </div>
+        {/* Swipe Indicators - enhanced glassy */}
+        <motion.div
+          className="absolute top-6 left-6 z-20 px-5 py-2 rounded-full font-bold text-sm shadow-lg backdrop-blur-xl border border-white/20 text-white"
+          style={{ 
+            opacity: likeOverlayOpacity,
+            background: 'rgba(34, 197, 94, 0.15)',
+            backdropFilter: 'blur(16px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <HeartSolidIcon className="w-5 h-5" />
+            <span>LIKE</span>
           </div>
+        </motion.div>
 
-          <div className="h-1/3 p-6 overflow-y-auto">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white/70 text-sm">Breed</p>
-                  <p className="font-semibold text-white">{pet.breed || 'Mixed'}</p>
-                </div>
-                <div>
-                  <p className="text-white/70 text-sm">Size</p>
-                  <p className="font-semibold capitalize text-white">{pet.size || 'Medium'}</p>
-                </div>
-                <div>
-                  <p className="text-white/70 text-sm">Age</p>
-                  <p className="font-semibold text-white">{ageText}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2 text-white/70">
-                <MapPinIcon className="w-4 h-4" />
-                <span className="text-sm">{distanceText}</span>
-              </div>
-
-              {(pet.description || (pet as Pet & { bio?: string }).bio) && (
-                <div>
-                  <p className="text-white/85 text-sm leading-relaxed">
-                    {pet.description || (pet as Pet & { bio?: string }).bio}
-                  </p>
-                </div>
-              )}
-
-              {(pet as Pet & { personalityTags?: string[] }).personalityTags?.length > 0 && (
-                <div>
-                  <p className="text-white/70 text-sm mb-2">Personality</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(pet as Pet & { personalityTags?: string[] }).personalityTags
-                      .slice(0, 4)
-                      .map((tag: string, index: number) => (
-                        <span
-                          key={index}
-                          className="border border-white/10 bg-white/5 text-white/90 px-3 py-1 rounded-full text-xs font-medium"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    {(pet as Pet & { personalityTags?: string[] }).personalityTags.length > 4 && (
-                      <span className="border border-white/10 bg-white/5 text-white/80 px-3 py-1 rounded-full text-xs">
-                        +{(pet as Pet & { personalityTags?: string[] }).personalityTags.length - 4}{' '}
-                        more
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {(pet as Pet & { healthInfo?: { vaccinated: boolean; spayedNeutered: boolean } }).healthInfo && (
-                <div className="flex items-center space-x-4 text-sm text-white/70">
-                  {(pet as Pet & { healthInfo?: { vaccinated: boolean; spayedNeutered: boolean } }).healthInfo
-                    ?.vaccinated && (
-                      <span className="flex items-center space-x-1">
-                        <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
-                        <span>Vaccinated</span>
-                      </span>
-                    )}
-                  {(pet as Pet & { healthInfo?: { vaccinated: boolean; spayedNeutered: boolean } }).healthInfo
-                    ?.spayedNeutered && (
-                      <span className="flex items-center space-x-1">
-                        <span className="w-2 h-2 bg-sky-400 rounded-full"></span>
-                        <span>Spayed/Neutered</span>
-                      </span>
-                    )}
-                </div>
-              )}
-            </div>
+        <motion.div
+          className="absolute top-6 right-6 z-20 px-5 py-2 rounded-full font-bold text-sm shadow-lg backdrop-blur-xl border border-white/20 text-white"
+          style={{ 
+            opacity: passOverlayOpacity,
+            background: 'rgba(239, 68, 68, 0.15)',
+            backdropFilter: 'blur(16px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <XMarkIcon className="w-5 h-5" />
+            <span>PASS</span>
           </div>
+        </motion.div>
 
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
-            <MotionButton
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                handleButtonClick('pass');
-              }}
-              aria-label="Pass"
-              className="w-14 h-14 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-white/20 transition-colors"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e: React.KeyboardEvent) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleButtonClick('pass');
-                }
-              }}
-            >
-              <XMarkIcon className="w-7 h-7" />
-            </MotionButton>
+        {/* Main Photo */}
+        <div className="relative h-2/3">
+          <Image
+            src={photoUrl}
+            alt={pet.name}
+            fill
+            sizes="(max-width: 768px) 100vw, 480px"
+            className="object-cover"
+            priority={false}
+          />
+          
+          {/* Photo overlay gradient - enhanced */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          
+          {/* Premium Badge */}
+          {(pet as any).featured?.isFeatured && (
+            <div className="absolute top-4 left-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center space-x-1 shadow-lg">
+              <SparklesIcon className="w-4 h-4" />
+              <span>Featured</span>
+            </div>
+          )}
 
-            <MotionButton
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                handleButtonClick('superlike');
-              }}
-              aria-label="Super Like"
-              className="w-12 h-12 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-white/20 transition-colors"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e: React.KeyboardEvent) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleButtonClick('superlike');
-                }
-              }}
-            >
-              <SparklesIcon className="w-6 h-6" />
-            </MotionButton>
+          {/* Photo indicators */}
+          {pet.photos.length > 1 && (
+            <div className="absolute top-4 right-4 flex space-x-1">
+              {pet.photos.map((_, index: number) => (
+                <div
+                  key={index}
+                  className={`w-2 h-2 rounded-full ${
+                    index === 0 ? 'bg-white' : 'bg-white/50'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
 
-            <MotionButton
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                handleButtonClick('like');
-              }}
-              aria-label="Like"
-              className="w-14 h-14 bg-white/10 border border-white/20 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-white/20 transition-colors"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e: React.KeyboardEvent) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleButtonClick('like');
-                }
-              }}
-            >
-              <HeartIcon className="w-7 h-7" />
-            </MotionButton>
+          {/* Basic info overlay */}
+          <div className="absolute bottom-4 left-4 right-4 text-white">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-2xl font-bold">{pet.name}</h3>
+                <p className="text-lg opacity-90">{ageText}</p>
+              </div>
+              <div className="text-right">
+                <span className="text-3xl">{(pet as any).species === 'dog' ? '🐕' : (pet as any).species === 'cat' ? '🐱' : '🐾'}</span>
+              </div>
+            </div>
           </div>
         </div>
-      </DraggableMotionDiv>
+
+        {/* Pet Details */}
+        <div className="h-1/3 p-6 overflow-y-auto">
+          <div className="space-y-4">
+            {/* Basic Info */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/70 text-sm">Breed</p>
+                <p className="font-semibold text-white">{pet.breed || 'Mixed'}</p>
+              </div>
+              <div>
+                <p className="text-white/70 text-sm">Size</p>
+                <p className="font-semibold capitalize text-white">{pet.size || 'Medium'}</p>
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="flex items-center space-x-2 text-white/70">
+              <MapPinIcon className="w-4 h-4" />
+              <span className="text-sm">{distance}</span>
+            </div>
+
+            {/* Description/Bio */}
+            {(pet.description || (pet as any).bio) && (
+              <div>
+                <p className="text-white/85 text-sm leading-relaxed">
+                  {pet.description || (pet as any).bio}
+                </p>
+              </div>
+            )}
+
+            {/* Personality Tags (with fallback) */}
+            {(pet as any).personalityTags?.length > 0 && (
+              <div>
+                <p className="text-white/70 text-sm mb-2">Personality</p>
+                <div className="flex flex-wrap gap-2">
+                  {(pet as any).personalityTags.slice(0, 4).map((tag: string, index: number) => (
+                    <span
+                      key={index}
+                      className="border border-white/10 bg-white/5 text-white/90 px-3 py-1 rounded-full text-xs font-medium"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                  {(pet as any).personalityTags.length > 4 && (
+                    <span className="border border-white/10 bg-white/5 text-white/80 px-3 py-1 rounded-full text-xs">
+                      +{(pet as any).personalityTags.length - 4} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Health Info (with fallback) */}
+            {(pet as any).healthInfo && (
+              <div className="flex items-center space-x-4 text-sm text-white/70">
+                {(pet as any).healthInfo.vaccinated && (
+                  <span className="flex items-center space-x-1">
+                    <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    <span>Vaccinated</span>
+                  </span>
+                )}
+                {(pet as any).healthInfo.spayedNeutered && (
+                  <span className="flex items-center space-x-1">
+                    <span className="w-2 h-2 bg-sky-400 rounded-full"></span>
+                    <span>Spayed/Neutered</span>
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons - Responsive */}
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-3 sm:space-x-4">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleButtonClick('pass');
+            }}
+            aria-label="Pass button"
+            className="w-12 h-12 sm:w-14 sm:h-14 border border-white/30 text-white rounded-full flex items-center justify-center shadow-xl transition-all"
+            style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              backdropFilter: 'blur(12px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+            }}
+          >
+            <XMarkIcon className="w-5 h-5 sm:w-7 sm:h-7" />
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleButtonClick('superlike');
+            }}
+            aria-label="Superlike button"
+            className="w-10 h-10 sm:w-12 sm:h-12 border border-white/30 text-white rounded-full flex items-center justify-center shadow-xl transition-all"
+            style={{
+              background: 'rgba(59, 130, 246, 0.15)',
+              backdropFilter: 'blur(12px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+            }}
+          >
+            <SparklesIcon className="w-4 h-4 sm:w-6 sm:h-6" />
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleButtonClick('like');
+            }}
+            aria-label="Like button"
+            className="w-12 h-12 sm:w-14 sm:h-14 border border-white/30 text-white rounded-full flex items-center justify-center shadow-xl transition-all"
+            style={{
+              background: 'rgba(236, 72, 153, 0.15)',
+              backdropFilter: 'blur(12px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+            }}
+          >
+            <HeartIcon className="w-5 h-5 sm:w-7 sm:h-7" />
+          </motion.button>
+        </div>
+      </div>
+      </motion.div>
     </div>
   );
 };
 
-const MemoSwipeCard = memo(SwipeCardBase);
-MemoSwipeCard.displayName = 'SwipeCard';
-
-// First wrap with error boundary, then apply createComponent helper
-const SwipeCardWithErrorBoundary = withErrorBoundary(MemoSwipeCard);
-
-// Export using createComponent to ensure proper React 19 compatibility
-export default createComponent(SwipeCardWithErrorBoundary);
-export { MemoSwipeCard as SwipeCard };
+export default SwipeCard;

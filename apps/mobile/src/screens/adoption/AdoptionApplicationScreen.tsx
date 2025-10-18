@@ -1,8 +1,23 @@
-import { logger } from '@pawfectmatch/core';
-import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { RootStackScreenProps } from '../../navigation/types';
+
+type AdoptionStackParamList = {
+  AdoptionApplication: { petId: string; petName: string };
+};
+
+type Props = NativeStackScreenProps<AdoptionStackParamList, 'AdoptionApplication'>;
 
 interface ApplicationData {
   experience: string;
@@ -16,7 +31,7 @@ interface ApplicationData {
   commitment: string;
 }
 
-const AdoptionApplicationScreen = ({ navigation, route }: RootStackScreenProps<'AdoptionApplication'>) => {
+const AdoptionApplicationScreen = ({ navigation, route }: Props) => {
   const { petId, petName } = route.params;
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<ApplicationData>({
@@ -34,37 +49,37 @@ const AdoptionApplicationScreen = ({ navigation, route }: RootStackScreenProps<'
     commitment: '',
   });
 
-  const updateFormData = (field: string, value: string): void => {
+  const updateFormData = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const updateReference = (index: number, field: string, value: string): void => {
+  const updateReference = (index: number, field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      references: prev.references.map((ref, i) =>
+      references: prev.references.map((ref, i) => 
         i === index ? { ...ref, [field]: value } : ref
       ),
     }));
   };
 
-  const updateVeterinarian = (field: string, value: string): void => {
+  const updateVeterinarian = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       veterinarian: { ...prev.veterinarian, [field]: value },
     }));
   };
 
-  const validateStep = (): boolean => {
+  const validateStep = () => {
     switch (currentStep) {
-      case 0: return formData.experience.length > 0 && formData.livingSpace.length > 0;
-      case 1: return formData.workSchedule.length > 0 && formData.reason.length > 0;
-      case 2: return (formData.references[0]?.name?.length ?? 0) > 0 && (formData.references[0]?.phone?.length ?? 0) > 0;
-      case 3: return formData.commitment.length > 0;
+      case 0: return formData.experience && formData.livingSpace;
+      case 1: return formData.workSchedule && formData.reason;
+      case 2: return formData.references[0].name && formData.references[0].phone;
+      case 3: return formData.commitment;
       default: return false;
     }
   };
 
-  const handleNext = (): void => {
+  const handleNext = () => {
     if (!validateStep()) {
       Alert.alert('Missing Information', 'Please fill in all required fields.');
       return;
@@ -78,7 +93,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: RootStackScreenProps<'
 
   const handleSubmit = async () => {
     try {
-      logger.info('Submitting application:', { petId, ...formData });
+      console.log('Submitting application:', { petId, ...formData });
       Alert.alert(
         'Application Submitted!',
         `Your application for ${petName} has been submitted. The owner will review it and get back to you soon.`,
@@ -89,20 +104,20 @@ const AdoptionApplicationScreen = ({ navigation, route }: RootStackScreenProps<'
     }
   };
 
-  const renderStep = (): React.ReactElement => {
+  const renderStep = () => {
     switch (currentStep) {
       case 0: return renderExperienceStep();
       case 1: return renderLifestyleStep();
       case 2: return renderReferencesStep();
       case 3: return renderCommitmentStep();
-      default: return renderExperienceStep();
+      default: return null;
     }
   };
 
   const renderExperienceStep = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Pet Experience</Text>
-
+      
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Pet Experience *</Text>
         <View style={styles.optionsContainer}>
@@ -166,7 +181,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: RootStackScreenProps<'
   const renderLifestyleStep = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Lifestyle & Schedule</Text>
-
+      
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Work Schedule *</Text>
         <TextInput
@@ -194,7 +209,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: RootStackScreenProps<'
   const renderReferencesStep = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>References & Veterinarian</Text>
-
+      
       <Text style={styles.sectionTitle}>Personal References</Text>
       {formData.references.map((ref, index) => (
         <View key={index} style={styles.referenceContainer}>
@@ -247,7 +262,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: RootStackScreenProps<'
   const renderCommitmentStep = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Commitment & Agreement</Text>
-
+      
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Long-term Commitment *</Text>
         <TextInput
@@ -309,7 +324,7 @@ const AdoptionApplicationScreen = ({ navigation, route }: RootStackScreenProps<'
               <Text style={styles.backStepButtonText}>Back</Text>
             </TouchableOpacity>
           )}
-
+          
           <TouchableOpacity
             style={[styles.nextButton, !validateStep() && styles.disabledButton]}
             onPress={handleNext}

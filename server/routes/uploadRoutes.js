@@ -8,11 +8,11 @@ const router = express.Router();
 const multer = require('multer');
 const PhotoModeration = require('../models/PhotoModeration');
 const { authenticateToken } = require('../src/middleware/auth');
-const logger = require('../utils/logger');
+const logger = require('../src/utils/logger');
 const { uploadToCloudinary } = require('../src/services/cloudinaryService');
 
 // Configure multer for memory storage (no disk writes)
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB max
@@ -31,16 +31,16 @@ async function validateFileType(buffer) {
   try {
     const { fileTypeFromBuffer } = await import('file-type');
     const type = await fileTypeFromBuffer(buffer);
-    
+
     if (!type) {
       return { valid: false, error: 'Unable to determine file type' };
     }
-    
+
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(type.mime)) {
       return { valid: false, error: `File type ${type.mime} not allowed` };
     }
-    
+
     return { valid: true, mime: type.mime, ext: type.ext };
   } catch (error) {
     logger.error('File type validation error', { error: error.message });
@@ -54,9 +54,9 @@ async function validateFileType(buffer) {
  */
 router.post('/photo', authenticateToken, upload.single('photo'), async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.userId || req.user?._id;
     const { photoType = 'profile' } = req.body;
-    
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -248,10 +248,10 @@ async function getUserModerationHistory(userId) {
   );
 
   // Trust criteria: 10+ approved uploads, 0 rejected, 30+ days old, email verified
-  const isTrustedUser = approvedUploads >= 10 && 
-                       rejectedUploads === 0 &&
-                       accountAge >= 30 &&
-                       user.emailVerified;
+  const isTrustedUser = approvedUploads >= 10 &&
+    rejectedUploads === 0 &&
+    accountAge >= 30 &&
+    user.emailVerified;
 
   return {
     totalUploads,

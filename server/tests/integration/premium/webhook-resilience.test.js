@@ -34,7 +34,7 @@ jest.mock('stripe', () => {
 });
 
 let mongoServer;
-let app;
+// Use the imported app reference; do not redeclare
 let server;
 
 describe('Webhook Resilience Tests', () => {
@@ -82,34 +82,34 @@ describe('Webhook Resilience Tests', () => {
           }
         }
       };
-      
+
       // Process webhook first time
       const firstResponse = await request(app)
         .post('/api/webhooks/stripe')
         .set('stripe-signature', 'valid_signature')
         .send(webhookEvent);
-      
+
       expect(firstResponse.status).toBe(200);
-      
+
       // User should have premium now
       const userAfterFirst = await User.findById(testUser._id);
       expect(userAfterFirst.premium.isActive).toBe(true);
       expect(userAfterFirst.premium.stripeSubscriptionId).toBe('sub_mock_idempotency');
-      
+
       // Record subscription update time
       const firstUpdateTime = userAfterFirst.updatedAt;
-      
+
       // Wait a moment to ensure timestamps would differ if updated
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // Send identical webhook event second time
       const secondResponse = await request(app)
         .post('/api/webhooks/stripe')
         .set('stripe-signature', 'valid_signature')
         .send(webhookEvent);
-      
+
       expect(secondResponse.status).toBe(200);
-      
+
       // User should still have premium, but no changes should have been made
       const userAfterSecond = await User.findById(testUser._id);
       expect(userAfterSecond.updatedAt.getTime()).toEqual(firstUpdateTime.getTime());
@@ -117,21 +117,21 @@ describe('Webhook Resilience Tests', () => {
 
     it('should process webhook after server restart', async () => {
       // This test simulates server downtime and restart
-      
+
       // First, create a pending subscription record
       await User.findByIdAndUpdate(testUser._id, {
         'premium.pendingSubscriptionId': 'sub_mock_restart'
       });
-      
+
       // Simulate server restart by recreating the app
       const originalServer = httpServer;
       if (originalServer.listening) {
         await new Promise(resolve => originalServer.close(resolve));
       }
-      
+
       // Reinitialize the app (this would happen during server restart)
       const { app: restartedApp } = require('../../../server');
-      
+
       // Now send webhook that should be processed by the restarted server
       const webhookEvent = {
         id: 'evt_server_restart_test',
@@ -148,15 +148,15 @@ describe('Webhook Resilience Tests', () => {
           }
         }
       };
-      
+
       // Process webhook on restarted server
       const response = await request(restartedApp)
         .post('/api/webhooks/stripe')
         .set('stripe-signature', 'valid_signature')
         .send(webhookEvent);
-      
+
       expect(response.status).toBe(200);
-      
+
       // Verify subscription processed after restart
       const user = await User.findById(testUser._id);
       expect(user.premium.isActive).toBe(true);
@@ -168,22 +168,22 @@ describe('Webhook Resilience Tests', () => {
       // Setup mock for database interruption
       const originalSave = mongoose.Model.prototype.save;
       let saveAttempts = 0;
-      
+
       // Mock save to fail on first attempt
-      mongoose.Model.prototype.save = function() {
+      mongoose.Model.prototype.save = function () {
         saveAttempts++;
         if (saveAttempts === 1) {
           return Promise.reject(new Error('Database connection lost'));
         }
         return originalSave.apply(this, arguments);
       };
-      
+
       // Reset user's subscription for this test
       await User.findByIdAndUpdate(testUser._id, {
         'premium.isActive': false,
         'premium.stripeSubscriptionId': null
       });
-      
+
       // Create webhook event
       const webhookEvent = {
         id: 'evt_database_interruption_test',
@@ -200,17 +200,17 @@ describe('Webhook Resilience Tests', () => {
           }
         }
       };
-      
+
       // Send webhook with retry mechanism
       let finalResponse;
-      
+
       try {
         // First attempt should fail internally due to DB error
         await request(app)
           .post('/api/webhooks/stripe')
           .set('stripe-signature', 'valid_signature')
           .send(webhookEvent);
-        
+
         // Simulate Stripe's automatic retry
         finalResponse = await request(app)
           .post('/api/webhooks/stripe')
@@ -222,10 +222,10 @@ describe('Webhook Resilience Tests', () => {
         // Restore original save method
         mongoose.Model.prototype.save = originalSave;
       }
-      
+
       // Second attempt should succeed
       expect(finalResponse.status).toBe(200);
-      
+
       // Verify subscription was activated on retry
       const user = await User.findById(testUser._id);
       expect(user.premium.isActive).toBe(true);
@@ -238,7 +238,7 @@ describe('Webhook Resilience Tests', () => {
         'premium.isActive': false,
         'premium.stripeSubscriptionId': null
       });
-      
+
       // Create multiple webhook events to send concurrently
       const webhookEvents = [
         {
@@ -276,22 +276,22 @@ describe('Webhook Resilience Tests', () => {
           }
         }
       ];
-      
+
       // Send webhook events concurrently
       const responses = await Promise.all(
-        webhookEvents.map(event => 
+        webhookEvents.map(event =>
           request(app)
             .post('/api/webhooks/stripe')
             .set('stripe-signature', 'valid_signature')
             .send(event)
         )
       );
-      
+
       // All responses should be successful
       responses.forEach(response => {
         expect(response.status).toBe(200);
       });
-      
+
       // Check final state - both events should have been processed in order
       const user = await User.findById(testUser._id);
       expect(user.premium.isActive).toBe(true);

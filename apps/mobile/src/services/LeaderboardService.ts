@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@pawfectmatch/core';
+import { authService } from './AuthService';
 
 export interface LeaderboardEntry {
   id: string;
@@ -508,8 +509,11 @@ class LeaderboardService {
    * Get auth token
    */
   private async getAuthToken(): Promise<string> {
-    // Implementation would get token from secure storage
-    return 'mock-token';
+    const token = await authService.getAccessToken();
+    if (!token) {
+      throw new Error('Authentication required for leaderboard access');
+    }
+    return token;
   }
 
   /**

@@ -39,18 +39,48 @@ favoriteSchema.virtual('age').get(function () {
 });
 
 // Static method: Get user's favorites with populated pet data
-favoriteSchema.statics.getUserFavorites = async function (userId, options = {}) {
-    const { limit = 50, skip = 0, sort = { createdAt: -1 } } = options;
+favoriteSchema.statics.getUserFavorites = async function (userId, pageOrOptions = {}, perPage) {
+    // Support legacy signature: (userId, page, limit)
+    let page, limit;
+    let sort = { createdAt: -1, _id: -1 };
+    let skip;
 
-    return this.find({ userId })
-        .populate({
-            path: 'petId',
-            select: 'name breed age photos location species gender description',
-        })
-        .sort(sort)
-        .limit(limit)
-        .skip(skip)
-        .lean();
+    if (typeof pageOrOptions === 'number') {
+        page = pageOrOptions || 1;
+        limit = perPage || 10;
+        skip = (page - 1) * limit;
+    } else {
+        const options = pageOrOptions || {};
+        limit = options.limit || 50;
+        skip = options.skip || 0;
+        sort = options.sort || sort;
+        page = Math.floor(skip / limit) + 1;
+    }
+
+    const [favorites, totalFavorites] = await Promise.all([
+        this.find({ userId })
+            .populate({
+                path: 'petId',
+                select: 'name breed age photos location species gender description',
+            })
+            .sort(sort)
+            .limit(limit)
+            .skip(skip)
+            .lean(),
+        this.countDocuments({ userId })
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(totalFavorites / limit) || 1);
+    const currentPage = page;
+    const hasNextPage = currentPage < totalPages;
+
+    return {
+        favorites,
+        totalFavorites,
+        totalPages,
+        currentPage,
+        hasNextPage
+    };
 };
 
 // Static method: Check if pet is favorited by user

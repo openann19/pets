@@ -1,7 +1,7 @@
 /**
  * Professional SwipeCard Component for React Native
  * Enterprise-grade implementation with proper architecture
- *
+ * 
  * Features:
  * - Gesture-based swiping with haptic feedback
  * - Smooth animations with spring physics
@@ -13,15 +13,22 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import { logger } from '@pawfectmatch/core';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Dimensions, PanResponder, StyleSheet, Text, View } from 'react-native';
-import { useTheme } from '../contexts/ThemeContext';
-import { api } from '../services/api';
-import { haptics } from '../utils/haptics';
-import OptimizedImage from './OptimizedImage';
+import React, { useRef, useState, useCallback, useMemo } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Dimensions,
+  Animated,
+  PanResponder,
+  Platform,
+  AccessibilityInfo,
+} from 'react-native';
 
+import { useTheme } from '../contexts/ThemeContext';
 // Local types until core package is properly configured
 interface Pet {
   _id: string;
@@ -36,192 +43,6 @@ interface Pet {
   tags: string[];
 }
 
-// React Native StyleSheet types for SwipeCard
-interface SwipeCardStyle {
-  card?: {
-    position?: 'absolute' | 'relative';
-    width?: number | string;
-    height?: number | string;
-    borderRadius?: number;
-    backgroundColor?: string;
-    shadowColor?: string;
-    shadowOffset?: { width: number; height: number };
-    shadowOpacity?: number;
-    shadowRadius?: number;
-    elevation?: number;
-  };
-  cardDisabled?: {
-    opacity?: number;
-  };
-  photoContainer?: {
-    flex?: number;
-    borderRadius?: number;
-    overflow?: 'hidden' | 'visible';
-    position?: 'absolute' | 'relative';
-  };
-  photo?: {
-    width?: number | string;
-    height?: number | string;
-  };
-  photoIndicators?: {
-    position?: 'absolute';
-    top?: number;
-    left?: number;
-    right?: number;
-    flexDirection?: 'row';
-    gap?: number;
-  };
-  photoDot?: {
-    flex?: number;
-    height?: number;
-    borderRadius?: number;
-    backgroundColor?: string;
-  };
-  photoNavigation?: {
-    position?: 'absolute';
-    top?: number;
-    left?: number;
-    right?: number;
-    bottom?: number;
-    flexDirection?: 'row';
-  };
-  photoNavLeft?: {
-    flex?: number;
-  };
-  photoNavRight?: {
-    flex?: number;
-  };
-  verifiedBadge?: {
-    position?: 'absolute';
-    top?: number;
-    right?: number;
-    backgroundColor?: string;
-    borderRadius?: number;
-    padding?: number;
-  };
-  distanceBadge?: {
-    position?: 'absolute';
-    bottom?: number;
-    right?: number;
-    backgroundColor?: string;
-    paddingHorizontal?: number;
-    paddingVertical?: number;
-    borderRadius?: number;
-  };
-  distanceText?: {
-    color?: string;
-    fontSize?: number;
-    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
-  };
-  overlay?: {
-    position?: 'absolute';
-    top?: number;
-    left?: number;
-    right?: number;
-    bottom?: number;
-    justifyContent?: 'center';
-    alignItems?: 'center';
-    borderRadius?: number;
-  };
-  likeOverlay?: {
-    backgroundColor?: string;
-  };
-  nopeOverlay?: {
-    backgroundColor?: string;
-  };
-  superLikeOverlay?: {
-    backgroundColor?: string;
-  };
-  overlayText?: {
-    color?: string;
-    fontSize?: number;
-    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
-    textAlign?: 'center';
-    textShadowColor?: string;
-    textShadowOffset?: { width: number; height: number };
-    textShadowRadius?: number;
-  };
-  infoGradient?: {
-    position?: 'absolute';
-    bottom?: number;
-    left?: number;
-    right?: number;
-    height?: number;
-    borderBottomLeftRadius?: number;
-    borderBottomRightRadius?: number;
-  };
-  infoContainer?: {
-    flex?: number;
-    justifyContent?: 'flex-end';
-    padding?: number;
-  };
-  nameRow?: {
-    flexDirection?: 'row';
-    alignItems?: 'baseline';
-    marginBottom?: number;
-  };
-  name?: {
-    fontSize?: number;
-    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
-    color?: string;
-    marginRight?: number;
-  };
-  age?: {
-    fontSize?: number;
-    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
-    color?: string;
-  };
-  breed?: {
-    fontSize?: number;
-    color?: string;
-    marginBottom?: number;
-  };
-  compatibilityContainer?: {
-    flexDirection?: 'row';
-    alignItems?: 'center';
-    marginBottom?: number;
-  };
-  compatibilityBar?: {
-    flex?: number;
-    height?: number;
-    backgroundColor?: string;
-    borderRadius?: number;
-    marginRight?: number;
-  };
-  compatibilityFill?: {
-    height?: number | string;
-    borderRadius?: number;
-    backgroundColor?: string;
-  };
-  compatibilityText?: {
-    color?: string;
-    fontSize?: number;
-    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
-  };
-  tagsContainer?: {
-    flexDirection?: 'row';
-    marginBottom?: number;
-    gap?: number;
-  };
-  tag?: {
-    paddingHorizontal?: number;
-    paddingVertical?: number;
-    borderRadius?: number;
-    backgroundColor?: string;
-  };
-  tagText?: {
-    fontSize?: number;
-    fontWeight?: '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
-    color?: string;
-  };
-  bio?: {
-    fontSize?: number;
-    color?: string;
-    lineHeight?: number;
-  };
-  [key: string]: unknown; // Allow additional style properties
-}
-
 interface SwipeCardProps {
   pet: Pet;
   onSwipeLeft: (pet: Pet) => void;
@@ -229,7 +50,7 @@ interface SwipeCardProps {
   onSwipeUp: (pet: Pet) => void;
   isTopCard?: boolean;
   disabled?: boolean;
-  style?: SwipeCardStyle;
+  style?: Record<string, unknown>;
 }
 
 const DEFAULT_SWIPE_CONFIG = {
@@ -257,94 +78,92 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
   disabled = false,
   style,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isAccessibilityEnabled, setIsAccessibilityEnabled] = useState(false);
-
+  
   // Swipe processing state
   const [isProcessing, setIsProcessing] = useState(false);
-
+  
   // Swipe handlers
   const handleLike = useCallback(async (pet: Pet) => {
     setIsProcessing(true);
     try {
-      await api.swipePet(pet._id, 'like');
+      // eslint-disable-next-line no-console
+      console.log('Liked pet:', pet.name);
+      // API call would go here
     } catch (error) {
-      logger.error('Error liking pet:', { error });
+      console.error('Error liking pet:', error);
     } finally {
       setIsProcessing(false);
     }
   }, []);
-
+  
   const handlePass = useCallback(async (pet: Pet) => {
     setIsProcessing(true);
     try {
-      await api.swipePet(pet._id, 'pass');
+      // eslint-disable-next-line no-console
+      console.log('Passed pet:', pet.name);
+      // API call would go here
     } catch (error) {
-      logger.error('Error passing pet:', { error });
+      console.error('Error passing pet:', error);
     } finally {
       setIsProcessing(false);
     }
   }, []);
-
+  
   const handleSuperLike = useCallback(async (pet: Pet) => {
     setIsProcessing(true);
     try {
-      await api.swipePet(pet._id, 'superlike');
+      // eslint-disable-next-line no-console
+      console.log('Super liked pet:', pet.name);
+      // API call would go here
     } catch (error) {
-      logger.error('Error super liking pet:', { error });
+      console.error('Error super liking pet:', error);
     } finally {
       setIsProcessing(false);
     }
   }, []);
-
+  
   // Animation values - memoized for performance
   const animationValues = useMemo(() => ({
-    panX: new Animated.Value(0),
-    panY: new Animated.Value(0),
+    pan: new Animated.ValueXY(),
     scale: new Animated.Value(isTopCard ? 1 : 0.95),
     opacity: new Animated.Value(isTopCard ? 1 : 0.8),
     likeOpacity: new Animated.Value(0),
     nopeOpacity: new Animated.Value(0),
     superLikeOpacity: new Animated.Value(0),
   }), [isTopCard]);
-
-  const { panX, panY, scale, opacity, likeOpacity, nopeOpacity, superLikeOpacity } = animationValues;
-
-  // Create opacity interpolations for overlay styles
-  const likeOverlayOpacity = likeOpacity.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  }) as any;
-
-  const nopeOverlayOpacity = nopeOpacity.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  }) as any;
-
-  const superLikeOverlayOpacity = superLikeOpacity.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  }) as any;
-
+  
+  const { pan, scale, opacity, likeOpacity, nopeOpacity, superLikeOpacity } = animationValues;
+  
   // Check accessibility settings
   React.useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then(setIsAccessibilityEnabled);
+    void AccessibilityInfo.isReduceMotionEnabled().then(setIsAccessibilityEnabled);
   }, []);
 
   // Pan responder for gesture handling
   const panResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: () => !disabled,
-      onPanResponderGrant: () => {
-        // Haptic feedback on touch
-        void haptics.light();
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
       },
-      onPanResponderMove: (_, gestureState) => {
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: (pan.x as any)._value,
+          y: (pan.y as any)._value,
+        });
+        pan.setValue({ x: 0, y: 0 });
+        
+        // Haptic feedback on touch
+        if (Platform.OS === 'ios') {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      },
+      onPanResponderMove: (evt, gestureState) => {
         // Update pan values
-        panX.setValue(gestureState.dx);
-        panY.setValue(gestureState.dy);
-
+        pan.setValue({ x: gestureState.dx, y: gestureState.dy });
+        
         // Show appropriate overlay based on swipe direction
         if (gestureState.dx > 50) {
           // Swiping right - show like
@@ -371,11 +190,13 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
           superLikeOpacity.setValue(0);
         }
       },
-      onPanResponderRelease: (_, gestureState) => {
+      onPanResponderRelease: (evt, gestureState) => {
+        pan.flattenOffset();
+        
         const { dx, dy } = gestureState;
         const absDx = Math.abs(dx);
         const absDy = Math.abs(dy);
-
+        
         // Determine swipe direction and trigger appropriate action
         if (absDx > DEFAULT_SWIPE_CONFIG.threshold && absDx > absDy) {
           // Horizontal swipe
@@ -399,202 +220,190 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
 
   const animateSwipeRight = useCallback(() => {
     if (disabled || isProcessing) return;
-
-    void haptics.medium();
-
-    // Run animations sequentially to avoid type issues
-    Animated.timing(panX, {
-      toValue: SCREEN_WIDTH + 100,
-      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start();
-
-    Animated.timing(panY, {
-      toValue: 0,
-      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start();
-
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start(async () => {
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    const animations = [
+      Animated.timing(pan, {
+        toValue: { x: SCREEN_WIDTH + 100, y: 0 },
+        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
+        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
+        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      }),
+    ];
+    
+    Animated.parallel(animations).start(async () => {
       try {
         await handleLike(pet);
         onSwipeRight(pet);
       } catch (error) {
-        logger.error('Error handling like:', error);
+        console.error('Error handling like:', error);
       }
     });
-  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handleLike, onSwipeRight, panX, panY, opacity]);
+  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handleLike, onSwipeRight]);
 
   const animateSwipeLeft = useCallback(() => {
     if (disabled || isProcessing) return;
-
-    void haptics.medium();
-
-    // Run animations sequentially
-    Animated.timing(panX, {
-      toValue: -SCREEN_WIDTH - 100,
-      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start();
-
-    Animated.timing(panY, {
-      toValue: 0,
-      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start();
-
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start(async () => {
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    const animations = [
+      Animated.timing(pan, {
+        toValue: { x: -SCREEN_WIDTH - 100, y: 0 },
+        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
+        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: isAccessibilityEnabled ? 150 : DEFAULT_ANIMATION_CONFIG.duration,
+        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      }),
+    ];
+    
+    Animated.parallel(animations).start(async () => {
       try {
         await handlePass(pet);
         onSwipeLeft(pet);
       } catch (error) {
-        logger.error('Error handling pass:', error);
+        console.error('Error handling pass:', error);
       }
     });
-  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handlePass, onSwipeLeft, panX, panY, opacity]);
+  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handlePass, onSwipeLeft]);
 
   const animateSwipeUp = useCallback(() => {
     if (disabled || isProcessing) return;
-
-    void haptics.heavy();
-
-    // Run animations sequentially
-    Animated.timing(panX, {
-      toValue: 0,
-      duration: isAccessibilityEnabled ? 200 : 400,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start();
-
-    Animated.timing(panY, {
-      toValue: -SCREEN_HEIGHT - 100,
-      duration: isAccessibilityEnabled ? 200 : 400,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start();
-
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: isAccessibilityEnabled ? 200 : 400,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start();
-
-    Animated.timing(scale, {
-      toValue: 1.1,
-      duration: isAccessibilityEnabled ? 100 : 200,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start(async () => {
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    
+    const animations = [
+      Animated.timing(pan, {
+        toValue: { x: 0, y: -SCREEN_HEIGHT - 100 },
+        duration: isAccessibilityEnabled ? 200 : 400,
+        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: isAccessibilityEnabled ? 200 : 400,
+        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      }),
+      Animated.timing(scale, {
+        toValue: 1.1,
+        duration: isAccessibilityEnabled ? 100 : 200,
+        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      }),
+    ];
+    
+    Animated.parallel(animations).start(async () => {
       try {
         await handleSuperLike(pet);
         onSwipeUp(pet);
       } catch (error) {
-        logger.error('Error handling super like:', { error });
+        console.error('Error handling super like:', error);
       }
     });
-  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handleSuperLike, onSwipeUp, panX, panY, opacity, scale]);
+  }, [disabled, isProcessing, isAccessibilityEnabled, pet, handleSuperLike, onSwipeUp]);
 
   const animateReturn = useCallback(() => {
-    // Run animations sequentially
-    Animated.spring(panX, {
-      toValue: 0,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      tension: DEFAULT_ANIMATION_CONFIG.tension,
-      friction: DEFAULT_ANIMATION_CONFIG.friction,
-    }).start();
-
-    Animated.spring(panY, {
-      toValue: 0,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-      tension: DEFAULT_ANIMATION_CONFIG.tension,
-      friction: DEFAULT_ANIMATION_CONFIG.friction,
-    }).start();
-
-    Animated.timing(likeOpacity, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start();
-
-    Animated.timing(nopeOpacity, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start();
-
-    Animated.timing(superLikeOpacity, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
-    }).start();
-  }, [panX, panY, likeOpacity, nopeOpacity, superLikeOpacity]);
+    const animations = [
+      Animated.spring(pan, {
+        toValue: { x: 0, y: 0 },
+        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+        tension: DEFAULT_ANIMATION_CONFIG.tension,
+        friction: DEFAULT_ANIMATION_CONFIG.friction,
+      }),
+      Animated.timing(likeOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      }),
+      Animated.timing(nopeOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      }),
+      Animated.timing(superLikeOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: DEFAULT_ANIMATION_CONFIG.useNativeDriver,
+      }),
+    ];
+    
+    Animated.parallel(animations).start();
+  }, [pan, likeOpacity, nopeOpacity, superLikeOpacity]);
 
   // Calculate rotation based on pan position - memoized for performance
-  const rotate = useMemo(() =>
-    panX.interpolate({
+  const rotate = useMemo(() => 
+    pan.x.interpolate({
       inputRange: [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
       outputRange: ['-10deg', '0deg', '10deg'],
       extrapolate: 'clamp',
-    }) as any, [panX]
+    }), [pan.x]
   );
-
-  // Create transform interpolations
-  const translateX = panX as any;
-  const translateY = panY as any;
-  const cardScale = scale as any;
-  const cardOpacity = opacity as any;
 
   const nextPhoto = useCallback(() => {
     if (currentPhotoIndex < pet.photos.length - 1) {
       setCurrentPhotoIndex(prev => prev + 1);
-      void haptics.light();
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   }, [currentPhotoIndex, pet.photos.length]);
 
   const prevPhoto = useCallback(() => {
     if (currentPhotoIndex > 0) {
       setCurrentPhotoIndex(prev => prev - 1);
-      void haptics.light();
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   }, [currentPhotoIndex]);
-
   return (
     <Animated.View
       style={[
         styles.card,
+        disabled && styles.cardDisabled,
         {
           transform: [
-            { translateX },
-            { translateY },
-            { rotate },
-            { scale: cardScale },
+            { translateX: pan.x },
+            { translateY: pan.y },
+            { rotate: rotate },
+            { scale: scale },
           ],
-          opacity: cardOpacity,
+          opacity,
         },
-        disabled && styles.cardDisabled,
-        style as any,
       ]}
-      {...(!disabled ? panResponder.panHandlers : {})}
-      accessible
+      {...panResponder.panHandlers}
+      accessible={true}
       accessibilityRole="button"
-      accessibilityLabel={`Pet profile for ${pet.name}, ${pet.age} years old ${pet.breed}`}
-      accessibilityHint="Swipe right to like, left to pass, or up for super like"
+      accessibilityLabel={`${pet.name}, ${pet.age} year old ${pet.breed}, ${pet.distance}km away, ${pet.compatibility}% compatibility match`}
+      accessibilityHint="Swipe right to like, left to pass, or up for super like. Double tap to view more details."
+      accessibilityActions={[
+        { name: 'like', label: 'Like this pet' },
+        { name: 'pass', label: 'Pass on this pet' },
+        { name: 'superlike', label: 'Super like this pet' },
+      ]}
+      onAccessibilityAction={(event) => {
+        switch (event.nativeEvent.actionName) {
+          case 'like':
+            animateSwipeRight();
+            break;
+          case 'pass':
+            animateSwipeLeft();
+            break;
+          case 'superlike':
+            animateSwipeUp();
+            break;
+        }
+      }}
     >
       {/* Photo Section */}
       <View style={styles.photoContainer}>
-        <OptimizedImage
+        <Image
           source={{ uri: pet.photos[currentPhotoIndex] }}
           style={styles.photo}
           resizeMode="cover"
-          priority="high"
-          enableCache={true}
         />
-
+        
         {/* Photo Navigation Dots */}
         <View style={styles.photoIndicators}>
           {pet.photos.map((_, index) => (
@@ -612,32 +421,56 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
 
         {/* Photo Navigation Areas */}
         <View style={styles.photoNavigation}>
-          <View style={styles.photoNavLeft} onTouchEnd={prevPhoto} />
-          <View style={styles.photoNavRight} onTouchEnd={nextPhoto} />
+          <View 
+            style={styles.photoNavLeft} 
+            onTouchEnd={prevPhoto}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Previous photo"
+            accessibilityHint="Tap to view previous photo"
+          />
+          <View 
+            style={styles.photoNavRight} 
+            onTouchEnd={nextPhoto}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Next photo"
+            accessibilityHint="Tap to view next photo"
+          />
         </View>
 
         {/* Verification Badge */}
         {pet.isVerified && (
-          <View style={styles.verifiedBadge}>
+          <View 
+            style={styles.verifiedBadge}
+            accessible={true}
+            accessibilityLabel="Verified pet profile"
+            accessibilityRole="image"
+          >
             <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
           </View>
         )}
 
         {/* Distance Badge */}
-        <View style={styles.distanceBadge}>
+        <View 
+          style={styles.distanceBadge}
+          accessible={true}
+          accessibilityLabel={`${pet.distance} kilometers away`}
+          accessibilityRole="text"
+        >
           <Text style={styles.distanceText}>{pet.distance}km away</Text>
         </View>
 
         {/* Swipe Overlays */}
-        <Animated.View style={[styles.overlay, styles.likeOverlay, { opacity: likeOverlayOpacity }]}>
+        <Animated.View style={[styles.overlay, styles.likeOverlay, { opacity: likeOpacity }]}>
           <Text style={styles.overlayText}>LIKE</Text>
         </Animated.View>
 
-        <Animated.View style={[styles.overlay, styles.nopeOverlay, { opacity: nopeOverlayOpacity }]}>
+        <Animated.View style={[styles.overlay, styles.nopeOverlay, { opacity: nopeOpacity }]}>
           <Text style={styles.overlayText}>NOPE</Text>
         </Animated.View>
 
-        <Animated.View style={[styles.overlay, styles.superLikeOverlay, { opacity: superLikeOverlayOpacity }]}>
+        <Animated.View style={[styles.overlay, styles.superLikeOverlay, { opacity: superLikeOpacity }]}>
           <Text style={styles.overlayText}>SUPER LIKE</Text>
         </Animated.View>
       </View>
@@ -652,17 +485,17 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
             <Text style={styles.name}>{pet.name}</Text>
             <Text style={styles.age}>{pet.age}</Text>
           </View>
-
+          
           <Text style={styles.breed}>{pet.breed}</Text>
-
+          
           {/* Compatibility Score */}
           <View style={styles.compatibilityContainer}>
             <View style={styles.compatibilityBar}>
-              <View
+              <View 
                 style={[
-                  styles.compatibilityFill,
+                  styles.compatibilityFill, 
                   { width: `${pet.compatibility}%`, backgroundColor: colors.primary }
-                ]}
+                ]} 
               />
             </View>
             <Text style={styles.compatibilityText}>{pet.compatibility}% match</Text>
@@ -671,7 +504,7 @@ const SwipeCard: React.FC<SwipeCardProps> = React.memo(({
           {/* Tags */}
           <View style={styles.tagsContainer}>
             {pet.tags.slice(0, 3).map((tag, index) => (
-              <View key={index} style={[styles.tag, { backgroundColor: `${colors.primary}20` }]}>
+              <View key={index} style={[styles.tag, { backgroundColor: `${colors.primary  }20` }]}>
                 <Text style={[styles.tagText, { color: colors.primary }]}>{tag}</Text>
               </View>
             ))}

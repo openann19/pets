@@ -4,14 +4,14 @@
  * Tests all favorites API endpoints with authentication, authorization, and error cases.
  */
 
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import mongoose from 'mongoose';
-import request from 'supertest';
-import app from '../../index.js';
-import Favorite from '../../models/Favorite.js';
-import Pet from '../../models/Pet.js';
-import User from '../../models/User.js';
-import { generateToken } from '../../utils/auth.js';
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+const request = require('supertest');
+const app = require('../../server');
+const Favorite = require('../../src/models/Favorite');
+const Pet = require('../../src/models/Pet');
+const User = require('../../src/models/User');
+const { generateTokens } = require('../../src/middleware/auth');
 
 let mongoServer;
 let authToken;
@@ -30,27 +30,33 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-    // Create test user
+    // Create test user (include required fields per User schema)
     testUser = await User.create({
         email: 'test@example.com',
-        username: 'testuser',
-        password: '$2a$10$hashedpassword', // bcrypt hashed
+        password: 'password123',
+        firstName: 'Test',
+        lastName: 'User',
+        dateOfBirth: new Date('1990-01-01'),
+        isEmailVerified: true,
         role: 'user',
     });
 
-    authToken = generateToken(testUser._id);
+    authToken = generateTokens(testUser._id).accessToken;
 
-    // Create test pet
+    // Create test pet (include required fields per Pet schema)
     testPet = await Pet.create({
+        owner: testUser._id,
         name: 'Buddy',
         species: 'dog',
         breed: 'Golden Retriever',
         age: 3,
         gender: 'male',
+        size: 'medium',
         description: 'Friendly dog',
-        photos: ['https://example.com/photo1.jpg'],
-        shelterId: new mongoose.Types.ObjectId(),
-        status: 'available',
+        photos: [{ url: 'https://example.com/photo1.jpg', isPrimary: true }],
+        intent: 'adoption',
+        location: { type: 'Point', coordinates: [0, 0] },
+        status: 'active',
     });
 });
 
@@ -194,11 +200,17 @@ describe('DELETE /api/favorites/:petId', () => {
     });
 
     it('should not allow user to delete another user\'s favorite', async () => {
+        // Ensure the authenticated user does NOT have a favorite for this pet
+        await Favorite.deleteMany({ userId: testUser._id, petId: testPet._id });
+
         // Create another user
         const user2 = await User.create({
             email: 'user2@example.com',
-            username: 'testuser2',
-            password: '$2a$10$hashedpassword2',
+            password: 'password123',
+            firstName: 'User',
+            lastName: 'Two',
+            dateOfBirth: new Date('1992-02-02'),
+            isEmailVerified: true,
             role: 'user',
         });
 
@@ -228,37 +240,46 @@ describe('GET /api/favorites', () => {
         // Create multiple pets and favorites
         const pets = await Pet.insertMany([
             {
+                owner: testUser._id,
                 name: 'Dog1',
                 species: 'dog',
                 breed: 'Labrador',
                 age: 2,
                 gender: 'male',
+                size: 'medium',
                 description: 'Test dog 1',
-                photos: ['photo1.jpg'],
-                shelterId: new mongoose.Types.ObjectId(),
-                status: 'available',
+                photos: [{ url: 'https://example.com/photo1.jpg', isPrimary: true }],
+                intent: 'adoption',
+                location: { type: 'Point', coordinates: [0, 0] },
+                status: 'active',
             },
             {
+                owner: testUser._id,
                 name: 'Dog2',
                 species: 'dog',
                 breed: 'Beagle',
                 age: 3,
                 gender: 'female',
+                size: 'small',
                 description: 'Test dog 2',
-                photos: ['photo2.jpg'],
-                shelterId: new mongoose.Types.ObjectId(),
-                status: 'available',
+                photos: [{ url: 'https://example.com/photo2.jpg', isPrimary: true }],
+                intent: 'adoption',
+                location: { type: 'Point', coordinates: [0, 0] },
+                status: 'active',
             },
             {
+                owner: testUser._id,
                 name: 'Cat1',
                 species: 'cat',
                 breed: 'Siamese',
                 age: 1,
                 gender: 'female',
+                size: 'small',
                 description: 'Test cat 1',
-                photos: ['photo3.jpg'],
-                shelterId: new mongoose.Types.ObjectId(),
-                status: 'available',
+                photos: [{ url: 'https://example.com/photo3.jpg', isPrimary: true }],
+                intent: 'adoption',
+                location: { type: 'Point', coordinates: [0, 0] },
+                status: 'active',
             },
         ]);
 
@@ -341,21 +362,27 @@ describe('GET /api/favorites', () => {
         // Create another user with different favorites
         const user2 = await User.create({
             email: 'user2@example.com',
-            username: 'testuser2',
-            password: '$2a$10$hashedpassword2',
+            password: 'password123',
+            firstName: 'User',
+            lastName: 'Two',
+            dateOfBirth: new Date('1992-02-02'),
+            isEmailVerified: true,
             role: 'user',
         });
 
         const pet2 = await Pet.create({
+            owner: user2._id,
             name: 'OtherPet',
             species: 'cat',
             breed: 'Persian',
             age: 2,
             gender: 'male',
+            size: 'small',
             description: 'Other user pet',
-            photos: ['photo.jpg'],
-            shelterId: new mongoose.Types.ObjectId(),
-            status: 'available',
+            photos: [{ url: 'https://example.com/photo.jpg', isPrimary: true }],
+            intent: 'adoption',
+            location: { type: 'Point', coordinates: [0, 0] },
+            status: 'active',
         });
 
         await Favorite.create({
@@ -424,14 +451,20 @@ describe('GET /api/favorites/count/:petId', () => {
         const users = await User.insertMany([
             {
                 email: 'user1@example.com',
-                username: 'user1',
-                password: '$2a$10$pass1',
+                password: 'password123',
+                firstName: 'User',
+                lastName: 'One',
+                dateOfBirth: new Date('1991-01-01'),
+                isEmailVerified: true,
                 role: 'user',
             },
             {
                 email: 'user2@example.com',
-                username: 'user2',
-                password: '$2a$10$pass2',
+                password: 'password123',
+                firstName: 'User',
+                lastName: 'Two',
+                dateOfBirth: new Date('1992-02-02'),
+                isEmailVerified: true,
                 role: 'user',
             },
         ]);

@@ -153,3 +153,16 @@ Enable debug logging:
 DEBUG=biometric,notifications,leaderboard
 LOG_LEVEL=debug
 ```
+
+## Stories Limits
+
+To limit per-user daily story creations (applies to POST /api/stories), set:
+
+```env
+# Defaults to 10 if unset
+STORY_DAILY_CAP=10
+```
+
+Notes:
+- Enforced via Redis-backed middleware `storyDailyLimiter`. If `REDIS_URL` is not configured, the limiter fails open and logs a warning.
+- The counter resets at UTC end-of-day. The response when over the cap is HTTP 429 with code `DAILY_LIMIT_EXCEEDED`.

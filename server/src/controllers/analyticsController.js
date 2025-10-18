@@ -1,28 +1,23 @@
-const { 
-  trackUserEvent, 
-  trackPetEvent, 
-  trackMatchEvent,
-  getUserAnalytics,
-  getPetAnalytics,
-  getMatchAnalytics,
-  EVENT_TYPES
-} = require('../services/analyticsService');
+// Defer requiring analyticsService until inside handlers to play nicely with jest.mock
+// This ensures tests that mock ../services/analyticsService capture the references used here.
+const getAnalyticsService = () => require('../services/analyticsService');
 
 // @desc    Track user event
 // @route   POST /api/analytics/user
 // @access  Private
 const trackUserEventController = async (req, res) => {
   try {
+    const { trackUserEvent, EVENT_TYPES } = getAnalyticsService();
     const { eventType, metadata } = req.body;
-    
+
     // Validate event type
     if (!eventType || !Object.values(EVENT_TYPES).includes(eventType)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid event type' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid event type'
       });
     }
-    
+
     await trackUserEvent(req.userId, eventType, metadata);
     res.json({ success: true, message: 'User event tracked successfully' });
   } catch (error) {
@@ -36,16 +31,17 @@ const trackUserEventController = async (req, res) => {
 // @access  Private
 const trackPetEventController = async (req, res) => {
   try {
+    const { trackPetEvent, EVENT_TYPES } = getAnalyticsService();
     const { petId, eventType, metadata } = req.body;
-    
+
     // Validate event type
     if (!eventType || !Object.values(EVENT_TYPES).includes(eventType)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid event type' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid event type'
       });
     }
-    
+
     await trackPetEvent(petId, eventType, req.userId, metadata);
     res.json({ success: true, message: 'Pet event tracked successfully' });
   } catch (error) {
@@ -59,16 +55,17 @@ const trackPetEventController = async (req, res) => {
 // @access  Private
 const trackMatchEventController = async (req, res) => {
   try {
+    const { trackMatchEvent, EVENT_TYPES } = getAnalyticsService();
     const { matchId, eventType, metadata } = req.body;
-    
+
     // Validate event type
     if (!eventType || !Object.values(EVENT_TYPES).includes(eventType)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid event type' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid event type'
       });
     }
-    
+
     await trackMatchEvent(matchId, eventType, req.userId, metadata);
     res.json({ success: true, message: 'Match event tracked successfully' });
   } catch (error) {
@@ -82,19 +79,20 @@ const trackMatchEventController = async (req, res) => {
 // @access  Private
 const getUserAnalyticsController = async (req, res) => {
   try {
+    const { getUserAnalytics } = getAnalyticsService();
     const userId = req.params.userId || req.userId;
     const { period = 'week' } = req.query;
-    
+
     const analytics = await getUserAnalytics(userId, period);
     if (!analytics) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    
+
     // Convert dates to ISO strings for JSON serialization if they're Date objects
     if (analytics.lastActive && analytics.lastActive instanceof Date) {
       analytics.lastActive = analytics.lastActive.toISOString();
     }
-    
+
     res.json({ success: true, data: analytics });
   } catch (error) {
     console.error('Error in getUserAnalyticsController:', error);
@@ -107,16 +105,17 @@ const getUserAnalyticsController = async (req, res) => {
 // @access  Private
 const getPetAnalyticsController = async (req, res) => {
   try {
+    const { getPetAnalytics } = getAnalyticsService();
     const analytics = await getPetAnalytics(req.params.petId);
     if (!analytics) {
       return res.status(404).json({ success: false, message: 'Pet not found' });
     }
-    
+
     // Convert dates to ISO strings for JSON serialization if they're Date objects
     if (analytics.lastViewed && analytics.lastViewed instanceof Date) {
       analytics.lastViewed = analytics.lastViewed.toISOString();
     }
-    
+
     res.json({ success: true, data: { analytics } });
   } catch (error) {
     console.error('Error in getPetAnalyticsController:', error);
@@ -129,9 +128,10 @@ const getPetAnalyticsController = async (req, res) => {
 // @access  Private
 const getMatchAnalyticsController = async (req, res) => {
   try {
+    const { getMatchAnalytics } = getAnalyticsService();
     const matchId = req.params.matchId || req.params.userId;
     const { period = 'week' } = req.query;
-    
+
     // If it's a user ID, get match analytics for that user
     if (req.params.userId) {
       const analytics = await getMatchAnalytics(req.params.userId, period);

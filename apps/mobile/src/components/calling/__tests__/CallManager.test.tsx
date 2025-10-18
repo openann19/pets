@@ -1,15 +1,16 @@
+import { act, fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
-import {  } from '@testing-library/react-native';
-import {  } from 'react-native';
-import CallManager, { useCallManager } from '../CallManager';
+import { Alert, Text, TouchableOpacity, View } from 'react-native';
+
+import { useSocket } from '../../../hooks/useSocket';
 import WebRTCService from '../../../services/WebRTCService';
-import {  } from '../../../hooks/useSocket';
+import CallManager, { useCallManager } from '../CallManager';
 
 // Mock dependencies
 jest.mock('../../../services/WebRTCService');
 jest.mock('../../../hooks/useSocket');
+// React Native is already mocked in jest.setup.ts
 jest.mock('react-native', () => ({
-  ...jest.requireActual('react-native'),
   Alert: {
     alert: jest.fn(),
   },
@@ -25,12 +26,12 @@ const mockSocket = {
 };
 
 const mockWebRTCService = WebRTCService as jest.Mocked<typeof WebRTCService>;
-const mockUseSocket = useSocket;
+const mockUseSocket = useSocket as jest.MockedFunction<typeof useSocket>;
 
 describe('CallManager', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseSocket.mockReturnValue(mockSocket as unknown);
+    mockUseSocket.mockReturnValue(mockSocket as any);
     mockWebRTCService.getCallState.mockReturnValue({
       isActive: false,
       isConnected: false,
@@ -45,7 +46,7 @@ describe('CallManager', () => {
   });
 
   it('should render children correctly', () => {
-    const TestChild = () => <div testID="test-child">Test Child</div>;
+    const TestChild = () => <Text testID="test-child">Test Child</Text>;
     
     const { getByTestId } = render(
       <CallManager>
@@ -167,22 +168,22 @@ describe('CallManager', () => {
 });
 
 describe('useCallManager hook', () => {
-  const TestComponent = (): JSX.Element => {
+  const TestComponent = () => {
     const { startCall, endCall, isCallActive, getCallState } = useCallManager();
     
     return (
-      <div>
-        <button testID="start-voice-call" onPress={() => startCall('test-match', 'voice')}>
-          Start Voice Call
-        </button>
-        <button testID="start-video-call" onPress={() => startCall('test-match', 'video')}>
-          Start Video Call
-        </button>
-        <button testID="end-call" onPress={endCall}>
-          End Call
-        </button>
-        <div testID="call-active">{isCallActive() ? 'Active' : 'Inactive'}</div>
-      </div>
+      <View>
+        <TouchableOpacity testID="start-voice-call" onPress={() => startCall('test-match', 'voice')}>
+          <Text>Start Voice Call</Text>
+        </TouchableOpacity>
+        <TouchableOpacity testID="start-video-call" onPress={() => startCall('test-match', 'video')}>
+          <Text>Start Video Call</Text>
+        </TouchableOpacity>
+        <TouchableOpacity testID="end-call" onPress={endCall}>
+          <Text>End Call</Text>
+        </TouchableOpacity>
+        <Text testID="call-active">{isCallActive() ? 'Active' : 'Inactive'}</Text>
+      </View>
     );
   };
 

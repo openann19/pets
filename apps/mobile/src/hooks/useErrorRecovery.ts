@@ -23,7 +23,7 @@ export const useErrorRecovery = (options: RecoveryOptions = {}) => {
     maxOfflineRetries = 5,
     enableNetworkRetry = true,
     maxNetworkRetries = 3,
-    onRecoverySuccess,
+    onRecoverySuccess: _onRecoverySuccess,
     onRecoveryFailure
   } = options;
 
@@ -131,9 +131,8 @@ export const useErrorRecovery = (options: RecoveryOptions = {}) => {
       throw error;
     }
   }, [
-    enableOfflineRetry, maxOfflineRetries, enableNetworkRetry, maxNetworkRetries,
-    offlineRetry, networkRetry, handleError, handleNetworkError, handleOfflineError,
-    onRecoverySuccess, onRecoveryFailure
+    enableOfflineRetry, enableNetworkRetry,
+    offlineRetry, networkRetry, handleError, handleNetworkError, handleOfflineError
   ]);
 
   /**

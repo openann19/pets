@@ -7,7 +7,7 @@ module.exports = {
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   transformIgnorePatterns: [
-    'node_modules/(?!(expo-modules-core|@expo/modules-core)/)'
+    'node_modules/(?!(?:.pnpm/)?(?:jest-)?react-native|@react-native|@react-native-community|@react-navigation|expo|expo-modules-core|@expo|@unimodules|unimodules|sentry-expo|native-base|react-native-svg)'
   ],
   moduleNameMapper: {
     '^@pawfectmatch/core$': '<rootDir>/../../packages/core/src',

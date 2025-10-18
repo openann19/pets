@@ -3,17 +3,17 @@
  * Advanced error handling with recovery mechanisms, user feedback, and analytics
  */
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ExclamationTriangleIcon, 
-  ArrowPathIcon, 
-  HomeIcon,
-  ChatBubbleLeftIcon,
-  BugAntIcon
+import {
+  ArrowPathIcon,
+  BugAntIcon,
+  ExclamationTriangleIcon,
+  HomeIcon
 } from '@heroicons/react/24/outline';
-import { errorHandler } from '../../../core/src/services/ErrorHandler';
-import { logger } from '../../../core/src/services/Logger';
+import { errorHandler, logger } from '@pawfectmatch/core/services';
+import { AnimatePresence } from 'framer-motion';
+import type { ErrorInfo, ReactNode } from 'react';
+import { Component } from 'react';
+import { MotionDetails, MotionDiv, MotionH2, MotionP } from '../../utils/Motion';
 
 export interface ErrorBoundaryProps {
   children: ReactNode;
@@ -36,7 +36,7 @@ export interface ErrorBoundaryState {
 }
 
 export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  private retryTimeoutId: NodeJS.Timeout | null = null;
+  private retryTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
@@ -58,11 +58,11 @@ export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     const { level = 'component', onError } = this.props;
-    
+
     // Log error with enhanced context
-    logger.error('React Error Boundary caught an error', {
+    logger.error('React Error Boundary caught an error', error, {
       component: 'EnhancedErrorBoundary',
       action: 'component_did_catch',
       metadata: {
@@ -96,7 +96,7 @@ export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     }
   }
 
-  componentWillUnmount(): void {
+  override componentWillUnmount(): void {
     if (this.retryTimeoutId) {
       clearTimeout(this.retryTimeoutId);
     }
@@ -110,8 +110,10 @@ export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
       logger.warn('Maximum retry attempts reached', {
         component: 'EnhancedErrorBoundary',
         action: 'max_retries_reached',
-        retryCount,
-        maxRetries,
+        metadata: {
+          retryCount,
+          maxRetries,
+        },
       });
       return;
     }
@@ -120,7 +122,7 @@ export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
 
     // Exponential backoff
     const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-    
+
     this.retryTimeoutId = setTimeout(() => {
       this.setState({
         hasError: false,
@@ -133,23 +135,27 @@ export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
       logger.info('Error boundary retry attempted', {
         component: 'EnhancedErrorBoundary',
         action: 'retry_attempt',
-        retryCount: retryCount + 1,
-        delay,
+        metadata: {
+          retryCount: retryCount + 1,
+          delay,
+        },
       });
     }, delay);
   };
 
   handleReportError = (): void => {
     const { error, errorId } = this.state;
-    
+
     if (!error || !errorId) return;
 
     // Log error report
     logger.info('User reported error', {
       component: 'EnhancedErrorBoundary',
       action: 'user_report_error',
-      errorId,
-      errorMessage: error.message,
+      metadata: {
+        errorId,
+        errorMessage: error.message,
+      },
     });
 
     // In a real implementation, this would send to a bug reporting service
@@ -165,19 +171,19 @@ export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     window.location.reload();
   };
 
-  render(): ReactNode {
-    const { 
-      hasError, 
-      error, 
-      errorInfo, 
-      errorId, 
-      retryCount, 
-      isRetrying 
+  override render(): ReactNode {
+    const {
+      hasError,
+      error,
+      errorInfo,
+      errorId,
+      retryCount,
+      isRetrying
     } = this.state;
-    
-    const { 
-      children, 
-      fallback, 
+
+    const {
+      children,
+      fallback,
       level = 'component',
       showReportButton = true,
       showRetryButton = true,
@@ -197,63 +203,58 @@ export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
 
       return (
         <AnimatePresence>
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className={`error-boundary ${className} ${
-              isPage ? 'min-h-screen' : 'min-h-[400px]'
-            } flex items-center justify-center p-4`}
+            className={`error-boundary ${className} ${isPage ? 'min-h-screen' : 'min-h-[400px]'
+              } flex items-center justify-center p-4`}
           >
-            <div className={`max-w-md w-full ${
-              isCritical 
-                ? 'bg-red-50 border-red-200' 
-                : 'bg-yellow-50 border-yellow-200'
-            } border rounded-2xl shadow-lg p-8 text-center`}>
-              
+            <div className={`max-w-md w-full ${isCritical
+              ? 'bg-red-50 border-red-200'
+              : 'bg-yellow-50 border-yellow-200'
+              } border rounded-2xl shadow-lg p-8 text-center`}>
+
               {/* Error Icon */}
-              <motion.div
+              <MotionDiv
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
-                className={`mb-6 ${
-                  isCritical ? 'text-red-500' : 'text-yellow-500'
-                }`}
+                className={`mb-6 ${isCritical ? 'text-red-500' : 'text-yellow-500'
+                  }`}
               >
                 <ExclamationTriangleIcon className="h-16 w-16 mx-auto" />
-              </motion.div>
+              </MotionDiv>
 
               {/* Error Title */}
-              <motion.h2
+              <MotionH2
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className={`text-2xl font-bold mb-4 ${
-                  isCritical ? 'text-red-900' : 'text-yellow-900'
-                }`}
+                className={`text-2xl font-bold mb-4 ${isCritical ? 'text-red-900' : 'text-yellow-900'
+                  }`}
               >
                 {isCritical ? 'Critical Error' : 'Something went wrong'}
-              </motion.h2>
+              </MotionH2>
 
               {/* Error Message */}
-              <motion.p
+              <MotionP
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className={`text-lg mb-6 ${
-                  isCritical ? 'text-red-700' : 'text-yellow-700'
-                }`}
+                className={`text-lg mb-6 ${isCritical ? 'text-red-700' : 'text-yellow-700'
+                  }`}
               >
-                {isCritical 
+                {isCritical
                   ? 'A critical error occurred that prevented the application from working properly.'
                   : 'An unexpected error occurred. Don\'t worry, your data is safe.'
                 }
-              </motion.p>
+              </MotionP>
 
               {/* Error ID for support */}
               {errorId && (
-                <motion.div
+                <MotionDiv
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4 }}
@@ -262,11 +263,11 @@ export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
                   <p className="text-sm text-gray-600">
                     Error ID: <code className="font-mono text-xs">{errorId}</code>
                   </p>
-                </motion.div>
+                </MotionDiv>
               )}
 
               {/* Action Buttons */}
-              <motion.div
+              <MotionDiv
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
@@ -277,11 +278,10 @@ export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
                   <button
                     onClick={this.handleRetry}
                     disabled={isRetrying}
-                    className={`w-full flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
-                      isCritical
-                        ? 'bg-red-600 hover:bg-red-700 text-white'
-                        : 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`w-full flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${isCritical
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                      : 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     <ArrowPathIcon className={`h-5 w-5 mr-2 ${isRetrying ? 'animate-spin' : ''}`} />
                     {isRetrying ? 'Retrying...' : 'Try Again'}
@@ -318,11 +318,11 @@ export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
                     Report Error
                   </button>
                 )}
-              </motion.div>
+              </MotionDiv>
 
               {/* Development Error Details */}
-              {process.env.NODE_ENV === 'development' && errorInfo && (
-                <motion.details
+              {((globalThis as any)?.process?.env?.NODE_ENV === 'development') && errorInfo && (
+                <MotionDetails
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.6 }}
@@ -344,10 +344,10 @@ export class EnhancedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
                       <pre className="whitespace-pre-wrap mt-1">{errorInfo.componentStack}</pre>
                     </div>
                   </div>
-                </motion.details>
+                </MotionDetails>
               )}
             </div>
-          </motion.div>
+          </MotionDiv>
         </AnimatePresence>
       );
     }

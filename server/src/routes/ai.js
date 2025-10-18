@@ -1,6 +1,6 @@
 const express = require('express');
 const axios = require('axios');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requirePremiumFeature } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 
 const router = express.Router();
@@ -329,7 +329,7 @@ router.post('/analyze-photos', authenticateToken, [
 });
 
 // Enhanced compatibility analysis using AI service
-router.post('/enhanced-compatibility', authenticateToken, [
+router.post('/enhanced-compatibility', authenticateToken, requirePremiumFeature('aiMatching'), [
   body('pet1').isObject().withMessage('Pet1 must be an object'),
   body('pet2').isObject().withMessage('Pet2 must be an object'),
   body('interaction_type').optional().isIn(['playdate', 'mating', 'adoption', 'cohabitation']).withMessage('Invalid interaction type')

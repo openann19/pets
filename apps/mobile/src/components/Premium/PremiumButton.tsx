@@ -4,34 +4,49 @@
  * Matches web premium experience with native mobile optimizations
  */
 
-import { logger } from '@pawfectmatch/core';
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCallback } from 'react';
+import React, { useRef, useState } from 'react';
+import type {
+  ViewStyle} from 'react-native';
 import {
-  StyleSheet,
-  Text,
   TouchableOpacity,
+  Text,
   View,
-  type ViewStyle,
+  StyleSheet,
+  Animated,
+  PanResponder,
+  Dimensions,
+  TextStyle,
 } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { MOBILE_TYPOGRAPHY, MOBILE_VARIANTS } from '../../constants/design-tokens';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface PremiumButtonProps {
   title: string;
   onPress: () => void;
-  variant?: keyof typeof MOBILE_VARIANTS.button;
+  variant?: 'primary' | 'secondary' | 'glass' | 'gradient' | 'neon' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
-  icon?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
   iconPosition?: 'left' | 'right';
   fullWidth?: boolean;
-  haptic?: boolean;
+  haptic?: 'light' | 'medium' | 'heavy';
   glow?: boolean;
   style?: ViewStyle;
+}
+
+// Variant style interface
+interface VariantStyle {
+  colors: string[];
+  textColor: string;
+  shadowColor: string;
+  blur?: boolean;
+  border?: boolean;
+  borderColor?: string;
 }
 
 export const PremiumButton: React.FC<PremiumButtonProps> = ({
@@ -44,16 +59,18 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
   icon,
   iconPosition = 'left',
   fullWidth = false,
-  haptic = true,
+  haptic = 'medium',
   glow = false,
   style,
 }) => {
-  // Animation state
-  const animatedScale = useSharedValue(1);
-  const animatedGlow = useSharedValue(0);
+  const [isPressed, setIsPressed] = useState(false);
+  const animatedScale = useRef(new Animated.Value(1)).current;
+  const animatedGlow = useRef(new Animated.Value(0)).current;
 
-  const triggerHaptic = useCallback(async (type: 'light' | 'medium' | 'heavy' = 'medium') => {
+  // Enhanced haptic feedback with optimized patterns
+  const triggerHaptic = async (type: 'light' | 'medium' | 'heavy' = 'medium') => {
     if (!haptic) return;
+    
     try {
       switch (type) {
         case 'light':
@@ -63,215 +80,302 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           break;
         case 'heavy':
+          // Enhanced heavy haptic with pattern
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-          setTimeout(() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+          setTimeout(async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }, 100);
           break;
       }
-    } catch {
-      // no-op
+    } catch (error) {
+      console.debug('Haptic feedback not available');
     }
-  }, [haptic]);
+  };
 
-  const handlePressIn = useCallback(() => {
-    triggerHaptic('light').catch(err => logger.error('PremiumButton light haptic error', { err }));
-    animatedScale.value = withSpring(0.95, { stiffness: 300, damping: 30 });
-    if (glow) animatedGlow.value = withSpring(1, { stiffness: 300, damping: 30 });
-  }, [glow, triggerHaptic]);
+  // Enhanced press animations with optimized spring physics
+  const handlePressIn = () => {
+    setIsPressed(true);
+    
+    const animations = [
+      Animated.spring(animatedScale, {
+        toValue: 0.95,
+        useNativeDriver: true,
+        tension: 400, // Increased for more responsive feel
+        friction: 8,  // Reduced for smoother animation
+      }),
+    ];
+    
+    if (glow) {
+      animations.push(Animated.timing(animatedGlow, {
+        toValue: 1,
+        duration: 120, // Faster response
+        useNativeDriver: false,
+      }));
+    }
+    
+    Animated.parallel(animations).start();
+    triggerHaptic('light');
+  };
 
-  const handlePressOut = useCallback(() => {
-    animatedScale.value = withSpring(1, { stiffness: 300, damping: 30 });
-    if (glow) animatedGlow.value = withSpring(0, { stiffness: 300, damping: 30 });
-  }, [glow]);
+  const handlePressOut = () => {
+    setIsPressed(false);
+    
+    const animations = [
+      Animated.spring(animatedScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 400, // Increased for more responsive feel
+        friction: 6,  // Reduced for smoother animation
+      }),
+    ];
+    
+    if (glow) {
+      animations.push(Animated.timing(animatedGlow, {
+        toValue: 0,
+        duration: 180, // Faster response
+        useNativeDriver: false,
+      }));
+    }
+    
+    Animated.parallel(animations).start();
+  };
 
-  const handlePress = useCallback(() => {
+  const handlePress = () => {
     if (disabled || loading) return;
-    triggerHaptic('medium').catch(err => logger.error('PremiumButton medium haptic error', { err }));
+    
+    triggerHaptic('medium');
     onPress();
-  }, [disabled, loading, onPress, triggerHaptic]);
+  };
 
-  const variantStyle = MOBILE_VARIANTS.button[variant];
-  const sizeStyle = (() => {
-    switch (size) {
-      case 'sm': return { height: 36, paddingHorizontal: 16, fontSize: MOBILE_TYPOGRAPHY.fontSizes.sm };
-      case 'lg': return { height: 52, paddingHorizontal: 32, fontSize: MOBILE_TYPOGRAPHY.fontSizes.lg };
-      case 'md':
-      default: return { height: 44, paddingHorizontal: 24, fontSize: MOBILE_TYPOGRAPHY.fontSizes.base };
-    }
-  })();
+  // Get variant styles
+  const getVariantStyles = (): VariantStyle => {
+    const variants: Record<string, VariantStyle> = {
+      primary: {
+        colors: ['#ec4899', '#f472b6'],
+        textColor: '#ffffff',
+        shadowColor: '#ec4899',
+      },
+      secondary: {
+        colors: ['#0ea5e9', '#38bdf8'],
+        textColor: '#ffffff',
+        shadowColor: '#0ea5e9',
+      },
+      glass: {
+        colors: ['transparent', 'transparent'],
+        textColor: '#374151',
+        shadowColor: '#000000',
+        blur: true,
+      },
+      gradient: {
+        colors: ['#667eea', '#764ba2', '#f093fb', '#f5576c'],
+        textColor: '#ffffff',
+        shadowColor: '#667eea',
+      },
+      neon: {
+        colors: ['#1a1a1a', '#1a1a1a'],
+        textColor: '#ec4899',
+        shadowColor: '#ec4899',
+        border: true,
+        borderColor: '#ec4899',
+      },
+      ghost: {
+        colors: ['transparent', 'transparent'],
+        textColor: '#6b7280',
+        shadowColor: 'transparent',
+        border: true,
+        borderColor: '#d1d5db',
+      },
+    };
+    
+    return variants[variant] || variants.primary;
+  };
 
-  // Base button container style (non-animated)
-  const radius = size === 'sm' ? 10 : size === 'lg' ? 14 : 12;
+  // Get size styles
+  const getSizeStyles = () => {
+    const sizes = {
+      sm: { height: 36, paddingHorizontal: 16, fontSize: 14 },
+      md: { height: 44, paddingHorizontal: 24, fontSize: 16 },
+      lg: { height: 52, paddingHorizontal: 32, fontSize: 18 },
+    };
+    
+    return sizes[size] || sizes.md;
+  };
+
+  const variantStyle = getVariantStyles();
+  const sizeStyle = getSizeStyles();
+
+  // Icon rendering helper
+  const renderIcon = () => {
+    if (!icon) return null;
+    
+    return (
+      <Ionicons
+        name={icon}
+        size={sizeStyle.fontSize + 2}
+        color={loading ? 'transparent' : variantStyle.textColor}
+        style={{ marginRight: iconPosition === 'left' ? 8 : 0, marginLeft: iconPosition === 'right' ? 8 : 0 }}
+      />
+    );
+  };
+
   const buttonStyle: ViewStyle = {
+    width: fullWidth ? '100%' : 'auto',
+    minWidth: fullWidth ? undefined : 120,
     height: sizeStyle.height,
     paddingHorizontal: sizeStyle.paddingHorizontal,
-    borderRadius: radius,
-    backgroundColor: (variantStyle as any).backgroundColor,
-    borderWidth: variantStyle.borderColor ? StyleSheet.hairlineWidth : 0,
-    borderColor: variantStyle.borderColor,
-    alignSelf: fullWidth ? 'stretch' : 'auto',
-    justifyContent: 'center',
+    borderRadius: sizeStyle.height / 2,
+    opacity: disabled ? 0.5 : 1,
+    ...(variantStyle.border && {
+      borderWidth: 2,
+      borderColor: variantStyle.borderColor || variantStyle.shadowColor,
+    }),
+    ...style,
   };
-  if (style) Object.assign(buttonStyle, style);
 
-  // Animated styles
-  const animatedButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: animatedScale.value }],
-  }));
-
-  const animatedGlowStyle = useAnimatedStyle(() => ({
-    opacity: glow ? animatedGlow.value * 0.3 : 0,
-    borderRadius: radius,
-    backgroundColor: variantStyle.shadowColor,
-  }));
-
-  const ButtonContent = (): React.JSX.Element => (
-    <View style={[styles.content, { height: sizeStyle.height }]}>
-      {icon !== undefined && iconPosition === 'left' ? (
-        <Text style={{ fontSize: sizeStyle.fontSize + 2, color: variantStyle.textColor, marginRight: 8 }}>
-          {icon !== '' ? icon : '📱'}
-        </Text>
-      ) : null}
-
-      <Text
-        style={[
-          styles.text,
-          {
-            color: variantStyle.textColor,
-            fontSize: sizeStyle.fontSize,
-            opacity: loading ? 0 : 1,
-          },
-        ]}
-        numberOfLines={1}
-      >
-        {title}
-      </Text>
-
-      {icon !== undefined && iconPosition === 'right' ? (
-        <Text style={{ fontSize: sizeStyle.fontSize + 2, color: variantStyle.textColor, marginLeft: 8 }}>
-          {icon !== '' ? icon : '📱'}
-        </Text>
-      ) : null}
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <View style={styles.loadingDot}>
-            <Text style={{ fontSize: 20, color: variantStyle.textColor }}>🐾</Text>
-          </View>
-        </View>
-      ) : null}
-    </View>
-  );
-
-  // Glass variant is fully rendered here
+  // Glass morphism variant
   if (variant === 'glass') {
     return (
       <Animated.View
         style={[
           buttonStyle,
-          animatedButtonStyle,
           {
-            overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: glow ? 8 : 4 },
-            shadowOpacity: glow ? 0.25 : 0.15,
-            shadowRadius: glow ? 14 : 8,
-            elevation: glow ? 8 : 4,
+            transform: [{ scale: animatedScale }],
           },
         ]}
       >
-        <BlurView intensity={20} style={StyleSheet.absoluteFillObject} />
+        <BlurView intensity={80} style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
+        
         <TouchableOpacity
           onPress={handlePress}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           disabled={disabled || loading}
-          style={styles.touchable}
-          activeOpacity={0.8}
+          style={styles.buttonContent}
+          activeOpacity={0.9}
         >
-          <ButtonContent />
+          {iconPosition === 'left' && renderIcon()}
+          <Text style={[styles.buttonText, { color: variantStyle.textColor, fontSize: sizeStyle.fontSize }]}>
+            {title}
+          </Text>
+          {iconPosition === 'right' && renderIcon()}
+          
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <View style={[styles.loadingDot, { backgroundColor: variantStyle.textColor }]} />
+            </View>
+          )}
         </TouchableOpacity>
-        {glow ? (
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFillObject,
-              animatedGlowStyle,
-            ]}
-            pointerEvents="none"
-          />
-        ) : null}
       </Animated.View>
     );
   }
 
-  // Default variants open container; remainder of JSX (gradient, touchable, glow) follows below
+  // Gradient variant
+  if (variant === 'gradient') {
+    return (
+      <Animated.View
+        style={[
+          buttonStyle,
+          {
+            transform: [{ scale: animatedScale }],
+          },
+        ]}
+      >
+        <LinearGradient
+          colors={variantStyle.colors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        
+        <TouchableOpacity
+          onPress={handlePress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          disabled={disabled || loading}
+          style={styles.buttonContent}
+          activeOpacity={0.9}
+        >
+          {iconPosition === 'left' && renderIcon()}
+          <Text style={[styles.buttonText, { color: variantStyle.textColor, fontSize: sizeStyle.fontSize }]}>
+            {title}
+          </Text>
+          {iconPosition === 'right' && renderIcon()}
+          
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <View style={[styles.loadingDot, { backgroundColor: variantStyle.textColor }]} />
+            </View>
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
+
+  // Standard variants (primary, secondary, neon, ghost)
   return (
     <Animated.View
       style={[
         buttonStyle,
-        animatedButtonStyle,
         {
+          backgroundColor: variantStyle.colors[0],
+          transform: [{ scale: animatedScale }],
+        },
+        glow && {
           shadowColor: variantStyle.shadowColor,
-          shadowOffset: { width: 0, height: glow ? 8 : 4 },
-          shadowOpacity: glow ? 0.4 : 0.2,
-          shadowRadius: glow ? 16 : 8,
-          elevation: glow ? 8 : 4,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: animatedGlow,
+          shadowRadius: 12,
+          elevation: 8,
         },
       ]}
     >
-      {/* FIX: Add a type guard to ensure `variantStyle.colors` is a valid array before rendering LinearGradient */}
-      {Array.isArray(variantStyle.colors) && variantStyle.colors.length >= 2 ? (
-        <LinearGradient
-          colors={variantStyle.colors as [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[StyleSheet.absoluteFillObject, { borderRadius: buttonStyle.borderRadius }]}
-        />
-      ) : null}
-
       <TouchableOpacity
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled || loading}
-        style={styles.touchable}
-        activeOpacity={0.8}
+        style={styles.buttonContent}
+        activeOpacity={0.95}
       >
-        <ButtonContent />
+        {iconPosition === 'left' && renderIcon()}
+        <Text style={[styles.buttonText, { color: variantStyle.textColor, fontSize: sizeStyle.fontSize }]}>
+          {title}
+        </Text>
+        {iconPosition === 'right' && renderIcon()}
+        
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <View style={[styles.loadingDot, { backgroundColor: variantStyle.textColor }]} />
+          </View>
+        )}
       </TouchableOpacity>
-
-      {glow ? <Animated.View
-        style={[
-          StyleSheet.absoluteFillObject,
-          animatedGlowStyle,
-        ]}
-        pointerEvents="none"
-      /> : null}
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  touchable: {
+  buttonContent: {
     flex: 1,
-    alignItems: 'center',
-  },
-  content: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 16,
   },
-  text: {
+  buttonText: {
     fontWeight: '600',
     textAlign: 'center',
   },
   loadingContainer: {
     position: 'absolute',
+    right: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     justifyContent: 'center',
     alignItems: 'center',
   },

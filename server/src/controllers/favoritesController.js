@@ -5,6 +5,8 @@
  */
 
 const Favorite = require('../models/Favorite');
+const Pet = require('../models/Pet');
+const mongoose = require('mongoose');
 const logger = require('../utils/logger');
 
 /**
@@ -19,7 +21,24 @@ exports.addFavorite = async (req, res) => {
         if (!petId) {
             return res.status(400).json({
                 success: false,
-                message: 'Pet ID is required',
+                message: 'petId is required',
+            });
+        }
+
+        // Validate petId format
+        if (!mongoose.Types.ObjectId.isValid(petId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid petId',
+            });
+        }
+
+        // Ensure pet exists
+        const petExists = await Pet.exists({ _id: petId });
+        if (!petExists) {
+            return res.status(404).json({
+                success: false,
+                message: 'Pet not found',
             });
         }
 
@@ -28,7 +47,7 @@ exports.addFavorite = async (req, res) => {
         if (existing) {
             return res.status(409).json({
                 success: false,
-                message: 'Pet already in favorites',
+                message: 'Pet already favorited',
             });
         }
 
@@ -71,12 +90,27 @@ exports.removeFavorite = async (req, res) => {
         const { petId } = req.params;
         const userId = req.user._id;
 
-        const favorite = await Favorite.findOneAndDelete({ userId, petId });
+        if (!mongoose.Types.ObjectId.isValid(petId)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid petId',
+            });
+        }
+
+        const favorite = await Favorite.findOne({ userId, petId });
+        if (!favorite) {
+            return res.status(404).json({
+                success: false,
+                message: 'not found in favorites',
+            });
+        }
+
+        await Favorite.deleteOne({ _id: favorite._id, userId });
 
         if (!favorite) {
             return res.status(404).json({
                 success: false,
-                message: 'Favorite not found',
+                message: 'not found in favorites',
             });
         }
 
@@ -105,20 +139,28 @@ exports.removeFavorite = async (req, res) => {
 exports.getFavorites = async (req, res) => {
     try {
         const userId = req.user._id;
-        const { limit = 50, skip = 0 } = req.query;
+        // Support page & limit, validate inputs
+        const pageRaw = req.query.page;
+        const limitRaw = req.query.limit;
+        const hasPage = typeof pageRaw !== 'undefined';
+        const hasLimit = typeof limitRaw !== 'undefined';
 
-        const favorites = await Favorite.getUserFavorites(userId, {
-            limit: parseInt(limit, 10),
-            skip: parseInt(skip, 10),
-        });
+        if ((hasPage && isNaN(parseInt(pageRaw, 10))) || (hasLimit && isNaN(parseInt(limitRaw, 10)))) {
+            return res.status(400).json({ success: false, message: 'Invalid pagination parameters' });
+        }
 
-        const totalCount = await Favorite.getUserFavoriteCount(userId);
+        const page = hasPage ? Math.max(1, parseInt(pageRaw, 10)) : 1;
+        const limit = hasLimit ? Math.max(1, parseInt(limitRaw, 10)) : 50;
+
+        const result = await Favorite.getUserFavorites(userId, page, limit);
 
         res.json({
             success: true,
-            favorites,
-            totalCount,
-            hasMore: totalCount > parseInt(skip, 10) + favorites.length,
+            favorites: result.favorites,
+            totalFavorites: result.totalFavorites,
+            totalPages: result.totalPages,
+            currentPage: result.currentPage,
+            hasNextPage: result.hasNextPage,
         });
     } catch (error) {
         logger.error('Error fetching favorites', { error: error.message });
@@ -137,6 +179,10 @@ exports.checkFavorite = async (req, res) => {
     try {
         const { petId } = req.params;
         const userId = req.user._id;
+
+        if (!mongoose.Types.ObjectId.isValid(petId)) {
+            return res.status(400).json({ success: false, message: 'Invalid petId' });
+        }
 
         const isFavorited = await Favorite.isFavorited(userId, petId);
 
@@ -160,6 +206,10 @@ exports.checkFavorite = async (req, res) => {
 exports.getPetFavoriteCount = async (req, res) => {
     try {
         const { petId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(petId)) {
+            return res.status(400).json({ success: false, message: 'Invalid petId' });
+        }
 
         const count = await Favorite.getPetFavoriteCount(petId);
 

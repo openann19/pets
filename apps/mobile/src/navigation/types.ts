@@ -21,6 +21,8 @@ export type RootStackParamList = {
   Map: undefined;
   Home: undefined;
   Premium: undefined;
+  PremiumSuccess: { sessionId?: string };
+  PremiumCancel: undefined;
   Subscription: undefined;
   AIBio: undefined;
   AIPhotoAnalyzer: undefined;
@@ -64,6 +66,7 @@ export type TabParamList = {
   Profile: undefined;
   AdoptionManager: undefined;
   Premium: undefined;
+  BreedSelection: { onBreedSelected: (selectedBreeds: string[]) => void };
 };
 
 // Onboarding Stack Types

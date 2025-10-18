@@ -7,7 +7,8 @@
  * - Secret entropy checking
  */
 
-const zod = require('zod'); // Using zod for schema validation
+// Note: zod was previously required here but not used. Avoid requiring optional deps in early boot paths
+// to keep tests and minimal environments lightweight.
 
 // Simple console logger for validation (before full logger is initialized)
 const validationLogger = {
@@ -30,42 +31,42 @@ const envSchema = {
   JWT_REFRESH_SECRET: { type: 'secret', required: true, minLength: 32 },
   JWT_EXPIRY: { type: 'duration', required: false, default: '1h' },
   JWT_REFRESH_EXPIRY: { type: 'duration', required: false, default: '7d' },
-  
+
   // Database
   MONGODB_URI: { type: 'mongodb', required: true },
   REDIS_URL: { type: 'redis', required: false },
-  
+
   // External services
   CLIENT_URL: { type: 'url', required: true },
   ADMIN_URL: { type: 'url', required: false },
-  
+
   // Stripe integration
   STRIPE_SECRET_KEY: { type: 'secret', required: 'production', pattern: /^sk_(test|live)_/ },
   STRIPE_WEBHOOK_SECRET: { type: 'secret', required: 'production' },
   STRIPE_PRICE_ID_PREMIUM: { type: 'string', required: 'production', pattern: /^price_/ },
   STRIPE_PRICE_ID_ULTIMATE: { type: 'string', required: 'production', pattern: /^price_/ },
-  
+
   // File storage
   CLOUDINARY_CLOUD_NAME: { type: 'string', required: 'production' },
   CLOUDINARY_API_KEY: { type: 'secret', required: 'production' },
   CLOUDINARY_API_SECRET: { type: 'secret', required: 'production' },
-  
+
   // API rate limiting
   RATE_LIMIT_WINDOW_MS: { type: 'number', required: false, default: '60000' },
   RATE_LIMIT_MAX_REQUESTS: { type: 'number', required: false, default: '100' },
-  
+
   // Security
   CONFIG_ENCRYPTION_KEY: { type: 'secret', required: true, minLength: 32 },
   CONFIG_ENCRYPTION_KEY_V2: { type: 'secret', required: false, minLength: 32 },
   CORS_ORIGINS: { type: 'string', required: false },
-  
+
   // Email
   SMTP_HOST: { type: 'string', required: 'production' },
   SMTP_PORT: { type: 'port', required: 'production' },
   SMTP_USER: { type: 'string', required: 'production' },
   SMTP_PASS: { type: 'secret', required: 'production' },
   EMAIL_FROM: { type: 'email', required: 'production' },
-  
+
   // Monitoring
   SENTRY_DSN: { type: 'url', required: 'production' },
   SENTRY_ENVIRONMENT: { type: 'string', required: false },
@@ -111,18 +112,19 @@ const validators = {
  */
 function validateEnv() {
   validationLogger.info('Starting environment variable validation');
-  
+
   const errors = [];
   const warnings = [];
   const validatedEnv = {};
   const isProduction = process.env.NODE_ENV === 'production';
-  
+  const isTest = process.env.NODE_ENV === 'test';
+
   // Process each variable defined in the schema
   for (const [key, schema] of Object.entries(envSchema)) {
     const value = process.env[key];
-    const isRequired = schema.required === true || 
-                      (schema.required === 'production' && isProduction);
-    
+    const isRequired = schema.required === true ||
+      (schema.required === 'production' && isProduction);
+
     // Check if required variable is missing
     if (isRequired && (value === undefined || value === '')) {
       errors.push({
@@ -132,16 +134,16 @@ function validateEnv() {
       });
       continue;
     }
-    
+
     // If variable is not set but has a default, use the default
     if ((value === undefined || value === '') && schema.default !== undefined) {
       validatedEnv[key] = schema.default;
       continue;
     }
-    
+
     // Skip further validation if the variable is not set and not required
     if (value === undefined || value === '') continue;
-    
+
     // Type validation
     const validator = validators[schema.type];
     if (validator && !validator(value, schema)) {
@@ -153,7 +155,7 @@ function validateEnv() {
       });
       continue;
     }
-    
+
     // Pattern validation if specified
     if (schema.pattern && !schema.pattern.test(value)) {
       errors.push({
@@ -163,13 +165,13 @@ function validateEnv() {
       });
       continue;
     }
-    
+
     // Min/max validation for numeric types
-    if ((schema.type === 'number' || schema.type === 'float') && 
-        (schema.min !== undefined || schema.max !== undefined)) {
+    if ((schema.type === 'number' || schema.type === 'float') &&
+      (schema.min !== undefined || schema.max !== undefined)) {
       const numValue = Number(value);
-      if ((schema.min !== undefined && numValue < schema.min) || 
-          (schema.max !== undefined && numValue > schema.max)) {
+      if ((schema.min !== undefined && numValue < schema.min) ||
+        (schema.max !== undefined && numValue > schema.max)) {
         errors.push({
           variable: key,
           message: `${key} must be between ${schema.min || 0} and ${schema.max || 'unlimited'}`,
@@ -178,7 +180,7 @@ function validateEnv() {
         continue;
       }
     }
-    
+
     // Additional security checks for secrets
     if (schema.type === 'secret') {
       // Check for obviously insecure values
@@ -187,7 +189,7 @@ function validateEnv() {
           'changeme', 'secret', 'password', 'your-secret', 'your-key',
           '123456', 'secretkey', 'apikey', 'change-me', 'example'
         ];
-        
+
         const lowerValue = value.toLowerCase();
         if (insecureValues.some(insecure => lowerValue.includes(insecure))) {
           errors.push({
@@ -199,25 +201,25 @@ function validateEnv() {
         }
       }
     }
-    
+
     // Warn about duplicated secrets in different variables
     if (schema.type === 'secret' && Object.entries(envSchema)
-        .filter(([k, s]) => k !== key && s.type === 'secret' && process.env[k] === value)
-        .length > 0) {
+      .filter(([k, s]) => k !== key && s.type === 'secret' && process.env[k] === value)
+      .length > 0) {
       warnings.push({
         variable: key,
         message: `${key} appears to use the same value as another secret`,
         severity: 'warning'
       });
     }
-    
+
     // Store the validated value
     validatedEnv[key] = value;
   }
-  
+
   // Special case: JWT secrets should be different
-  if (validatedEnv.JWT_SECRET && validatedEnv.JWT_REFRESH_SECRET && 
-      validatedEnv.JWT_SECRET === validatedEnv.JWT_REFRESH_SECRET) {
+  if (validatedEnv.JWT_SECRET && validatedEnv.JWT_REFRESH_SECRET &&
+    validatedEnv.JWT_SECRET === validatedEnv.JWT_REFRESH_SECRET) {
     if (isProduction) {
       errors.push({
         variable: 'JWT_REFRESH_SECRET',
@@ -232,12 +234,12 @@ function validateEnv() {
       });
     }
   }
-  
+
   // Special case: Stripe key environment mismatch
   if (validatedEnv.STRIPE_SECRET_KEY) {
     const isTestKey = validatedEnv.STRIPE_SECRET_KEY.startsWith('sk_test_');
     const isLiveKey = validatedEnv.STRIPE_SECRET_KEY.startsWith('sk_live_');
-    
+
     if (isProduction && isTestKey) {
       warnings.push({
         variable: 'STRIPE_SECRET_KEY',
@@ -252,35 +254,38 @@ function validateEnv() {
       });
     }
   }
-  
+
   // Report errors and exit if any critical issues
   if (errors.length > 0) {
-    validationLogger.error('Environment validation failed'); 
+    validationLogger.error('Environment validation failed');
     errors.forEach(e => validationLogger.error(`  - ${e.variable}: ${e.message}`));
-    
+
     console.error('\n❌ Environment Validation Failed:\n');
     errors.forEach((error, index) => {
       console.error(`  ${index + 1}. ${error.message}`);
     });
     console.error('\n💡 Tip: Copy .env.example to .env and fill in the values\n');
-    process.exit(1);
+    // During test runs, do not exit the process. Proceed with defaults to keep tests isolated from env.
+    if (!isTest) {
+      process.exit(1);
+    }
   }
-  
+
   // Report warnings but continue
   if (warnings.length > 0) {
     validationLogger.warn('Environment validation warnings');
     warnings.forEach(w => validationLogger.warn(`  - ${w.variable}: ${w.message}`));
-    
+
     console.warn('\n⚠️ Environment Validation Warnings:\n');
     warnings.forEach((warning, index) => {
       console.warn(`  ${index + 1}. ${warning.message}`);
     });
     console.warn('');
   }
-  
+
   // Log successful validation
   validationLogger.info(`Environment variables validated successfully (${validatedEnv.NODE_ENV || 'development'})`);
-  
+
   // Log sanitized configuration (without sensitive data)
   const configSummary = {
     environment: validatedEnv.NODE_ENV || 'development',
@@ -293,9 +298,9 @@ function validateEnv() {
     smtp: validatedEnv.SMTP_HOST ? 'Configured' : 'Not configured',
     sentry: validatedEnv.SENTRY_DSN ? 'Configured' : 'Not configured'
   };
-  
+
   validationLogger.info('Server configuration loaded');
-  
+
   // Console output for human-readable summary
   console.log('\n📋 Configuration Summary:');
   console.log(`  • Environment: ${configSummary.environment}`);
@@ -309,7 +314,7 @@ function validateEnv() {
   console.log(`  • Email: ${configSummary.smtp === 'Configured' ? '✓' : '✗'} ${configSummary.smtp}`);
   console.log(`  • Error Monitoring: ${configSummary.sentry === 'Configured' ? '✓' : '✗'} ${configSummary.sentry}`);
   console.log('');
-  
+
   return validatedEnv;
 }
 

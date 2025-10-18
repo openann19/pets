@@ -2,7 +2,7 @@ import { useDialog } from '@react-aria/dialog';
 import { FocusScope } from '@react-aria/focus';
 import { useModal, useOverlay, usePreventScroll } from '@react-aria/overlays';
 import { mergeProps } from '@react-aria/utils';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAnimation } from '../../hooks/useAnimation';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -56,37 +56,37 @@ export interface DialogProps {
    * Visual variant of the dialog
    */
   variant?: 'standard' | 'blurred' | 'minimal' | 'branded';
-  
+
   /**
    * Animation preset for dialog entry
    */
   animationPreset?: 'scale' | 'slide' | 'fade' | 'bounce' | 'none';
-  
+
   /**
    * Position of dialog on screen
    */
   position?: 'center' | 'top' | 'bottom' | 'left' | 'right';
-  
+
   /**
    * Whether to show backdrop blur effect
    */
   blurBackground?: boolean;
-  
+
   /**
    * Whether to render with Neumorphic design style
    */
   neumorphic?: boolean;
-  
+
   /**
    * Custom header component
    */
   headerComponent?: React.ReactNode;
-  
+
   /**
    * Custom footer component
    */
   footerComponent?: React.ReactNode;
-  
+
   /**
    * Whether to allow dragging the dialog (mobile friendly)
    */
@@ -121,7 +121,7 @@ export const Dialog: React.FC<DialogProps> = ({
   const [dragging, setDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const { isDarkMode } = useTheme();
-  
+
   // Animation control
   const { styles, animate } = useAnimation();
 
@@ -137,7 +137,7 @@ export const Dialog: React.FC<DialogProps> = ({
       return () => { clearTimeout(timer); };
     }
     return undefined;
-  }, [isOpen, animationPreset, animate]);
+  }, [isOpen, animationPreset, animate, mounted]);
 
   // Dialog accessibility setup
   const { dialogProps, titleProps } = useDialog(
@@ -161,11 +161,11 @@ export const Dialog: React.FC<DialogProps> = ({
   // Handle drag interactions
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent): void => {
     if (!draggable) return;
-    
+
     setDragging(true);
     const clientX = 'touches' in e ? e.touches[0]?.clientX || 0 : e.clientX;
     const clientY = 'touches' in e ? e.touches[0]?.clientY || 0 : e.clientY;
-    
+
     if (ref.current) {
       const rect = ref.current.getBoundingClientRect();
       setDragOffset({
@@ -175,19 +175,19 @@ export const Dialog: React.FC<DialogProps> = ({
     }
   };
 
-  const handleDragMove = (e: MouseEvent | TouchEvent): void => {
+  const handleDragMove = useCallback((e: MouseEvent | TouchEvent): void => {
     if (!dragging || !ref.current) return;
-    
+
     const clientX = 'touches' in e ? e.touches[0]?.clientX || 0 : e.clientX;
     const clientY = 'touches' in e ? e.touches[0]?.clientY || 0 : e.clientY;
-    
+
     ref.current.style.left = `${clientX - dragOffset.x}px`;
     ref.current.style.top = `${clientY - dragOffset.y}px`;
-  };
+  }, [dragging, dragOffset]);
 
-  const handleDragEnd = (): void => {
+  const handleDragEnd = useCallback((): void => {
     setDragging(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (draggable !== null && draggable !== undefined) {
@@ -195,7 +195,7 @@ export const Dialog: React.FC<DialogProps> = ({
       document.addEventListener('touchmove', handleDragMove);
       document.addEventListener('mouseup', handleDragEnd);
       document.addEventListener('touchend', handleDragEnd);
-      
+
       return () => {
         document.removeEventListener('mousemove', handleDragMove);
         document.removeEventListener('touchmove', handleDragMove);
@@ -204,8 +204,8 @@ export const Dialog: React.FC<DialogProps> = ({
       };
     }
     return undefined;
-  }, [draggable, dragging]);
-  
+  }, [draggable, dragging, handleDragMove, handleDragEnd]);
+
   // Size classes with responsive design
   const sizeClasses = {
     small: 'w-full max-w-md',
@@ -213,7 +213,7 @@ export const Dialog: React.FC<DialogProps> = ({
     large: 'w-full max-w-3xl',
     fullscreen: 'w-[98vw] h-[90vh] max-w-none'
   };
-  
+
   // Position classes
   const positionClasses = {
     center: 'items-center justify-center',
@@ -222,23 +222,23 @@ export const Dialog: React.FC<DialogProps> = ({
     left: 'items-center justify-start pl-8',
     right: 'items-center justify-end pr-8'
   };
-  
+
   // Variant style classes
   const variantClasses = {
-    standard: isDarkMode 
-      ? 'bg-gray-900 text-white border border-gray-700' 
+    standard: isDarkMode
+      ? 'bg-gray-900 text-white border border-gray-700'
       : 'bg-white text-gray-900',
-    blurred: isDarkMode 
-      ? 'bg-gray-900/80 backdrop-blur-xl text-white border border-gray-700/50' 
+    blurred: isDarkMode
+      ? 'bg-gray-900/80 backdrop-blur-xl text-white border border-gray-700/50'
       : 'bg-white/90 backdrop-blur-xl text-gray-900',
-    minimal: isDarkMode 
-      ? 'bg-gray-900/50 backdrop-blur-lg text-white' 
+    minimal: isDarkMode
+      ? 'bg-gray-900/50 backdrop-blur-lg text-white'
       : 'bg-white/80 backdrop-blur-lg text-gray-900',
-    branded: isDarkMode 
-      ? 'bg-gradient-to-br from-blue-900 to-indigo-900 text-white' 
+    branded: isDarkMode
+      ? 'bg-gradient-to-br from-blue-900 to-indigo-900 text-white'
       : 'bg-gradient-to-br from-blue-50 to-indigo-100 text-gray-900'
   };
-  
+
   // Neumorphic effect classes
   const neumorphicClasses = neumorphic
     ? isDarkMode
@@ -249,16 +249,16 @@ export const Dialog: React.FC<DialogProps> = ({
   // Animation classes based on preset
   const animationClasses = {
     scale: styles.scaleTransition,
-    slide: position === 'top' || position === 'bottom' 
-      ? styles.slideVerticalTransition 
+    slide: position === 'top' || position === 'bottom'
+      ? styles.slideVerticalTransition
       : styles.slideHorizontalTransition,
     fade: styles.fadeTransition,
     bounce: styles.bounceTransition,
     none: ''
   };
-  
+
   // Backdrop classes with blur effect
-  const backdropClasses = blurBackground 
+  const backdropClasses = blurBackground
     ? 'backdrop-blur-sm'
     : '';
 
@@ -266,7 +266,7 @@ export const Dialog: React.FC<DialogProps> = ({
   if (!isOpen && !mounted) return null;
 
   return (
-    <div 
+    <div
       className={`
         fixed inset-0 z-50 flex p-4 transition-opacity duration-300
         ${isOpen ? 'opacity-100' : 'opacity-0'}
@@ -294,21 +294,21 @@ export const Dialog: React.FC<DialogProps> = ({
           onTouchStart={handleDragStart}
         >
           {/* Drag handle for mobile (visible only if draggable) */}
-          {draggable !== undefined &&  (
+          {draggable !== undefined && (
             <div className="flex justify-center py-2 touch-none">
               <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
             </div>
           )}
-          
+
           {/* Custom header or default header */}
           {headerComponent || ((title || description) && (
             <div className={`
               px-6 py-5 
               ${isDarkMode ? 'border-b border-gray-700' : 'border-b border-gray-200'}
             `}>
-              {title !== undefined &&  (
-                <h2 
-                  {...titleProps} 
+              {title !== undefined && (
+                <h2
+                  {...titleProps}
                   className={`
                     text-xl font-semibold 
                     ${isDarkMode ? 'text-white' : 'text-gray-900'}
@@ -317,7 +317,7 @@ export const Dialog: React.FC<DialogProps> = ({
                   {title}
                 </h2>
               )}
-              {description !== undefined &&  (
+              {description !== undefined && (
                 <p className={`
                   mt-2 text-sm 
                   ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}
@@ -332,9 +332,9 @@ export const Dialog: React.FC<DialogProps> = ({
           <div className="p-6">
             {children}
           </div>
-          
+
           {/* Footer if provided */}
-          {footerComponent !== undefined &&  (
+          {footerComponent !== undefined && (
             <div className={`
               px-6 py-4 
               ${isDarkMode ? 'border-t border-gray-700' : 'border-t border-gray-200'}

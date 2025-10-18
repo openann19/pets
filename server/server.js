@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -122,6 +123,7 @@ const aiModerationRoutes = require('./src/routes/aiModeration');
 const aiModerationAdminRoutes = require('./src/routes/aiModerationAdmin');
 const favoritesRoutes = require('./routes/favorites'); // Import favorites routes
 const storiesRoutes = require('./routes/stories');
+const conversationsRoutes = require('./src/routes/conversations');
 
 // Import middleware
 const errorHandler = require('./src/middleware/errorHandler');
@@ -131,14 +133,8 @@ const { requestIdMiddleware } = require('./src/middleware/requestId');
 
 const httpServer = createServer(app);
 
-// Socket.io setup with CORS
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
-    methods: ["GET", "POST"],
-    credentials: true
-  }
-});
+// Socket.io setup with CORS - moved to initializeSocket function
+// Make io available in all requests - handled in initializeSocket
 
 // 2025 Enhanced Security Middleware - Modern Web Security Standards
 app.use(helmet({
@@ -296,7 +292,8 @@ const authLimiter = rateLimit({
   keyGenerator: (req) => {
     // Use both IP and username (if provided) to prevent username enumeration
     const username = req.body?.username || req.body?.email || '';
-    return username ? `${req.ip}_${username}` : req.ip;
+    // Use library-provided IPv6-safe helper
+    return username ? `${ipKeyGenerator(req)}_${username}` : ipKeyGenerator(req);
   },
   skip: (req) => {
     // Skip rate limiting for password reset verification
@@ -329,7 +326,7 @@ const apiLimiter = rateLimit({
   keyGenerator: (req) => {
     // Use authenticated user ID if available, otherwise IP
     const userId = req.userId || req.user?.id;
-    return userId ? `user_${userId}` : req.ip;
+    return userId ? `user_${userId}` : ipKeyGenerator(req);
   },
   handler: (req, res, next, options) => {
     // Log rate limit exceeded
@@ -349,7 +346,7 @@ const premiumLimiter = rateLimit({
   max: parseInt(process.env.RATE_LIMIT_PREMIUM_MAX) || 300, // Higher limit for premium users
   keyGenerator: (req) => {
     const userId = req.userId || req.user?.id;
-    return userId ? `premium_${userId}` : req.ip;
+    return userId ? `premium_${userId}` : ipKeyGenerator(req);
   },
   skip: (req) => {
     // Skip for premium users with active subscription
@@ -513,8 +510,9 @@ app.use('/api/ai/moderation', authenticateToken, aiModerationRoutes);
 app.use('/api/admin/ai/moderation', csrfProtection, aiModerationAdminRoutes);
 app.use('/api/upload', csrfProtection, authenticateToken, uploadRoutes);
 app.use('/api/community', authenticateToken, communityRoutes); // Register community routes
-app.use('/api/favorites', authenticateToken, favoritesRoutes); // Register favorites routes
+app.use('/api/favorites', favoritesRoutes); // Favorites routes handle auth per-route
 app.use('/api/stories', authenticateToken, storiesRoutes);
+app.use('/api/conversations', conversationsRoutes);
 
 // Enhanced 2025 Features Routes
 app.use('/api/auth/biometric', biometricRoutes);
@@ -538,56 +536,63 @@ app.get('/api/health/legacy', (req, res) => {
   });
 });
 
-// Initialize WebSocket for real-time features
-const { initializeSocket } = require('./socket');
-initializeSocket(httpServer);
-
-// Socket.io for real-time chat
-const chatSocket = require('./src/services/chatSocket');
-chatSocket(io);
-
-// Initialize admin notifications service
-const adminNotifications = require('./src/services/adminNotifications');
-adminNotifications.setSocketIO(io);
-adminNotifications.setupAdminRoom(io);
-
-// Inject Socket.io into moderation routes for real-time updates
-moderationRoutes.setSocketIO(io);
-
-// Socket.io for pulse
-const pulseSocket = require('./src/sockets/pulse');
-pulseSocket(io);
-
-// Socket.io for suggestions
-try {
-  const suggestionsSocket = require('./src/sockets/suggestions');
-  suggestionsSocket(io);
-} catch (error) {
-  logger.warn('⚠️ Suggestions socket module not found or failed to load');
+// Initialize WebSocket for real-time features (only when not in test mode)
+let socketInstance;
+let io;
+if (process.env.NODE_ENV !== 'test') {
+  socketInstance = initializeSocket(httpServer);
+  io = socketInstance.io;
 }
 
-// Socket.io for WebRTC calling
-try {
-  const webrtcSocket = require('./src/sockets/webrtc');
-  const webrtcService = webrtcSocket(io);
-  logger.info('✅ WebRTC signaling service initialized');
+// Socket.io services (only when not in test mode)
+if (process.env.NODE_ENV !== 'test') {
+  // Socket.io for real-time chat
+  const chatSocket = require('./src/services/chatSocket');
+  chatSocket(io);
 
-  // Make WebRTC service available globally for admin functions
-  global.webrtcService = webrtcService;
-} catch (error) {
-  logger.warn('⚠️ WebRTC socket module not found or failed to load:', { error: error.message });
-}
+  // Initialize admin notifications service
+  const adminNotifications = require('./src/services/adminNotifications');
+  adminNotifications.setSocketIO(io);
+  adminNotifications.setupAdminRoom(io);
 
-// Socket.io for Map tracking
-try {
-  const MapSocketServer = require('./src/sockets/mapSocket');
-  const mapSocketServer = new MapSocketServer(httpServer);
-  logger.info('🗺️ Map socket server initialized');
+  // Inject Socket.io into moderation routes for real-time updates
+  moderationRoutes.setSocketIO(io);
 
-  // Make map service available globally
-  global.mapSocketServer = mapSocketServer;
-} catch (error) {
-  logger.warn('⚠️ Map socket module not found or failed to load:', { error: error.message });
+  // Socket.io for pulse
+  const pulseSocket = require('./src/sockets/pulse');
+  pulseSocket(io);
+
+  // Socket.io for suggestions
+  try {
+    const suggestionsSocket = require('./src/sockets/suggestions');
+    suggestionsSocket(io);
+  } catch (error) {
+    logger.warn('⚠️ Suggestions socket module not found or failed to load');
+  }
+
+  // Socket.io for WebRTC calling
+  try {
+    const webrtcSocket = require('./src/sockets/webrtc');
+    const webrtcService = webrtcSocket(io);
+    logger.info('✅ WebRTC signaling service initialized');
+
+    // Make WebRTC service available globally for admin functions
+    global.webrtcService = webrtcService;
+  } catch (error) {
+    logger.warn('⚠️ WebRTC socket module not found or failed to load:', { error: error.message });
+  }
+
+  // Socket.io for Map tracking
+  try {
+    const MapSocketServer = require('./src/sockets/mapSocket');
+    const mapSocketServer = new MapSocketServer(httpServer);
+    logger.info('🗺️ Map socket server initialized');
+
+    // Make map service available globally
+    global.mapSocketServer = mapSocketServer;
+  } catch (error) {
+    logger.warn('⚠️ Map socket module not found or failed to load:', { error: error.message });
+  }
 }
 
 // Sentry error handler (must be before other error handlers)
@@ -634,6 +639,10 @@ const startServer = async () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('👋 SIGTERM received, shutting down gracefully');
+  // Clean up socket connections
+  if (socketInstance && socketInstance.cleanup) {
+    socketInstance.cleanup();
+  }
   httpServer.close(() => {
     logger.info('✅ Process terminated');
   });
@@ -647,5 +656,7 @@ if (require.main === module) {
   });
 }
 
-// Export for testing
+// Export for testing: default export is the app function, with attached properties
 module.exports = app;
+module.exports.app = app;
+module.exports.httpServer = httpServer;

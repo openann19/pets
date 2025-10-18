@@ -1,53 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import {  } from '../../hooks/useTheme';
-import {  } from '../../hooks/useAnimation';
+import React, { useEffect, useState, type JSX } from 'react';
+import { useAnimation } from '../../hooks/useAnimation';
+import { useTheme } from '../../hooks/useTheme';
 
 export interface DarkModeToggleProps {
   /**
    * Size of the toggle button
    */
   size?: 'small' | 'medium' | 'large';
-  
+
   /**
    * Visual variant of the toggle
    */
   variant?: 'switch' | 'icon' | 'minimal' | 'animated';
-  
+
   /**
    * Position of the label relative to the toggle
    */
   labelPosition?: 'left' | 'right' | 'top' | 'bottom' | 'none';
-  
+
   /**
    * Custom label for light mode
    */
   lightModeLabel?: string;
-  
+
   /**
    * Custom label for dark mode
    */
   darkModeLabel?: string;
-  
+
   /**
    * Additional CSS classes
    */
   className?: string;
-  
+
   /**
    * Whether to show icon animation
    */
   animated?: boolean;
-  
+
   /**
    * Whether to show a subtle pulsing effect when mode changes
    */
   pulseOnChange?: boolean;
-  
+
   /**
    * ARIA label for accessibility
    */
   ariaLabel?: string;
-  
+
   /**
    * Callback when the theme is changed
    */
@@ -73,25 +73,25 @@ export const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
   const { isDarkMode, toggleTheme } = useTheme();
   const { animate } = useAnimation();
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
-  
+
   // Handle theme toggle
   const handleToggle = (): void => {
     toggleTheme();
-    
+
     if (animated !== null && animated !== undefined) {
       setIsAnimating(true);
       setTimeout(() => { setIsAnimating(false); }, 700);
     }
-    
+
     if (pulseOnChange !== null && pulseOnChange !== undefined) {
       animate('bounce');
     }
-    
+
     if (onThemeChange !== null && onThemeChange !== undefined) {
       onThemeChange(!isDarkMode);
     }
   };
-  
+
   // Run initial animation on mount
   useEffect(() => {
     if (animated !== null && animated !== undefined) {
@@ -121,7 +121,7 @@ export const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
       text: 'text-base'
     }
   };
-  
+
   // Label position classes
   const labelPositionClasses = {
     left: 'flex-row-reverse',
@@ -130,7 +130,7 @@ export const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
     bottom: 'flex-col',
     none: ''
   };
-  
+
   // Label spacing classes
   const labelSpacingClasses = {
     left: 'mr-3',
@@ -168,62 +168,62 @@ export const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
       />
     </div>
   );
-  
+
   // Render icon variant
   const renderIcon = (): JSX.Element => (
     <button
       onClick={handleToggle}
       className={`
         p-2 rounded-full transition-colors duration-300
-        ${isDarkMode 
-          ? 'bg-gray-800 text-yellow-300 hover:bg-gray-700' 
+        ${isDarkMode
+          ? 'bg-gray-800 text-yellow-300 hover:bg-gray-700'
           : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
         }
       `}
       aria-label={ariaLabel}
     >
       {isDarkMode ? (
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          className={sizeClasses[size].icon} 
-          fill="none" 
-          viewBox="0 0 24 24" 
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={sizeClasses[size].icon}
+          fill="none"
+          viewBox="0 0 24 24"
           stroke="currentColor"
         >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={2} 
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" 
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
           />
         </svg>
       ) : (
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          className={sizeClasses[size].icon} 
-          fill="none" 
-          viewBox="0 0 24 24" 
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={sizeClasses[size].icon}
+          fill="none"
+          viewBox="0 0 24 24"
           stroke="currentColor"
         >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={2} 
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" 
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
           />
         </svg>
       )}
     </button>
   );
-  
+
   // Render minimal variant
   const renderMinimal = (): JSX.Element => (
     <button
       onClick={handleToggle}
       className={`
         text-sm font-medium transition-colors duration-300
-        ${isDarkMode 
-          ? 'text-gray-300 hover:text-white' 
+        ${isDarkMode
+          ? 'text-gray-300 hover:text-white'
           : 'text-gray-600 hover:text-gray-900'
         }
       `}
@@ -232,15 +232,15 @@ export const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
       {isDarkMode ? darkModeLabel : lightModeLabel}
     </button>
   );
-  
+
   // Render animated variant
   const renderAnimated = (): JSX.Element => (
     <button
       onClick={handleToggle}
       className={`
         relative rounded-full overflow-hidden transition-all duration-300 cursor-pointer
-        ${isDarkMode 
-          ? 'bg-gray-800 border border-gray-600' 
+        ${isDarkMode
+          ? 'bg-gray-800 border border-gray-600'
           : 'bg-blue-50 border border-blue-200'
         }
         ${sizeClasses[size].container}
@@ -275,7 +275,7 @@ export const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
                 transformOrigin: '0 0',
                 transform: `rotate(${i * 45}deg) translateY(-${size === 'small' ? 5 : size === 'medium' ? 7 : 9}px)`
               }}
-             />
+            />
           ))}
         </div>
       </div>
@@ -301,7 +301,7 @@ export const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
       </div>
 
       {/* Stars */}
-      {isDarkMode !== undefined &&  (
+      {isDarkMode !== undefined && (
         <>
           {[...Array(3)].map((_, i) => (
             <div
@@ -317,13 +317,13 @@ export const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
                 left: `${15 + i * 25}%`,
                 animationDelay: `${i * 0.2}s`
               }}
-             />
+            />
           ))}
         </>
       )}
     </button>
   );
-  
+
   // Render variant based on prop
   const renderVariant = (): JSX.Element => {
     switch (variant) {
@@ -343,7 +343,7 @@ export const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
   // Render label based on position
   const renderLabel = (): JSX.Element | null => {
     if (labelPosition === 'none') return null;
-    
+
     return (
       <span className={`${sizeClasses[size].text} font-medium text-gray-700 dark:text-gray-300`}>
         {isDarkMode ? darkModeLabel : lightModeLabel}
@@ -352,7 +352,7 @@ export const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
   };
 
   return (
-    <div 
+    <div
       className={`
         inline-flex items-center
         ${labelPositionClasses[labelPosition]}
@@ -365,7 +365,7 @@ export const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
           {renderLabel()}
         </div>
       )}
-      <style jsx global>{`
+      <style>{`
         @keyframes twinkle {
           0% { opacity: 0.2; }
           50% { opacity: 1; }

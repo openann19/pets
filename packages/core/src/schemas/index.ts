@@ -116,3 +116,8 @@ export type UserProfileData = z.infer<typeof userProfileSchema>;
 export type MessageData = z.infer<typeof messageSchema>;
 export type SwipeData = z.infer<typeof swipeSchema>;
 export type SearchData = z.infer<typeof searchSchema>;
+
+// Stories
+export { createStorySchema as storyCreateSchema, replyStorySchema as storyReplySchema } from './story';
+export type { CreateStoryInput, ReplyStoryInput } from './story';
+

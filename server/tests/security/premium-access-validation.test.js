@@ -44,7 +44,7 @@ describe('Premium Access Security Tests', () => {
       }
     });
     await basicUser.save();
-    
+
     premiumUser = new User({
       email: 'premium-user@example.com',
       password: 'password123',
@@ -63,18 +63,32 @@ describe('Premium Access Security Tests', () => {
     // Create pets for each user
     basicUserPet = new Pet({
       name: 'Basic Pet',
-      species: 'Dog',
+      species: 'dog',
       breed: 'Mixed',
       age: 3,
+      gender: 'male',
+      size: 'medium',
+      intent: 'adoption',
+      location: {
+        type: 'Point',
+        coordinates: [0, 0]
+      },
       owner: basicUser._id
     });
     await basicUserPet.save();
 
     premiumUserPet = new Pet({
       name: 'Premium Pet',
-      species: 'Cat',
+      species: 'cat',
       breed: 'Persian',
       age: 2,
+      gender: 'female',
+      size: 'small',
+      intent: 'adoption',
+      location: {
+        type: 'Point',
+        coordinates: [0, 0]
+      },
       owner: premiumUser._id
     });
     await premiumUserPet.save();
@@ -99,10 +113,10 @@ describe('Premium Access Security Tests', () => {
         .post(`/api/premium/boost/${basicUserPet._id}`)
         .set('Authorization', `Bearer ${basicUserToken}`)
         .send({});
-      
+
       // Should be rejected with 403 Forbidden
       expect(response.status).toBe(403);
-      expect(response.body.message).toContain('premium users only');
+      expect(response.body.message).toContain('Premium subscription required');
     });
 
     it('should allow access to premium features for premium users', async () => {
@@ -111,7 +125,7 @@ describe('Premium Access Security Tests', () => {
         .post(`/api/premium/boost/${premiumUserPet._id}`)
         .set('Authorization', `Bearer ${premiumUserToken}`)
         .send({});
-      
+
       // Should succeed
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -124,14 +138,14 @@ describe('Premium Access Security Tests', () => {
         `/api/premium/usage`,
         `/api/premium/subscription`
       ];
-      
+
       for (const endpoint of premiumEndpoints) {
         const response = await request(app)
           .get(endpoint)
           .set('Authorization', `Bearer ${basicUserToken}`);
-        
+
         // All should be forbidden
-        expect(response.status).toBe(403).or(expect(response.status).toBe(404));
+        expect([403, 404]).toContain(response.status);
       }
     });
   });
@@ -142,13 +156,13 @@ describe('Premium Access Security Tests', () => {
       const jwtSecret = process.env.JWT_SECRET || 'test-secret';
       const payload = { userId: basicUser._id.toString(), premium: true };
       const tamperedToken = jwt.sign(payload, jwtSecret, { expiresIn: '1h' });
-      
+
       // Try to use tampered token to access premium features
       const response = await request(app)
         .post(`/api/premium/boost/${basicUserPet._id}`)
         .set('Authorization', `Bearer ${tamperedToken}`)
         .send({});
-      
+
       // Should be rejected as the token payload doesn't match the user's actual status
       expect(response.status).toBe(403);
     });
@@ -156,18 +170,18 @@ describe('Premium Access Security Tests', () => {
     it('should verify premium status from database, not just from token', async () => {
       // Create token with correct signature but manipulated claims
       const jwtSecret = process.env.JWT_SECRET || 'test-secret';
-      const payload = { 
+      const payload = {
         userId: basicUser._id.toString(),
         premium: { isActive: true, plan: 'ultimate' } // Falsely claiming ultimate status
       };
       const manipulatedToken = jwt.sign(payload, jwtSecret, { expiresIn: '1h' });
-      
+
       // Try to use this token to access premium features
       const response = await request(app)
         .post(`/api/premium/boost/${basicUserPet._id}`)
         .set('Authorization', `Bearer ${manipulatedToken}`)
         .send({});
-      
+
       // Should be rejected as server should check database, not trust the token
       expect(response.status).toBe(403);
     });
@@ -180,7 +194,7 @@ describe('Premium Access Security Tests', () => {
         .post(`/api/premium/boost/${basicUserPet._id}`)
         .set('Authorization', `Bearer ${premiumUserToken}`)
         .send({});
-      
+
       // Should be rejected with 404 Not Found
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
@@ -190,19 +204,26 @@ describe('Premium Access Security Tests', () => {
       // Create a new pet not owned by premium user
       const otherPet = new Pet({
         name: 'Other Pet',
-        species: 'Bird',
+        species: 'bird',
         breed: 'Parrot',
         age: 1,
+        gender: 'male',
+        size: 'small',
+        intent: 'adoption',
+        location: {
+          type: 'Point',
+          coordinates: [0, 0]
+        },
         owner: basicUser._id // Owned by basic user
       });
       await otherPet.save();
-      
+
       // Premium user tries to boost a pet they don't own
       const response = await request(app)
         .post(`/api/premium/boost/${otherPet._id}`)
         .set('Authorization', `Bearer ${premiumUserToken}`)
         .send({});
-      
+
       // Should be rejected
       expect(response.status).toBe(404);
       expect(response.body.message).toContain('not found');
@@ -217,7 +238,7 @@ describe('Premium Access Security Tests', () => {
         .post(`/api/premium/boost/${invalidPetId}`)
         .set('Authorization', `Bearer ${premiumUserToken}`)
         .send({});
-      
+
       // Should return error
       expect(response.status).toBe(404);
     });
@@ -229,7 +250,7 @@ describe('Premium Access Security Tests', () => {
         .post(`/api/premium/boost/${premiumUserPet._id}`)
         .set('Authorization', `Bearer ${premiumUserToken}`)
         .send(invalidBody);
-      
+
       // Should not crash with 500, but return appropriate error
       expect(response.status).not.toBe(500);
     });
@@ -241,13 +262,13 @@ describe('Premium Access Security Tests', () => {
       await User.findByIdAndUpdate(premiumUser._id, {
         'premium.expiresAt': new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 day in the past
       });
-      
+
       // Try to use premium feature
       const response = await request(app)
         .post(`/api/premium/boost/${premiumUserPet._id}`)
         .set('Authorization', `Bearer ${premiumUserToken}`)
         .send({});
-      
+
       // Should be rejected
       expect(response.status).toBe(403);
     });
@@ -268,16 +289,16 @@ describe('Premium Access Security Tests', () => {
         }
       });
       await trialUser.save();
-      
+
       const trialUserToken = generateTestToken(trialUser._id.toString());
-      
+
       // Try to use premium feature
       const response = await request(app)
         .get('/api/premium/super-likes')
         .set('Authorization', `Bearer ${trialUserToken}`);
-      
+
       // Should be rejected
-      expect(response.status).toBe(403).or(expect(response.status).toBe(404));
+      expect([403, 404]).toContain(response.status);
     });
   });
 });

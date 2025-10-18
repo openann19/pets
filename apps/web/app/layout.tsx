@@ -1,17 +1,31 @@
-// import ThemeToggle from '@/components/ThemeToggle';
-import KeyboardShortcutsOverlay from '@/components/KeyboardShortcuts/KeyboardShortcutsOverlay';
-import PWAInitializer from '@/components/PWA/PWAInitializer';
 import type { Metadata } from 'next';
-import ErrorBoundary from '../src/components/ErrorBoundary';
-import { ThemeScript } from '../src/contexts/ThemeContext';
+import { Inter } from 'next/font/google';
 import './globals.css';
+import '../src/polyfills'; // Import polyfills first
 import { Providers } from './providers';
+import ThemeToggle from '@/components/ThemeToggle';
+import BackgroundProvider from '@/components/Background/BackgroundProvider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { SafeAreaProvider } from '@/components/SafeAreaProvider';
+import { MobileOptimizationInit } from '@/components/MobileOptimizationInit';
+
+const inter = Inter({
+  subsets: ['latin'], // Optimized subset for perf
+  variable: '--font-inter', // Allow variable font usage in CSS
+  display: 'swap', // Fallback during load
+});
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover', // Enable safe area handling for iOS
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ec4899' },
+    { media: '(prefers-color-scheme: dark)', color: '#8b5cf6' },
+  ],
+  colorScheme: 'light dark',
 };
 
 export const metadata: Metadata = {
@@ -24,11 +38,25 @@ export const metadata: Metadata = {
   authors: [{ name: 'PawfectMatch Team' }],
   creator: 'PawfectMatch',
   publisher: 'PawfectMatch',
-  manifest: '/manifest.json', // PWA manifest
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'PawfectMatch',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': 'PawfectMatch',
+    'application-name': 'PawfectMatch',
+    'msapplication-TileColor': '#ec4899',
+    'msapplication-config': '/browserconfig.xml',
   },
   robots: 'index, follow', // SEO: Allow crawling
   openGraph: {
@@ -56,11 +84,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://pawfectmatch.com', // SEO: Canonical URL
   },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'PawfectMatch',
-  },
 };
 
 export default function RootLayout({
@@ -69,30 +92,35 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-    >
-      <head>
-        {/* Prevent flash of unstyled content (FOUC) for theme */}
-        <ThemeScript />
-      </head>
+    <html lang="en" suppressHydrationWarning>
       <body
-        className="min-h-screen bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
+        className={`${inter.variable} font-inter min-h-screen bg-gray-50 text-gray-900`}
         role="document"
         suppressHydrationWarning
       >
-        <ErrorBoundary>
-          <Providers>
-            {/* Initialize PWA features */}
-            <PWAInitializer />
-
-            {/* Global Keyboard Shortcuts Overlay (Press '?' to show) */}
-            <KeyboardShortcutsOverlay />
-
-            <main role="main">{children}</main>
-          </Providers>
-        </ErrorBoundary>
+        {/* Skip to content for keyboard and screen readers */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[1100] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-md focus:shadow-lg"
+        >
+          Skip to content
+        </a>
+        <Providers>
+          <SafeAreaProvider>
+            <BackgroundProvider>
+              <MobileOptimizationInit />
+              {/* Global floating theme toggle - always visible */}
+              <div className="fixed top-4 right-4 z-[1000]">
+                <ThemeToggle />
+              </div>
+              <main id="main-content" role="main">
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
+              </main>
+            </BackgroundProvider>
+          </SafeAreaProvider>
+        </Providers>
       </body>
     </html>
   );

@@ -1,20 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CheckIcon, MicrophoneIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
-import { CheckCircleIcon as CheckSolidIcon } from '@heroicons/react/24/solid';
-import type { Message, User } from '@pawfectmatch/core';
-
-type VoiceMessage = Message & { messageType: 'voice'; duration?: number };
-type VideoMessage = Message & { messageType: 'video'; duration?: number };
-type AudioMessage = Message & { messageType: 'audio'; duration?: number };
-type GifMessage = Message & { messageType: 'gif' };
-type StickerMessage = Message & { messageType: 'sticker' };
-
-const isVoiceMessage = (m: Message): m is VoiceMessage => m.messageType === 'voice';
-const isVideoMessage = (m: Message): m is VideoMessage => m.messageType === 'video';
-const isAudioMessage = (m: Message): m is AudioMessage => m.messageType === 'audio';
-const isGifMessage = (m: Message): m is GifMessage => m.messageType === 'gif';
-const isStickerMessage = (m: Message): m is StickerMessage => m.messageType === 'sticker';
+import Image from 'next/image';
+import { CheckIcon } from '@heroicons/react/24/outline';
+import { CheckIcon as CheckSolidIcon } from '@heroicons/react/24/solid';
+import { Message, User } from '../../types';
 
 interface MessageBubbleProps {
   message: Message;
@@ -24,19 +13,20 @@ interface MessageBubbleProps {
   showTimestamp?: boolean;
 }
 
-const MessageBubble = ({
+const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isOwnMessage,
   currentUser,
   showAvatar = true,
   showTimestamp = true,
-}: MessageBubbleProps) => {
+}) => {
+  const msg = message as any;
   // Sender is always a populated User object due to backend consistency fixes
-  const sender = message.sender;
-  const senderName = `${sender.firstName} ${sender.lastName}`;
+  const sender = msg.sender || {};
+  const senderName = `${sender.firstName || ''} ${sender.lastName || ''}`.trim() || 'User';
   const senderAvatar = sender.avatar;
 
-  const formatTime = (dateString: string): string => {
+  const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -45,7 +35,7 @@ const MessageBubble = ({
     });
   };
 
-  const isRead = message.readBy.some((receipt) => receipt.user !== currentUser._id);
+  const isRead = msg.readBy?.some((receipt: any) => receipt.user !== (currentUser as any)._id) || false;
 
   return (
     <motion.div
@@ -55,14 +45,10 @@ const MessageBubble = ({
       className={`flex items-end space-x-2 mb-4 ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''}`}
     >
       {/* Avatar */}
-      {showAvatar !== undefined && !isOwnMessage && (
+      {showAvatar && !isOwnMessage && (
         <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-400 to-purple-500 flex items-center justify-center text-white text-sm font-semibold overflow-hidden flex-shrink-0">
           {senderAvatar ? (
-            <img
-              src={senderAvatar}
-              alt={senderName}
-              className="w-full h-full object-cover"
-            />
+            <Image src={senderAvatar} alt={senderName} className="w-full h-full object-cover" width={32} height={32} />
           ) : (
             <span>{sender.firstName[0]}</span>
           )}
@@ -84,22 +70,21 @@ const MessageBubble = ({
           } ${isOwnMessage ? 'rounded-br-md' : 'rounded-bl-md'}`}
         >
           {/* Message content based on type */}
-          {message.messageType === 'text' && (
+          {msg.messageType === 'text' && (
             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-              {message.content}
+              {msg.content}
             </p>
           )}
 
-          {message.messageType === 'image' && message.attachments && (
+          {msg.messageType === 'image' && msg.attachments && (
             <div className="space-y-2">
-              {message.attachments.map((attachment, index) => (
-                <div
-                  key={index}
-                  className="rounded-lg overflow-hidden"
-                >
-                  <img
+              {msg.attachments.map((attachment: any, index: number) => (
+                <div key={index} className="rounded-lg overflow-hidden">
+                  <Image
                     src={attachment.url}
-                    alt={attachment.fileName || 'Image'}
+                    alt={(attachment as any).fileName || 'Image'}
+                    width={200}
+                    height={200}
                     className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                     onClick={() => {
                       // Could open image in modal
@@ -108,109 +93,45 @@ const MessageBubble = ({
                   />
                 </div>
               ))}
-              {message.content !== undefined && (
+              {message.content && (
                 <p className="text-sm leading-relaxed mt-2">{message.content}</p>
               )}
             </div>
           )}
 
-          {message.messageType === 'location' && (
+          {msg.messageType === 'location' && (
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <span className="text-lg">📍</span>
                 <span className="text-sm font-medium">Location shared</span>
               </div>
-              {message.content !== undefined && (
+              {message.content && (
                 <p className="text-sm opacity-90">{message.content}</p>
               )}
             </div>
           )}
 
-          {message.messageType === 'system' && (
+          {msg.messageType === 'system' && (
             <p className="text-sm italic opacity-75">{message.content}</p>
           )}
 
-          {isVoiceMessage(message) && (
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <MicrophoneIcon className="w-5 h-5" />
-                <span className="text-sm font-medium">
-                  {message.duration
-                    ? `${Math.floor((message.duration || 0) / 60)}:${(((message.duration || 0) % 60)).toString().padStart(2, '0')}`
-                    : 'Voice Message'}
-                </span>
-              </div>
-              {message.content && <p className="text-sm opacity-90">{message.content}</p>}
-            </div>
-          )}
-
-          {isVideoMessage(message) && (
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <VideoCameraIcon className="w-5 h-5" />
-                <span className="text-sm font-medium">
-                  {message.duration
-                    ? `${Math.floor((message.duration || 0) / 60)}:${(((message.duration || 0) % 60)).toString().padStart(2, '0')}`
-                    : 'Video Message'}
-                </span>
-              </div>
-              {message.content && <p className="text-sm opacity-90">{message.content}</p>}
-            </div>
-          )}
-
-          {isAudioMessage(message) && (
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <span className="text-lg">🎵</span>
-                <span className="text-sm font-medium">
-                  {message.duration
-                    ? `${Math.floor((message.duration || 0) / 60)}:${(((message.duration || 0) % 60)).toString().padStart(2, '0')}`
-                    : 'Audio Message'}
-                </span>
-              </div>
-              {message.content && <p className="text-sm opacity-90">{message.content}</p>}
-            </div>
-          )}
-
-          {isGifMessage(message) && (
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <span className="text-lg">🎭</span>
-                <span className="text-sm font-medium">GIF</span>
-              </div>
-              {message.content && <p className="text-sm opacity-90">{message.content}</p>}
-            </div>
-          )}
-
-          {isStickerMessage(message) && (
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <span className="text-lg">😊</span>
-                <span className="text-sm font-medium">Sticker</span>
-              </div>
-              {message.content && <p className="text-sm opacity-90">{message.content}</p>}
-            </div>
-          )}
-
           {/* Edited indicator */}
-          {message.isEdited !== undefined && (
-            <p
-              className={`text-xs mt-1 opacity-60 ${isOwnMessage ? 'text-pink-100' : 'text-gray-500'}`}
-            >
+          {message.isEdited && (
+            <p className={`text-xs mt-1 opacity-60 ${isOwnMessage ? 'text-pink-100' : 'text-gray-500'}`}>
               edited
             </p>
           )}
         </div>
 
         {/* Timestamp and read status */}
-        {showTimestamp !== undefined && (
-          <div
-            className={`flex items-center space-x-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
-          >
-            <span className="text-xs text-gray-500">{formatTime(message.sentAt)}</span>
-
+        {showTimestamp && (
+          <div className={`flex items-center space-x-1 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+            <span className="text-xs text-gray-500">
+              {formatTime(msg.sentAt || msg.createdAt)}
+            </span>
+            
             {/* Read status for own messages */}
-            {isOwnMessage !== undefined && (
+            {isOwnMessage && (
               <div className="flex items-center">
                 {isRead ? (
                   <CheckSolidIcon className="w-4 h-4 text-blue-500" />
@@ -224,7 +145,7 @@ const MessageBubble = ({
       </div>
 
       {/* Spacer for own messages to maintain alignment */}
-      {isOwnMessage !== undefined && <div className="w-8 flex-shrink-0" />}
+      {isOwnMessage && <div className="w-8 flex-shrink-0" />}
     </motion.div>
   );
 };

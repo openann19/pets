@@ -1,6 +1,13 @@
 const User = require('../models/User');
 const Match = require('../models/Match');
-const Message = require('../models/Message');
+let Message;
+try {
+  // Optional dependency: some environments/tests don't ship a standalone Message model
+  Message = require('../models/Message');
+} catch (e) {
+  Message = null;
+}
+const Conversation = require('../models/Conversation');
 const logger = require('../utils/logger');
 
 // Get account deletion status
@@ -144,18 +151,56 @@ const requestDataExport = async (req, res) => {
 
     // Add messages data
     if (includeMessages) {
-      const messages = await Message.find({
-        $or: [{ sender: userId }, { receiver: userId }]
-      }).populate('sender receiver match');
+      if (Message && typeof Message.find === 'function') {
+        const messages = await Message.find({
+          $or: [{ sender: userId }, { receiver: userId }]
+        }).populate('sender receiver match');
 
-      exportData.messages = messages.map(message => ({
-        id: message._id,
-        content: message.content,
-        type: message.type,
-        createdAt: message.createdAt,
-        matchId: message.match ? message.match._id : null,
-        isSender: message.sender._id.toString() === userId.toString()
-      }));
+        exportData.messages = messages.map(message => {
+          const senderId = message?.sender?._id ? message.sender._id.toString() : message?.sender?.toString?.();
+          return {
+            id: message._id,
+            content: message.content,
+            type: message.type,
+            createdAt: message.createdAt,
+            matchId: message.match ? (message.match._id || message.match) : null,
+            isSender: senderId === userId.toString()
+          };
+        });
+      } else {
+        // Fallback: infer messages from Conversation embedded documents
+        const conversations = await Conversation.find({ participants: userId }).lean();
+        const flat = [];
+        for (const conv of conversations) {
+          for (const m of (conv.messages || [])) {
+            flat.push({
+              _id: m._id,
+              content: m.content,
+              type: m.type,
+              createdAt: m.sentAt || m.createdAt,
+              sender: m.sender,
+              conversationParticipants: conv.participants
+            });
+          }
+        }
+        exportData.messages = flat.map(message => {
+          const senderId = message?.sender?._id ? message.sender._id.toString() : message?.sender?.toString?.();
+          let receiverId;
+          if (Array.isArray(message.conversationParticipants)) {
+            const others = message.conversationParticipants.map(id => id.toString()).filter(id => id !== userId.toString());
+            receiverId = others[0];
+          }
+          return {
+            id: message._id,
+            content: message.content,
+            type: message.type,
+            createdAt: message.createdAt,
+            matchId: null,
+            isSender: senderId === userId.toString(),
+            receiverId
+          };
+        });
+      }
     }
 
     // Generate export ID
@@ -323,9 +368,16 @@ const getProfileStats = async (req, res) => {
     });
 
     // Count messages
-    const messagesCount = await Message.countDocuments({
-      $or: [{ sender: userId }, { receiver: userId }]
-    });
+    let messagesCount = 0;
+    if (Message && typeof Message.countDocuments === 'function') {
+      messagesCount = await Message.countDocuments({
+        $or: [{ sender: userId }, { receiver: userId }]
+      });
+    } else {
+      // Fallback: count embedded messages across user's conversations
+      const convs = await Conversation.find({ participants: userId }).select('messages._id').lean();
+      messagesCount = convs.reduce((sum, c) => sum + ((c.messages && c.messages.length) || 0), 0);
+    }
 
     res.json({
       success: true,

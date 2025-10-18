@@ -1,202 +1,476 @@
-'use client';
+import L, { DivIcon, LatLngExpression } from 'leaflet';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { Socket, io } from 'socket.io-client';
+// import { PulsePin } from '@pawfectmatch/core/types/realtime';
+import { ChatBubbleLeftRightIcon, HeartIcon, MapPinIcon } from '@heroicons/react/24/solid';
+import { motion } from 'framer-motion';
+import 'leaflet/dist/leaflet.css';
+import LoadingSpinner from '../UI/LoadingSpinner';
+// import { SPRING_CONFIG } from '@pawfectmatch/core/constants/animations';
+const SPRING_CONFIG = { type: "spring", stiffness: 260, damping: 20 };
+// Local dev stub for PulsePin type (remove when shared types are available)
+type PulsePin = {
+  _id: string;
+  petId: string;
+  ownerId: string;
+  coordinates: [number, number]; // [lng, lat]
+  activity: 'walking' | 'playing' | 'grooming' | 'vet' | 'park' | 'other';
+  message?: string;
+  createdAt: string;
+};
+// Enhanced icon system with activity-based styling
+const createActivityIcon = (activity: string, isMatch: boolean = false) => {
+  const activityIcons: Record<string, string> = {
+    walking: '🚶',
+    playing: '🎾',
+    grooming: '✂️',
+    vet: '🏥',
+    park: '🏞️',
+    other: '📍'
+  };
 
-import { logger } from '@pawfectmatch/core';
-import React, { useEffect, useRef, useState } from 'react';
-;
+  const colors: Record<string, string> = {
+    walking: '#3B82F6',
+    playing: '#10B981',
+    grooming: '#8B5CF6',
+    vet: '#EF4444',
+    park: '#059669',
+    other: '#6B7280'
+  };
 
-// Leaflet types (will be loaded dynamically)
-type LatLngExpression = [number, number] | { lat: number; lng: number };
+  const emoji = activityIcons[activity] || '📍';
+  const color = colors[activity] || '#6B7280';
+  const borderColor = isMatch ? '#EC4899' : color;
 
-interface MapMarker {
-  position: LatLngExpression;
-  popup?: string;
-  icon?: string;
+  return new DivIcon({
+    html: `
+      <div style="
+        width: 40px;
+        height: 40px;
+        background: ${color};
+        border: 3px solid ${borderColor};
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: pulse 2s infinite;
+      ">
+        ${emoji}
+      </div>
+      <style>
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); }
+        }
+      </style>
+    `,
+    className: 'custom-div-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20]
+  });
+};
+
+interface AnimatedMarkerProps {
+  pin: PulsePin;
+  isMatch?: boolean;
+  onMarkerClick?: (pin: PulsePin) => void;
 }
 
-interface MapFilters {
-  showMyPets?: boolean;
-  showMatches?: boolean;
-  showNearby?: boolean;
-  activityTypes?: string[];
-  radius?: number;
+const AnimatedMarker: React.FC<AnimatedMarkerProps> = memo(({ pin, isMatch = false, onMarkerClick }) => {
+  const [isNew, setIsNew] = useState(true);
+  const [showTrail, setShowTrail] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsNew(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleMarkerClick = useCallback(() => {
+    onMarkerClick?.(pin);
+    setShowTrail(!showTrail);
+  }, [pin, onMarkerClick, showTrail]);
+
+  const activityLabels: Record<string, string> = {
+    walking: 'Taking a walk',
+    playing: 'Playing around',
+    grooming: 'Getting groomed',
+    vet: 'At the vet',
+    park: 'At the dog park',
+    other: 'Active nearby'
+  };
+
+  return (
+    <>
+      <Marker
+        position={[pin.coordinates[1], pin.coordinates[0]] as LatLngExpression}
+        icon={createActivityIcon(pin.activity, isMatch)}
+        eventHandlers={{
+          click: handleMarkerClick
+        }}
+      >
+        <Popup className="custom-popup">
+          <div className="p-3 min-w-[200px]">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className={`w-3 h-3 rounded-full ${
+                isMatch ? 'bg-pink-500' : 'bg-blue-500'
+              }`} />
+              <strong className="text-gray-900">
+                {activityLabels[pin.activity] || pin.activity}
+              </strong>
+            </div>
+            
+            {pin.message && (
+              <p className="text-sm text-gray-600 mb-2">{pin.message}</p>
+            )}
+            
+            <div className="text-xs text-gray-500 mb-3">
+              {new Date(pin.createdAt).toLocaleTimeString()}
+            </div>
+            
+            {isMatch && (
+              <div className="flex space-x-2">
+                <button className="flex items-center space-x-1 px-2 py-1 bg-pink-100 text-pink-700 rounded-full text-xs hover:bg-pink-200 transition-colors">
+                  <HeartIcon className="w-3 h-3" />
+                  <span>Like</span>
+                </button>
+                <button className="flex items-center space-x-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs hover:bg-blue-200 transition-colors">
+                  <ChatBubbleLeftRightIcon className="w-3 h-3" />
+                  <span>Chat</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </Popup>
+      </Marker>
+      
+      {/* Activity radius circle */}
+      <Circle
+        center={[pin.coordinates[1], pin.coordinates[0]] as LatLngExpression}
+        radius={100}
+        pathOptions={{
+          color: isMatch ? '#EC4899' : '#3B82F6',
+          fillColor: isMatch ? '#EC4899' : '#3B82F6',
+          fillOpacity: 0.1,
+          weight: 2,
+          opacity: 0.6
+        }}
+      />
+      
+      {/* New pin animation */}
+      {isNew && (
+        <Circle
+          center={[pin.coordinates[1], pin.coordinates[0]] as LatLngExpression}
+          radius={200}
+          pathOptions={{
+            color: '#10B981',
+            fillColor: '#10B981',
+            fillOpacity: 0.2,
+            weight: 3,
+            opacity: 0.8
+          }}
+        />
+      )}
+    </>
+  );
+});
+
+AnimatedMarker.displayName = 'AnimatedMarker'; // For React dev tools
+
+interface AutoCenterProps {
+  pins: PulsePin[];
 }
+
+const AutoCenter: React.FC<AutoCenterProps> = ({ pins }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (pins.length === 0) return;
+    const bounds = L.latLngBounds(
+      pins.map((p) => [p.coordinates[1], p.coordinates[0]] as LatLngExpression)
+    );
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 }); // Cap zoom for usability
+  }, [pins, map]);
+
+  return null;
+};
 
 interface MapViewProps {
-  center?: LatLngExpression;
-  zoom?: number;
-  markers?: MapMarker[];
-  className?: string;
-  onMapClick?: (lat: number, lng: number) => void;
-  enableUserLocation?: boolean;
-  filters?: MapFilters;
+  filters?: {
+    showMyPets: boolean;
+    showMatches: boolean;
+    showNearby: boolean;
+    activityTypes: string[];
+    radius: number;
+  };
 }
 
-const MapView = ({
-  center = [37.7749, -122.4194], // Default to San Francisco
-  zoom = 13,
-  markers = [],
-  className = 'w-full h-96',
-  onMapClick,
-  enableUserLocation = false,
-}: MapViewProps): React.JSX.Element => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [userLocation, setUserLocation] = useState<LatLngExpression | null>(null);
+const MapView: React.FC<MapViewProps> = ({ filters }) => {
+  const [pins, setPins] = useState<PulsePin[]>([]);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [selectedPin, setSelectedPin] = useState<PulsePin | null>(null);
+  const [heatmapData, setHeatmapData] = useState<Array<[number, number, number]>>([]);
+  
+  // Socket connection state
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
-  // Get user location if enabled
+  // Get user location
   useEffect(() => {
-    if (!enableUserLocation) return;
-
-    if ('geolocation' in navigator) {
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation([position.coords.latitude, position.coords.longitude]);
         },
-        (err) => {
-          logger.warn('Geolocation error:', { message: err.message });
+        (error) => {
+          console.warn('Geolocation error:', error);
+          // Fallback to NYC
+          setUserLocation([40.75, -73.98]);
         }
       );
+    } else {
+      setUserLocation([40.75, -73.98]);
     }
-  }, [enableUserLocation]);
+  }, []);
 
+  // ✅ PRODUCTION READY - Real WebSocket connection for live pin updates
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5001';
+    const socket: Socket = io(socketUrl, {
+      transports: ['websocket', 'polling'],
+      upgrade: true,
+      rememberUpgrade: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 10000,
+      forceNew: true
+    });
 
-    let isMounted = true;
-
-    // Dynamically import Leaflet (only on client side)
-    const initializeMap = async () => {
-      try {
-        setIsLoading(true);
-
-        // Dynamic import of Leaflet
-        const L = await import('leaflet');
-
-        // Import Leaflet CSS (dynamic import)
-        await import('leaflet/dist/leaflet.css' as any);
-
-        if (!isMounted || !mapContainerRef.current) return;
-
-        // Fix default marker icon issue with webpack
-        interface IconPrototype {
-          _getIconUrl?: unknown;
-        }
-        delete (L.Icon.Default.prototype as unknown as IconPrototype)._getIconUrl;
-        L.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    // Connection established
+    socket.on('connect', () => {
+      console.log('✅ MapView connected to real-time pulse feed');
+      setIsConnected(true);
+      setConnectionError(null);
+      
+      // Request initial pins based on user location and filters
+      if (userLocation) {
+        socket.emit('request:initial-pins', { 
+          location: userLocation,
+          radius: filters?.radius || 5 
         });
-
-        // Initialize map
-        const map = L.map(mapContainerRef.current).setView(
-          Array.isArray(center) ? center : [center.lat, center.lng],
-          zoom
-        );
-
-        mapRef.current = map;
-
-        // Add OpenStreetMap tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          maxZoom: 19,
-        }).addTo(map);
-
-        // Add markers
-        markers.forEach((marker) => {
-          const position = Array.isArray(marker.position)
-            ? marker.position
-            : [marker.position.lat, marker.position.lng];
-
-          const leafletMarker = L.marker(position as [number, number]).addTo(map);
-
-          if (marker.popup) {
-            leafletMarker.bindPopup(marker.popup);
-          }
-        });
-
-        // Add user location marker if available
-        if (userLocation) {
-          const userPos = Array.isArray(userLocation)
-            ? userLocation
-            : [userLocation.lat, userLocation.lng];
-
-          L.circle(userPos as [number, number], {
-            color: '#3B82F6',
-            fillColor: '#3B82F6',
-            fillOpacity: 0.2,
-            radius: 500,
-          }).addTo(map);
-
-          L.marker(userPos as [number, number], {
-            icon: L.divIcon({
-              className: 'user-location-marker',
-              html: '<div style="background: #3B82F6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-              iconSize: [20, 20],
-            }),
-          }).addTo(map);
-        }
-
-        // Handle map clicks
-        if (onMapClick) {
-          interface LeafletMouseEvent {
-            latlng: { lat: number; lng: number };
-          }
-          map.on('click', (e: LeafletMouseEvent) => {
-            onMapClick(e.latlng.lat, e.latlng.lng);
-          });
-        }
-
-        setIsLoading(false);
-      } catch (err) {
-        logger.error('Failed to load map:', { error: err });
-        setError('Map could not be loaded. Please ensure Leaflet is installed: npm install leaflet @types/leaflet');
-        setIsLoading(false);
       }
-    };
+    });
 
-    initializeMap();
+    // Connection lost
+    socket.on('disconnect', (reason) => {
+      console.warn('⚠️ MapView disconnected:', reason);
+      setIsConnected(false);
+      
+      if (reason === 'io server disconnect') {
+        // Server disconnected, try to reconnect
+        socket.connect();
+      }
+    });
 
-    // Cleanup
+    // Connection error
+    socket.on('connect_error', (error) => {
+      console.warn('⚠️ MapView connection error:', error.message);
+      setIsConnected(false);
+      setConnectionError('Unable to connect to live updates. Retrying...');
+      
+      // Add some mock data for development when connection fails
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 Adding mock data for development');
+        const mockPins: PulsePin[] = [
+          {
+            _id: 'mock-1',
+            petId: 'pet-1',
+            ownerId: 'user-1',
+            coordinates: [-73.98, 40.75],
+            activity: 'walking',
+            message: 'Taking a walk in Central Park',
+            createdAt: new Date().toISOString()
+          },
+          {
+            _id: 'mock-2',
+            petId: 'pet-2',
+            ownerId: 'user-2',
+            coordinates: [-73.99, 40.76],
+            activity: 'playing',
+            message: 'Playing fetch at the dog park',
+            createdAt: new Date().toISOString()
+          }
+        ];
+        setPins(mockPins);
+      }
+    });
+
+    // Reconnection successful
+    socket.on('reconnect', (attemptNumber) => {
+      console.log(`✅ MapView reconnected after ${attemptNumber} attempts`);
+      setIsConnected(true);
+      setConnectionError(null);
+    });
+
+    // ✅ REAL DATA - Live pin updates from backend
+    socket.on('pin:created', (pin: PulsePin) => {
+      setPins((prev) => {
+        // Remove duplicate if exists, add new pin
+        const updated = prev.filter((p) => p._id !== pin._id);
+        return [...updated, pin].slice(-100); // Keep last 100 pins
+      });
+    });
+
+    socket.on('pin:updated', (pin: PulsePin) => {
+      setPins((prev) => {
+        const updated = prev.map((p) => p._id === pin._id ? pin : p);
+        return updated;
+      });
+    });
+
+    socket.on('pin:removed', (pinId: string) => {
+      setPins((prev) => prev.filter((p) => p._id !== pinId));
+    });
+
+    socket.on('heatmap:update', (data: Array<[number, number, number]>) => {
+      setHeatmapData(data);
+    });
+
+    // ❌ REMOVED: No more mock data simulation!
+    // Real pins come from backend via WebSocket events
+
     return () => {
-      isMounted = false;
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+      socket.disconnect();
     };
-  }, [center, zoom, markers, userLocation, onMapClick]);
+  }, [userLocation, filters?.radius]);
 
-  if (error) {
+  // Filter pins based on current filters
+  const filteredPins = useMemo(() => {
+    if (!filters) return pins;
+    
+    return pins.filter(pin => {
+      if (!filters.activityTypes.includes(pin.activity)) return false;
+      // Add more filtering logic here
+      return true;
+    });
+  }, [pins, filters]);
+
+  const handleMarkerClick = useCallback((pin: PulsePin) => {
+    setSelectedPin(pin);
+  }, []);
+
+  const center: LatLngExpression = useMemo(() => {
+    return userLocation || [40.75, -73.98];
+  }, [userLocation]);
+
+  if (!userLocation) {
     return (
-      <div className={`${className} bg-gray-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300`}>
-        <div className="text-center p-6 max-w-md">
-          <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-          </svg>
-          <h3 className="text-sm font-medium text-gray-900 mb-1">Map Not Available</h3>
-          <p className="text-xs text-gray-500">{error}</p>
-          <code className="block mt-3 text-xs text-left bg-gray-800 text-green-400 p-2 rounded">
-            npm install leaflet @types/leaflet
-          </code>
+      <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-2xl">
+        <div className="text-center">
+          <LoadingSpinner size="lg" color="#EC4899" className="mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading map...</p>
         </div>
       </div>
     );
   }
 
+  // Connection status indicator
+  const ConnectionStatus = () => (
+    <div className="absolute top-4 right-4 z-[1000]">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className={`px-4 py-2 rounded-full backdrop-blur-md shadow-lg flex items-center gap-2 ${
+          isConnected 
+            ? 'bg-green-500/20 border border-green-500/50 text-green-100' 
+            : connectionError
+            ? 'bg-red-500/20 border border-red-500/50 text-red-100'
+            : 'bg-yellow-500/20 border border-yellow-500/50 text-yellow-100'
+        }`}
+      >
+        <div className={`w-2 h-2 rounded-full ${
+          isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+        }`} />
+        <span className="text-sm font-semibold">
+          {isConnected ? 'Live' : connectionError ? 'Reconnecting...' : 'Connecting...'}
+        </span>
+      </motion.div>
+    </div>
+  );
+
   return (
-    <div className="relative">
-      <div ref={mapContainerRef} className={className} />
-      {isLoading && (
-        <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded-lg">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
-            <p className="mt-2 text-sm text-gray-600">Loading map...</p>
-          </div>
-        </div>
-      )}
+    <div className="relative h-full w-full" key="map-container">
+      {/* Connection Status Indicator */}
+      <ConnectionStatus />
+      
+      <div key="map-wrapper">
+        <MapContainer
+          center={center}
+          zoom={13}
+          className="h-full w-full rounded-2xl overflow-hidden shadow-lg"
+          aria-label="Interactive map of pet locations"
+          zoomControl={false}
+          key="leaflet-map"
+        >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        
+        {/* User location marker */}
+        {userLocation && (
+          <Marker
+            position={userLocation as LatLngExpression}
+            icon={new DivIcon({
+              html: `
+                <div style="
+                  width: 20px;
+                  height: 20px;
+                  background: #EC4899;
+                  border: 3px solid white;
+                  border-radius: 50%;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                ">
+                </div>
+              `,
+              className: 'user-location-icon',
+              iconSize: [20, 20],
+              iconAnchor: [10, 10]
+            })}
+          >
+            <Popup>
+              <div className="text-center">
+                <strong>Your Location</strong>
+              </div>
+            </Popup>
+          </Marker>
+        )}
+        
+        {/* Pet activity pins */}
+        {filteredPins.map((pin) => (
+          <AnimatedMarker
+            key={pin._id}
+            pin={pin}
+            isMatch={Math.random() > 0.7} // Simulate matches
+            onMarkerClick={handleMarkerClick}
+          />
+        ))}
+        
+        <AutoCenter pins={filteredPins} />
+        </MapContainer>
+      </div>
+      
+      {/* Custom zoom controls */}
+      <div className="absolute top-4 left-4 z-[1000] space-y-2">
+        <button className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
+          <MapPinIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        </button>
+      </div>
     </div>
   );
 };

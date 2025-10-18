@@ -1,13 +1,8 @@
-import React, { useState } from 'react'
-import { logger } from '@pawfectmatch/core';
-;
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SPRING_CONFIG } from '../../constants/animations';
-import {
-  SparklesIcon,
-  PencilIcon,
-} from '@heroicons/react/24/outline';
-import PremiumButton from '../ui/PremiumButton';
+import { SparklesIcon, PencilIcon } from '@heroicons/react/24/outline';
+import PremiumButton from '../UI/PremiumButton';
 
 interface AIBioAssistantProps {
   currentBio?: string;
@@ -21,12 +16,12 @@ interface AIBioAssistantProps {
  * Implements Phase 3 requirements for AI-driven personalization
  * Connects to backend AI service for creative bio generation
  */
-const AIBioAssistant = ({
+const AIBioAssistant: React.FC<AIBioAssistantProps> = ({
   currentBio = '',
   onBioGenerated,
   petName = 'your pet',
-  className = '',
-}: AIBioAssistantProps) => {
+  className = ''
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
@@ -36,37 +31,26 @@ const AIBioAssistant = ({
   // Using rules-compliant SPRING_CONFIG from constants
 
   const suggestedKeywords = [
-    'playful',
-    'gentle',
-    'energetic',
-    'cuddly',
-    'smart',
-    'loyal',
-    'friendly',
-    'adventurous',
-    'calm',
-    'social',
-    'loves treats',
-    'loves walks',
-    'loves fetch',
-    'loves naps',
+    'playful', 'gentle', 'energetic', 'cuddly', 'smart',
+    'loyal', 'friendly', 'adventurous', 'calm', 'social',
+    'loves treats', 'loves walks', 'loves fetch', 'loves naps'
   ];
 
-  const handleToggle = (): void => {
+  const handleToggle = () => {
     setIsOpen(!isOpen);
   };
 
-  const addKeyword = (keyword: string): void => {
+  const addKeyword = (keyword: string) => {
     if (keywords.length < 6 && !keywords.includes(keyword)) {
       setKeywords([...keywords, keyword]);
     }
   };
 
-  const removeKeyword = (keyword: string): void => {
-    setKeywords(keywords.filter((k) => k !== keyword));
+  const removeKeyword = (keyword: string) => {
+    setKeywords(keywords.filter(k => k !== keyword));
   };
 
-  const handleAddCustomKeyword = (): void => {
+  const handleAddCustomKeyword = () => {
     if (newKeyword.trim() && !keywords.includes(newKeyword.trim())) {
       addKeyword(newKeyword.trim());
       setNewKeyword('');
@@ -80,31 +64,32 @@ const AIBioAssistant = ({
 
     try {
       // Call AI service (implementing Phase 3 requirement)
-      const response = await fetch(`${process.env['REACT_APP_API_URL']}/ai/generate-bio`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/ai/generate-bio`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
           keywords,
           petName,
-          currentBio,
-        }),
+          currentBio
+        })
       });
 
       if (!response.ok) throw new Error('Failed to generate bio');
 
       const data = await response.json();
       setGeneratedBio(data.bio);
+
     } catch (error) {
-      logger.error('Bio generation failed:', { error });
+      console.error('Bio generation failed:', error);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const acceptBio = (): void => {
+  const acceptBio = () => {
     onBioGenerated(generatedBio);
     setIsOpen(false);
     setGeneratedBio('');
@@ -112,7 +97,7 @@ const AIBioAssistant = ({
     // keep UX snappy without external feedback service
   };
 
-  const regenerateBio = (): void => {
+  const regenerateBio = () => {
     setGeneratedBio('');
     generateBio();
   };
@@ -129,9 +114,10 @@ const AIBioAssistant = ({
         <SparklesIcon className="w-5 h-5" />
         <span className="text-sm font-medium">AI Assist</span>
       </motion.button>
+
       {/* AI Bio Assistant Modal */}
       <AnimatePresence>
-        {isOpen !== undefined && (
+        {isOpen && (
           <>
             {/* Backdrop */}
             <motion.div
@@ -157,7 +143,9 @@ const AIBioAssistant = ({
                       <SparklesIcon className="w-6 h-6 text-purple-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">AI Bio Assistant</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        AI Bio Assistant
+                      </h3>
                       <p className="text-sm text-gray-600">
                         Help me write a creative bio for {petName}
                       </p>
@@ -174,7 +162,7 @@ const AIBioAssistant = ({
                         <label className="block text-sm font-medium text-gray-700 mb-3">
                           Select personality traits (choose up to 6):
                         </label>
-
+                        
                         {/* Selected Keywords */}
                         {keywords.length > 0 && (
                           <div className="flex flex-wrap gap-2 mb-4">
@@ -205,25 +193,17 @@ const AIBioAssistant = ({
                                 keywords.includes(keyword)
                                   ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                                   : keywords.length >= 6
-                                    ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
-                                    : 'bg-white text-gray-700 border-gray-300 hover:border-purple-300 hover:text-purple-600'
+                                  ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+                                  : 'bg-white text-gray-700 border-gray-300 hover:border-purple-300 hover:text-purple-600'
                               }`}
-                              whileHover={
-                                !keywords.includes(keyword) && keywords.length < 6
-                                  ? {
-                                      scale: 1.05,
-                                      transition: SPRING_CONFIG,
-                                    }
-                                  : {}
-                              }
-                              whileTap={
-                                !keywords.includes(keyword) && keywords.length < 6
-                                  ? {
-                                      scale: 0.95,
-                                      transition: SPRING_CONFIG,
-                                    }
-                                  : {}
-                              }
+                              whileHover={!keywords.includes(keyword) && keywords.length < 6 ? { 
+                                scale: 1.05, 
+                                transition: SPRING_CONFIG 
+                              } : {}}
+                              whileTap={!keywords.includes(keyword) && keywords.length < 6 ? { 
+                                scale: 0.95, 
+                                transition: SPRING_CONFIG 
+                              } : {}}
                               layout
                             >
                               {keyword}
@@ -263,10 +243,15 @@ const AIBioAssistant = ({
                     >
                       <div className="flex items-center space-x-2">
                         <PencilIcon className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-medium text-green-600">Generated Bio:</span>
+                        <span className="text-sm font-medium text-green-600">
+                          Generated Bio:
+                        </span>
                       </div>
+                      
                       <div className="p-4 bg-gray-50 rounded-lg border">
-                        <p className="text-gray-800 leading-relaxed">{generatedBio}</p>
+                        <p className="text-gray-800 leading-relaxed">
+                          {generatedBio}
+                        </p>
                       </div>
                     </motion.div>
                   )}

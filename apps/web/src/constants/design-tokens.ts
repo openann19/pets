@@ -4,7 +4,7 @@
  */
 
 // ====== COLOR PALETTE ======
-export const _COLORS = {
+export const COLORS = {
   // Brand Primary (Pink/Rose)
   primary: {
     50: '#fdf2f8',
@@ -18,7 +18,7 @@ export const _COLORS = {
     800: '#9d174d',
     900: '#831843',
   },
-
+  
   // Brand Secondary (Purple/Violet)
   secondary: {
     50: '#faf5ff',
@@ -93,7 +93,7 @@ export const GRADIENTS = {
   // Primary brand gradients
   primary: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
   secondary: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-
+  
   // Premium mesh gradients
   mesh: {
     warm: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 25%, #c44569 50%, #a8385d 75%, #7f2c53 100%)',
@@ -119,52 +119,52 @@ export const GRADIENTS = {
 // ====== SHADOWS ======
 export const SHADOWS = {
   // Standard shadows
-  'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-  'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-  'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-  'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+  sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+  md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+  lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+  xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
   '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
 
   // Premium shadows
-  'premium': '0 20px 40px -12px rgba(0, 0, 0, 0.15)',
+  premium: '0 20px 40px -12px rgba(0, 0, 0, 0.15)',
   'premium-lg': '0 30px 60px -12px rgba(0, 0, 0, 0.25)',
 
   // Glass morphism shadow
-  'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+  glass: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
 
   // Color glow shadows
-  'primaryGlow': '0 10px 40px -10px rgba(236, 72, 153, 0.6)',
-  'secondaryGlow': '0 10px 40px -10px rgba(168, 85, 247, 0.6)',
-  'successGlow': '0 10px 40px -10px rgba(34, 197, 94, 0.6)',
-  'errorGlow': '0 10px 40px -10px rgba(239, 68, 68, 0.6)',
-  'warningGlow': '0 10px 40px -10px rgba(245, 158, 11, 0.6)',
-
+  primaryGlow: '0 10px 40px -10px rgba(236, 72, 153, 0.6)',
+  secondaryGlow: '0 10px 40px -10px rgba(168, 85, 247, 0.6)',
+  successGlow: '0 10px 40px -10px rgba(34, 197, 94, 0.6)',
+  errorGlow: '0 10px 40px -10px rgba(239, 68, 68, 0.6)',
+  warningGlow: '0 10px 40px -10px rgba(245, 158, 11, 0.6)',
+  
   // Neon effects
-  'neon': '0 0 20px rgba(236, 72, 153, 0.5), 0 0 40px rgba(236, 72, 153, 0.3)',
-  'neonStrong': '0 0 30px rgba(236, 72, 153, 0.7), 0 0 60px rgba(236, 72, 153, 0.5)',
+  neon: '0 0 20px rgba(236, 72, 153, 0.5), 0 0 40px rgba(236, 72, 153, 0.3)',
+  neonStrong: '0 0 30px rgba(236, 72, 153, 0.7), 0 0 60px rgba(236, 72, 153, 0.5)',
 };
 
 // ====== BLUR EFFECTS ======
 export const BLUR = {
-  'none': 'blur(0)',
-  'sm': 'blur(4px)',
-  'md': 'blur(8px)',
-  'lg': 'blur(12px)',
-  'xl': 'blur(16px)',
+  none: 'blur(0)',
+  sm: 'blur(4px)',
+  md: 'blur(8px)',
+  lg: 'blur(12px)',
+  xl: 'blur(16px)',
   '2xl': 'blur(24px)',
-  'premium': 'blur(16px) saturate(180%)',
+  premium: 'blur(16px) saturate(180%)',
 };
 
 // ====== BORDER RADIUS ======
 export const RADIUS = {
-  'none': '0',
-  'sm': '0.375rem',
-  'md': '0.5rem',
-  'lg': '0.75rem',
-  'xl': '1rem',
+  none: '0',
+  sm: '0.375rem',
+  md: '0.5rem',
+  lg: '0.75rem',
+  xl: '1rem',
   '2xl': '1.5rem',
   '3xl': '2rem',
-  'full': '9999px',
+  full: '9999px',
 };
 
 // ====== SPACING SCALE ======
@@ -186,7 +186,7 @@ export const SPACING = {
 };
 
 // ====== TRANSITIONS ======
-export const _transitions = {
+export const transitions = {
   micro: { stiffness: 400, damping: 25 },
   smooth: { stiffness: 300, damping: 30 },
   bouncy: { stiffness: 600, damping: 15 },
@@ -194,7 +194,7 @@ export const _transitions = {
 };
 
 // ====== Z-INDEX SCALE ======
-export const _ZINDEX = {
+export const ZINDEX = {
   base: 0,
   dropdown: 1000,
   sticky: 1100,

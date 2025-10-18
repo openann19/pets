@@ -1,12 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import {
-  HeartIcon,
-  XMarkIcon,
-  ChatBubbleLeftRightIcon,
-} from '@heroicons/react/24/outline';
-import type { Pet, User } from '../../types';
+import { XMarkIcon, ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { Pet, User } from '../../types';
 
 interface MatchModalProps {
   isOpen: boolean;
@@ -17,34 +13,32 @@ interface MatchModalProps {
   matchedUser: User;
 }
 
-const MatchModal = ({
+const MatchModal: React.FC<MatchModalProps> = ({
   isOpen,
   onClose,
   matchId,
   currentUserPet,
   matchedPet,
   matchedUser,
-}: MatchModalProps) => {
+}) => {
   const router = useRouter();
 
-  const handleStartChatting = (): void => {
+  const handleStartChatting = () => {
     router.push(`/chat/${matchId}`);
     onClose();
   };
 
-  const handleKeepSwiping = (): void => {
+  const handleKeepSwiping = () => {
     onClose();
   };
 
   // Get primary photos
-  const currentPetPhoto =
-    currentUserPet.photos.find((p) => p.isPrimary)?.url || currentUserPet.photos[0]?.url;
-  const matchedPetPhoto =
-    matchedPet.photos.find((p) => p.isPrimary)?.url || matchedPet.photos[0]?.url;
+  const currentPetPhoto = currentUserPet.photos.find(p => p.isPrimary)?.url || currentUserPet.photos[0]?.url;
+  const matchedPetPhoto = matchedPet.photos.find(p => p.isPrimary)?.url || matchedPet.photos[0]?.url;
 
   return (
     <AnimatePresence>
-      {isOpen !== undefined && (
+      {isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -53,21 +47,18 @@ const MatchModal = ({
           style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
         >
           {/* Background blur */}
-          <div
-            className="absolute inset-0 backdrop-blur-sm"
-            onClick={onClose}
-          />
-
+          <div className="absolute inset-0 backdrop-blur-sm" onClick={onClose} />
+          
           {/* Modal Content */}
           <motion.div
             initial={{ scale: 0.8, opacity: 0, y: 50 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0, y: 50 }}
-            transition={{
-              type: 'spring',
-              stiffness: 300,
+            transition={{ 
+              type: "spring", 
+              stiffness: 300, 
               damping: 30,
-              duration: 0.5,
+              duration: 0.5 
             }}
             className="relative w-full max-w-md mx-auto"
           >
@@ -88,13 +79,13 @@ const MatchModal = ({
                   <motion.div
                     key={i}
                     className="absolute text-2xl"
-                    initial={{
-                      opacity: 0,
+                    initial={{ 
+                      opacity: 0, 
                       scale: 0,
                       x: Math.random() * 200 - 100,
                       y: Math.random() * 100 + 50,
                     }}
-                    animate={{
+                    animate={{ 
                       opacity: [0, 1, 0],
                       scale: [0, 1.2, 0],
                       y: [50, -50],
@@ -113,7 +104,7 @@ const MatchModal = ({
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                   className="text-6xl mb-4"
                 >
                   🎉
@@ -125,7 +116,7 @@ const MatchModal = ({
                   transition={{ delay: 0.3 }}
                   className="text-3xl font-bold text-white mb-2"
                 >
-                  It&apos;s a Match!
+                  It's a Match!
                 </motion.h2>
 
                 <motion.p
@@ -163,7 +154,7 @@ const MatchModal = ({
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ delay: 0.6, type: 'spring', stiffness: 200 }}
+                    transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
                     className="text-4xl text-red-500"
                   >
                     <HeartIcon className="w-8 h-8" />
@@ -184,7 +175,9 @@ const MatchModal = ({
                       />
                     </div>
                     <p className="mt-2 font-semibold text-gray-900">{matchedPet.name}</p>
-                    <p className="text-sm text-gray-600">{matchedUser.firstName}&apos;s pet</p>
+                    <p className="text-sm text-gray-600">
+                      {(matchedUser as any).firstName}'s pet
+                    </p>
                   </motion.div>
                 </div>
 
@@ -193,7 +186,7 @@ const MatchModal = ({
                   <div className="text-center">
                     <p className="text-sm text-gray-600 mb-1">Match Intent</p>
                     <p className="font-semibold text-gray-900 capitalize">
-                      {matchedPet.intent === 'all' ? 'Open to all' : matchedPet.intent}
+                      {(matchedPet as any).intent === 'all' ? 'Open to all' : (matchedPet as any).intent}
                     </p>
                   </div>
                 </div>

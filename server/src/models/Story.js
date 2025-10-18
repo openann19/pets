@@ -62,7 +62,8 @@ const StorySchema = new Schema({
     },
     caption: {
         type: String,
-        maxlength: 200,
+        // Align with shared schema: allow up to Instagram-like caption length
+        maxlength: 2200,
     },
     duration: {
         type: Number,
@@ -107,11 +108,8 @@ const StorySchema = new Schema({
 // Compound index for user's stories sorted by creation time
 StorySchema.index({ userId: 1, createdAt: -1 });
 
-// TTL index for automatic expiry
+// TTL index for automatic expiry (also supports lookups by expiresAt)
 StorySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-
-// Index for active stories (not expired)
-StorySchema.index({ expiresAt: 1, createdAt: -1 });
 
 // ============================================================================
 // Methods
@@ -334,7 +332,8 @@ StorySchema.statics.deleteExpiredStories = async function () {
 StorySchema.pre('save', function (next) {
     // Set expiresAt if not already set (24 hours from creation)
     if (!this.expiresAt) {
-        this.expiresAt = new Date(this.createdAt.getTime() + 24 * 60 * 60 * 1000);
+        const baseDate = this.createdAt instanceof Date ? this.createdAt : new Date();
+        this.expiresAt = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000);
     }
     next();
 });

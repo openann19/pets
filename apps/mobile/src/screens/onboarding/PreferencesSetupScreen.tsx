@@ -1,7 +1,16 @@
-import { logger } from '@pawfectmatch/core';
+import { INTENT_OPTIONS, SPECIES_OPTIONS } from '@pawfectmatch/core';
 import Slider from '@react-native-community/slider';
-import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React, { useState } from 'react';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,22 +18,15 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { OnboardingScreenProps } from '../../navigation/types';
 
-const SPECIES_OPTIONS = [
-  { label: 'Dog', value: 'dog' },
-  { label: 'Cat', value: 'cat' },
-  { label: 'Bird', value: 'bird' },
-  { label: 'Small & Furry', value: 'small_furry' },
-];
+type OnboardingStackParamList = {
+  UserIntent: undefined;
+  PetProfileSetup: { userIntent: string };
+  PreferencesSetup: { userIntent: string };
+  Welcome: undefined;
+};
 
-const INTENT_OPTIONS = [
-  { label: 'Adoption', value: 'adoption' },
-  { label: 'Foster', value: 'foster' },
-  { label: 'Playdate', value: 'playdate' },
-];
-
-type PreferencesSetupScreenProps = OnboardingScreenProps<'PreferencesSetup'>;
+type PreferencesSetupScreenProps = NativeStackScreenProps<OnboardingStackParamList, 'PreferencesSetup'>;
 
 interface PreferencesData {
   maxDistance: number;
@@ -48,7 +50,7 @@ const SPRING_CONFIG = {
   mass: 1,
 };
 
-const PreferencesSetupScreen: React.FC<PreferencesSetupScreenProps> = ({ navigation, route }) => {
+const PreferencesSetupScreen = ({ navigation, route }: PreferencesSetupScreenProps) => {
   const { userIntent } = route.params;
   const [preferences, setPreferences] = useState<PreferencesData>({
     maxDistance: 25,
@@ -69,7 +71,7 @@ const PreferencesSetupScreen: React.FC<PreferencesSetupScreenProps> = ({ navigat
   const scaleValue = useSharedValue(1);
   const opacity = useSharedValue(0);
 
-  useEffect(() => {
+  React.useEffect(() => {
     opacity.value = withTiming(1, { duration: 800 });
   }, []);
 
@@ -78,14 +80,14 @@ const PreferencesSetupScreen: React.FC<PreferencesSetupScreenProps> = ({ navigat
     transform: [{ scale: scaleValue.value }],
   }));
 
-  const updatePreferences = (field: keyof PreferencesData, value: any): void => {
+  const updatePreferences = (field: string, value: any) => {
     setPreferences(prev => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const updateNotifications = (field: string, value: boolean): void => {
+  const updateNotifications = (field: string, value: boolean) => {
     setPreferences(prev => ({
       ...prev,
       notifications: {
@@ -95,7 +97,7 @@ const PreferencesSetupScreen: React.FC<PreferencesSetupScreenProps> = ({ navigat
     }));
   };
 
-  const toggleSpecies = (species: string): void => {
+  const toggleSpecies = (species: string) => {
     setPreferences(prev => ({
       ...prev,
       species: prev.species.includes(species)
@@ -104,7 +106,7 @@ const PreferencesSetupScreen: React.FC<PreferencesSetupScreenProps> = ({ navigat
     }));
   };
 
-  const toggleIntent = (intent: string): void => {
+  const toggleIntent = (intent: string) => {
     setPreferences(prev => ({
       ...prev,
       intents: prev.intents.includes(intent)
@@ -126,13 +128,12 @@ const PreferencesSetupScreen: React.FC<PreferencesSetupScreenProps> = ({ navigat
 
     try {
       // Save preferences to backend
-      logger.info('Saving preferences:', { preferences });
-
+      console.log('Saving preferences:', preferences);
+      
       // Animate completion
-      scaleValue.value = withSpring(0.95, SPRING_CONFIG);
-      setTimeout(() => {
+      scaleValue.value = withSpring(0.95, SPRING_CONFIG, () => {
         scaleValue.value = withSpring(1, SPRING_CONFIG);
-      }, 150);
+      });
 
       // Navigate to welcome screen
       setTimeout(() => {
@@ -170,7 +171,6 @@ const PreferencesSetupScreen: React.FC<PreferencesSetupScreenProps> = ({ navigat
                 onValueChange={(value) => updatePreferences('maxDistance', Math.round(value))}
                 minimumTrackTintColor="#ec4899"
                 maximumTrackTintColor="#e5e7eb"
-                thumbTintColor="#ec4899"
               />
               <View style={styles.sliderLabels}>
                 <Text style={styles.sliderLabel}>5 mi</Text>
@@ -316,7 +316,7 @@ const PreferencesSetupScreen: React.FC<PreferencesSetupScreenProps> = ({ navigat
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
-
+        
         <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
           <Text style={styles.completeButtonText}>Complete Setup</Text>
         </TouchableOpacity>

@@ -38,6 +38,9 @@ export interface AnalysisResult {
 /**
  * Real DeepSeek AI-Powered Pet Photo Analysis
  */
+import type { DeepSeekResponse } from '../services/deepSeekService';
+import { DeepSeekService } from '../services/deepSeekService';
+
 export class PetPhotoAnalysis {
   private readonly deepSeekService: DeepSeekService;
   private isInitialized = false;
@@ -66,7 +69,7 @@ export class PetPhotoAnalysis {
    */
   public async analyzePhoto(imageData: ImageData | string): Promise<AnalysisResult> {
     const startTime = Date.now();
-    
+
     if (!this.isInitialized) {
       return {
         success: false,
@@ -77,14 +80,14 @@ export class PetPhotoAnalysis {
 
     try {
       // Convert image data to base64 if needed
-      const base64Image = typeof imageData === 'string' 
-        ? imageData 
+      const base64Image = typeof imageData === 'string'
+        ? imageData
         : await this.imageDataToBase64(imageData);
-      
+
       // Use DeepSeek AI for analysis
       const response = await this.deepSeekService.analyzePetPhoto(base64Image);
       const analysis = this.parseDeepSeekResponse(response);
-      
+
       return {
         success: true,
         analysis,
@@ -105,24 +108,26 @@ export class PetPhotoAnalysis {
   private async imageDataToBase64(imageData: ImageData): Promise<string> {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    
+
     if (!ctx) {
       throw new Error('Could not get canvas context');
     }
-    
+
     canvas.width = imageData.width;
     canvas.height = imageData.height;
     ctx.putImageData(imageData, 0, 0);
-    
-    return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    const parts = dataUrl.split(',');
+    return parts[1] ?? '';
   }
 
   /**
    * Parse DeepSeek AI response
    */
-  private parseDeepSeekResponse(response: unknown): PetPhotoAnalysisData {
+  private parseDeepSeekResponse(response: DeepSeekResponse): PetPhotoAnalysisData {
     try {
-      const content = response.choices[0]?.message?.content;
+      const content = response.choices?.[0]?.message?.content;
       if (!content) {
         throw new Error('No content in DeepSeek response');
       }
@@ -149,7 +154,7 @@ export class PetPhotoAnalysis {
     const speciesMatch = content.match(/species["\s]*:["\s]*([a-z]+)/i);
     const breedMatch = content.match(/breed["\s]*:["\s]*([^,}]+)/i);
     const confidenceMatch = content.match(/confidence["\s]*:["\s]*([0-9.]+)/i);
-    
+
     return {
       species: speciesMatch?.[1] || 'unknown',
       breed: breedMatch?.[1]?.trim() || 'unknown',
@@ -244,7 +249,7 @@ export class PetPhotoAnalysis {
    */
   public isAnalysisReliable(analysis: PetPhotoAnalysisData): boolean {
     return analysis.confidence >= this.getConfidenceThreshold() &&
-           analysis.quality.photoScore >= 0.6;
+      analysis.quality.photoScore >= 0.6;
   }
 }
 

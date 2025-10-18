@@ -79,7 +79,7 @@ const reportErrorToServer = async (
                 timestamp: new Date().toISOString()
             })
         });
-    } catch (e) {
+    } catch {
         // Silent fail for error reporting to avoid infinite loops
     }
 };

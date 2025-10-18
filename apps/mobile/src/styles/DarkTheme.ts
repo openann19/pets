@@ -1,5 +1,6 @@
-import { Dimensions, Platform, StyleSheet } from 'react-native';
-import { BorderRadius, Spacing, Typography } from './GlobalStyles';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
+
+import { Typography, Spacing, BorderRadius } from './GlobalStyles';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -56,13 +57,13 @@ export const ColorsDark = {
   gradientWarning: ['#78350f', '#b45309', '#fbbf24'],
   gradientError: ['#7f1d1d', '#b91c1c', '#f87171'],
   
-  // UI Component Colors
-  text: '#f3f4f6', // Default text color (white)
-  textSecondary: '#9ca3af', // Secondary text color (gray700)
-  card: '#1e293b', // Card background color (gray200)
-  background: '#111827', // Background color (gray100)
-  border: '#273449', // Border color (gray300)
-  inputBackground: '#1f2937', // Input background color (gray50)
+  // Additional UI Colors
+  background: '#111827',
+  surface: '#1f2937',
+  text: '#f9fafb',
+  textSecondary: '#9ca3af',
+  border: '#374151',
+  borderLight: '#273449',
 };
 
 // Dark Theme Shadows

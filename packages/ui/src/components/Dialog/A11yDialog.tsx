@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useKeyboardShortcut } from '../../hooks/useKeyboardShortcut';
@@ -9,52 +9,52 @@ export interface A11yDialogProps {
    * Whether the dialog is open
    */
   isOpen: boolean;
-  
+
   /**
    * Callback when the dialog should close
    */
   onClose: () => void;
-  
+
   /**
    * The dialog's title (for accessibility)
    */
   title: string;
-  
+
   /**
    * Optional description (for accessibility)
    */
   description?: string;
-  
+
   /**
    * Content of the dialog
    */
   children: React.ReactNode;
-  
+
   /**
    * Width of the dialog
    */
   width?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
-  
+
   /**
    * Whether to close when clicking outside the dialog
    */
   closeOnClickOutside?: boolean;
-  
+
   /**
    * Whether to close when pressing Escape
    */
   closeOnEsc?: boolean;
-  
+
   /**
    * Additional CSS class for the dialog
    */
   className?: string;
-  
+
   /**
    * Label for the close button (for accessibility)
    */
   closeButtonLabel?: string;
-  
+
   /**
    * Whether to show the close button
    */
@@ -64,7 +64,7 @@ export interface A11yDialogProps {
    * Override for the dialog's ID
    */
   id?: string;
-  
+
   /**
    * Additional keyboard shortcuts
    * Format: { key: handler }
@@ -95,7 +95,7 @@ export const A11yDialog: React.FC<A11yDialogProps> = ({
   const dialogId = useRef(propId || createSafeId('dialog'));
   const titleId = useRef(createSafeId('dialog-title'));
   const descriptionId = useRef(description ? createSafeId('dialog-desc') : undefined);
-  
+
   // Set up focus trap
   const { containerRef } = useFocusTrap({
     active: isOpen,
@@ -104,73 +104,87 @@ export const A11yDialog: React.FC<A11yDialogProps> = ({
     clickOutsideDeactivates: closeOnClickOutside,
     onDeactivate: onClose
   });
-  
+
   // Keyboard shortcuts
   useKeyboardShortcut('Escape', () => {
     if (closeOnEsc && isOpen) {
       onClose();
     }
   }, { enabled: isOpen });
-  
-  // Add custom keyboard shortcuts
+
+  // Add custom keyboard shortcuts without calling hooks in a loop
   useEffect(() => {
     if (!isOpen) return;
-    
-    // Register custom keyboard shortcuts
+
+    const handlers: Array<{ key: string; fn: (e: KeyboardEvent) => void }> = [];
+
     Object.entries(keyboardShortcuts).forEach(([key, handler]) => {
-      useKeyboardShortcut(key, handler, { enabled: isOpen });
+      const fn = (e: KeyboardEvent) => {
+        if (e.key === key) {
+          handler();
+        }
+      };
+      handlers.push({ key, fn });
+      document.addEventListener('keydown', fn);
     });
+
+    return () => {
+      handlers.forEach(({ fn }) => document.removeEventListener('keydown', fn));
+    };
   }, [isOpen, keyboardShortcuts]);
-  
+
   // Handle click outside
-  const handleClickOverlay = (): void => {
-    if (closeOnClickOutside && event.target === overlayRef.current) {
+  const handleClickOverlay = (evt: React.MouseEvent<HTMLDivElement>): void => {
+    if (!closeOnClickOutside) return;
+    // Close only when clicking directly on the overlay, not children
+    if (evt.currentTarget === overlayRef.current) {
       onClose();
     }
   };
-  
+
   // Set container ref
-  const setContainerRef = (node: HTMLElement | null): void => {
+  const setContainerRef = (node: HTMLDivElement | null): void => {
     dialogRef.current = node;
     containerRef.current = node;
   };
-  
+
   // Handle body scroll locking
   useEffect(() => {
     if (!isMounted) {
       setIsMounted(true);
-      return;
+      return () => { };
     }
-    
+
     if (isOpen !== null && isOpen !== undefined) {
       // Save current scroll position
-      const {scrollY} = window;
-      
+      const { scrollY } = window;
+
       // Prevent body scrolling
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
       document.body.style.top = `-${scrollY}px`;
       document.body.style.overflow = 'hidden';
-      
+
       // Add ARIA attributes to indicate modal is open
       document.body.setAttribute('aria-hidden', 'true');
-      
+
       return () => {
         // Restore body scrolling
         document.body.style.position = '';
         document.body.style.width = '';
         document.body.style.top = '';
         document.body.style.overflow = '';
-        
+
         // Restore scroll position
         window.scrollTo(0, scrollY);
-        
+
         // Remove ARIA attributes
         document.body.removeAttribute('aria-hidden');
       };
     }
+    return () => { };
   }, [isOpen, isMounted]);
-  
+
   // Width classes
   const widthClasses = {
     sm: 'max-w-sm',
@@ -179,20 +193,20 @@ export const A11yDialog: React.FC<A11yDialogProps> = ({
     xl: 'max-w-xl',
     full: 'max-w-full'
   };
-  
+
   // Only render if client-side
   if (!isMounted) return null;
-  
+
   // Portal content
   const dialog = isOpen && (
-    <div 
+    <div
       role="presentation"
       aria-hidden={!isOpen}
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-50 p-4"
       onClick={handleClickOverlay}
       ref={overlayRef}
     >
-      <div 
+      <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId.current}
@@ -206,12 +220,12 @@ export const A11yDialog: React.FC<A11yDialogProps> = ({
           <h2 id={titleId.current} className="text-xl font-semibold text-gray-900 dark:text-white">
             {title}
           </h2>
-          {description !== undefined &&  (
+          {description !== undefined && (
             <p id={descriptionId.current} className="mt-2 text-gray-600 dark:text-gray-300">
               {description}
             </p>
           )}
-          {showCloseButton !== undefined &&  (
+          {showCloseButton !== undefined && (
             <button
               type="button"
               onClick={onClose}
@@ -225,7 +239,7 @@ export const A11yDialog: React.FC<A11yDialogProps> = ({
             </button>
           )}
         </header>
-        
+
         {/* Content */}
         <div className="dialog-content">
           {children}
@@ -233,7 +247,7 @@ export const A11yDialog: React.FC<A11yDialogProps> = ({
       </div>
     </div>
   );
-  
+
   // Create portal
   return isMounted ? createPortal(dialog, document.body) : null;
 };

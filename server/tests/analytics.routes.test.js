@@ -34,9 +34,9 @@ jest.mock('../src/services/analyticsService', () => ({
   }
 }));
 
-const { 
-  trackUserEvent, 
-  trackPetEvent, 
+const {
+  trackUserEvent,
+  trackPetEvent,
   trackMatchEvent,
   getUserAnalytics,
   getPetAnalytics,
@@ -64,11 +64,11 @@ describe('Analytics Routes', () => {
     it('should track user event successfully', async () => {
       const response = await request(app)
         .post('/api/analytics/user')
-        .send({ 
+        .send({
           eventType: EVENT_TYPES.USER_LOGIN,
           metadata: { source: 'mobile_app' }
         });
-      
+
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(trackUserEvent).toHaveBeenCalledWith(
@@ -81,25 +81,25 @@ describe('Analytics Routes', () => {
     it('should return error for invalid event type', async () => {
       const response = await request(app)
         .post('/api/analytics/user')
-        .send({ 
+        .send({
           eventType: 'invalid_event',
           metadata: { source: 'mobile_app' }
         });
-      
+
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
     it('should handle service errors', async () => {
       trackUserEvent.mockRejectedValueOnce(new Error('Service error'));
-      
+
       const response = await request(app)
         .post('/api/analytics/user')
-        .send({ 
+        .send({
           eventType: EVENT_TYPES.USER_LOGIN,
           metadata: { source: 'mobile_app' }
         });
-      
+
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
@@ -109,12 +109,12 @@ describe('Analytics Routes', () => {
     it('should track pet event successfully', async () => {
       const response = await request(app)
         .post('/api/analytics/pet')
-        .send({ 
+        .send({
           petId: 'test-pet-id',
           eventType: EVENT_TYPES.PET_LIKE,
           metadata: { fromUserId: 'test-user-id' }
         });
-      
+
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(trackPetEvent).toHaveBeenCalledWith(
@@ -128,27 +128,27 @@ describe('Analytics Routes', () => {
     it('should return error for invalid event type', async () => {
       const response = await request(app)
         .post('/api/analytics/pet')
-        .send({ 
+        .send({
           petId: 'test-pet-id',
           eventType: 'invalid_event',
           metadata: { fromUserId: 'test-user-id' }
         });
-      
+
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
     it('should handle service errors', async () => {
       trackPetEvent.mockRejectedValueOnce(new Error('Service error'));
-      
+
       const response = await request(app)
         .post('/api/analytics/pet')
-        .send({ 
+        .send({
           petId: 'test-pet-id',
           eventType: EVENT_TYPES.PET_LIKE,
           metadata: { fromUserId: 'test-user-id' }
         });
-      
+
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
@@ -158,12 +158,12 @@ describe('Analytics Routes', () => {
     it('should track match event successfully', async () => {
       const response = await request(app)
         .post('/api/analytics/match')
-        .send({ 
+        .send({
           matchId: 'test-match-id',
           eventType: EVENT_TYPES.MESSAGE_SEND,
           metadata: { content: 'Hello!' }
         });
-      
+
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(trackMatchEvent).toHaveBeenCalledWith(
@@ -177,27 +177,27 @@ describe('Analytics Routes', () => {
     it('should return error for invalid event type', async () => {
       const response = await request(app)
         .post('/api/analytics/match')
-        .send({ 
+        .send({
           matchId: 'test-match-id',
           eventType: 'invalid_event',
           metadata: { content: 'Hello!' }
         });
-      
+
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
     it('should handle service errors', async () => {
       trackMatchEvent.mockRejectedValueOnce(new Error('Service error'));
-      
+
       const response = await request(app)
         .post('/api/analytics/match')
-        .send({ 
+        .send({
           matchId: 'test-match-id',
           eventType: EVENT_TYPES.MESSAGE_SEND,
           metadata: { content: 'Hello!' }
         });
-      
+
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
@@ -207,28 +207,28 @@ describe('Analytics Routes', () => {
     it('should get user analytics successfully', async () => {
       const response = await request(app)
         .get('/api/analytics/user');
-      
+
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(getUserAnalytics).toHaveBeenCalledWith('test-user-id');
+      expect(getUserAnalytics).toHaveBeenCalledWith('test-user-id', 'week');
     });
 
     it('should handle user not found', async () => {
       getUserAnalytics.mockResolvedValueOnce(null);
-      
+
       const response = await request(app)
         .get('/api/analytics/user');
-      
+
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
     });
 
     it('should handle service errors', async () => {
       getUserAnalytics.mockRejectedValueOnce(new Error('Service error'));
-      
+
       const response = await request(app)
         .get('/api/analytics/user');
-      
+
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
@@ -238,7 +238,7 @@ describe('Analytics Routes', () => {
     it('should get pet analytics successfully', async () => {
       const response = await request(app)
         .get('/api/analytics/pet/test-pet-id');
-      
+
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(getPetAnalytics).toHaveBeenCalledWith('test-pet-id');
@@ -246,20 +246,20 @@ describe('Analytics Routes', () => {
 
     it('should handle pet not found', async () => {
       getPetAnalytics.mockResolvedValueOnce(null);
-      
+
       const response = await request(app)
         .get('/api/analytics/pet/test-pet-id');
-      
+
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
     });
 
     it('should handle service errors', async () => {
       getPetAnalytics.mockRejectedValueOnce(new Error('Service error'));
-      
+
       const response = await request(app)
         .get('/api/analytics/pet/test-pet-id');
-      
+
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });
@@ -269,7 +269,7 @@ describe('Analytics Routes', () => {
     it('should get match analytics successfully', async () => {
       const response = await request(app)
         .get('/api/analytics/match/test-match-id');
-      
+
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(getMatchAnalytics).toHaveBeenCalledWith('test-match-id');
@@ -277,20 +277,20 @@ describe('Analytics Routes', () => {
 
     it('should handle match not found', async () => {
       getMatchAnalytics.mockResolvedValueOnce(null);
-      
+
       const response = await request(app)
         .get('/api/analytics/match/test-match-id');
-      
+
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
     });
 
     it('should handle service errors', async () => {
       getMatchAnalytics.mockRejectedValueOnce(new Error('Service error'));
-      
+
       const response = await request(app)
         .get('/api/analytics/match/test-match-id');
-      
+
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
     });

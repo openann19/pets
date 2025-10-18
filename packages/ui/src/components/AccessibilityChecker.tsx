@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { checkContrastRatio } from '../utils/accessibilityUtils';
 
 interface AccessibilityCheckResult {
@@ -73,7 +73,7 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Function to check contrast ratio
-  const checkContrast = (): AccessibilityCheckResult[] => {
+  const checkContrast = useCallback((): AccessibilityCheckResult[] => {
     if (!containerRef.current || !rules.includes('contrast')) return [];
 
     const results: AccessibilityCheckResult[] = [];
@@ -140,10 +140,10 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
     });
 
     return results;
-  };
+  }, [rules]);
 
   // Function to check ARIA labels
-  const checkAriaLabels = (): AccessibilityCheckResult[] => {
+  const checkAriaLabels = useCallback((): AccessibilityCheckResult[] => {
     if (!containerRef.current || !rules.includes('aria-labels')) return [];
 
     const results: AccessibilityCheckResult[] = [];
@@ -199,10 +199,10 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
     });
 
     return results;
-  };
+  }, [rules]);
 
   // Function to check keyboard focus indicators
-  const checkKeyboardFocus = (): AccessibilityCheckResult[] => {
+  const checkKeyboardFocus = useCallback((): AccessibilityCheckResult[] => {
     if (!containerRef.current || !rules.includes('keyboard-focus')) return [];
 
     const results: AccessibilityCheckResult[] = [];
@@ -261,10 +261,10 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
     });
 
     return results;
-  };
+  }, [rules]);
 
   // Function to check text alternatives
-  const checkTextAlternatives = (): AccessibilityCheckResult[] => {
+  const checkTextAlternatives = useCallback((): AccessibilityCheckResult[] => {
     if (!containerRef.current || !rules.includes('text-alternatives')) return [];
 
     const results: AccessibilityCheckResult[] = [];
@@ -309,10 +309,10 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
     });
 
     return results;
-  };
+  }, [rules]);
 
   // Function to check semantic structure
-  const checkSemanticStructure = (): AccessibilityCheckResult[] => {
+  const checkSemanticStructure = useCallback((): AccessibilityCheckResult[] => {
     if (!containerRef.current || !rules.includes('semantic-structure')) return [];
 
     const results: AccessibilityCheckResult[] = [];
@@ -365,7 +365,7 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
     });
 
     return results;
-  };
+  }, [rules]);
 
   // Run all checks
   const runChecks = useCallback((): void => {
@@ -395,7 +395,7 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
 
       setIsChecking(false);
     }, 0);
-  }, []);
+  }, [checkAriaLabels, checkContrast, checkKeyboardFocus, checkSemanticStructure, checkTextAlternatives, onCheckComplete]);
 
   // Run checks on mount if autoCheck is true
   useEffect(() => {
@@ -449,18 +449,18 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({
                 <li
                   key={index}
                   className={`p-3 rounded-md ${result.severity === 'error'
-                      ? 'bg-red-50 border-l-4 border-red-500'
-                      : result.severity === 'warning'
-                        ? 'bg-yellow-50 border-l-4 border-yellow-500'
-                        : 'bg-blue-50 border-l-4 border-blue-500'
+                    ? 'bg-red-50 border-l-4 border-red-500'
+                    : result.severity === 'warning'
+                      ? 'bg-yellow-50 border-l-4 border-yellow-500'
+                      : 'bg-blue-50 border-l-4 border-blue-500'
                     }`}
                 >
                   <div className="flex items-start">
                     <div className={`mr-2 ${result.severity === 'error'
-                        ? 'text-red-500'
-                        : result.severity === 'warning'
-                          ? 'text-yellow-500'
-                          : 'text-blue-500'
+                      ? 'text-red-500'
+                      : result.severity === 'warning'
+                        ? 'text-yellow-500'
+                        : 'text-blue-500'
                       }`}>
                       {result.severity === 'error' ? (
                         <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">

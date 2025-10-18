@@ -5,14 +5,16 @@
 
 'use client';
 
-import React, { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import VideoCallRoom from '@/components/VideoCall/VideoCallRoom';
-import { _useAuthStore as useAuthStore } from '@/stores/auth-store';
-import { usePremiumTier } from '@/hooks/premium-hooks';
-import PremiumButton from '@/components/ui/PremiumButton';
-import PremiumCard from '@/components/ui/PremiumCard';
 import { VideoCameraIcon } from '@heroicons/react/24/solid';
+import { useParams, useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+
+import PremiumButton from '../../../../src/components/UI/PremiumButton';
+import PremiumCard from '../../../../src/components/UI/PremiumCard';
+import VideoCallRoom from '../../../../src/components/VideoCall/VideoCallRoom';
+import { usePremiumTier } from '../../../../src/hooks/premium-hooks';
+import { useAuthStore } from '../../../../src/lib/auth-store';
+
 
 export default function VideoCallPage() {
   const params = useParams();
@@ -21,7 +23,7 @@ export default function VideoCallPage() {
   const { hasFeature } = usePremiumTier(user?.id || '');
   const [inCall, setInCall] = useState(false);
 
-  const roomId = (params as Record<string, string>)['roomId'] as string;
+  const roomId = params['roomId'] as string;
   const hasVideoAccess = hasFeature('videoCalls');
 
   // Check premium access
@@ -30,7 +32,9 @@ export default function VideoCallPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 p-4">
         <PremiumCard className="max-w-md w-full p-8 text-center">
           <VideoCameraIcon className="w-20 h-20 mx-auto text-purple-500 mb-6" />
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Premium Feature</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Premium Feature
+          </h2>
           <p className="text-gray-600 mb-6">
             Video calls are available for Premium Plus subscribers and above
           </p>
@@ -48,11 +52,11 @@ export default function VideoCallPage() {
   if (!inCall) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 p-4">
-        <PremiumCard
-          className="max-w-md w-full p-8 text-center"
-        >
+        <PremiumCard className="max-w-md w-full p-8 text-center" glow>
           <VideoCameraIcon className="w-20 h-20 mx-auto text-purple-500 mb-6" />
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Join Video Call</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Join Video Call
+          </h2>
           <p className="text-gray-600 mb-2">
             Room: <span className="font-mono font-semibold">{roomId}</span>
           </p>
@@ -83,7 +87,7 @@ export default function VideoCallPage() {
     <VideoCallRoom
       roomId={roomId}
       userId={user?.id || ''}
-      userName={user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'User'}
+      userName={user?.name || 'User'}
       onLeave={() => {
         setInCall(false);
         router.push('/dashboard');

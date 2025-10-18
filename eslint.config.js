@@ -1,5 +1,6 @@
 // @ts-check
 import js from '@eslint/js';
+import nextPlugin from '@next/eslint-plugin-next';
 import prettierConfig from 'eslint-config-prettier';
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 import reactPlugin from 'eslint-plugin-react';
@@ -19,12 +20,19 @@ export default tseslint.config(
       '**/.next/**',
       '**/coverage/**',
       '**/build/**',
+      '**/.github/**',
       '**/*.d.ts',
       '**/storybook-static/**',
       '**/.turbo/**',
       '**/out/**',
       '**/.storybook/**', // Ignore Storybook files to avoid parsing errors
       '**/apps/web/src/tests/**',
+      // Ignore static assets and service workers that don't follow app lint rules
+      '**/apps/web/public/**',
+      // Ignore utility scripts that aren't part of the app runtime
+      '**/apps/web/scripts/**',
+      // Ignore legacy CRA-style entrypoint not used by Next.js app
+      'apps/web/src/app/**',
     ],
   },
 
@@ -56,6 +64,16 @@ export default tseslint.config(
   // === TypeScript Files Configuration ===
   {
     files: ['**/*.ts', '**/*.tsx'],
+    ignores: [
+      '**/*.test.ts',
+      '**/*.test.tsx',
+      '**/*.spec.ts',
+      '**/*.spec.tsx',
+      '**/__tests__/**',
+      'apps/web/cypress/**',
+      '**/*.cy.ts',
+      '**/*.cy.tsx',
+    ],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -72,6 +90,7 @@ export default tseslint.config(
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
       'jsx-a11y': jsxA11yPlugin,
+      '@next/next': nextPlugin,
     },
     rules: {
       // === TypeScript Rules ===
@@ -172,7 +191,10 @@ export default tseslint.config(
   // === Test Files Configuration ===
   {
     files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+    // Disable type-aware parsing for tests to avoid project includes issues
+    ...tseslint.configs.disableTypeChecked,
     languageOptions: {
+      parser: tseslint.parser,
       globals: {
         ...globals.browser,
         ...globals.node,
@@ -187,6 +209,12 @@ export default tseslint.config(
         beforeAll: 'readonly',
         afterAll: 'readonly',
       },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
+      'jsx-a11y': jsxA11yPlugin,
     },
     rules: {
       // Relax all rules for tests
@@ -206,10 +234,93 @@ export default tseslint.config(
       'react-hooks/exhaustive-deps': 'off',
     },
   },
+  // JS/JSX test files (relax no-undef and unused vars)
+  {
+    files: ['**/*.test.js', '**/*.test.jsx', '**/*.spec.js', '**/*.spec.jsx', '**/__tests__/**/*.js', '**/__tests__/**/*.jsx'],
+    rules: {
+      'no-undef': 'off',
+      'no-unused-vars': 'off',
+    },
+  },
+
+  // === __tests__ TypeScript Utilities (non-type-aware) ===
+  {
+    files: ['**/__tests__/**/*.ts', '**/__tests__/**/*.tsx'],
+    ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      parser: tseslint.parser,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021,
+        jest: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
+      'jsx-a11y': jsxA11yPlugin,
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-unused-vars': 'off',
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'no-undef': 'off',
+    },
+  },
+
+  // === Cypress E2E Files Configuration ===
+  {
+    files: [
+      'apps/web/cypress/**/*.ts',
+      'apps/web/cypress/**/*.tsx',
+      'apps/web/cypress/**/*.js',
+      'apps/web/cypress/**/*.jsx',
+      '**/*.cy.ts',
+      '**/*.cy.tsx',
+    ],
+    // Disable type-aware parsing for Cypress specs
+    ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      parser: tseslint.parser,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021,
+        // Cypress globals
+        cy: 'readonly',
+        Cypress: 'readonly',
+        expect: 'readonly',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
+      'jsx-a11y': jsxA11yPlugin,
+    },
+    rules: {
+      'no-undef': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-unused-vars': 'off',
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+    },
+  },
 
   // === Setup Tests Files (Jest globals) ===
   {
-    files: ['**/setupTests.ts', '**/setupTests.js'],
+    files: ['**/setupTests.ts', '**/setupTests.js', '**/jest.setup.js', '**/jest.setup.ts'],
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -233,15 +344,22 @@ export default tseslint.config(
     },
   },
 
-  // === JavaScript Files Configuration ===
+  // === JavaScript/JSX Files Configuration ===
   {
-    files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
+    files: ['**/*.js', '**/*.mjs', '**/*.cjs', '**/*.jsx'],
     ...tseslint.configs.disableTypeChecked,
+    plugins: {
+      react: reactPlugin,
+    },
     rules: {
       '@typescript-eslint/no-var-requires': 'off',
+      // Ensure JSX usage counts towards variable usage to avoid false unused-var errors in JS/JSX
+      'react/jsx-uses-vars': 'error',
+      // Allow ignoring unused args/vars by prefixing with _ in JS files as well
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
 
   // === Prettier Integration (must be last) ===
-  prettierConfig,
+  /** @type {any} */(prettierConfig),
 );

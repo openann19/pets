@@ -1,7 +1,13 @@
-import { motion } from 'framer-motion';
 import type { ErrorInfo, ReactNode } from 'react';
 import React, { Component } from 'react';
-import { logger } from '../../../web/src/services/logger';
+import { MotionDiv } from '../../utils/Motion';
+
+// Local minimal logger fallback to avoid cross-package import issues
+const logger = {
+  error: (...args: unknown[]) => {
+    console.error(...args);
+  },
+};
 
 export interface ErrorBoundaryProps {
   /**
@@ -46,11 +52,11 @@ export interface ErrorBoundaryState {
   /**
    * The error that occurred
    */
-  error?: Error;
+  error: Error | null;
   /**
    * Error information
    */
-  errorInfo?: ErrorInfo;
+  errorInfo: ErrorInfo | null;
 }
 
 /**
@@ -65,21 +71,23 @@ export interface ErrorBoundaryState {
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return {
       hasError: true,
-      error
+      error,
+      errorInfo: null,
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    this.setState({
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    this.setState((prev) => ({
+      ...prev,
       error,
-      errorInfo
-    });
+      errorInfo,
+    }));
 
     // Call error callback
     if (this.props.onError) {
@@ -90,7 +98,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
-  componentDidUpdate(prevProps: ErrorBoundaryProps) {
+  override componentDidUpdate(prevProps: ErrorBoundaryProps) {
     const { resetKeys, resetOnPropsChange } = this.props;
     const { hasError } = this.state;
 
@@ -100,13 +108,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       );
 
       if (hasResetKeyChanged) {
-        this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+        this.setState((prev) => ({ ...prev, hasError: false, error: null, errorInfo: null }));
       }
     }
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    this.setState((prev) => ({ ...prev, hasError: false, error: null, errorInfo: null }));
   };
 
   handleReportError = () => {
@@ -118,7 +126,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
   };
 
-  render() {
+  override render() {
     const { hasError, error, errorInfo } = this.state;
     const { fallback, errorMessage, showDetails, className } = this.props;
 
@@ -130,7 +138,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       // Default error UI
       return (
-        <motion.div
+        <MotionDiv
           className={`error-boundary ${className || ''}`}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -159,28 +167,28 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
               {errorMessage || 'Something went wrong'}
             </h2>
-            
+
             <p className="text-neutral-600 dark:text-neutral-400 text-center mb-6 max-w-md">
               We apologize for the inconvenience. An unexpected error has occurred.
             </p>
 
             {/* Error Details */}
             {showDetails && error ? <details className="w-full max-w-md mb-6">
-                <summary className="cursor-pointer text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300">
-                  Show error details
-                </summary>
-                <div className="mt-2 p-3 bg-neutral-100 dark:bg-neutral-700 rounded text-xs font-mono text-neutral-800 dark:text-neutral-200 overflow-auto">
-                  <div className="mb-2">
-                    <strong>Error:</strong> {error.message}
-                  </div>
-                  {errorInfo ? <div>
-                      <strong>Stack:</strong>
-                      <pre className="whitespace-pre-wrap mt-1">
-                        {errorInfo.componentStack}
-                      </pre>
-                    </div> : null}
+              <summary className="cursor-pointer text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300">
+                Show error details
+              </summary>
+              <div className="mt-2 p-3 bg-neutral-100 dark:bg-neutral-700 rounded text-xs font-mono text-neutral-800 dark:text-neutral-200 overflow-auto">
+                <div className="mb-2">
+                  <strong>Error:</strong> {error.message}
                 </div>
-              </details> : null}
+                {errorInfo ? <div>
+                  <strong>Stack:</strong>
+                  <pre className="whitespace-pre-wrap mt-1">
+                    {errorInfo.componentStack}
+                  </pre>
+                </div> : null}
+              </div>
+            </details> : null}
 
             {/* Action Buttons */}
             <div className="flex space-x-3">
@@ -190,7 +198,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               >
                 Try Again
               </button>
-              
+
               <button
                 onClick={this.handleReportError}
                 className="px-4 py-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2"
@@ -199,7 +207,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               </button>
             </div>
           </div>
-        </motion.div>
+        </MotionDiv>
       );
     }
 
@@ -221,7 +229,7 @@ export function withErrorBoundary<P extends object>(
   );
 
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  
+
   return WrappedComponent;
 }
 

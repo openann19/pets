@@ -1,11 +1,10 @@
-import React, { useRef, useCallback, useEffect } from 'react';
-import { usePremiumAnimations } from '../../hooks/usePremiumAnimations';
+import { featureFlags } from '@pawfectmatch/core';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useAria } from '../../hooks/useAria';
-import { featureFlags } from '@pawfectmatch/core/src/featureFlags';
-import { UsageTrackingService } from '@pawfectmatch/web/src/services/usageTracking';
+import { usePremiumAnimations } from '../../hooks/usePremiumAnimations';
 
-import SkeletonLoader from '../SkeletonLoader';
 import LoadingSpinner from '../LoadingSpinner';
+import SkeletonLoader from '../SkeletonLoader';
 
 export interface PetCardProps {
   id: string;
@@ -15,7 +14,6 @@ export interface PetCardProps {
   breed: string;
   distance: number;
   matchScore?: number;
-  isFavorite: boolean;
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
   onExpand?: () => void;
@@ -31,7 +29,7 @@ export const PetCard: React.FC<PetCardProps> = React.memo(({
   breed,
   distance,
   matchScore,
-  isFavorite,
+
   onSwipeLeft,
   onSwipeRight,
   onExpand,
@@ -40,30 +38,25 @@ export const PetCard: React.FC<PetCardProps> = React.memo(({
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<number | null>(null);
-  const { triggerAnimation, triggerAnimationFrameAnimation, confetti, glow } = usePremiumAnimations();
+  const { premiumAnimations } = usePremiumAnimations();
   const { prefersReducedMotion, prefersHighContrast } = useAria();
-  
+
   // Cleanup timeouts on unmount
   useEffect(() => () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    }, []);
-  
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+  }, []);
+
   // Handle swipe gestures with premium animations (optimized with useCallback)
   const handleSwipe = useCallback(async (direction: 'left' | 'right') => {
     if (!prefersReducedMotion) {
-      triggerAnimation(`pet-card-${id}`, {
-        type: direction === 'left' ? 'slide-out-left' : 'slide-out-right',
-        duration: 300
-      });
-      
+      // basic slide handled by CSS, use premium glow for effect
+      premiumAnimations['glow']?.(`pet-card-${id}`, { duration: 300 });
+
       // Add confetti effect for right swipes (likes)
       if (direction === 'right' && onSwipeRight) {
-        confetti(`pet-card-${id}`, {
-          duration: 800,
-          onComplete: onSwipeRight
-        });
+        premiumAnimations['confetti']?.(`pet-card-${id}`, { duration: 800, onComplete: onSwipeRight });
       }
     } else {
       // For users with reduced motion preference, still call the handlers
@@ -73,35 +66,29 @@ export const PetCard: React.FC<PetCardProps> = React.memo(({
         onSwipeRight();
       }
     }
-    
+
     // Call left swipe handler directly if no animation
     if (direction === 'left' && onSwipeLeft) {
       timeoutRef.current = setTimeout(() => {
         onSwipeLeft();
       }, 300);
     }
-  }, [id, prefersReducedMotion, onSwipeLeft, onSwipeRight, triggerAnimation, confetti]);
-  
+  }, [id, prefersReducedMotion, onSwipeLeft, onSwipeRight, premiumAnimations]);
+
   // Handle card hover effect with premium animation (optimized with useCallback)
   const handleHover = useCallback(() => {
     if (!prefersReducedMotion) {
-      triggerAnimationFrameAnimation(`pet-card-${id}`, {
-        type: 'glow',
-        duration: 600
-      });
+      premiumAnimations['glow']?.(`pet-card-${id}`, { duration: 600 });
     }
-  }, [id, prefersReducedMotion, triggerAnimationFrameAnimation]);
-  
+  }, [id, prefersReducedMotion, premiumAnimations]);
+
   // Handle card click with morph animation (optimized with useCallback)
   const handleClick = useCallback(() => {
     if (!prefersReducedMotion) {
-      triggerAnimationFrameAnimation(`pet-card-${id}`, {
-        type: 'morph',
-        duration: 500
-      });
+      premiumAnimations['morph']?.(`pet-card-${id}`, { duration: 500 });
     }
-  }, [id, prefersReducedMotion, triggerAnimationFrameAnimation]);
-  
+  }, [id, prefersReducedMotion, premiumAnimations]);
+
   if (loading) {
     return (
       <div className="pet-card-loading">
@@ -116,7 +103,7 @@ export const PetCard: React.FC<PetCardProps> = React.memo(({
   }
 
   return (
-    <div 
+    <div
       ref={cardRef}
       id={`pet-card-${id}`}
       className={`pet-card ${prefersHighContrast ? 'high-contrast' : ''}`}
@@ -124,21 +111,21 @@ export const PetCard: React.FC<PetCardProps> = React.memo(({
       onClick={handleClick}
     >
       <div className="pet-card-photos">
-        <img 
-          src={photos[0]} 
-          alt={`${name}, ${breed}`} 
+        <img
+          src={photos[0]}
+          alt={`${name}, ${breed}`}
           className="pet-photo"
         />
         {swipeLoading ? <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-60 dark:bg-black dark:bg-opacity-40">
-            <LoadingSpinner size={36} />
-          </div> : null}
+          <LoadingSpinner size={36} />
+        </div> : null}
       </div>
-      
+
       <div className="pet-card-content">
         <h3>{name}</h3>
         <p>{breed} · {age} years old</p>
         <p>{distance} miles away</p>
-        
+
         {/* Premium features */}
         {featureFlags.isEnabled('animations') && matchScore !== undefined && (
           <div className="match-score-container">
@@ -146,21 +133,21 @@ export const PetCard: React.FC<PetCardProps> = React.memo(({
           </div>
         )}
       </div>
-      
+
       <div className="pet-card-actions">
-        <button 
+        <button
           onClick={() => handleSwipe('left')}
           aria-label={`Pass on ${name}`}
         >
           Pass
         </button>
-        <button 
+        <button
           onClick={onExpand}
           aria-label={`View details for ${name}`}
         >
           Details
         </button>
-        <button 
+        <button
           onClick={() => handleSwipe('right')}
           aria-label={`Like ${name}`}
         >

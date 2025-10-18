@@ -51,10 +51,9 @@ function csrfProtection(req, res, next) {
     }
 
     // Constant-time comparison to prevent timing attacks
-    if (!crypto.timingSafeEqual(
-      Buffer.from(csrfTokenFromHeader),
-      Buffer.from(csrfTokenFromCookie)
-    )) {
+    const headerBuf = Buffer.from(csrfTokenFromHeader);
+    const cookieBuf = Buffer.from(csrfTokenFromCookie);
+    if (headerBuf.length !== cookieBuf.length || !crypto.timingSafeEqual(headerBuf, cookieBuf)) {
       logger.security('CSRF token mismatch', {
         method: req.method,
         path: req.path,
@@ -142,7 +141,7 @@ function setCsrfToken(req, res, next) {
 
   // Attach token to response header for client to read
   res.setHeader('X-CSRF-Token', token);
-  
+
   next();
 }
 

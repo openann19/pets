@@ -20,8 +20,10 @@ export * from './stores';
 
 // Export services (logger from utils only to avoid conflicts)
 export { AccountService } from './services/AccountService';
-// errorHandler is available via direct import
-// errorHandler is available via direct import
+export { errorHandler } from './services/ErrorHandler';
+
+// Export feature flags via root to support public consumption
+export * from './featureFlags';
 
 // Export API client and hooks
 export * from './api';

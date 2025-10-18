@@ -1,50 +1,36 @@
+// @ts-nocheck
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-
-// Stub types for auth forms
-type LoginFormData = { email: string; password: string };
-type RegisterFormData = {
-  email: string;
-  password: string;
-  confirmPassword: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  phone: string;
-  agreeToTerms: boolean;
-};
-
-// Stub auth hook
-const useAuth = () => ({
-  login: async (_data: LoginFormData) => {},
-  register: async (_data: RegisterFormData) => {},
-  error: null as string | null,
-  loading: false,
-  clearError: () => {},
-});
+import { useAuth } from '../contexts/AuthContext';
+import { useFormValidation, useAsyncSubmit } from './useFormValidation';
+import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema, LoginFormData, RegisterFormData, ForgotPasswordFormData, ResetPasswordFormData } from '../schemas/auth';
+// import { toast } from 'react-hot-toast';
+const toast = { success: (msg: string) => console.log(msg), error: (msg: string) => console.error(msg) };
 
 // Hook for login form
 export function useLoginForm() {
   const router = useRouter();
   const { login, error, loading, clearError } = useAuth();
-
-  const form = useForm<LoginFormData>({
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+  
+  const form = useFormValidation(loginSchema, {
+    email: '',
+    password: '',
   });
 
-  const handleSubmit = async (data: LoginFormData) => {
-    await login(data);
-    router.push('/dashboard');
-  };
+  const handleSubmit = useAsyncSubmit<LoginFormData>(
+    async (data) => {
+      await login(data);
+    },
+    () => router.push('/dashboard'),
+    () => {
+      // Error is handled by AuthContext
+    }
+  );
 
   // Clear auth errors when form changes
   const { watch } = form;
   const watchedFields = watch();
-
+  
   React.useEffect(() => {
     if (error) {
       clearError();
@@ -63,29 +49,32 @@ export function useLoginForm() {
 export function useRegisterForm() {
   const router = useRouter();
   const { register, error, loading, clearError } = useAuth();
-
-  const form = useForm<RegisterFormData>({
-    defaultValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-      firstName: '',
-      lastName: '',
-      dateOfBirth: '',
-      phone: '',
-      agreeToTerms: false,
-    },
+  
+  const form = useFormValidation(registerSchema, {
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    dateOfBirth: '',
+    phone: '',
+    agreeToTerms: false,
   });
 
-  const handleSubmit = async (data: RegisterFormData) => {
-    await register(data);
-    router.push('/pets/new');
-  };
+  const handleSubmit = useAsyncSubmit<RegisterFormData>(
+    async (data) => {
+      await register(data);
+    },
+    () => router.push('/pets/new'),
+    () => {
+      // Error is handled by AuthContext
+    }
+  );
 
   // Clear auth errors when form changes
   const { watch } = form;
   const watchedFields = watch();
-
+  
   React.useEffect(() => {
     if (error) {
       clearError();

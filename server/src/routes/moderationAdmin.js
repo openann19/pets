@@ -1,10 +1,10 @@
 const express = require('express');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/adminAuth');
 const Report = require('../models/Report');
 const logger = require('../utils/logger');
 
 const router = express.Router();
-router.use(authenticateToken);
+router.use(requireAuth);
 router.use(requireAdmin);
 
 // GET /api/admin/moderation/reports

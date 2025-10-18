@@ -7,42 +7,47 @@ const { deleteFromCloudinary, uploadToCloudinary } = require('../services/cloudi
 // @route   GET /api/users/profile
 // @access  Private
 const getProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.userId).populate('pets');
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+    try {
+        const user = await User.findById(req.userId).populate('pets');
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        res.json({ success: true, data: { user } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
-    res.json({ success: true, data: { user } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Server Error' });
-  }
 };
+
+const { sanitizeObject } = require('../utils/sanitize');
 
 // @desc    Update user profile
 // @route   PUT /api/users/profile
 // @access  Private
 const updateProfile = async (req, res) => {
-  try {
-    const { firstName, lastName, bio, location, preferences } = req.body;
+    try {
+        const { firstName, lastName, bio, location, preferences } = req.body;
 
-    const user = await User.findById(req.userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+        const user = await User.findById(req.userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Sanitize input to prevent XSS
+        const sanitizedData = sanitizeObject({ firstName, lastName, bio, location, preferences });
+
+        // Update fields
+        if (sanitizedData.firstName) user.firstName = sanitizedData.firstName;
+        if (sanitizedData.lastName) user.lastName = sanitizedData.lastName;
+        if (sanitizedData.bio) user.bio = sanitizedData.bio;
+        if (sanitizedData.location) user.location = { ...user.location, ...sanitizedData.location };
+        if (sanitizedData.preferences) user.preferences = { ...user.preferences, ...sanitizedData.preferences };
+
+        await user.save();
+
+        res.json({ success: true, message: 'Profile updated successfully', data: { user } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
-
-    // Update fields
-    if (firstName) user.firstName = firstName;
-    if (lastName) user.lastName = lastName;
-    if (bio) user.bio = bio;
-    if (location) user.location = { ...user.location, ...location };
-    if (preferences) user.preferences = { ...user.preferences, ...preferences };
-
-    await user.save();
-
-    res.json({ success: true, message: 'Profile updated successfully', data: { user } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Server Error' });
-  }
 };
 
 // @desc    Upload user avatar
@@ -198,13 +203,13 @@ const updateFilters = async (req, res) => {
 };
 
 module.exports = {
-  getProfile,
-  updateProfile,
-  uploadAvatar,
-  deleteAccount,
-  updatePreferences,
-  updateLocation,
-  getUserStats,
-  updatePrivacy,
-  updateFilters
+    getProfile,
+    updateProfile,
+    uploadAvatar,
+    deleteAccount,
+    updatePreferences,
+    updateLocation,
+    getUserStats,
+    updatePrivacy,
+    updateFilters
 };

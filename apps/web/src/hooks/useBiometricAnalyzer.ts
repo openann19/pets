@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { logger } from '../services/logger';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface BiometricAnalyzerConfig {
   sensitivity: number;
@@ -43,21 +42,20 @@ interface SignatureData {
   neuralPattern: NeuralPattern;
 }
 
-export const useBiometricAnalyzer = (config: BiometricAnalyzerConfig = { sensitivity: 0.7, adaptiveThreshold: true, multiModal: false }) => {
-  const [biometricProfile] = useState<Map<string, unknown>>(new Map());
-  const [currentSession, setCurrentSession] = useState<Record<string, unknown>>({});
-  const [analysisHistory, setAnalysisHistory] = useState<BiometricData[]>([]);
+export const useBiometricAnalyzer = (config: BiometricAnalyzerConfig) => {
+  const [biometricProfile, setBiometricProfile] = useState<Map<string, any>>(new Map());
+  const [currentSession, setCurrentSession] = useState<any>({});
+  const [analysisHistory, setAnalysisHistory] = useState<any[]>([]);
   const keystrokeBuffer = useRef<number[]>([]);
   const pressureBuffer = useRef<number[]>([]);
   const timingBuffer = useRef<number[]>([]);
 
   // Track keystroke timing
-  const trackKeystroke = useCallback((_timestamp: number, pressure: number = 1) => {
+  const trackKeystroke = useCallback((timestamp: number, pressure: number = 1) => {
     const now = Date.now();
 
     if (keystrokeBuffer.current.length > 0) {
-      const lastKeystroke = keystrokeBuffer.current[keystrokeBuffer.current.length - 1] ?? now;
-      const interval = now - lastKeystroke;
+      const interval = now - keystrokeBuffer.current[keystrokeBuffer.current.length - 1];
       timingBuffer.current.push(interval);
     }
 
@@ -73,71 +71,69 @@ export const useBiometricAnalyzer = (config: BiometricAnalyzerConfig = { sensiti
   }, []);
 
   // Analyze typing rhythm
-  const analyzeRhythm = useCallback(
-    (intervals: number[]): RhythmMetrics => {
-      if (intervals.length < 2) {
-        return {
-          averageInterval: 0,
-          variance: 0,
-          consistencyScore: 0,
-          neuralSync: 0,
-        };
-      }
-
-      const sum = intervals.reduce((a, b) => a + b, 0);
-      const average = sum / intervals.length;
-
-      const variance =
-        intervals.reduce((acc, interval) => acc + Math.pow(interval - average, 2), 0) /
-        intervals.length;
-
-      const standardDeviation = Math.sqrt(variance);
-      const consistencyScore = Math.max(0, 1 - standardDeviation / average);
-
-      // Neural sync based on rhythm consistency and biometric patterns
-      const neuralSync = consistencyScore * config.sensitivity;
-
+  const analyzeRhythm = useCallback((intervals: number[]): RhythmMetrics => {
+    if (intervals.length < 2) {
       return {
-        averageInterval: average,
-        variance,
-        consistencyScore,
-        neuralSync,
+        averageInterval: 0,
+        variance: 0,
+        consistencyScore: 0,
+        neuralSync: 0,
       };
-    },
-    [config.sensitivity],
-  );
+    }
+
+    const sum = intervals.reduce((a, b) => a + b, 0);
+    const average = sum / intervals.length;
+
+    const variance = intervals.reduce((acc, interval) =>
+      acc + Math.pow(interval - average, 2), 0) / intervals.length;
+
+    const standardDeviation = Math.sqrt(variance);
+    const consistencyScore = Math.max(0, 1 - (standardDeviation / average));
+
+    // Neural sync based on rhythm consistency and biometric patterns
+    const neuralSync = consistencyScore * config.sensitivity;
+
+    return {
+      averageInterval: average,
+      variance,
+      consistencyScore,
+      neuralSync,
+    };
+  }, [config.sensitivity]);
 
   // Calculate typing speed (characters per minute)
-  const calculateTypingSpeed = useCallback(
-    (keystrokes: number[], timeWindow: number = 60000): number => {
-      if (keystrokes.length < 2) return 0;
+  const calculateTypingSpeed = useCallback((keystrokes: number[], timeWindow: number = 60000): number => {
+    if (keystrokes.length < 2) return 0;
 
-      const startTime = keystrokes[0];
-      const endTime = keystrokes[keystrokes.length - 1];
-      const duration = (endTime || 0) - (startTime || 0);
+    const startTime = keystrokes[0];
+    const endTime = keystrokes[keystrokes.length - 1];
+    const duration = endTime - startTime;
 
-      if (duration === 0) return 0;
+    if (duration === 0) return 0;
 
-      const speed = (keystrokes.length / duration) * (timeWindow / 1000); // CPM
-      return Math.min(speed, 1000); // Cap at 1000 CPM for sanity
-    },
-    [],
-  );
+    const speed = (keystrokes.length / duration) * (timeWindow / 1000); // CPM
+    return Math.min(speed, 1000); // Cap at 1000 CPM for sanity
+  }, []);
 
   // Analyze pressure patterns
   const analyzePressure = useCallback((pressures: number[]): number[] => {
     if (pressures.length === 0) return [];
 
     const average = pressures.reduce((a, b) => a + b, 0) / pressures.length;
-    const variance =
-      pressures.reduce((acc, p) => acc + Math.pow(p - average, 2), 0) / pressures.length;
+    const variance = pressures.reduce((acc, p) => acc + Math.pow(p - average, 2), 0) / pressures.length;
 
     return [average, variance, Math.sqrt(variance)]; // mean, variance, std dev
   }, []);
 
   // Generate biometric signature
   const generateSignature = useCallback((data: SignatureData): string => {
-    const { typingSpeed, keystrokePattern, pressureData, rhythmAnalysis, neuralPattern } = data;
+    const {
+      typingSpeed,
+      keystrokePattern,
+      pressureData,
+      rhythmAnalysis,
+      neuralPattern,
+    } = data;
 
     // Create a unique signature based on biometric data
     const signatureData = [
@@ -153,7 +149,7 @@ export const useBiometricAnalyzer = (config: BiometricAnalyzerConfig = { sensiti
     let hash = 0;
     for (let i = 0; i < signatureData.length; i++) {
       const char = signatureData.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
+      hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
 
@@ -185,42 +181,38 @@ export const useBiometricAnalyzer = (config: BiometricAnalyzerConfig = { sensiti
     if (history.length < 5) return;
 
     // Calculate average metrics from recent history
-    const avgConsistency =
-      history.reduce((sum, h) => sum + h.rhythmAnalysis.consistencyScore, 0) / history.length;
+    const avgTypingSpeed = history.reduce((sum, h) => sum + h.typingSpeed, 0) / history.length;
+    const avgConsistency = history.reduce((sum, h) => sum + h.rhythmAnalysis.consistencyScore, 0) / history.length;
 
     // Adjust sensitivity based on user patterns
-    const newSensitivity = Math.max(
-      0.1,
-      Math.min(0.99, config.sensitivity + (avgConsistency - 0.7) * 0.1),
-    );
+    const newSensitivity = Math.max(0.1, Math.min(0.99,
+      config.sensitivity + (avgConsistency - 0.7) * 0.1
+    ));
 
     // Update configuration would go here
-    logger.debug('Adaptive threshold adjusted', { newSensitivity });
+    console.log('Adaptive threshold adjusted:', newSensitivity);
   }, [config, analysisHistory]);
 
   // Multi-modal analysis combining multiple biometric signals
-  const multiModalAnalysis = useCallback(
-    (biometricData: BiometricData, neuralData: NeuralPattern) => {
-      if (!config.multiModal) return { confidence: 0, risk: 0 };
+  const multiModalAnalysis = useCallback((biometricData: BiometricData, neuralData: NeuralPattern) => {
+    if (!config.multiModal) return { confidence: 0, risk: 0 };
 
-      // Combine typing rhythm, pressure patterns, and neural signals
-      const rhythmScore = biometricData.rhythmAnalysis.consistencyScore;
-      const pressureStability = 1 - (biometricData.pressureData[1] || 0); // Lower variance = higher stability
-      const neuralStability = neuralData.predictionAccuracy;
-      const { cognitiveLoad } = neuralData;
+    // Combine typing rhythm, pressure patterns, and neural signals
+    const rhythmScore = biometricData.rhythmAnalysis.consistencyScore;
+    const pressureStability = 1 - (biometricData.pressureData[1] || 0); // Lower variance = higher stability
+    const neuralStability = neuralData.predictionAccuracy;
+    const cognitiveLoad = neuralData.cognitiveLoad;
 
-      // Calculate overall confidence
-      const confidence = rhythmScore * 0.4 + pressureStability * 0.3 + neuralStability * 0.3;
+    // Calculate overall confidence
+    const confidence = (rhythmScore * 0.4 + pressureStability * 0.3 + neuralStability * 0.3);
 
-      // Calculate risk based on anomalies
-      const typingAnomaly = Math.abs(biometricData.typingSpeed - 300) / 300; // Deviation from average typing speed
-      const cognitiveAnomaly = Math.abs(cognitiveLoad - 0.5) / 0.5;
-      const risk = Math.max(0, typingAnomaly * 0.6 + cognitiveAnomaly * 0.4);
+    // Calculate risk based on anomalies
+    const typingAnomaly = Math.abs(biometricData.typingSpeed - 300) / 300; // Deviation from average typing speed
+    const cognitiveAnomaly = Math.abs(cognitiveLoad - 0.5) / 0.5;
+    const risk = Math.max(0, typingAnomaly * 0.6 + cognitiveAnomaly * 0.4);
 
-      return { confidence, risk };
-    },
-    [config.multiModal],
-  );
+    return { confidence, risk };
+  }, [config.multiModal]);
 
   // Update analysis history
   useEffect(() => {
@@ -233,7 +225,7 @@ export const useBiometricAnalyzer = (config: BiometricAnalyzerConfig = { sensiti
           analysisId: Math.random().toString(36).substr(2, 9),
         };
 
-        setAnalysisHistory((prev) => [...prev.slice(-99), analysis]); // Keep last 100
+        setAnalysisHistory(prev => [...prev.slice(-99), analysis]); // Keep last 100
         setCurrentSession(analysis);
       }
     }, 1000);

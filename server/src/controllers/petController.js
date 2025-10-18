@@ -33,7 +33,7 @@ const createPet = async (req, res) => {
 
     // Get user's location for pet location
     const user = await User.findById(req.userId);
-    
+
     const pet = new Pet({
       owner: req.userId,
       name,
@@ -101,10 +101,10 @@ const discoverPets = async (req, res) => {
     } = req.query;
 
     const user = await User.findById(req.userId);
-    
+
     // Get IDs of pets already swiped by user
     const swipedPetIds = user.swipedPets.map(swipe => swipe.petId);
-    
+
     // Build query
     const query = {
       owner: { $ne: req.userId }, // Exclude user's own pets
@@ -159,7 +159,7 @@ const discoverPets = async (req, res) => {
 
     // Apply pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
+
     let pets;
     if (Array.isArray(petsQuery)) {
       // Aggregation result
@@ -227,7 +227,7 @@ const swipePet = async (req, res) => {
     }
 
     // Check if already swiped
-    const alreadySwiped = user.swipedPets.find(swipe => 
+    const alreadySwiped = user.swipedPets.find(swipe =>
       swipe.petId.toString() === petId
     );
 
@@ -264,9 +264,9 @@ const swipePet = async (req, res) => {
     // Check for mutual match if it's a like/superlike
     if (action === 'like' || action === 'superlike') {
       const otherUser = await User.findById(pet.owner._id);
-      const mutualLike = otherUser.swipedPets.find(swipe => 
-        user.pets.some(userPetId => 
-          userPetId.toString() === swipe.petId.toString() && 
+      const mutualLike = otherUser.swipedPets.find(swipe =>
+        user.pets.some(userPetId =>
+          userPetId.toString() === swipe.petId.toString() &&
           (swipe.action === 'like' || swipe.action === 'superlike')
         )
       );
@@ -274,9 +274,9 @@ const swipePet = async (req, res) => {
       if (mutualLike) {
         // Create match
         const Match = require('../models/Match');
-        
+
         // Find which of user's pets was liked
-        const likedUserPet = user.pets.find(userPetId => 
+        const likedUserPet = user.pets.find(userPetId =>
           userPetId.toString() === mutualLike.petId.toString()
         );
 
@@ -288,7 +288,7 @@ const swipePet = async (req, res) => {
           matchType: pet.intent === 'all' ? 'general' : pet.intent,
           compatibilityScore: 50 // Default score, will be updated below
         });
-        
+
         await match.save();
 
         // Get real compatibility score from AI service
@@ -303,7 +303,7 @@ const swipePet = async (req, res) => {
           console.error('AI compatibility score error:', aiError);
           // Continue without AI score if it fails
         }
-        
+
         // Add match to both users
         await User.findByIdAndUpdate(pet.owner._id, {
           $push: { matches: match._id }
@@ -409,6 +409,8 @@ const getPet = async (req, res) => {
   }
 };
 
+const { sanitizeObject } = require('../utils/sanitize');
+
 // @desc    Update pet
 // @route   PUT /api/pets/:id
 // @access  Private
@@ -439,6 +441,9 @@ const updatePet = async (req, res) => {
       }
     }
 
+    // Sanitize input to prevent XSS
+    const sanitizedBody = sanitizeObject(req.body);
+
     // Update allowed fields
     const allowedUpdates = [
       'name', 'description', 'personalityTags', 'intent', 'availability',
@@ -446,8 +451,8 @@ const updatePet = async (req, res) => {
     ];
 
     allowedUpdates.forEach(field => {
-      if (req.body[field] !== undefined) {
-        pet[field] = req.body[field];
+      if (sanitizedBody[field] !== undefined) {
+        pet[field] = sanitizedBody[field];
       }
     });
 

@@ -5,14 +5,10 @@
 
 import { logger } from './logger';
 
-interface NotificationData {
-  type?: 'match' | 'message' | 'like' | 'super_like' | 'reminder' | 'test';
-  matchId?: string;
-  petId?: string;
-  messageId?: string;
-  likeId?: string;
-  reminderId?: string;
-  [key: string]: unknown;
+interface NotificationPermissionState {
+  permission: NotificationPermission;
+  token?: string;
+  platform: 'web' | 'ios' | 'android';
 }
 
 interface PushNotification {
@@ -22,7 +18,7 @@ interface PushNotification {
   badge?: string;
   image?: string;
   tag?: string;
-  data?: NotificationData;
+  data?: any;
   requireInteraction?: boolean;
   actions?: NotificationAction[];
   vibrate?: number[];
@@ -47,13 +43,14 @@ interface NotificationAnalytics {
 class NotificationService {
   private serviceWorker: ServiceWorkerRegistration | null = null;
   private pushSubscription: PushSubscription | null = null;
-  // Removed unused private properties for strict compliance
+  private fcmToken: string | null = null;
+  private apnsToken: string | null = null;
   private analytics: NotificationAnalytics = {
     sent: 0,
     delivered: 0,
     clicked: 0,
     dismissed: 0,
-    failed: 0,
+    failed: 0
   };
   private messageQueue: PushNotification[] = [];
   private isOnline = true;
@@ -65,7 +62,7 @@ class NotificationService {
     }
   }
 
-  private async initialize(): Promise<void> {
+  private async initialize() {
     try {
       // Check if notifications are supported
       if (!('Notification' in window)) {
@@ -88,11 +85,11 @@ class NotificationService {
         logger.info('Notification service initialized');
       }
     } catch (error) {
-      logger.error('Failed to initialize notification service', { error });
+      logger.error('Failed to initialize notification service', error);
     }
   }
 
-  private async registerServiceWorker(): Promise<void> {
+  private async registerServiceWorker() {
     try {
       this.serviceWorker = await navigator.serviceWorker.register('/sw.js');
       logger.info('Service worker registered');
@@ -102,11 +99,11 @@ class NotificationService {
         logger.info('Service worker update found');
       });
     } catch (error) {
-      logger.error('Service worker registration failed', { error });
+      logger.error('Service worker registration failed', error);
     }
   }
 
-  private setupEventListeners(): void {
+  private setupEventListeners() {
     if (!('serviceWorker' in navigator)) return;
 
     // Listen for messages from service worker
@@ -129,7 +126,7 @@ class NotificationService {
     });
   }
 
-  private setupConnectivityListener(): void {
+  private setupConnectivityListener() {
     window.addEventListener('online', () => {
       this.isOnline = true;
       this.processQueuedMessages();
@@ -159,17 +156,17 @@ class NotificationService {
       logger.info('Notification permission', { permission });
       return permission;
     } catch (error) {
-      logger.error('Failed to request notification permission', { error });
+      logger.error('Failed to request notification permission', error);
       return 'denied';
     }
   }
 
-  private async subscribeToPush(): Promise<void> {
+  private async subscribeToPush() {
     if (!this.serviceWorker) return;
 
     try {
       // Get VAPID public key from environment
-      const vapidPublicKey = process.env['NEXT_PUBLIC_VAPID_PUBLIC_KEY'];
+      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       if (!vapidPublicKey) {
         logger.warn('VAPID public key not configured');
         return;
@@ -180,21 +177,23 @@ class NotificationService {
       // Subscribe to push notifications
       this.pushSubscription = await this.serviceWorker.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: convertedVapidKey as BufferSource,
+        applicationServerKey: convertedVapidKey.buffer as ArrayBuffer
       });
 
       // Send subscription to backend
       await this.sendSubscriptionToServer(this.pushSubscription);
-
+      
       logger.info('Subscribed to push notifications');
     } catch (error) {
-      logger.error('Failed to subscribe to push notifications', { error });
+      logger.error('Failed to subscribe to push notifications', error);
     }
   }
 
   private urlBase64ToUint8Array(base64String: string): Uint8Array {
-    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
 
     const rawData = window.atob(base64);
     const outputArray = new Uint8Array(rawData.length);
@@ -205,29 +204,26 @@ class NotificationService {
     return outputArray;
   }
 
-  private async sendSubscriptionToServer(subscription: PushSubscription): Promise<void> {
+  private async sendSubscriptionToServer(subscription: PushSubscription) {
     try {
-      const response = await fetch(
-        `${process.env['NEXT_PUBLIC_API_URL']}/api/notifications/subscribe`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          },
-          body: JSON.stringify({
-            subscription,
-            platform: this.getPlatform(),
-            deviceInfo: this.getDeviceInfo(),
-          }),
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/subscribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
         },
-      );
+        body: JSON.stringify({
+          subscription,
+          platform: this.getPlatform(),
+          deviceInfo: this.getDeviceInfo()
+        })
+      });
 
       if (response.ok) {
         logger.info('Push subscription sent to server');
       }
     } catch (error) {
-      logger.error('Failed to send subscription to server', { error });
+      logger.error('Failed to send subscription to server', error);
     }
   }
 
@@ -238,18 +234,18 @@ class NotificationService {
     return 'web';
   }
 
-  private getDeviceInfo(): Record<string, string> {
+  private getDeviceInfo() {
     return {
       userAgent: navigator.userAgent,
       language: navigator.language,
       platform: navigator.platform,
       vendor: navigator.vendor,
       screenResolution: `${screen.width}x${screen.height}`,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
     };
   }
 
-  async sendNotification(notification: PushNotification): Promise<void> {
+  async sendNotification(notification: PushNotification) {
     // Track analytics
     this.analytics.sent++;
 
@@ -271,61 +267,59 @@ class NotificationService {
         // Send via service worker for rich notifications
         await this.serviceWorker.active.postMessage({
           type: 'show-notification',
-          notification,
+          notification
         });
       } else {
         // Fallback to basic notification
         this.showBasicNotification(notification);
       }
     } catch (error) {
-      logger.error('Failed to send notification', { error });
+      logger.error('Failed to send notification', error);
       this.analytics.failed++;
     }
   }
 
-  private showBasicNotification(notification: PushNotification): void {
+  private showBasicNotification(notification: PushNotification) {
     const options: NotificationOptions = {
       body: notification.body,
       icon: notification.icon || '/icon-192.png',
       badge: notification.badge || '/badge-72.png',
-      requireInteraction: notification.requireInteraction ?? false,
-      ...(notification.image ? { image: notification.image } : {}),
-      ...(notification.tag ? { tag: notification.tag } : {}),
-      ...(notification.data ? { data: notification.data } : {}),
-      ...(notification.actions ? { actions: notification.actions } : {}),
+      tag: notification.tag,
+      data: notification.data,
+      requireInteraction: notification.requireInteraction || false
     };
 
     const notif = new Notification(notification.title, options);
 
-    notif.onclick = (): void => {
+    notif.onclick = () => {
       this.handleNotificationClick(notification.data);
     };
 
-    notif.onclose = (): void => {
+    notif.onclose = () => {
       this.handleNotificationClose(notification.data);
     };
   }
 
-  private handleNotificationClick(data: NotificationData | undefined): void {
+  private handleNotificationClick(data: any) {
     this.analytics.clicked++;
     logger.info('Notification clicked', data);
 
     // Navigate based on notification type
     if (data?.type === 'match') {
-      window.location.href = `/matches/${data.matchId}`;
+      window.location.href = `./matches/${data.matchId}`;
     } else if (data?.type === 'message') {
-      window.location.href = `/chat/${data.matchId}`;
+      window.location.href = `./chat/${data.matchId}`;
     } else if (data?.type === 'like') {
-      window.location.href = '/swipe';
+      window.location.href = './swipe';
     }
   }
 
-  private handleNotificationClose(data: NotificationData | undefined): void {
+  private handleNotificationClose(data: any) {
     this.analytics.dismissed++;
     logger.info('Notification closed', data);
   }
 
-  private async processQueuedMessages(): Promise<void> {
+  private async processQueuedMessages() {
     while (this.messageQueue.length > 0) {
       const notification = this.messageQueue.shift();
       if (notification) {
@@ -334,7 +328,7 @@ class NotificationService {
     }
   }
 
-  async unsubscribe(): Promise<void> {
+  async unsubscribe() {
     try {
       if (this.pushSubscription) {
         await this.pushSubscription.unsubscribe();
@@ -342,7 +336,7 @@ class NotificationService {
         logger.info('Unsubscribed from push notifications');
       }
     } catch (error) {
-      logger.error('Failed to unsubscribe', { error });
+      logger.error('Failed to unsubscribe', error);
     }
   }
 
@@ -350,7 +344,7 @@ class NotificationService {
     return { ...this.analytics };
   }
 
-  async testNotification(): Promise<void> {
+  async testNotification() {
     await this.sendNotification({
       title: '🎉 Test Notification',
       body: 'This is a test notification from PawfectMatch!',
@@ -358,19 +352,14 @@ class NotificationService {
       vibrate: [200, 100, 200],
       actions: [
         { action: 'open', title: 'Open App' },
-        { action: 'dismiss', title: 'Dismiss' },
+        { action: 'dismiss', title: 'Dismiss' }
       ],
-      data: { test: true },
+      data: { test: true }
     });
   }
 
   // Specific notification types
-  async sendMatchNotification(matchData: {
-    id: string;
-    petId: string;
-    petName: string;
-    petPhoto?: string;
-  }): Promise<void> {
+  async sendMatchNotification(matchData: any) {
     await this.sendNotification({
       title: '💕 New Match!',
       body: `You matched with ${matchData.petName}!`,
@@ -379,19 +368,13 @@ class NotificationService {
       data: {
         type: 'match',
         matchId: matchData.id,
-        petId: matchData.petId,
+        petId: matchData.petId
       },
-      requireInteraction: true,
+      requireInteraction: true
     });
   }
 
-  async sendMessageNotification(messageData: {
-    id: string;
-    matchId: string;
-    senderName: string;
-    message: string;
-    senderPhoto?: string;
-  }): Promise<void> {
+  async sendMessageNotification(messageData: any) {
     await this.sendNotification({
       title: `💬 ${messageData.senderName}`,
       body: messageData.message,
@@ -400,12 +383,12 @@ class NotificationService {
       data: {
         type: 'message',
         matchId: messageData.matchId,
-        messageId: messageData.id,
-      },
+        messageId: messageData.id
+      }
     });
   }
 
-  async sendLikeNotification(likeData: { id: string }): Promise<void> {
+  async sendLikeNotification(likeData: any) {
     await this.sendNotification({
       title: '❤️ Someone likes your pet!',
       body: 'Check who liked your furry friend',
@@ -413,12 +396,12 @@ class NotificationService {
       tag: 'like',
       data: {
         type: 'like',
-        likeId: likeData.id,
-      },
+        likeId: likeData.id
+      }
     });
   }
 
-  async sendReminderNotification(reminder: { id: string; message: string }): Promise<void> {
+  async sendReminderNotification(reminder: any) {
     await this.sendNotification({
       title: '🔔 Reminder',
       body: reminder.message,
@@ -426,33 +409,60 @@ class NotificationService {
       tag: 'reminder',
       data: {
         type: 'reminder',
-        reminderId: reminder.id,
-      },
+        reminderId: reminder.id
+      }
     });
   }
 
   // iOS specific methods
-  async registerForAPNS(): Promise<void> {
+  async registerForAPNS() {
     // This would be implemented in the native iOS app
     logger.info('APNS registration requested');
   }
 
   // Android specific methods
-  async registerForFCM(): Promise<void> {
+  async registerForFCM() {
     try {
-      const vapidKey = process.env['NEXT_PUBLIC_FCM_VAPID_KEY'];
-      if (!vapidKey) {
-        logger.warn('FCM VAPID key not configured; skipping FCM registration');
-        return;
+      const { getToken } = await import('firebase/messaging');
+      const { messaging } = await import('./firebase');
+      
+      if (messaging) {
+        this.fcmToken = await getToken(messaging, {
+          vapidKey: process.env.NEXT_PUBLIC_FCM_VAPID_KEY
+        });
+        
+        logger.info('FCM token obtained', { token: this.fcmToken });
+        await this.sendFCMTokenToServer(this.fcmToken);
       }
-      // Web FCM not configured in this environment
-      logger.info('FCM registration skipped (web runtime not configured)');
     } catch (error) {
-      logger.error('Failed to get FCM token', { error });
+      logger.error('Failed to get FCM token', error);
     }
   }
 
-  // Removed unused private methods for strict compliance
+  private async getFirebaseMessaging() {
+    try {
+      const { messaging } = await import('./firebase');
+      return messaging;
+    } catch (error) {
+      logger.error('Firebase messaging not available', error);
+      return null;
+    }
+  }
+
+  private async sendFCMTokenToServer(token: string) {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/fcm-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
+        },
+        body: JSON.stringify({ token, platform: 'android' })
+      });
+    } catch (error) {
+      logger.error('Failed to send FCM token to server', error);
+    }
+  }
 }
 
 // Create singleton instance

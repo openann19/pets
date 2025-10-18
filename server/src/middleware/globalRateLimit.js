@@ -4,7 +4,14 @@
  */
 
 const rateLimit = require('express-rate-limit');
-const RedisStore = require('rate-limit-redis');
+const { ipKeyGenerator } = require('express-rate-limit');
+let RedisStore;
+const isTestEnv = process.env.NODE_ENV === 'test';
+try {
+  RedisStore = require('rate-limit-redis');
+} catch {
+  RedisStore = null;
+}
 const redis = require('../config/redis');
 const logger = require('../utils/logger');
 
@@ -27,7 +34,7 @@ function createRateLimiter(options = {}) {
         path: req.path,
         method: req.method,
       });
-      
+
       res.status(429).json({
         error: 'Too many requests',
         message: 'You have exceeded the rate limit. Please try again later.',
@@ -38,29 +45,25 @@ function createRateLimiter(options = {}) {
       // Skip rate limiting for health checks
       return req.path === '/health' || req.path === '/api/health';
     },
-    keyGenerator: (req) => {
-      // Use IP address as key, but check for proxy headers
-      return req.headers['x-forwarded-for']?.split(',')[0].trim() || 
-             req.headers['x-real-ip'] || 
-             req.ip;
-    },
+    // Use library-provided IPv6-safe generator
+    keyGenerator: ipKeyGenerator,
   };
 
   const config = { ...defaultOptions, ...options };
 
   // Use Redis store if available
-  if (redis && redis.isReady) {
+  if (RedisStore && redis && redis.isReady) {
     try {
       config.store = new RedisStore({
         client: redis,
         prefix: 'rl:',
       });
-      logger.info('Rate limiter using Redis store');
+      if (!isTestEnv) logger.info('Rate limiter using Redis store');
     } catch (error) {
-      logger.warn('Failed to initialize Redis store for rate limiter, using memory store', { error: error.message });
+      if (!isTestEnv) logger.warn('Failed to initialize Redis store for rate limiter, using memory store', { error: error.message });
     }
   } else {
-    logger.info('Rate limiter using memory store (Redis not available)');
+    if (!isTestEnv) logger.info('Rate limiter using memory store (Redis not available)');
   }
 
   return rateLimit(config);

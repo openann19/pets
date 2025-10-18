@@ -1,249 +1,243 @@
-'use client';
+/**
+ * WebSocket Hook for Real-time Features
+ * Provides socket connection management and event handling
+ */
 
-import { logger } from '@pawfectmatch/core';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Socket } from 'socket.io-client';
-import io from 'socket.io-client';
-import { useAuthStore } from '../lib/auth-store';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { createSocketService, getSocketService } from '@/services/socket';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { SocketEventHandlers, SocketError, SocketMessageData, SocketMatchData, SocketUserStatusData, SocketNotificationData, SocketCallData, SocketTypingData, MessageAttachment } from '@/types';
 
-// Validate and provide fallback for SOCKET_URL
-const SOCKET_URL =
-  process.env['NEXT_PUBLIC_SOCKET_URL'] && process.env['NEXT_PUBLIC_SOCKET_URL'].length > 0
-    ? process.env['NEXT_PUBLIC_SOCKET_URL']
-    : 'http://localhost:3001';
-
-// Exponential backoff configuration
-const INITIAL_RECONNECT_DELAY = 1000;
-const MAX_RECONNECT_DELAY = 30000;
-const RECONNECT_DECAY = 1.5;
-const MAX_RECONNECT_ATTEMPTS = 10;
-
-interface SocketState {
-  isConnected: boolean;
-  reconnectAttempts: number;
-  lastError: Error | null;
+interface UseSocketOptions {
+  autoConnect?: boolean;
+  reconnectOnAuth?: boolean;
 }
 
-export function useSocket() {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [socketState, setSocketState] = useState<SocketState>({
-    isConnected: false,
-    reconnectAttempts: 0,
-    lastError: null,
-  });
-  const { user, isAuthenticated } = useAuthStore();
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef(0);
 
-  const registerUser = useCallback((socketInstance: Socket, userId: string) => {
-    socketInstance.emit('register', { userId });
-    logger.info('User registered on socket', { userId });
-  }, []);
+export const useSocket = (
+  options: UseSocketOptions = {},
+  eventHandlers: SocketEventHandlers = {}
+) => {
+  const { user, isAuthenticated } = useAuth();
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const socketRef = useRef<ReturnType<typeof createSocketService> | null>(null);
+  const handlersRef = useRef<SocketEventHandlers>(eventHandlers);
 
-  // Cleanup on unmount
+  const {
+    autoConnect = true,
+    reconnectOnAuth = true,
+  } = options;
+
+  // Update handlers when they change
   useEffect(() => {
-    return () => {
-      if (socket) {
-        socket.close();
-      }
-    };
-  }, [socket]);
+    handlersRef.current = eventHandlers;
+  }, [eventHandlers]);
 
-  const calculateBackoffDelay = useCallback((attemptNumber: number): number => {
-    const delay = Math.min(
-      INITIAL_RECONNECT_DELAY * Math.pow(RECONNECT_DECAY, attemptNumber),
-      MAX_RECONNECT_DELAY,
-    );
-    return delay + Math.random() * 1000; // Add jitter
-  }, []);
-
-  const showReconnectionToast = useCallback((attemptNumber: number, maxAttempts: number) => {
-    if (typeof window !== 'undefined' && attemptNumber > 2) {
-      // Show toast notification to user
-      const message =
-        attemptNumber < maxAttempts
-          ? `Reconnecting to server... (Attempt ${attemptNumber}/${maxAttempts})`
-          : 'Unable to connect to server. Please check your connection.';
-
-      logger.warn('Socket reconnection attempt', { attemptNumber, maxAttempts, message });
-
-      // Dispatch custom event for UI to handle
-      window.dispatchEvent(
-        new CustomEvent('socket-reconnect-status', {
-          detail: { attemptNumber, maxAttempts, message, isError: attemptNumber >= maxAttempts },
-        }),
-      );
-    }
-  }, []);
-
+  // Initialize socket service
   useEffect(() => {
-    if (isAuthenticated && user) {
-      // Create socket connection with auth
-      const newSocket = io(SOCKET_URL, {
-        auth: {
-          token: localStorage.getItem('auth_token'),
-        },
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-        reconnectionDelay: INITIAL_RECONNECT_DELAY,
-        reconnectionDelayMax: MAX_RECONNECT_DELAY,
-        timeout: 20000,
+    if (autoConnect && isAuthenticated && user?.id) {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001';
+      
+      socketRef.current = createSocketService({
+        url: apiUrl,
+        token: localStorage.getItem('accessToken') || localStorage.getItem('auth_token') || undefined,
         autoConnect: true,
       });
 
-      // Connection events
-      newSocket.on('connect', () => {
-        logger.info('Socket connected', { id: newSocket.id, userId: user._id });
-        reconnectAttemptsRef.current = 0;
-
-        setSocketState({
-          isConnected: true,
-          reconnectAttempts: 0,
-          lastError: null,
-        });
-
-        // Register user on connect
-        registerUser(newSocket, user._id);
-
-        // Clear any pending reconnect timeout
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-          reconnectTimeoutRef.current = null;
-        }
+      // Set up event listeners
+      const socket = socketRef.current;
+      
+      socket.on('connected', () => {
+        setIsConnected(true);
+        setConnectionError(null);
+        handlersRef.current.onConnect?.();
       });
 
-      newSocket.on('disconnect', (reason) => {
-        logger.warn('Socket disconnected', { reason, userId: user._id });
-
-        setSocketState((prev) => ({
-          ...prev,
-          isConnected: false,
-        }));
+      socket.on('disconnected', (reason: string) => {
+        setIsConnected(false);
+        handlersRef.current.onDisconnect?.(reason);
       });
 
-      newSocket.on('connect_error', (error) => {
-        logger.error('Socket connection error', { error: error.message, userId: user._id });
-
-        setSocketState((prev) => ({
-          ...prev,
-          lastError: error,
-        }));
+      socket.on('error', (error: SocketError) => {
+        setConnectionError(error.message || 'Connection error');
+        handlersRef.current.onError?.(error);
       });
 
-      // Reconnection events with exponential backoff
-      newSocket.on('reconnect_attempt', (attemptNumber) => {
-        reconnectAttemptsRef.current = attemptNumber;
-
-        setSocketState((prev) => ({
-          ...prev,
-          reconnectAttempts: attemptNumber,
-        }));
-
-        const delay = calculateBackoffDelay(attemptNumber);
-        logger.info('Socket reconnection attempt', {
-          attemptNumber,
-          delay: Math.round(delay),
-          userId: user._id,
-        });
-
-        showReconnectionToast(attemptNumber, MAX_RECONNECT_ATTEMPTS);
+      socket.on('message', (data: SocketMessageData) => {
+        handlersRef.current.onMessage?.(data);
       });
 
-      newSocket.on('reconnect', (attemptNumber) => {
-        logger.info('Socket reconnected successfully', { attemptNumber, userId: user._id });
-        reconnectAttemptsRef.current = 0;
-
-        setSocketState({
-          isConnected: true,
-          reconnectAttempts: 0,
-          lastError: null,
-        });
-
-        // Re-register user after reconnection
-        registerUser(newSocket, user._id);
-
-        // Notify user of successful reconnection
-        if (typeof window !== 'undefined' && attemptNumber > 1) {
-          window.dispatchEvent(
-            new CustomEvent('socket-reconnect-status', {
-              detail: {
-                attemptNumber,
-                message: 'Successfully reconnected to server',
-                isError: false,
-                isSuccess: true,
-              },
-            }),
-          );
-        }
+      socket.on('new_match', (data: SocketMatchData) => {
+        handlersRef.current.onNewMatch?.(data);
       });
 
-      newSocket.on('reconnect_error', (error) => {
-        logger.error('Socket reconnection error', {
-          error: error.message,
-          attempts: reconnectAttemptsRef.current,
-          userId: user._id,
-        });
-
-        setSocketState((prev) => ({
-          ...prev,
-          lastError: error,
-        }));
+      socket.on('user_status', (data: SocketUserStatusData) => {
+        handlersRef.current.onUserStatus?.(data);
       });
 
-      newSocket.on('reconnect_failed', () => {
-        logger.error('Socket reconnection failed - max attempts reached', {
-          maxAttempts: MAX_RECONNECT_ATTEMPTS,
-          userId: user._id,
-        });
-
-        setSocketState((prev) => ({
-          ...prev,
-          isConnected: false,
-        }));
-
-        // Notify user that reconnection has failed
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('socket-reconnect-status', {
-              detail: {
-                message: 'Connection lost. Please refresh the page.',
-                isError: true,
-                isFatal: true,
-              },
-            }),
-          );
-        }
+      socket.on('notification', (data: SocketNotificationData) => {
+        handlersRef.current.onNotification?.(data);
       });
 
-      setSocket(newSocket);
+      socket.on('call_incoming', (data: SocketCallData) => {
+        handlersRef.current.onCallIncoming?.(data);
+      });
 
-      // Cleanup on unmount
-      return () => {
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-        }
+      socket.on('call_accepted', (data: SocketCallData) => {
+        handlersRef.current.onCallAccepted?.(data);
+      });
 
-        // Remove all event listeners to prevent memory leaks
-        newSocket.off('connect');
-        newSocket.off('disconnect');
-        newSocket.off('connect_error');
-        newSocket.off('reconnect_attempt');
-        newSocket.off('reconnect');
-        newSocket.off('reconnect_error');
-        newSocket.off('reconnect_failed');
+      socket.on('call_rejected', (data: SocketCallData) => {
+        handlersRef.current.onCallRejected?.(data);
+      });
 
-        newSocket.close();
-      };
-    } else {
-      // Close socket if user logs out
-      if (socket) {
-        socket.close();
-        setSocket(null);
-      }
-      return undefined;
+      socket.on('call_ended', (data: SocketCallData) => {
+        handlersRef.current.onCallEnded?.(data);
+      });
+
+      socket.on('typing_start', (data: SocketTypingData) => {
+        handlersRef.current.onTypingStart?.(data);
+      });
+
+      socket.on('typing_stop', (data: SocketTypingData) => {
+        handlersRef.current.onTypingStop?.(data);
+      });
     }
-  }, [isAuthenticated, user, registerUser, calculateBackoffDelay, showReconnectionToast, socket]);
 
-  return { socket, ...socketState };
-}
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.destroy();
+        socketRef.current = null;
+      }
+    };
+  }, [autoConnect, isAuthenticated, user?.id]);
+
+  // Reconnect when authentication changes
+  useEffect(() => {
+    if (reconnectOnAuth && socketRef.current && isAuthenticated && user?.id) {
+      const token = localStorage.getItem('accessToken') || localStorage.getItem('auth_token') || undefined;
+      if (token) {
+        socketRef.current.updateToken(token);
+      }
+    }
+  }, [reconnectOnAuth, isAuthenticated, user?.id]);
+
+  // Socket methods
+  const connect = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.connect();
+    }
+  }, []);
+
+  const disconnect = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+  }, []);
+
+  const joinMatch = useCallback((matchId: string) => {
+    if (socketRef.current) {
+      socketRef.current.joinMatch(matchId);
+    }
+  }, []);
+
+  const leaveMatch = useCallback((matchId: string) => {
+    if (socketRef.current) {
+      socketRef.current.leaveMatch(matchId);
+    }
+  }, []);
+
+  const sendMessage = useCallback((matchId: string, content: string, attachments?: MessageAttachment[]) => {
+    if (socketRef.current) {
+      socketRef.current.sendMessage(matchId, content, attachments);
+    }
+  }, []);
+
+  const startTyping = useCallback((matchId: string) => {
+    if (socketRef.current) {
+      socketRef.current.startTyping(matchId);
+    }
+  }, []);
+
+  const stopTyping = useCallback((matchId: string) => {
+    if (socketRef.current) {
+      socketRef.current.stopTyping(matchId);
+    }
+  }, []);
+
+  const swipePet = useCallback((petId: string, action: 'like' | 'pass' | 'superlike') => {
+    if (socketRef.current) {
+      socketRef.current.swipePet(petId, action);
+    }
+  }, []);
+
+  const initiateCall = useCallback((matchId: string, type: 'audio' | 'video') => {
+    if (socketRef.current) {
+      socketRef.current.initiateCall(matchId, type);
+    }
+  }, []);
+
+  const acceptCall = useCallback((callId: string) => {
+    if (socketRef.current) {
+      socketRef.current.acceptCall(callId);
+    }
+  }, []);
+
+  const rejectCall = useCallback((callId: string) => {
+    if (socketRef.current) {
+      socketRef.current.rejectCall(callId);
+    }
+  }, []);
+
+  const endCall = useCallback((callId: string) => {
+    if (socketRef.current) {
+      socketRef.current.endCall(callId);
+    }
+  }, []);
+
+  const updateStatus = useCallback((status: 'online' | 'offline' | 'away') => {
+    if (socketRef.current) {
+      socketRef.current.updateStatus(status);
+    }
+  }, []);
+
+  return {
+    // Connection state
+    isConnected,
+    connectionError,
+    socketId: socketRef.current?.getSocketId(),
+    
+    // Connection methods
+    connect,
+    disconnect,
+    
+    // Chat methods
+    joinMatch,
+    leaveMatch,
+    sendMessage,
+    startTyping,
+    stopTyping,
+    
+    // Match methods
+    swipePet,
+    
+    // Call methods
+    initiateCall,
+    acceptCall,
+    rejectCall,
+    endCall,
+    
+    // Status methods
+    updateStatus,
+    
+    // Raw socket access (for advanced usage)
+    socket: socketRef.current,
+    
+    // Event methods
+    on: socketRef.current?.on?.bind(socketRef.current),
+    off: socketRef.current?.off?.bind(socketRef.current),
+  };
+};
+
+export default useSocket;

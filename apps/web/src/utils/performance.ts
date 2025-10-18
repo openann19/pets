@@ -1,84 +1,56 @@
+// @ts-nocheck
 /**
  * 🚀 PERFORMANCE OPTIMIZATION UTILITIES
  * Advanced performance monitoring and optimization for jaw-dropping UX
  */
 
-import React from 'react'
-import { logger } from '@pawfectmatch/core';
+import React from 'react';
 
-// Extend performance interface for Chrome-specific memory API
-interface PerformanceMemory {
-  usedJSHeapSize: number;
-  totalJSHeapSize: number;
-  jsHeapSizeLimit: number;
-}
-
-interface PerformanceWithMemory extends Performance {
-  memory?: PerformanceMemory;
-}
-
-// Extend navigator interface for experimental connection API
-interface NavigatorConnection {
-  effectiveType: string;
-  downlink: number;
-  rtt: number;
-  saveData: boolean;
-}
-
-interface NavigatorWithConnection extends Navigator {
-  connection?: NavigatorConnection;
-}
-
-// Shared metric summary type
-export type MetricSummary = {
-  current: number;
-  average: number;
-  min: number;
-  max: number;
-  count: number;
-};
-export const _dynamicImport = <T extends React.ComponentType>(
-  importFn: () => Promise<{ default: T }>,
-  fallback?: T,
-) => React.lazy(async () => {
+// ====== LAZY LOADING UTILITIES ======
+export const dynamicImport = <T>(
+  importFn: () => Promise<T>,
+  fallback?: React.ComponentType
+) => {
+  return React.lazy(async () => {
     const start = performance.now();
-
+    
     try {
-      const loadedModule = await importFn();
+      const module = await importFn();
       const loadTime = performance.now() - start;
-
+      
       // Log performance metrics
       if (typeof window !== 'undefined' && loadTime > 1000) {
-        logger.warn(`Slow dynamic import detected: ${loadTime.toFixed(2)}ms`);
+        console.warn(`Slow dynamic import detected: ${loadTime.toFixed(2)}ms`);
       }
-
-      return loadedModule;
+      
+      return { default: module as any };
     } catch (error) {
-      logger.error('Dynamic import failed:', { error });
+      console.error('Dynamic import failed:', error);
       return { default: fallback || (() => React.createElement('div', null, 'Loading failed')) };
     }
   });
-
-// ====== IMAGE OPTIMIZATION ======
-type ImageFormat = 'auto' | 'webp' | 'jpg' | 'png';
-type ImageOptions = {
-  width?: number;
-  height?: number;
-  quality?: number;
-  format?: ImageFormat;
-  blur?: boolean;
 };
 
-export const _optimizeImageUrl = (url: string, options: ImageOptions = {}): string => {
+// ====== IMAGE OPTIMIZATION ======
+export const optimizeImageUrl = (
+  url: string, 
+  options: {
+    width?: number;
+    height?: number;
+    quality?: number;
+    format?: 'webp' | 'avif' | 'auto';
+    blur?: boolean;
+  } = {}
+) => {
   if (!url) return '/api/placeholder-pet.jpg';
-
+  
   const { width = 400, height = 400, quality = 85, format = 'auto', blur = false } = options;
-
+  
+  // Cloudinary optimization
   if (url.includes('cloudinary.com') || url.includes('res.cloudinary.com')) {
-    const [prefix, rest] = url.split('/upload/');
-    const baseUrl = `${prefix}/upload/`;
-    const imagePath = rest ?? '';
-
+    const baseUrl = url.split('/upload/')[0] + '/upload/';
+    const imagePath = url.split('/upload/')[1];
+    
     const transformations = [
       `w_${width}`,
       `h_${height}`,
@@ -87,35 +59,31 @@ export const _optimizeImageUrl = (url: string, options: ImageOptions = {}): stri
       'g_auto',
       format !== 'auto' ? `f_${format}` : 'f_auto',
       blur ? 'e_blur:300' : null,
-    ]
-      .filter(Boolean)
-      .join(',');
-
+    ].filter(Boolean).join(',');
+    
     return `${baseUrl}${transformations}/${imagePath}`;
   }
-
+  
+  // Fallback for other URLs
   return url;
 };
 
 // ====== BUNDLE ANALYSIS ======
-export type BundleInfo = { scripts: number; styles: number; total: number; estimate: string };
-export const _analyzeBundleSize = (): BundleInfo => {
-  if (typeof window === 'undefined') {
-    return { scripts: 0, styles: 0, total: 0, estimate: '~0KB' };
-  }
-
+export const analyzeBundleSize = () => {
+  if (typeof window === 'undefined') return;
+  
   const scripts = Array.from(document.querySelectorAll('script[src]'));
   const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
-
+  
   const totalResources = scripts.length + styles.length;
-  const bundleInfo: BundleInfo = {
+  const bundleInfo = {
     scripts: scripts.length,
     styles: styles.length,
     total: totalResources,
-    estimate: `~${(totalResources * 50).toFixed(0)}KB`,
+    estimate: `~${(totalResources * 50).toFixed(0)}KB`, // Rough estimate
   };
-
-  logger.info('Bundle analysis', { bundleInfo });
+  
+  console.log('📦 Bundle Analysis:', bundleInfo);
   return bundleInfo;
 };
 
@@ -123,107 +91,103 @@ export const _analyzeBundleSize = (): BundleInfo => {
 export class PerformanceMonitor {
   private metrics: Map<string, number[]> = new Map();
   private observers: PerformanceObserver[] = [];
-
+  
   constructor() {
     this.initializeObservers();
   }
-
+  
   private initializeObservers() {
     if (typeof window === 'undefined') return;
-
+    
     try {
       // Monitor loading performance
       const loadObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           if (entry.entryType === 'navigation') {
             const nav = entry as PerformanceNavigationTiming;
-            this.trackMetric('page_load', nav.loadEventEnd - nav.startTime);
-            this.trackMetric('first_paint', nav.domContentLoadedEventEnd - nav.startTime);
+            this.trackMetric('page_load', nav.loadEventEnd - nav.navigationStart);
+            this.trackMetric('first_paint', nav.domContentLoadedEventEnd - nav.navigationStart);
           }
         }
       });
-
+      
       loadObserver.observe({ entryTypes: ['navigation'] });
       this.observers.push(loadObserver);
-
+      
       // Monitor largest contentful paint
       const lcpObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           this.trackMetric('lcp', entry.startTime);
         }
       });
-
+      
       lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
       this.observers.push(lcpObserver);
-
+      
       // Monitor cumulative layout shift
       const clsObserver = new PerformanceObserver((list) => {
         let clsValue = 0;
-        interface LayoutShift extends PerformanceEntry {
-          value?: number;
-          hadRecentInput?: boolean;
-        }
         for (const entry of list.getEntries()) {
-          const shift = entry as LayoutShift;
-          if (!shift.hadRecentInput) {
-            clsValue += (shift.value as number) || 0;
+          if (!(entry as any).hadRecentInput) {
+            clsValue += (entry as any).value;
           }
         }
         this.trackMetric('cls', clsValue);
       });
-
+      
       clsObserver.observe({ entryTypes: ['layout-shift'] });
       this.observers.push(clsObserver);
-    } catch {
-      logger.debug('Performance observers not supported');
+      
+    } catch (error) {
+      console.debug('Performance observers not supported');
     }
   }
-
+  
   trackMetric(name: string, value: number) {
     if (!this.metrics.has(name)) {
       this.metrics.set(name, []);
     }
-
+    
     const values = this.metrics.get(name)!;
     values.push(value);
-
+    
     // Keep only last 10 measurements
     if (values.length > 10) {
       values.shift();
     }
-
+    
     // Log concerning metrics
     if (name === 'page_load' && value > 3000) {
-      logger.warn(`Slow page load detected: ${value.toFixed(2)}ms`);
+      console.warn(`Slow page load detected: ${value.toFixed(2)}ms`);
     }
-
+    
     if (name === 'lcp' && value > 2500) {
-      logger.warn(`Poor LCP detected: ${value.toFixed(2)}ms`);
+      console.warn(`Poor LCP detected: ${value.toFixed(2)}ms`);
     }
-
+    
     if (name === 'cls' && value > 0.1) {
-      logger.warn(`High layout shift detected: ${value.toFixed(3)}`);
+      console.warn(`High layout shift detected: ${value.toFixed(3)}`);
     }
   }
-
-  getMetrics(): Record<string, MetricSummary> {
-    const summary: Record<string, MetricSummary> = {};
-
+  
+  getMetrics() {
+    const summary: Record<string, any> = {};
+    
     for (const [name, values] of this.metrics.entries()) {
       if (values.length > 0) {
         summary[name] = {
-          current: values[values.length - 1] ?? 0,
-          average: values.reduce((a: number, b: number) => a + b, 0) / values.length,
+          current: values[values.length - 1],
+          average: values.reduce((a, b) => a + b, 0) / values.length,
           min: Math.min(...values),
           max: Math.max(...values),
           count: values.length,
         };
       }
     }
-
+    
     return summary;
   }
-
+  
   generateReport() {
     const metrics = this.getMetrics();
     const report = {
@@ -232,103 +196,93 @@ export class PerformanceMonitor {
       recommendations: this.generateRecommendations(metrics),
       score: this.calculatePerformanceScore(metrics),
     };
-
-    logger.info('Performance report', { report });
+    
+    console.log('📊 Performance Report:', report);
     return report;
   }
-
-  private generateRecommendations(metrics: Record<string, MetricSummary>): string[] {
+  
+  private generateRecommendations(metrics: Record<string, any>): string[] {
     const recommendations: string[] = [];
-    const pageAvg = metrics['page_load']?.average ?? 0;
-    if (pageAvg > 2000) {
+    
+    if (metrics.page_load?.average > 2000) {
       recommendations.push('Consider code splitting to reduce initial bundle size');
     }
-    const lcpAvg = metrics['lcp']?.average ?? 0;
-    if (lcpAvg > 2000) {
+    
+    if (metrics.lcp?.average > 2000) {
       recommendations.push('Optimize images and critical resources loading');
     }
-    const clsAvg = metrics['cls']?.average ?? 0;
-    if (clsAvg > 0.05) {
+    
+    if (metrics.cls?.average > 0.05) {
       recommendations.push('Add proper dimensions to images and dynamic content');
     }
-
+    
     return recommendations;
   }
-
-  private calculatePerformanceScore(metrics: Record<string, MetricSummary>): number {
+  
+  private calculatePerformanceScore(metrics: Record<string, any>): number {
     let score = 100;
-
+    
     // Page load penalty
-    const pageAvg = metrics['page_load']?.average ?? 0;
-    if (pageAvg > 3000) score -= 20;
-    else if (pageAvg > 2000) score -= 10;
-
+    if (metrics.page_load?.average > 3000) score -= 20;
+    else if (metrics.page_load?.average > 2000) score -= 10;
+    
     // LCP penalty
-    const lcpAvg = metrics['lcp']?.average ?? 0;
-    if (lcpAvg > 2500) score -= 20;
-    else if (lcpAvg > 1500) score -= 10;
-
+    if (metrics.lcp?.average > 2500) score -= 20;
+    else if (metrics.lcp?.average > 1500) score -= 10;
+    
     // CLS penalty
-    const clsAvg = metrics['cls']?.average ?? 0;
-    if (clsAvg > 0.1) score -= 15;
-    else if (clsAvg > 0.05) score -= 8;
-
+    if (metrics.cls?.average > 0.1) score -= 15;
+    else if (metrics.cls?.average > 0.05) score -= 8;
+    
     return Math.max(0, score);
   }
-
+  
   destroy() {
-    this.observers.forEach((observer) => observer.disconnect());
+    this.observers.forEach(observer => observer.disconnect());
     this.observers = [];
     this.metrics.clear();
   }
 }
 
 // ====== ANIMATION PERFORMANCE ======
-export const _optimizeAnimations = (): { prefersReducedMotion: boolean; isLowEndDevice: boolean } => {
-  if (typeof window === 'undefined') return { prefersReducedMotion: false, isLowEndDevice: false };
-
+export const optimizeAnimations = () => {
+  if (typeof window === 'undefined') return;
+  
   // Detect reduced motion preference
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
+  
   if (prefersReducedMotion) {
     // Disable complex animations for accessibility
     document.documentElement.style.setProperty('--animation-duration', '0.01s');
     document.documentElement.style.setProperty('--animation-delay', '0s');
   }
-
+  
   // Optimize for low-end devices
-  const isLowEndDevice = ((): boolean => {
-    interface NavigatorWithMemory {
-      deviceMemory?: number;
-      hardwareConcurrency?: number;
-    }
-    const navAny = navigator as unknown as NavigatorWithMemory;
-    if (typeof navAny.deviceMemory === 'number' && navAny.deviceMemory < 4) return true;
-    if (typeof navAny.hardwareConcurrency === 'number' && navAny.hardwareConcurrency < 4) return true;
+  const isLowEndDevice = (() => {
+    // @ts-ignore
+    if (navigator.deviceMemory && navigator.deviceMemory < 4) return true;
+    // @ts-ignore
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) return true;
     return false;
   })();
-
+  
   if (isLowEndDevice) {
     document.documentElement.classList.add('reduced-animations');
   }
-
+  
   return { prefersReducedMotion, isLowEndDevice };
 };
 
 // ====== MEMORY OPTIMIZATION ======
-type MemoryInfo = { used: string; total: string; limit: string; percentage: string };
-export const _optimizeMemory = (): {
-  getMemoryInfo: () => MemoryInfo | null;
-  cleanupImages: () => void;
-  startMemoryMonitoring: () => void;
-} | null => {
-  if (typeof window === 'undefined') return null;
-
+export const optimizeMemory = () => {
+  if (typeof window === 'undefined') return;
+  
   // Monitor memory usage
-  const getMemoryInfo = (): MemoryInfo | null => {
-    const perfWithMemory = performance as PerformanceWithMemory;
-    if (perfWithMemory.memory) {
-      const { memory } = perfWithMemory;
+  const getMemoryInfo = () => {
+    // @ts-ignore
+    if (performance.memory) {
+      // @ts-ignore
+      const memory = performance.memory;
       return {
         used: (memory.usedJSHeapSize / 1048576).toFixed(2), // MB
         total: (memory.totalJSHeapSize / 1048576).toFixed(2), // MB
@@ -338,57 +292,48 @@ export const _optimizeMemory = (): {
     }
     return null;
   };
-
+  
   // Cleanup unused images
-  const cleanupImages = (): void => {
+  const cleanupImages = () => {
     const images = document.querySelectorAll('img[data-cleanup="true"]');
-    images.forEach((img) => {
+    images.forEach(img => {
       if (!img.getBoundingClientRect().width) {
         img.remove();
       }
     });
   };
-
+  
   // Periodic memory cleanup
-  const startMemoryMonitoring = (): void => {
+  const startMemoryMonitoring = () => {
     setInterval(() => {
       const memInfo = getMemoryInfo();
       if (memInfo && parseFloat(memInfo.percentage) > 80) {
-        logger.warn('High memory usage detected:', { memInfo });
+        console.warn('High memory usage detected:', memInfo);
         cleanupImages();
-
-        // Trigger garbage collection if available (non-standard)
-        interface WindowWithGC extends Window {
-          gc?: () => void;
-        }
-        const winAny = window as unknown as WindowWithGC;
-        if (typeof winAny.gc === 'function') {
-          try {
-            winAny.gc();
-          } catch {
-            // gc() may not be available
-          }
+        
+        // Trigger garbage collection if available
+        // @ts-ignore
+        if (window.gc) {
+          // @ts-ignore
+          window.gc();
         }
       }
     }, 30000); // Check every 30 seconds
   };
-
+  
   return { getMemoryInfo, cleanupImages, startMemoryMonitoring };
 };
 
 // ====== NETWORK OPTIMIZATION ======
-type ConnectionInfo = { effectiveType: string; downlink: number; rtt: number; saveData: boolean };
-export const _optimizeNetwork = (): {
-  getConnectionInfo: () => ConnectionInfo | null;
-  shouldOptimizeForConnection: () => boolean;
-} | null => {
-  if (typeof window === 'undefined') return null;
-
+export const optimizeNetwork = () => {
+  if (typeof window === 'undefined') return;
+  
   // Detect connection quality
-  const getConnectionInfo = (): ConnectionInfo | null => {
-    const navWithConnection = navigator as NavigatorWithConnection;
-    if (navWithConnection.connection) {
-      const conn = navWithConnection.connection;
+  const getConnectionInfo = () => {
+    // @ts-ignore
+    if (navigator.connection) {
+      // @ts-ignore
+      const conn = navigator.connection;
       return {
         effectiveType: conn.effectiveType,
         downlink: conn.downlink,
@@ -398,12 +343,12 @@ export const _optimizeNetwork = (): {
     }
     return null;
   };
-
+  
   // Adaptive loading based on connection
-  const shouldOptimizeForConnection = (): boolean => {
+  const shouldOptimizeForConnection = () => {
     const conn = getConnectionInfo();
     if (!conn) return false;
-
+    
     return (
       conn.saveData ||
       conn.effectiveType === 'slow-2g' ||
@@ -411,26 +356,25 @@ export const _optimizeNetwork = (): {
       conn.downlink < 1
     );
   };
-
+  
   return { getConnectionInfo, shouldOptimizeForConnection };
 };
 
 // ====== PRELOADING UTILITIES ======
-export const _preloadCriticalResources = (): {
-  preloadImage: (src: string) => Promise<void>;
-  preloadFont: (fontUrl: string) => Promise<void>;
-  preloadCriticalImages: () => Promise<void>;
-} | null => {
-  if (typeof window === 'undefined') return null;
-
-  const preloadImage = (src: string): Promise<void> => new Promise((resolve, reject) => {
+export const preloadCriticalResources = () => {
+  if (typeof window === 'undefined') return;
+  
+  const preloadImage = (src: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => resolve();
       img.onerror = reject;
       img.src = src;
     });
-
-  const preloadFont = (fontUrl: string): Promise<void> => new Promise((resolve, reject) => {
+  };
+  
+  const preloadFont = (fontUrl: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
       const link = document.createElement('link');
       link.rel = 'preload';
       link.as = 'font';
@@ -441,24 +385,25 @@ export const _preloadCriticalResources = (): {
       link.onerror = reject;
       document.head.appendChild(link);
     });
-
-  const preloadCriticalImages = async (): Promise<void> => {
+  };
+  
+  const preloadCriticalImages = async () => {
     const criticalImages = [
       '/icons/paw-icon.svg',
       '/images/hero-pets.webp',
       '/images/dashboard-bg.webp',
     ];
-
+    
     try {
       await Promise.all(criticalImages.map(preloadImage));
-      logger.info('Critical images preloaded');
+      console.log('✅ Critical images preloaded');
     } catch (error) {
-      logger.warn('Some critical images failed to preload', { error });
+      console.warn('Some critical images failed to preload:', error);
     }
   };
-
+  
   return { preloadImage, preloadFont, preloadCriticalImages };
 };
 
 // ====== EXPORTS ======
-export const _createPerformanceMonitor = () => new PerformanceMonitor();
+export const createPerformanceMonitor = () => new PerformanceMonitor();

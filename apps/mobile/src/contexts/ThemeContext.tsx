@@ -1,11 +1,9 @@
-import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Appearance } from 'react-native';
-import type { ColorSchemeName } from 'react-native';
-import { logger } from '@pawfectmatch/core';
-import { GlobalStyles, Colors, Shadows } from '../styles/GlobalStyles';
-import { GlobalStylesDark, ColorsDark, ShadowsDark } from '../styles/DarkTheme';
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { Appearance, type ColorSchemeName } from 'react-native';
+
+import { ColorsDark, GlobalStylesDark, ShadowsDark } from '../styles/DarkTheme';
+import { Colors, GlobalStyles, Shadows } from '../styles/GlobalStyles';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -47,42 +45,23 @@ export interface ThemeColors {
   gradientSuccess: string[];
   gradientWarning: string[];
   gradientError: string[];
-  // Additional properties for UI components
+  // Additional UI colors
+  background: string;
+  surface: string;
   text: string;
   textSecondary: string;
-  card: string;
-  background: string;
   border: string;
-  inputBackground: string;
-}
-
-export interface ThemeStyles {
-  container: Record<string, unknown>;
-  backgroundGradient: Record<string, unknown>;
-  safeArea: Record<string, unknown>;
-  headerBlur: Record<string, unknown>;
-  headerContent: Record<string, unknown>;
-  heading2: Record<string, unknown>;
-  bodySmall: Record<string, unknown>;
-  scrollContainer: Record<string, unknown>;
-  [key: string]: Record<string, unknown>;
-}
-
-export interface ThemeShadows {
-  small: Record<string, unknown>;
-  medium: Record<string, unknown>;
-  large: Record<string, unknown>;
-  [key: string]: Record<string, unknown>;
+  borderLight: string;
 }
 
 export interface ThemeContextType {
   isDark: boolean;
   themeMode: ThemeMode;
   colors: ThemeColors;
-  styles: ThemeStyles;
-  shadows: ThemeShadows;
+  styles: Record<string, unknown>;
+  shadows: Record<string, unknown>;
   setThemeMode: (mode: ThemeMode) => void;
-  toggleTheme: () => void;
+  toggleTheme: () => Promise<void>;
 }
 
 const THEME_STORAGE_KEY = '@pawfectmatch_theme_mode';
@@ -110,29 +89,22 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   // Get current theme colors and styles
   const colors = isDark ? ColorsDark : Colors;
   const styles = isDark ? GlobalStylesDark : GlobalStyles;
-  const baseShadows = isDark ? ShadowsDark : Shadows;
-  const bs = baseShadows as unknown as Record<string, Record<string, unknown>>;
-  const themeShadows: ThemeShadows = {
-    small: bs['sm'] ?? {},
-    medium: bs['md'] ?? {},
-    large: bs['lg'] ?? {},
-    ...bs,
-  };
+  const shadows = isDark ? ShadowsDark : Shadows;
 
   // Load theme preference from storage
   useEffect(() => {
     const loadThemePreference = async () => {
       try {
         const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-        if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
+        if (savedTheme != null && savedTheme.length > 0 && ['light', 'dark', 'system'].includes(savedTheme)) {
           setThemeModeState(savedTheme as ThemeMode);
         }
       } catch (error) {
-        logger.warn('Failed to load theme preference:', { error });
+        console.warn('Failed to load theme preference:', error);
       }
     };
 
-    loadThemePreference();
+    void loadThemePreference();
   }, []);
 
   // Listen to system color scheme changes
@@ -141,7 +113,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       setSystemColorScheme(colorScheme);
     });
 
-    return () => { subscription?.remove(); };
+    return () => subscription?.remove();
   }, []);
 
   // Save theme preference to storage
@@ -150,14 +122,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       setThemeModeState(mode);
       await AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
     } catch (error) {
-      logger.warn('Failed to save theme preference:', { error });
+      console.warn('Failed to save theme preference:', error);
     }
   };
 
   // Toggle between light and dark (skip system)
-  const toggleTheme = (): void => {
+  const toggleTheme = async () => {
     const newMode = isDark ? 'light' : 'dark';
-    setThemeMode(newMode);
+    await setThemeMode(newMode);
   };
 
   const contextValue: ThemeContextType = {
@@ -165,7 +137,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     themeMode,
     colors,
     styles,
-    shadows: themeShadows,
+    shadows,
     setThemeMode,
     toggleTheme,
   };

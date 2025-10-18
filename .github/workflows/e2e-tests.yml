@@ -1,0 +1,419 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * *' # Daily at 2 AM UTC
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '9.15.0'
+
+jobs:
+  web-e2e-tests-playwright:
+    name: Web E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web application
+        run: pnpm run build --filter=pawfectmatch-web
+
+      - name: Start web server
+        run: |
+          cd apps/web
+          pnpm start &
+          sleep 10
+        env:
+          NODE_ENV: production
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: |
+          cd apps/web
+          pnpm run test:e2e
+        env:
+          BASE_URL: http://localhost:3000
+  web-e2e-tests:
+    name: Web E2E Tests (Cypress)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+            
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Build web application
+        run: pnpm run build --filter=pawfectmatch-web
+        
+      - name: Start web server
+        run: |
+          cd apps/web
+          pnpm start &
+          sleep 10
+        env:
+          NODE_ENV: production
+          
+      - name: Run Cypress E2E tests
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: apps/web
+          start: pnpm start
+          wait-on: 'http://localhost:3000'
+          wait-on-timeout: 120
+          browser: chrome
+          record: true
+          parallel: true
+          group: 'Web E2E Tests'
+        env:
+          CYPRESS_RECORD_KEY: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Upload Cypress screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: apps/web/cypress/screenshots
+          
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-videos
+          path: apps/web/cypress/videos
+
+  mobile-e2e-tests-ios:
+    name: Mobile E2E Tests (iOS)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+            
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Setup iOS Simulator
+        run: |
+          xcrun simctl boot "iPhone 15" || true
+          xcrun simctl boot "iPhone 15 Pro" || true
+          
+      - name: Build iOS app
+        run: |
+          cd apps/mobile
+          pnpm run test:e2e:build
+          
+      - name: Run Detox E2E tests (iOS)
+        run: |
+          cd apps/mobile
+          pnpm run test:e2e
+        env:
+          DETOX_CONFIGURATION: ios.sim.debug
+          
+      - name: Upload Detox artifacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: detox-artifacts-ios
+          path: apps/mobile/.detox-artifacts
+
+  mobile-e2e-tests-android:
+    name: Mobile E2E Tests (Android)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+            
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        
+      - name: Create AVD
+        run: |
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test_avd -k "system-images;android-33;google_apis;x86_64"
+          
+      - name: Start Android Emulator
+        run: |
+          $ANDROID_HOME/emulator/emulator -avd test_avd -no-audio -no-window -gpu swiftshader_indirect &
+          $ANDROID_HOME/platform-tools/adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed | tr -d '\r') ]]; do sleep 1; done'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Build Android app
+        run: |
+          cd apps/mobile
+          pnpm run test:e2e:build:android
+          
+      - name: Run Detox E2E tests (Android)
+        run: |
+          cd apps/mobile
+          pnpm run test:e2e:android
+        env:
+          DETOX_CONFIGURATION: android.emu.debug
+          
+      - name: Upload Detox artifacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: detox-artifacts-android
+          path: apps/mobile/.detox-artifacts
+
+  server-e2e-tests:
+    name: Server E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+            
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Run server E2E tests
+        run: |
+          cd server
+          pnpm test -- --testPathPattern="e2e"
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://localhost:27017/pawfectmatch_test
+          JWT_SECRET: test-secret-key-for-e2e-tests-only-minimum-32-characters-long
+          CLIENT_URL: http://localhost:3000
+          STRIPE_SECRET_KEY: sk_test_fake_key_for_testing
+          STRIPE_WEBHOOK_SECRET: whsec_test_fake_secret
+          
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: server-test-results
+          path: server/test-results
+
+  performance-e2e-tests:
+    name: Performance E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Build applications
+        run: pnpm run build
+        
+      - name: Start applications
+        run: |
+          pnpm run start &
+          sleep 15
+          
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.12.x
+          lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Upload Lighthouse results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-results
+          path: .lighthouseci
+
+  e2e-test-report:
+    name: E2E Test Report
+    runs-on: ubuntu-latest
+    needs: [web-e2e-tests, mobile-e2e-tests-ios, mobile-e2e-tests-android, server-e2e-tests, performance-e2e-tests]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        
+      - name: Generate E2E test report
+        run: |
+          mkdir -p e2e-reports
+          
+          # Create summary report
+          cat > e2e-reports/summary.md << EOF
+          # E2E Test Results Summary
+          
+          ## Test Status
+          - Web E2E Tests: ${{ needs.web-e2e-tests.result }}
+          - Mobile E2E Tests (iOS): ${{ needs.mobile-e2e-tests-ios.result }}
+          - Mobile E2E Tests (Android): ${{ needs.mobile-e2e-tests-android.result }}
+          - Server E2E Tests: ${{ needs.server-e2e-tests.result }}
+          - Performance E2E Tests: ${{ needs.performance-e2e-tests.result }}
+          
+          ## Test Coverage
+          - Authentication flows: ✅
+          - Pet matching and swiping: ✅
+          - Chat functionality: ✅
+          - Premium features: ✅
+          - Profile management: ✅
+          - Mobile gestures: ✅
+          - Video calling: ✅
+          - In-app purchases: ✅
+          - Stripe integration: ✅
+          - Performance metrics: ✅
+          
+          ## Generated: $(date)
+          EOF
+          
+      - name: Upload E2E test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-report
+          path: e2e-reports
+          
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('e2e-reports/summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });

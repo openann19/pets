@@ -207,54 +207,54 @@ router.get('/archetypes', authenticateToken, async (req, res) => {
 // Helper functions
 async function analyzePetPersonality(petData) {
   const { breed, age, personalityTags, description } = petData;
-  
+
   // Score each archetype based on pet data
   const archetypeScores = {};
-  
+
   for (const [key, archetype] of Object.entries(PERSONALITY_ARCHETYPES)) {
     let score = 0;
-    
+
     // Score based on personality tags overlap
-    const tagOverlap = personalityTags.filter(tag => 
+    const tagOverlap = personalityTags.filter(tag =>
       archetype.traits.includes(tag)
     ).length;
     score += tagOverlap * 20;
-    
+
     // Score based on breed characteristics (simplified)
     if (breed) {
       const breedScore = getBreedPersonalityScore(breed, archetype.traits);
       score += breedScore * 15;
     }
-    
+
     // Score based on age (younger pets tend to be more energetic)
     if (age !== undefined) {
       if (archetype.energyLevel === 'high' && age < 3) score += 10;
       if (archetype.energyLevel === 'low' && age > 5) score += 10;
     }
-    
+
     // Score based on description keywords
     if (description) {
       const descriptionScore = analyzeDescriptionKeywords(description, archetype.traits);
       score += descriptionScore * 10;
     }
-    
+
     archetypeScores[key] = score;
   }
-  
+
   // Get primary and secondary archetypes
   const sortedArchetypes = Object.entries(archetypeScores)
-    .sort(([,a], [,b]) => b - a);
-  
+    .sort(([, a], [, b]) => b - a);
+
   const primaryKey = sortedArchetypes[0][0];
   const secondaryKey = sortedArchetypes[1][0];
-  
+
   const primaryArchetype = PERSONALITY_ARCHETYPES[primaryKey];
   const secondaryArchetype = PERSONALITY_ARCHETYPES[secondaryKey];
-  
+
   // Generate description and compatibility tips
-  const description = generatePersonalityDescription(primaryArchetype, secondaryArchetype);
+  const personalityDescription = generatePersonalityDescription(primaryArchetype, secondaryArchetype);
   const compatibilityTips = generateCompatibilityTips(primaryArchetype);
-  
+
   return {
     primaryArchetype: primaryKey,
     secondaryArchetype: secondaryKey,
@@ -263,7 +263,7 @@ async function analyzePetPersonality(petData) {
       independence: getIndependenceScore(primaryArchetype.independence),
       sociability: getSociabilityScore(primaryArchetype.sociability)
     },
-    description,
+    description: personalityDescription,
     compatibilityTips,
     traits: primaryArchetype.traits
   };
@@ -280,7 +280,7 @@ function getBreedPersonalityScore(breed, archetypeTraits) {
     'persian': ['calm', 'gentle', 'quiet'],
     'maine coon': ['friendly', 'gentle', 'good-with-kids']
   };
-  
+
   const traits = breedTraits[breed.toLowerCase()] || [];
   const overlap = traits.filter(trait => archetypeTraits.includes(trait)).length;
   return overlap / Math.max(traits.length, 1);
@@ -295,14 +295,14 @@ function analyzeDescriptionKeywords(description, archetypeTraits) {
     'intelligent': ['smart', 'intelligent', 'clever', 'quick'],
     'playful': ['playful', 'fun', 'games', 'toys']
   };
-  
+
   let score = 0;
   for (const trait of archetypeTraits) {
     const traitWords = traitKeywords[trait] || [];
     const matches = keywords.filter(word => traitWords.includes(word)).length;
     score += matches;
   }
-  
+
   return Math.min(score, 5); // Cap at 5
 }
 
@@ -314,7 +314,7 @@ function generatePersonalityDescription(primary, secondary) {
     'the-independent-thinker': `${primary.name} - ${primary.description} They're smart and self-reliant, enjoying both their own company and thoughtful interactions.`,
     'the-energetic-athlete': `${primary.name} - ${primary.description} They need plenty of physical activity and excel at athletic challenges and games.`
   };
-  
+
   return descriptions[primary.name.toLowerCase().replace(/\s+/g, '-')] || primary.description;
 }
 
@@ -323,10 +323,10 @@ function generateCompatibilityTips(archetype) {
     'the-playful-explorer': 'Best matches with other energetic pets who love adventure and play.',
     'the-cautious-cuddler': 'Thrives with gentle, patient pets who respect their need for space.',
     'the-social-butterfly': 'Gets along with most pets but especially loves other social, friendly companions.',
-    'the-independent-thinker': 'Prefers pets who are calm and don't require constant attention.',
+    'the-independent-thinker': 'Prefers pets who are calm and don\'t require constant attention.',
     'the-energetic-athlete': 'Needs active companions who can keep up with their energy level.'
   };
-  
+
   const key = archetype.name.toLowerCase().replace(/\s+/g, '-');
   return tips[key] || 'Compatibility depends on individual personality and circumstances.';
 }
@@ -343,11 +343,11 @@ async function getPetPersonality(petId) {
   try {
     const Pet = require('../models/Pet');
     const pet = await Pet.findById(petId).lean();
-    
+
     if (!pet || !pet.aiData || !pet.aiData.personalityArchetype) {
       return null;
     }
-    
+
     return {
       petId: pet._id,
       primaryArchetype: pet.aiData.personalityArchetype?.primary || 'the-playful-explorer',
@@ -371,11 +371,11 @@ function calculatePersonalityCompatibility(pet1, pet2, interactionType) {
     independence: Math.abs(pet1.personalityScore.independence - pet2.personalityScore.independence),
     sociability: Math.abs(pet1.personalityScore.sociability - pet2.personalityScore.sociability)
   };
-  
+
   // Calculate overall compatibility (lower difference = higher compatibility)
   const avgDifference = (scores.energy + scores.independence + scores.sociability) / 3;
   const compatibilityScore = Math.max(0, 100 - (avgDifference * 10));
-  
+
   return Math.round(compatibilityScore);
 }
 

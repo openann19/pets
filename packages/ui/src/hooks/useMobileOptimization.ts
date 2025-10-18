@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { logger } from '../../../web/src/services/logger';
+// Local minimal logger to avoid cross-app imports
+const logger = {
+  warn: (...args: unknown[]) => {
+    // eslint-disable-next-line no-console
+    console.warn(...args);
+  },
+};
 
 export interface MobileOptimizationConfig {
   /**
@@ -123,9 +129,7 @@ export const useMobileOptimization = (config: MobileOptimizationConfig = {}): Mo
     isPortrait: true,
     isLandscape: false,
     hasNotch: false,
-    isLowEndDevice: false,
-    batteryLevel: undefined,
-    isCharging: undefined
+    isLowEndDevice: false
   });
 
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -134,10 +138,10 @@ export const useMobileOptimization = (config: MobileOptimizationConfig = {}): Mo
   // Detect mobile device
   useEffect(() => {
     const checkMobile = () => {
-      const {userAgent} = navigator;
+      const { userAgent } = navigator;
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
       const supportsTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      
+
       setState(prev => ({
         ...prev,
         isMobile,
@@ -157,9 +161,9 @@ export const useMobileOptimization = (config: MobileOptimizationConfig = {}): Mo
       const height = window.innerHeight;
       const isPortrait = height > width;
       const isLandscape = width > height;
-      
+
       // Detect notch (iOS devices)
-      const hasNotch = isMobile && (
+      const hasNotch = state.isMobile && (
         window.screen.width === 375 && window.screen.height === 812 || // iPhone X, XS, 11 Pro
         window.screen.width === 414 && window.screen.height === 896 || // iPhone XR, XS Max, 11, 11 Pro Max
         window.screen.width === 390 && window.screen.height === 844 || // iPhone 12, 12 Pro
@@ -192,16 +196,16 @@ export const useMobileOptimization = (config: MobileOptimizationConfig = {}): Mo
     const checkPerformance = () => {
       // Check hardware concurrency
       const cores = navigator.hardwareConcurrency || 1;
-      
+
       // Check memory (if available)
-      const memory = (navigator as unknown).deviceMemory || 4;
-      
+      const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 4;
+
       // Check connection (if available)
-      const {connection} = (navigator as unknown);
-      const isSlowConnection = connection && (
-        connection.effectiveType === 'slow-2g' ||
-        connection.effectiveType === '2g' ||
-        connection.saveData
+      const navConn = (navigator as Navigator & { connection?: { effectiveType?: string; saveData?: boolean } }).connection;
+      const isSlowConnection = !!navConn && (
+        navConn.effectiveType === 'slow-2g' ||
+        navConn.effectiveType === '2g' ||
+        !!navConn.saveData
       );
 
       const isLowEndDevice = cores < 4 || memory < 4 || isSlowConnection;
@@ -219,11 +223,15 @@ export const useMobileOptimization = (config: MobileOptimizationConfig = {}): Mo
   useEffect(() => {
     if (!enableBatteryOptimization) return;
 
+    let cleanup: (() => void) | undefined;
+    let cancelled = false;
+
     const monitorBattery = async () => {
       try {
-        if ('getBattery' in navigator) {
-          const battery = await (navigator as unknown).getBattery();
-          
+        const navWithBattery = navigator as Navigator & { getBattery?: () => Promise<{ level: number; charging: boolean; addEventListener: Function; removeEventListener: Function }> };
+        if (typeof navWithBattery.getBattery === 'function') {
+          const battery = await navWithBattery.getBattery();
+
           const updateBatteryStatus = () => {
             setState(prev => ({
               ...prev,
@@ -233,26 +241,39 @@ export const useMobileOptimization = (config: MobileOptimizationConfig = {}): Mo
           };
 
           updateBatteryStatus();
-          battery.addEventListener('levelchange', updateBatteryStatus);
-          battery.addEventListener('chargingchange', updateBatteryStatus);
+          battery.addEventListener('levelchange', updateBatteryStatus as EventListener);
+          battery.addEventListener('chargingchange', updateBatteryStatus as EventListener);
 
           return () => {
-            battery.removeEventListener('levelchange', updateBatteryStatus);
-            battery.removeEventListener('chargingchange', updateBatteryStatus);
+            battery.removeEventListener('levelchange', updateBatteryStatus as EventListener);
+            battery.removeEventListener('chargingchange', updateBatteryStatus as EventListener);
           };
         }
       } catch (error) {
         logger.warn('Battery API not supported', { error });
       }
+      return () => { };
     };
 
-    monitorBattery();
+    void monitorBattery().then((fn) => {
+      if (cancelled) {
+        // If effect already cleaned up, invoke returned cleanup immediately
+        if (fn) fn();
+        return;
+      }
+      cleanup = fn;
+    });
+
+    return () => {
+      cancelled = true;
+      if (cleanup) cleanup();
+    };
   }, [enableBatteryOptimization]);
 
   // Get optimized touch target size
   const getTouchTargetSize = useCallback((baseSize: number): number => {
     if (!enableTouchOptimization) return baseSize;
-    
+
     // Minimum touch target size should be 44px (Apple HIG) or 48dp (Material Design)
     const minSize = 44;
     return Math.max(baseSize, minSize);
@@ -261,7 +282,7 @@ export const useMobileOptimization = (config: MobileOptimizationConfig = {}): Mo
   // Get optimized gesture threshold
   const getGestureThreshold = useCallback((baseThreshold: number): number => {
     if (!enableGestureHandling) return baseThreshold;
-    
+
     // Adjust threshold based on device performance
     const performanceFactor = state.isLowEndDevice ? 1.5 : 1;
     return baseThreshold * performanceFactor;
@@ -301,20 +322,21 @@ export const useMobileOptimization = (config: MobileOptimizationConfig = {}): Mo
 
   // Get performance-optimized props
   const getOptimizedProps = useCallback((baseProps: unknown) => {
-    const optimizedProps = { ...baseProps };
+    if (!baseProps || typeof baseProps !== 'object') return baseProps;
+    const optimizedProps: any = { ...(baseProps as Record<string, any>) };
 
     // Optimize touch targets
-    if (optimizedProps.size) {
-      optimizedProps.size = getTouchTargetSize(optimizedProps.size);
+    if (optimizedProps.size != null) {
+      optimizedProps.size = getTouchTargetSize(optimizedProps.size as number);
     }
 
     // Optimize animation duration
-    if (optimizedProps.duration) {
-      optimizedProps.duration = getOptimizedDuration(optimizedProps.duration);
+    if (optimizedProps.duration != null) {
+      optimizedProps.duration = getOptimizedDuration(optimizedProps.duration as number);
     }
 
     // Disable animations on low-end devices
-    if (state.isLowEndDevice && optimizedProps.animate) {
+    if (state.isLowEndDevice && optimizedProps.animate != null) {
       optimizedProps.animate = false;
     }
 
@@ -341,7 +363,7 @@ export const useMobileOptimization = (config: MobileOptimizationConfig = {}): Mo
           const deltaX = touch.clientX - touchStartRef.current.x;
           const deltaY = touch.clientY - touchStartRef.current.y;
           const deltaTime = Date.now() - touchStartRef.current.time;
-          
+
           // Detect tap
           if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && deltaTime < 300) {
             // Handle tap
@@ -355,20 +377,21 @@ export const useMobileOptimization = (config: MobileOptimizationConfig = {}): Mo
 
   // Handle gesture events
   const handleGesture = useCallback((event: unknown) => {
+    const e = event as any;
     if (!enableGestureHandling) return;
 
     // Handle gesture events
-    switch (event.type) {
+    switch (e.type) {
       case 'gesturestart':
-        gestureRef.current = { start: event.scale };
+        gestureRef.current = { start: e.scale };
         break;
       case 'gesturechange':
         if (gestureRef.current) {
-          const scale = event.scale / gestureRef.current.start;
+          const scale = e.scale / gestureRef.current.start;
           // Handle pinch zoom
-          event.target?.dispatchEvent(new CustomEvent('pinch', { 
+          e.target?.dispatchEvent(new CustomEvent('pinch', {
             detail: { scale },
-            bubbles: true 
+            bubbles: true
           }));
         }
         break;

@@ -1,5 +1,11 @@
 import { useCallback } from 'react';
-import { logger } from '../../../web/src/services/logger';
+// Local minimal logger fallback to avoid cross-package imports
+const logger = {
+  warn: (...args: unknown[]) => {
+    // eslint-disable-next-line no-console
+    console.warn(...args);
+  },
+};
 
 export interface HapticFeedbackConfig {
   /**
@@ -67,40 +73,39 @@ export interface HapticFeedbackActions {
 export const useHapticFeedback = (config: HapticFeedbackConfig = {}): HapticFeedbackActions => {
   const {
     enabled = true,
-    intensity = 'medium',
+    // default intensity retained for API shape; currently unused in base actions
+    intensity: _intensity = 'medium',
     respectSystemPreferences = true
   } = config;
 
   // Check if haptic feedback is supported
   const isSupported = useCallback(() => {
     if (!enabled) return false;
-    
+
     // Check for various haptic feedback APIs
-    return !!(
-      'vibrate' in navigator ||
-      'hapticFeedback' in navigator ||
-      (navigator as unknown).vibrate ||
-      (window as unknown).DeviceMotionEvent
-    );
+    const hasNavigatorVibrate = 'vibrate' in navigator;
+    const hasNavigatorHaptic = 'hapticFeedback' in (navigator as Navigator & Record<string, unknown>);
+    const hasDeviceMotion = typeof (window as Window & { DeviceMotionEvent?: unknown }).DeviceMotionEvent !== 'undefined';
+    return hasNavigatorVibrate || hasNavigatorHaptic || hasDeviceMotion;
   }, [enabled]);
 
   // Check system preferences
   const shouldUseHaptic = useCallback(() => {
     if (!isSupported()) return false;
-    
+
     if (respectSystemPreferences) {
       // Check for reduced motion preference
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (prefersReducedMotion) return false;
     }
-    
+
     return true;
   }, [isSupported, respectSystemPreferences]);
 
   // Base haptic feedback function
   const vibrate = useCallback((pattern: number | number[]) => {
     if (!shouldUseHaptic()) return;
-    
+
     try {
       if ('vibrate' in navigator) {
         navigator.vibrate(pattern);

@@ -4,24 +4,18 @@
  */
 
 export { AIMatchingAlgorithm, aiMatchingAlgorithm } from './matching/algorithm';
-export { PetPhotoAnalysis, createPetPhotoAnalysis } from './vision/petAnalysis';
-export { DeepSeekService, createDeepSeekService } from './services/deepSeekService';
-export { PetMatchingService, createMatchingService } from './services/matchingService';
+export { createDeepSeekService, DeepSeekService } from './services/deepSeekService';
+export { createMatchingService, PetMatchingService } from './services/matchingService';
+export { createPetPhotoAnalysis, PetPhotoAnalysis } from './vision/petAnalysis';
+
+export type { MatchResult, PetProfile, UserPreferences } from './matching/algorithm';
+export type { AnalysisResult, PetPhotoAnalysisData } from './vision/petAnalysis';
 
 export type {
-  PetProfile,
-  UserPreferences,
-  MatchResult,
-  PetPhotoAnalysisData,
-  AnalysisResult,
-} from './vision/petAnalysis';
-
-export type {
-  DeepSeekConfig,
-  DeepSeekResponse,
-  DeepSeekError,
+  DeepSeekConfig, DeepSeekError, DeepSeekResponse
 } from './services/deepSeekService';
 
 export type {
-  MatchingServiceConfig,
+  MatchingServiceConfig
 } from './services/matchingService';
+

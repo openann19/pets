@@ -6,10 +6,12 @@
 
 'use client';
 
-import {  } from 'framer-motion';
-import React, { useCallback, useRef, useState } from 'react';
-import {  } from '../../animations/premium-motion';
-import {  } from '../../theme/design-system';
+import { useMotionValue, useSpring } from 'framer-motion';
+import React, { useCallback, useRef, useState, type JSX } from 'react';
+import { hoverVariants, tapVariants, transitions } from '../../animations/premium-motion';
+import { COLORS, GRADIENTS, RADIUS, SHADOWS } from '../../theme/design-system';
+import { MotionButton, MotionDiv, MotionSpan } from '../../utils/Motion';
+import { fromCss, makeConditionalStyle, makeHover, makeTap, springMicro, style as styleMerge } from '../../utils/motionTypes';
 
 interface PremiumButtonProps {
   children: React.ReactNode;
@@ -67,6 +69,10 @@ export const PremiumButton = ({
   magneticEffect = false,
   className = '',
   type = 'button',
+  'aria-label': ariaLabel,
+  'aria-disabled': ariaDisabled,
+  role,
+  tabIndex,
 }: PremiumButtonProps): JSX.Element => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [isPressed, setIsPressed] = useState(false);
@@ -75,13 +81,13 @@ export const PremiumButton = ({
   // Magnetic effect using motion values
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const springX = useSpring(x, transitions.micro);
-  const springY = useSpring(y, transitions.micro);
+  const springX = useSpring(x, springMicro);
+  const springY = useSpring(y, springMicro);
 
   // Advanced haptic feedback
   const triggerHaptic = useCallback((intensity: 'light' | 'medium' | 'heavy' = 'medium') => {
     if (!haptic || typeof window === 'undefined') return;
-    
+
     // Web Haptic API (if available)
     if ('vibrate' in navigator) {
       const patterns = {
@@ -96,21 +102,21 @@ export const PremiumButton = ({
   // Advanced sound feedback
   const triggerSound = useCallback((type: 'hover' | 'press' | 'success') => {
     if (!sound || typeof window === 'undefined') return;
-    
+
     try {
       const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       const frequencies = { hover: 800, press: 600, success: 1000 };
       oscillator.frequency.setValueAtTime(frequencies[type], audioContext.currentTime);
-      
+
       gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-      
+
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.1);
     } catch {
@@ -121,17 +127,17 @@ export const PremiumButton = ({
   // Magnetic mouse tracking
   const handleMouseMove = useCallback((event: React.MouseEvent) => {
     if (!magneticEffect || !buttonRef.current) return;
-    
+
     const rect = buttonRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    
+
     const deltaX = event.clientX - centerX;
     const deltaY = event.clientY - centerY;
-    
+
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     const maxDistance = 50;
-    
+
     if (distance < maxDistance) {
       const strength = 1 - distance / maxDistance;
       x.set(deltaX * strength * 0.3);
@@ -149,31 +155,31 @@ export const PremiumButton = ({
   // Enhanced click handler
   const handleClick = useCallback(() => {
     if (disabled || loading) return;
-    
+
     triggerHaptic('medium');
     triggerSound('press');
-    
+
     if (particles !== null && particles !== undefined) {
       setShowParticles(true);
       setTimeout(() => { setShowParticles(false); }, 600);
     }
-    
+
     onClick?.();
   }, [disabled, loading, onClick, triggerHaptic, triggerSound, particles]);
 
   // Get variant styles
-  const getVariantStyles = (): Record<string, string | number | string[]> => {
+  const getVariantStyles = (): React.CSSProperties => {
     const variants = {
       primary: {
         background: GRADIENTS.primary,
         color: COLORS.neutral[0],
-        shadow: glow ? SHADOWS.primaryGlow : SHADOWS.lg,
+        boxShadow: glow ? SHADOWS.primaryGlow : SHADOWS.lg,
         border: 'none',
       },
       secondary: {
         background: GRADIENTS.secondary,
         color: COLORS.neutral[0],
-        shadow: glow ? SHADOWS.secondaryGlow : SHADOWS.lg,
+        boxShadow: glow ? SHADOWS.secondaryGlow : SHADOWS.lg,
         border: 'none',
       },
       glass: {
@@ -181,36 +187,36 @@ export const PremiumButton = ({
         backdropFilter: 'blur(16px) saturate(180%)',
         border: '1px solid rgba(255, 255, 255, 0.3)',
         color: COLORS.neutral[800],
-        shadow: SHADOWS.glass,
+        boxShadow: SHADOWS.glass,
       },
       gradient: {
         background: GRADIENTS.mesh.warm,
         color: COLORS.neutral[0],
-        shadow: glow ? SHADOWS['2xl'] : SHADOWS.xl,
+        boxShadow: glow ? SHADOWS['2xl'] : SHADOWS.xl,
         border: 'none',
       },
       neon: {
         background: COLORS.neutral[900],
         color: COLORS.primary[400],
         border: `2px solid ${COLORS.primary[400]}`,
-        shadow: `0 0 20px ${COLORS.primary[400]}40`,
+        boxShadow: `0 0 20px ${COLORS.primary[400]}40`,
         filter: glow ? `drop-shadow(0 0 10px ${COLORS.primary[400]})` : 'none',
       },
       holographic: {
         background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7b8, #96ceb4, #ffeaa7)',
         backgroundSize: '400% 400%',
         color: COLORS.neutral[0],
-        shadow: SHADOWS['2xl'],
+        boxShadow: SHADOWS['2xl'],
         border: 'none',
         animation: 'holographic 3s ease infinite',
       },
     };
-    
+
     return variants[variant];
   };
 
   // Get size styles
-  const getSizeStyles = (): Record<string, string | number> => {
+  const getSizeStyles = (): React.CSSProperties => {
     const sizes = {
       sm: {
         padding: '8px 16px',
@@ -220,7 +226,7 @@ export const PremiumButton = ({
       },
       md: {
         padding: '12px 24px',
-        fontSize: '16px', 
+        fontSize: '16px',
         minHeight: '44px',
         borderRadius: RADIUS.xl,
       },
@@ -237,7 +243,7 @@ export const PremiumButton = ({
         borderRadius: RADIUS['2xl'],
       },
     };
-    
+
     return sizes[size];
   };
 
@@ -247,10 +253,10 @@ export const PremiumButton = ({
   return (
     <div className="relative inline-block">
       {/* Particle Effect */}
-      {showParticles !== undefined &&  (
+      {showParticles !== undefined && (
         <div className="absolute inset-0 pointer-events-none">
           {[...Array(6)].map((_, i) => (
-            <motion.div
+            <MotionDiv
               key={i}
               className="absolute w-2 h-2 bg-white rounded-full"
               initial={{
@@ -275,13 +281,13 @@ export const PremiumButton = ({
         </div>
       )}
 
-      <motion.button
+      <MotionButton
         ref={buttonRef}
         type={type}
-        aria-label={props['aria-label']}
-        aria-disabled={props['aria-disabled']}
-        role={props.role || 'button'}
-        tabIndex={props.tabIndex ?? 0}
+        aria-label={ariaLabel}
+        aria-disabled={ariaDisabled}
+        role={role || 'button'}
+        tabIndex={tabIndex ?? 0}
         disabled={disabled || loading}
         onClick={handleClick}
         onMouseMove={handleMouseMove}
@@ -292,16 +298,16 @@ export const PremiumButton = ({
         }}
         onMouseDown={() => { setIsPressed(true); }}
         onMouseUp={() => { setIsPressed(false); }}
-        style={{
+        style={styleMerge(makeConditionalStyle({
           x: magneticEffect ? springX : 0,
           y: magneticEffect ? springY : 0,
-          ...variantStyles,
-          ...sizeStyles,
+          ...fromCss(variantStyles),
+          ...fromCss(sizeStyles),
           width: fullWidth ? '100%' : 'auto',
           opacity: disabled ? 0.5 : 1,
           cursor: disabled ? 'not-allowed' : 'pointer',
-          outline: isPressed ? '2px solid var(--pm-primary)' : undefined,
-        }}
+          ...(isPressed ? { outline: '2px solid var(--pm-primary)' } : {}),
+        }))}
         className={`
           relative inline-flex items-center justify-center
           font-semibold transition-all duration-200
@@ -309,15 +315,15 @@ export const PremiumButton = ({
           ${disabled ? 'pointer-events-none' : ''}
           ${className}
         `}
-        whileHover={!disabled ? hoverVariants.glow : {}}
-        whileTap={!disabled ? tapVariants.press : {}}
+        {...(!disabled && { whileHover: makeHover(hoverVariants.glow) })}
+        {...(!disabled && { whileTap: makeTap(tapVariants.press) })}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: disabled ? 0.5 : 1, scale: 1 }}
         transition={transitions.spring}
       >
         {/* Glow effect overlay */}
-        {glow !== undefined &&  !disabled && (
-          <motion.div
+        {glow !== undefined && !disabled && (
+          <MotionDiv
             className="absolute inset-0 rounded-inherit"
             initial={{ opacity: 0 }}
             whileHover={{ opacity: 1 }}
@@ -331,14 +337,14 @@ export const PremiumButton = ({
         )}
 
         {/* Loading overlay */}
-        {loading !== undefined &&  (
-          <motion.div
+        {loading !== undefined && (
+          <MotionDiv
             className="absolute inset-0 rounded-inherit bg-black bg-opacity-20 flex items-center justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={transitions.micro}
           >
-            <motion.div
+            <MotionDiv
               className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
               animate={{ rotate: 360 }}
               transition={{
@@ -347,48 +353,48 @@ export const PremiumButton = ({
                 ease: "linear",
               }}
             />
-          </motion.div>
+          </MotionDiv>
         )}
 
         {/* Content */}
-        <motion.div
+        <MotionDiv
           className="flex items-center justify-center gap-2"
-          animate={{ 
+          animate={{
             scale: isPressed ? 0.95 : 1,
             opacity: loading ? 0 : 1,
           }}
           transition={transitions.micro}
         >
-          {icon !== undefined &&  iconPosition === 'left' && (
-            <motion.span
+          {icon !== undefined && iconPosition === 'left' && (
+            <MotionSpan
               className="flex-shrink-0"
               whileHover={{ rotate: 10 }}
               transition={transitions.micro}
             >
               {icon}
-            </motion.span>
+            </MotionSpan>
           )}
-          
+
           <span>{children}</span>
-          
-          {icon !== undefined &&  iconPosition === 'right' && (
-            <motion.span
+
+          {icon !== undefined && iconPosition === 'right' && (
+            <MotionSpan
               className="flex-shrink-0"
               whileHover={{ rotate: -10 }}
               transition={transitions.micro}
             >
               {icon}
-            </motion.span>
+            </MotionSpan>
           )}
-        </motion.div>
+        </MotionDiv>
 
         {/* Ripple effect */}
-        <motion.div
+        <MotionDiv
           className="absolute inset-0 rounded-inherit overflow-hidden pointer-events-none"
           initial={false}
           animate={isPressed ? { scale: 1 } : { scale: 0 }}
         >
-          <motion.div
+          <MotionDiv
             className="absolute inset-0 bg-white opacity-20"
             initial={{ scale: 0 }}
             animate={isPressed ? { scale: 4 } : { scale: 0 }}
@@ -400,8 +406,8 @@ export const PremiumButton = ({
               transform: 'translate(-50%, -50%)',
             }}
           />
-        </motion.div>
-      </motion.button>
+        </MotionDiv>
+      </MotionButton>
 
       {/* Holographic animation styles */}
       {variant === 'holographic' && (

@@ -11,7 +11,10 @@ const CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
 class SessionManager {
   constructor() {
     this.sessions = new Map();
-    this.startCleanup();
+    // Avoid starting background intervals during test runs to prevent open handle hangs
+    if (process.env.NODE_ENV !== 'test') {
+      this.startCleanup();
+    }
   }
 
   /**
@@ -40,7 +43,7 @@ class SessionManager {
    */
   validateSession(sessionId) {
     const session = this.sessions.get(sessionId);
-    
+
     if (!session) {
       return { valid: false, reason: 'Session not found' };
     }
@@ -58,8 +61,8 @@ class SessionManager {
     session.lastActivity = now;
     this.sessions.set(sessionId, session);
 
-    return { 
-      valid: true, 
+    return {
+      valid: true,
       session,
       timeRemaining: SESSION_TIMEOUT - timeSinceLastActivity
     };
@@ -114,10 +117,10 @@ class SessionManager {
 
     for (const session of this.sessions.values()) {
       const timeSinceLastActivity = now - session.lastActivity;
-      
+
       if (timeSinceLastActivity < SESSION_TIMEOUT) {
         activeSessions++;
-        
+
         // Expiring in next 5 minutes
         if (timeSinceLastActivity > SESSION_TIMEOUT - 5 * 60 * 1000) {
           expiringSoon++;
@@ -141,7 +144,7 @@ class SessionManager {
 
     for (const [sessionId, session] of this.sessions.entries()) {
       const timeSinceLastActivity = now - session.lastActivity;
-      
+
       if (timeSinceLastActivity > SESSION_TIMEOUT) {
         this.sessions.delete(sessionId);
         cleaned++;
@@ -191,7 +194,7 @@ const trackSession = (req, res, next) => {
   if (req.user && req.headers['x-session-id']) {
     const sessionId = req.headers['x-session-id'];
     const validation = sessionManager.validateSession(sessionId);
-    
+
     if (!validation.valid) {
       return res.status(401).json({
         success: false,
@@ -204,7 +207,7 @@ const trackSession = (req, res, next) => {
     req.session = validation.session;
     req.sessionTimeRemaining = validation.timeRemaining;
   }
-  
+
   next();
 };
 
@@ -213,7 +216,7 @@ const trackSession = (req, res, next) => {
  */
 const requireSession = (req, res, next) => {
   const sessionId = req.headers['x-session-id'];
-  
+
   if (!sessionId) {
     return res.status(401).json({
       success: false,
@@ -223,7 +226,7 @@ const requireSession = (req, res, next) => {
   }
 
   const validation = sessionManager.validateSession(sessionId);
-  
+
   if (!validation.valid) {
     return res.status(401).json({
       success: false,

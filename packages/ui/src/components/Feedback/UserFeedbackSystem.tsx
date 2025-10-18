@@ -3,18 +3,19 @@
  * Comprehensive user feedback with clear error messages, notifications, and recovery options
  */
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
+  ArrowPathIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  XCircleIcon,
   InformationCircleIcon,
-  XMarkIcon,
-  ArrowPathIcon
+  XCircleIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
-import { errorHandler } from '../../../core/src/services/ErrorHandler';
-import { logger } from '../../../core/src/services/Logger';
+import { logger } from '@pawfectmatch/core/services';
+import { AnimatePresence } from 'framer-motion';
+import type { ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useState } from 'react';
+import { MotionDiv } from '../../utils/Motion';
 
 export type FeedbackType = 'success' | 'error' | 'warning' | 'info';
 export type FeedbackSeverity = 'low' | 'medium' | 'high' | 'critical';
@@ -35,6 +36,7 @@ export interface FeedbackMessage {
   duration?: number;
   timestamp: Date;
   persistent?: boolean;
+  metadata?: Record<string, unknown>;
 }
 
 export interface FeedbackContextType {
@@ -67,10 +69,10 @@ interface FeedbackProviderProps {
   defaultDuration?: number;
 }
 
-export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({ 
-  children, 
+export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
+  children,
   maxMessages = 5,
-  defaultDuration = 5000 
+  defaultDuration = 5000
 }) => {
   const [messages, setMessages] = useState<FeedbackMessage[]>([]);
 
@@ -105,6 +107,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
 
   const dismissMessage = useCallback((id: string) => {
     setMessages(prev => prev.filter(msg => msg.id !== id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const clearAllMessages = useCallback(() => {
@@ -155,23 +158,31 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
 
   const showApiError = useCallback((error: Error, context?: string) => {
     const errorMessage = getApiErrorMessage(error);
-    
+
     return showError(
       'Request Failed',
       errorMessage.message,
       {
         severity: errorMessage.severity,
-        details: errorMessage.details,
-        action: errorMessage.retryable ? {
-          label: 'Retry',
-          handler: () => {
-            // Retry logic would be implemented by the calling component
-            logger.info('User requested retry for API error', {
-              error: error.message,
-              context,
-            });
-          },
-        } : undefined,
+        ...(errorMessage.details ? { details: errorMessage.details } : {}),
+        ...(errorMessage.retryable
+          ? {
+            action: {
+              label: 'Retry',
+              handler: () => {
+                // Retry logic would be implemented by the calling component
+                logger.info('User requested retry for API error', {
+                  action: 'retry',
+                  component: 'Feedback',
+                  metadata: {
+                    error: error.message,
+                    context,
+                  },
+                });
+              },
+            },
+          }
+          : {}),
         metadata: {
           error: error.message,
           context,
@@ -183,19 +194,23 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
 
   const showPaymentError = useCallback((error: Error, paymentDetails?: unknown) => {
     const errorMessage = getPaymentErrorMessage(error);
-    
+
     return showError(
       errorMessage.title,
       errorMessage.message,
       {
         severity: 'high',
-        details: errorMessage.details,
+        ...(errorMessage.details ? { details: errorMessage.details } : {}),
         action: {
           label: 'Try Again',
           handler: () => {
             logger.info('User requested retry for payment error', {
-              error: error.message,
-              paymentDetails,
+              action: 'retry',
+              component: 'Feedback',
+              metadata: {
+                error: error.message,
+                paymentDetails,
+              },
             });
           },
         },
@@ -214,10 +229,14 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
       'Please check your internet connection and try again.',
       {
         severity: 'medium',
-        action: retryAction ? {
-          label: 'Retry',
-          handler: retryAction,
-        } : undefined,
+        ...(retryAction
+          ? {
+            action: {
+              label: 'Retry',
+              handler: retryAction,
+            },
+          }
+          : {}),
         metadata: {
           error: error.message,
         },
@@ -226,8 +245,9 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
   }, [showError]);
 
   const showValidationError = useCallback((errors: string[]) => {
-    const message = errors.length === 1 
-      ? errors[0] 
+    const single = errors[0] ?? 'Validation error';
+    const message = errors.length === 1
+      ? single
       : `Please fix ${errors.length} validation errors`;
 
     return showError(
@@ -235,7 +255,7 @@ export const FeedbackProvider: React.FC<FeedbackProviderProps> = ({
       message,
       {
         severity: 'medium',
-        details: errors.length > 1 ? errors.join('\n') : undefined,
+        ...(errors.length > 1 ? { details: errors.join('\n') } : {}),
         autoHide: true,
         duration: 8000,
       }
@@ -290,9 +310,9 @@ interface FeedbackMessageComponentProps {
   onDismiss: (id: string) => void;
 }
 
-const FeedbackMessageComponent: React.FC<FeedbackMessageComponentProps> = ({ 
-  message, 
-  onDismiss 
+const FeedbackMessageComponent: React.FC<FeedbackMessageComponentProps> = ({
+  message,
+  onDismiss
 }) => {
   const getIcon = () => {
     switch (message.type) {
@@ -340,7 +360,7 @@ const FeedbackMessageComponent: React.FC<FeedbackMessageComponentProps> = ({
   };
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, x: 300, scale: 0.95 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 300, scale: 0.95 }}
@@ -372,15 +392,14 @@ const FeedbackMessageComponent: React.FC<FeedbackMessageComponentProps> = ({
             <div className="mt-3">
               <button
                 onClick={message.action.handler}
-                className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  message.type === 'error'
-                    ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                    : message.type === 'warning'
+                className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${message.type === 'error'
+                  ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                  : message.type === 'warning'
                     ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                     : message.type === 'success'
-                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                    : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                }`}
+                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                      : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                  }`}
               >
                 <ArrowPathIcon className="h-3 w-3 mr-1" />
                 {message.action.label}
@@ -392,22 +411,21 @@ const FeedbackMessageComponent: React.FC<FeedbackMessageComponentProps> = ({
           <div className="ml-4 flex-shrink-0">
             <button
               onClick={() => onDismiss(message.id)}
-              className={`inline-flex rounded-md p-1.5 transition-colors ${
-                message.type === 'error'
-                  ? 'text-red-500 hover:bg-red-100'
-                  : message.type === 'warning'
+              className={`inline-flex rounded-md p-1.5 transition-colors ${message.type === 'error'
+                ? 'text-red-500 hover:bg-red-100'
+                : message.type === 'warning'
                   ? 'text-yellow-500 hover:bg-yellow-100'
                   : message.type === 'success'
-                  ? 'text-green-500 hover:bg-green-100'
-                  : 'text-blue-500 hover:bg-blue-100'
-              }`}
+                    ? 'text-green-500 hover:bg-green-100'
+                    : 'text-blue-500 hover:bg-blue-100'
+                }`}
             >
               <XMarkIcon className="h-4 w-4" />
             </button>
           </div>
         )}
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 
@@ -419,7 +437,7 @@ function getApiErrorMessage(error: Error): {
   retryable: boolean;
 } {
   const message = error.message.toLowerCase();
-  
+
   if (message.includes('network') || message.includes('fetch')) {
     return {
       message: 'Network connection failed. Please check your internet connection.',
@@ -427,7 +445,7 @@ function getApiErrorMessage(error: Error): {
       retryable: true,
     };
   }
-  
+
   if (message.includes('timeout')) {
     return {
       message: 'Request timed out. Please try again.',
@@ -435,7 +453,7 @@ function getApiErrorMessage(error: Error): {
       retryable: true,
     };
   }
-  
+
   if (message.includes('unauthorized') || message.includes('401')) {
     return {
       message: 'Your session has expired. Please log in again.',
@@ -443,7 +461,7 @@ function getApiErrorMessage(error: Error): {
       retryable: false,
     };
   }
-  
+
   if (message.includes('forbidden') || message.includes('403')) {
     return {
       message: 'You do not have permission to perform this action.',
@@ -451,7 +469,7 @@ function getApiErrorMessage(error: Error): {
       retryable: false,
     };
   }
-  
+
   if (message.includes('not found') || message.includes('404')) {
     return {
       message: 'The requested resource was not found.',
@@ -459,7 +477,7 @@ function getApiErrorMessage(error: Error): {
       retryable: false,
     };
   }
-  
+
   if (message.includes('server') || message.includes('500')) {
     return {
       message: 'Server error occurred. Please try again later.',
@@ -467,7 +485,7 @@ function getApiErrorMessage(error: Error): {
       retryable: true,
     };
   }
-  
+
   return {
     message: 'An unexpected error occurred. Please try again.',
     severity: 'medium',
@@ -482,7 +500,7 @@ function getPaymentErrorMessage(error: Error): {
   details?: string;
 } {
   const message = error.message.toLowerCase();
-  
+
   if (message.includes('card') || message.includes('declined')) {
     return {
       title: 'Payment Declined',
@@ -490,35 +508,35 @@ function getPaymentErrorMessage(error: Error): {
       details: error.message,
     };
   }
-  
+
   if (message.includes('insufficient') || message.includes('funds')) {
     return {
       title: 'Insufficient Funds',
       message: 'Your account has insufficient funds. Please use a different payment method.',
     };
   }
-  
+
   if (message.includes('expired')) {
     return {
       title: 'Card Expired',
       message: 'Your payment method has expired. Please update your card information.',
     };
   }
-  
+
   if (message.includes('security') || message.includes('fraud')) {
     return {
       title: 'Security Check Required',
       message: 'Your payment requires additional verification. Please contact your bank or try a different payment method.',
     };
   }
-  
+
   if (message.includes('limit') || message.includes('exceeded')) {
     return {
       title: 'Payment Limit Exceeded',
       message: 'Your payment exceeds the allowed limit. Please try a smaller amount or contact support.',
     };
   }
-  
+
   return {
     title: 'Payment Error',
     message: 'We encountered an issue processing your payment. Please try again or contact support.',

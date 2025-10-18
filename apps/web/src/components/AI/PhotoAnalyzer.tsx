@@ -1,14 +1,8 @@
 'use client';
 
-import React, { useState, useCallback } from 'react'
-import { logger } from '@pawfectmatch/core';
-;
+import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import {
-  SparklesIcon,
-  CheckCircleIcon,
-  CameraIcon,
-} from '@heroicons/react/24/outline';
+import { CameraIcon, SparklesIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { useDropzone } from 'react-dropzone';
 
 interface AnalysisResult {
@@ -20,7 +14,7 @@ interface AnalysisResult {
   suggestions?: string[];
 }
 
-export const PhotoAnalyzer = (): JSX.Element => {
+export const PhotoAnalyzer: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -45,14 +39,14 @@ export const PhotoAnalyzer = (): JSX.Element => {
     maxFiles: 1,
   });
 
-  const analyzePhoto = async (_file: File) => {
+  const analyzePhoto = async (file: File) => {
     setAnalyzing(true);
     setResult(null);
 
     try {
       // Simulate AI analysis
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       // Mock result
       setResult({
         breed: 'Golden Retriever',
@@ -60,10 +54,14 @@ export const PhotoAnalyzer = (): JSX.Element => {
         temperament: ['Friendly', 'Energetic', 'Loyal'],
         healthScore: 95,
         confidence: 87,
-        suggestions: ['Great photo quality!', 'Well-lit and clear', 'Shows personality well'],
+        suggestions: [
+          'Great photo quality!',
+          'Well-lit and clear',
+          'Shows personality well',
+        ],
       });
     } catch (error) {
-      logger.error('Analysis failed:', { error });
+      console.error('Analysis failed:', error);
     } finally {
       setAnalyzing(false);
     }
@@ -76,8 +74,12 @@ export const PhotoAnalyzer = (): JSX.Element => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-4">
             <CameraIcon className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">AI Photo Analysis</h2>
-          <p className="text-gray-600">Upload a pet photo for instant AI-powered insights</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            AI Photo Analysis
+          </h2>
+          <p className="text-gray-600">
+            Upload a pet photo for instant AI-powered insights
+          </p>
         </div>
 
         <div
@@ -99,13 +101,15 @@ export const PhotoAnalyzer = (): JSX.Element => {
             <div>
               <CameraIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-lg text-gray-600">
-                {isDragActive ? 'Drop the photo here' : 'Drag & drop a photo, or click to select'}
+                {isDragActive
+                  ? 'Drop the photo here'
+                  : 'Drag & drop a photo, or click to select'}
               </p>
             </div>
           )}
         </div>
 
-        {analyzing !== undefined && (
+        {analyzing && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -129,27 +133,27 @@ export const PhotoAnalyzer = (): JSX.Element => {
                 <CheckCircleIcon className="w-6 h-6 text-green-500" />
                 <h3 className="text-xl font-bold text-gray-900">Analysis Complete</h3>
               </div>
-
+              
               <div className="grid md:grid-cols-2 gap-4">
-                {result.breed !== undefined && (
+                {result.breed && (
                   <div>
                     <p className="text-sm text-gray-600">Breed</p>
                     <p className="text-lg font-semibold text-gray-900">{result.breed}</p>
                   </div>
                 )}
-                {result.age !== undefined && (
+                {result.age && (
                   <div>
                     <p className="text-sm text-gray-600">Estimated Age</p>
                     <p className="text-lg font-semibold text-gray-900">{result.age}</p>
                   </div>
                 )}
-                {result.healthScore !== undefined && (
+                {result.healthScore && (
                   <div>
                     <p className="text-sm text-gray-600">Health Score</p>
                     <p className="text-lg font-semibold text-green-600">{result.healthScore}/100</p>
                   </div>
                 )}
-                {result.confidence !== undefined && (
+                {result.confidence && (
                   <div>
                     <p className="text-sm text-gray-600">Confidence</p>
                     <p className="text-lg font-semibold text-purple-600">{result.confidence}%</p>
@@ -157,7 +161,7 @@ export const PhotoAnalyzer = (): JSX.Element => {
                 )}
               </div>
 
-              {result.temperament !== undefined && result.temperament.length > 0 && (
+              {result.temperament && result.temperament.length > 0 && (
                 <div className="mt-4">
                   <p className="text-sm text-gray-600 mb-2">Temperament</p>
                   <div className="flex flex-wrap gap-2">
@@ -173,15 +177,12 @@ export const PhotoAnalyzer = (): JSX.Element => {
                 </div>
               )}
 
-              {result.suggestions !== undefined && result.suggestions.length > 0 && (
+              {result.suggestions && result.suggestions.length > 0 && (
                 <div className="mt-4">
                   <p className="text-sm text-gray-600 mb-2">Suggestions</p>
                   <ul className="space-y-1">
                     {result.suggestions.map((suggestion, index) => (
-                      <li
-                        key={index}
-                        className="text-sm text-gray-700 flex items-start gap-2"
-                      >
+                      <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
                         <span className="text-green-500">✓</span>
                         <span>{suggestion}</span>
                       </li>

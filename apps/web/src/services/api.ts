@@ -3,423 +3,75 @@
  * Production-ready with full type safety, error handling, and real-time features
  */
 
-import type { User } from '@pawfectmatch/core';
-import { logger } from '@pawfectmatch/core';
-import { toURLSearchParams } from '../utils/http/params';
+import { 
+  ApiResponse, 
+  User, 
+  Pet, 
+  UserRegistrationData, 
+  PetCreationData, 
+  SwipeParams, 
+  UserPreferences, 
+  MessageAttachment, 
+  BioGenerationData, 
+  CompatibilityOptions, 
+  BehaviorAnalysisData 
+} from '../types';
 
-const API_BASE_URL: string = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:5000/api';
-
-// Auth response types
-interface AuthResponse {
-  token: string;
-  refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    avatar?: string;
-    isPremium?: boolean;
-    preferences?: Record<string, unknown>;
-  };
-}
-
-// Forgot password request schema
-export interface ForgotPasswordRequest {
-  email: string;
-}
-
-// Reset password request schema
-export interface ResetPasswordRequest {
-  token: string;
-  password: string;
-  confirmPassword: string;
-}
-
-// Current user response schema
-interface CurrentUserResponse {
-  user: User;
-}
-
-// Pet creation/update types
-interface PetCreateData {
-  name: string;
-  breed: string;
-  age: number;
-  gender: 'male' | 'female';
-  size: 'small' | 'medium' | 'large';
-  weight: number;
-  description: string;
-  temperament: string[];
-  energy: 'low' | 'medium' | 'high';
-  training: 'none' | 'basic' | 'intermediate' | 'advanced';
-  goodWithKids: boolean;
-  goodWithPets: boolean;
-  houseTrained: boolean;
-  specialNeeds?: string;
-  photos: string[];
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-}
-
-interface PetUpdateData extends Partial<PetCreateData> {
-  id: string;
-}
-
-// User preferences type
-interface UserPreferences {
-  maxDistance: number;
-  ageRange: { min: number; max: number };
-  sizePreference: ('small' | 'medium' | 'large')[];
-  breedPreference: string[];
-  temperamentPreference: string[];
-  notificationsEnabled: boolean;
-  emailNotifications: boolean;
-  pushNotifications: boolean;
-}
-
-// Message attachment type
-interface MessageAttachment {
-  id: string;
-  type: 'image' | 'video' | 'audio' | 'document';
-  url: string;
-  name: string;
-  size: number;
-  mimeType: string;
-}
-
-// AI analysis types
-interface AIAnalysisOptions {
-  includeBehavior?: boolean;
-  includeCompatibility?: boolean;
-  includeRecommendations?: boolean;
-}
-
-interface BehaviorAnalysisData {
-  activityLevel: number;
-  socialBehavior: string[];
-  trainingProgress: number;
-  healthIndicators: Record<string, unknown>;
-}
-
-// Logger utility with proper typing
-interface LogLevel {
-  info: (...args: unknown[]) => void;
-  error: (...args: unknown[]) => void;
-  warn: (...args: unknown[]) => void;
-}
-
-const apiLogger: LogLevel = {
-  info: (...args: unknown[]): void => {
-    logger.info('[API]', { args });
-  },
-  error: (...args: unknown[]): void => {
-    logger.error('[API ERROR]', { args });
-  },
-  warn: (...args: unknown[]): void => {
-    logger.warn('[API WARN]', { args });
-  },
+// Centralized API configuration
+const getApiBaseUrl = (): string => {
+  // Check environment variable first
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // Fallback to localhost with correct port
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.hostname}:5001/api`;
+  }
+  
+  // SSR fallback
+  return 'http://localhost:5001/api';
 };
 
-/**
- * Error severity levels for classification
- */
-export enum ErrorSeverity {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical',
-}
+const API_BASE_URL = getApiBaseUrl();
 
-/**
- * Error categories for better organization
- */
-export enum ErrorCategory {
-  AUTHENTICATION = 'authentication',
-  AUTHORIZATION = 'authorization',
-  VALIDATION = 'validation',
-  NETWORK = 'network',
-  SERVER = 'server',
-  CLIENT = 'client',
-  RATE_LIMIT = 'rate_limit',
-  NOT_FOUND = 'not_found',
-  CONFLICT = 'conflict',
-  UNKNOWN = 'unknown',
-}
-
-/**
- * Error recovery strategies
- */
-export enum RecoveryStrategy {
-  RETRY = 'retry',
-  REDIRECT = 'redirect',
-  REFRESH_AUTH = 'refresh_auth',
-  FALLBACK = 'fallback',
-  MANUAL = 'manual',
-  NONE = 'none',
-}
-
-/**
- * Enhanced API Error class with classification, recovery, and user-friendly messages
- */
-export class ApiError extends Error {
-  public readonly timestamp: Date;
-  public readonly id: string;
-  public readonly isOperational: boolean;
-  public readonly category: ErrorCategory;
-  public readonly severity: ErrorSeverity;
-  public readonly recovery: RecoveryStrategy;
-
-  constructor(
-    public status: number,
-    message: string,
-    public code?: string,
-    public details?: unknown,
-  ) {
-    super(message);
-    this.name = 'ApiError';
-    this.timestamp = new Date();
-    this.id = `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    // Auto-classify error
-    const classification = this.classifyError(status);
-    this.category = classification.category;
-    this.severity = classification.severity;
-    this.recovery = classification.recovery;
-    this.isOperational = status >= 400 && status < 500;
-
-    // Maintain proper stack trace
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, ApiError);
+// Dev-time sanity check for port configuration
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  try {
+    const url = new URL(API_BASE_URL);
+    if (url.port && url.port !== '5001') {
+      console.warn('[API] Warning: NEXT_PUBLIC_API_URL is not using port 5001:', API_BASE_URL);
     }
-  }
-
-  private classifyError(status: number): { category: ErrorCategory; severity: ErrorSeverity; recovery: RecoveryStrategy } {
-    if (status === 401) {
-      return { category: ErrorCategory.AUTHENTICATION, severity: ErrorSeverity.HIGH, recovery: RecoveryStrategy.REFRESH_AUTH };
-    }
-    if (status === 403) {
-      return { category: ErrorCategory.AUTHORIZATION, severity: ErrorSeverity.HIGH, recovery: RecoveryStrategy.REDIRECT };
-    }
-    if (status === 404) {
-      return { category: ErrorCategory.NOT_FOUND, severity: ErrorSeverity.LOW, recovery: RecoveryStrategy.FALLBACK };
-    }
-    if (status === 409) {
-      return { category: ErrorCategory.CONFLICT, severity: ErrorSeverity.MEDIUM, recovery: RecoveryStrategy.MANUAL };
-    }
-    if (status === 400 || status === 422) {
-      return { category: ErrorCategory.VALIDATION, severity: ErrorSeverity.LOW, recovery: RecoveryStrategy.MANUAL };
-    }
-    if (status === 429) {
-      return { category: ErrorCategory.RATE_LIMIT, severity: ErrorSeverity.MEDIUM, recovery: RecoveryStrategy.RETRY };
-    }
-    if (status >= 400 && status < 500) {
-      return { category: ErrorCategory.CLIENT, severity: ErrorSeverity.MEDIUM, recovery: RecoveryStrategy.MANUAL };
-    }
-    if (status >= 500) {
-      return { category: ErrorCategory.SERVER, severity: ErrorSeverity.HIGH, recovery: RecoveryStrategy.RETRY };
-    }
-    if (status <= 0) {
-      return { category: ErrorCategory.NETWORK, severity: ErrorSeverity.HIGH, recovery: RecoveryStrategy.RETRY };
-    }
-    return { category: ErrorCategory.UNKNOWN, severity: ErrorSeverity.MEDIUM, recovery: RecoveryStrategy.MANUAL };
-  }
-
-  /**
-   * Get user-friendly error message
-   */
-  public getUserFriendlyMessage(): string {
-    // Code-specific messages
-    const codeMessages: Record<string, string> = {
-      'EMAIL_EXISTS': 'This email is already registered. Please use a different email or log in.',
-      'INVALID_CREDENTIALS': 'Invalid email or password. Please try again.',
-      'TOKEN_EXPIRED': 'Your session has expired. Please log in again.',
-      'TOKEN_INVALID': 'Invalid session. Please log in again.',
-      'WEAK_PASSWORD': 'Please choose a stronger password (8+ chars, uppercase, lowercase, numbers).',
-      'RATE_LIMIT_EXCEEDED': 'Too many requests. Please wait a moment and try again.',
-      'EMAIL_NOT_VERIFIED': 'Please verify your email address.',
-      'ACCOUNT_SUSPENDED': 'Your account has been suspended. Contact support.',
-      'INSUFFICIENT_PERMISSIONS': 'You don\'t have permission for this action.',
-      'RESOURCE_NOT_FOUND': 'The requested resource was not found.',
-      'PAYMENT_REQUIRED': 'This feature requires a premium subscription.',
-      'UPLOAD_TOO_LARGE': 'File too large. Max 10MB.',
-      'UNSUPPORTED_FILE_TYPE': 'File type not supported. Use JPG, PNG, or GIF.',
-    };
-
-    if (this.code && codeMessages[this.code]) {
-      return codeMessages[this.code] ?? this.message;
-    }
-
-    // Category-based messages
-    switch (this.category) {
-      case ErrorCategory.AUTHENTICATION:
-        return 'Authentication failed. Please log in again.';
-      case ErrorCategory.AUTHORIZATION:
-        return 'You don\'t have permission to access this resource.';
-      case ErrorCategory.VALIDATION:
-        return 'Please check your input and try again.';
-      case ErrorCategory.NETWORK:
-        return 'Network error. Check your connection and try again.';
-      case ErrorCategory.SERVER:
-        return 'Server error. Our team has been notified.';
-      case ErrorCategory.RATE_LIMIT:
-        return 'Too many requests. Please wait before trying again.';
-      case ErrorCategory.NOT_FOUND:
-        return 'Resource not found.';
-      case ErrorCategory.CONFLICT:
-        return 'This action conflicts with existing data.';
-      default:
-        if (this.status >= 500) return 'Something went wrong. Please try again later.';
-        if (this.status === 404) return 'Page not found.';
-        if (this.status === 403) return 'Access denied.';
-        if (this.status === 401) return 'Please log in to continue.';
-        return 'An unexpected error occurred.';
-    }
-  }
-
-  /**
-   * Check if error is retryable
-   */
-  public isRetryable(): boolean {
-    return this.recovery === RecoveryStrategy.RETRY || this.status === 429 || this.status >= 500;
-  }
-
-  /**
-   * Convert to JSON for logging
-   */
-  public toJSON(): Record<string, unknown> {
-    return {
-      id: this.id,
-      name: this.name,
-      message: this.message,
-      status: this.status,
-      code: this.code,
-      category: this.category,
-      severity: this.severity,
-      recovery: this.recovery,
-      userMessage: this.getUserFriendlyMessage(),
-      details: this.details,
-      timestamp: this.timestamp.toISOString(),
-      stack: this.stack,
-      isOperational: this.isOperational,
-    };
+  } catch (error) {
+    console.warn('[API] Invalid API_BASE_URL:', API_BASE_URL, error);
   }
 }
 
-/**
- * Retry configuration options
- */
-export interface RetryOptions {
-  /** Maximum number of retry attempts (default: 3) */
-  maxAttempts?: number;
-  /** Initial delay in milliseconds (default: 1000) */
-  initialDelay?: number;
-  /** Backoff multiplier (default: 2 for exponential) */
-  backoffMultiplier?: number;
-  /** Maximum delay cap in milliseconds (default: 10000) */
-  maxDelay?: number;
-  /** Custom retry condition function */
-  shouldRetry?: (error: unknown, attempt: number) => boolean;
-  /** Callback on each retry attempt */
-  onRetry?: (error: unknown, attempt: number, delay: number) => void;
-}
-
-/**
- * Exponential backoff retry wrapper for async functions
- * Automatically retries on ApiError with isRetryable() === true
- */
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions = {},
-): Promise<T> {
-  const {
-    maxAttempts = 3,
-    initialDelay = 1000,
-    backoffMultiplier = 2,
-    maxDelay = 10000,
-    shouldRetry,
-    onRetry,
-  } = options;
-
-  let lastError: unknown;
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error;
-
-      // Check if we should retry
-      const isLastAttempt = attempt === maxAttempts;
-      const shouldRetryDefault = error instanceof ApiError && error.isRetryable();
-      const shouldRetryCustom = shouldRetry ? shouldRetry(error, attempt) : shouldRetryDefault;
-
-      if (isLastAttempt || !shouldRetryCustom) {
-        throw error;
-      }
-
-      // Calculate delay with exponential backoff and jitter
-      const exponentialDelay = initialDelay * Math.pow(backoffMultiplier, attempt - 1);
-      const jitter = Math.random() * 0.3 * exponentialDelay; // ±30% jitter
-      const delay = Math.min(exponentialDelay + jitter, maxDelay);
-
-      // Log retry attempt
-      apiLogger.warn(`[RETRY] Attempt ${attempt}/${maxAttempts} failed. Retrying in ${Math.round(delay)}ms...`, {
-        error: error instanceof ApiError ? error.toJSON() : { message: String(error) },
-        attempt,
-        delay: Math.round(delay),
-      });
-
-      // Call retry callback
-      onRetry?.(error, attempt, delay);
-
-      // Wait before retrying
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-
-  throw lastError;
-}
-
-/**
- * Retry decorator for class methods
- */
-export function retry(options: RetryOptions = {}) {
-  return function (
-    _target: unknown,
-    _propertyKey: string,
-    descriptor: PropertyDescriptor,
-  ): PropertyDescriptor {
-    const originalMethod = descriptor.value as (...args: unknown[]) => Promise<unknown>;
-
-    descriptor.value = async function (this: unknown, ...args: unknown[]): Promise<unknown> {
-      return withRetry(() => originalMethod.apply(this, args), options);
-    };
-
-    return descriptor;
-  };
-}
-
-// Request options with proper typing
-type QueryParams = Record<string, string | number | boolean | undefined>;
+// Logger utility
+const logger = {
+  info: (...args: unknown[]) => console.log('[INFO]', ...args),
+  error: (...args: unknown[]) => console.error('[ERROR]', ...args),
+  warn: (...args: unknown[]) => console.warn('[WARN]', ...args),
+};
 
 interface RequestOptions extends RequestInit {
-  params?: QueryParams;
+  params?: Record<string, unknown>;
 }
 class ApiService {
   private token: string | null = null;
   private refreshToken: string | null = null;
-  private cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
+  private cache: Map<string, { data: unknown; timestamp: number; ttl: number }> = new Map();
+  private retryAttempts = 3;
+  private retryDelay = 1000;
 
   constructor() {
     this.initializeFromStorage();
     this.startCacheCleanup();
   }
 
-  private startCacheCleanup(): void {
+  private startCacheCleanup() {
     if (typeof window === 'undefined') return;
-
+    
     setInterval(() => {
       const now = Date.now();
       for (const [key, value] of this.cache.entries()) {
@@ -430,46 +82,126 @@ class ApiService {
     }, 60000); // Cleanup every minute
   }
 
-  private initializeFromStorage(): void {
+  private getCacheKey(endpoint: string, options: Record<string, unknown>): string {
+    return `${endpoint}_${JSON.stringify(options)}`;
+  }
+
+  private setCache(key: string, data: unknown, ttl: number = 300000) { // 5 minutes default
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl,
+    });
+  }
+
+  private getCache(key: string): unknown | null {
+    const cached = this.cache.get(key);
+    if (!cached) return null;
+    
+    if (Date.now() - cached.timestamp > cached.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return cached.data;
+  }
+
+  private initializeFromStorage() {
     if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('auth_token') ?? null;
-      this.refreshToken = localStorage.getItem('refresh_token') ?? null;
+      this.token = localStorage.getItem('accessToken') || localStorage.getItem('auth_token');
+      this.refreshToken = localStorage.getItem('refreshToken') || localStorage.getItem('refresh_token');
+      
+      // Also check Zustand store for tokens
+      try {
+        const authStorage = localStorage.getItem('auth-storage');
+        if (authStorage) {
+          const parsed = JSON.parse(authStorage);
+          if (parsed.state?.accessToken && !this.token) {
+            this.token = parsed.state.accessToken;
+          }
+          if (parsed.state?.refreshToken && !this.refreshToken) {
+            this.refreshToken = parsed.state.refreshToken;
+          }
+        }
+      } catch (error) {
+        // Ignore parsing errors
+      }
     }
   }
 
-  setToken(token: string, refreshToken?: string): void {
+  setToken(token: string, refreshToken?: string) {
     this.token = token;
-    if (refreshToken !== undefined && refreshToken !== '') {
+    if (refreshToken) {
       this.refreshToken = refreshToken;
     }
     if (typeof window !== 'undefined') {
+      // Persist in localStorage (both legacy and new keys)
+      localStorage.setItem('accessToken', token);
       localStorage.setItem('auth_token', token);
-      if (refreshToken !== undefined && refreshToken !== '') {
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
         localStorage.setItem('refresh_token', refreshToken);
       }
+
+      // Also set http cookies for middleware-based auth checks
+      const setCookie = (name: string, value: string, maxAgeSeconds: number) => {
+        document.cookie = `${name}=${value}; Max-Age=${maxAgeSeconds}; Path=/; SameSite=Lax`;
+      };
+      // Defaults: access 15m, refresh 7d
+      setCookie('accessToken', token, 15 * 60);
+      if (refreshToken) setCookie('refreshToken', refreshToken, 7 * 24 * 60 * 60);
     }
-    apiLogger.info('Auth token updated');
+    logger.info('Auth token updated');
   }
 
-  clearToken(): void {
+  clearToken() {
     this.token = null;
     this.refreshToken = null;
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken');
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('refreshToken');
       localStorage.removeItem('refresh_token');
+
+      // Clear cookies
+      const clearCookie = (name: string) => {
+        document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax`;
+      };
+      clearCookie('accessToken');
+      clearCookie('refreshToken');
     }
-    apiLogger.info('Auth tokens cleared');
+    logger.info('Auth tokens cleared');
   }
 
   getToken(): string | null {
     return this.token;
   }
 
-  private async refreshAccessToken(): Promise<boolean> {
-    if (this.refreshToken === null || this.refreshToken === '') return false;
+  // Sync tokens from auth store
+  syncTokensFromStore() {
+    if (typeof window !== 'undefined') {
+      try {
+        const authStorage = localStorage.getItem('auth-storage');
+        if (authStorage) {
+          const parsed = JSON.parse(authStorage);
+          if (parsed.state?.accessToken) {
+            this.token = parsed.state.accessToken;
+          }
+          if (parsed.state?.refreshToken) {
+            this.refreshToken = parsed.state.refreshToken;
+          }
+        }
+      } catch (error) {
+        // Ignore parsing errors
+      }
+    }
+  }
 
+  private async refreshAccessToken(): Promise<boolean> {
+    if (!this.refreshToken) return false;
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -478,166 +210,126 @@ class ApiService {
       });
 
       if (response.ok) {
-        interface TokenResponse {
-          token?: string;
-          accessToken?: string;
-          refreshToken?: string;
-          refresh_token?: string;
-        }
-
-        const data = (await response.json().catch(() => ({}) as TokenResponse)) as TokenResponse;
-        const token = data.token ?? data.accessToken;
-        const refresh = data.refreshToken ?? data.refresh_token;
-        if (token !== undefined && token !== '') {
-          this.setToken(token, refresh);
-        }
-        return Boolean(token);
+        const data = await response.json();
+        const tokens = (data.data ?? data).accessToken ? (data.data) : data;
+        this.setToken(tokens.accessToken, tokens.refreshToken);
+        return true;
       }
     } catch (error) {
-      apiLogger.error('Token refresh failed', error);
+      logger.error('Token refresh failed', error);
     }
-
+    
     return false;
   }
 
-  async request<T>(endpoint: string, options: RequestOptions = {}, retryCount = 0): Promise<T> {
+  async request<T>(
+    endpoint: string,
+    options: RequestOptions = {},
+    retryCount = 0
+  ): Promise<{ success: boolean; data: T; error?: string }> {
+    // Sync tokens from store before making request
+    this.syncTokensFromStore();
+    
     const url = `${API_BASE_URL}${endpoint}`;
     const token = this.getToken();
 
     // Build query string from params
     let finalUrl = url;
-    if (options.params !== undefined) {
-      const queryString = toURLSearchParams(options.params).toString();
-      if (queryString !== '') {
+    if (options.params) {
+      const searchParams = new URLSearchParams();
+      Object.entries(options.params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value));
+        }
+      });
+      const queryString = searchParams.toString();
+      if (queryString) {
         finalUrl = `${url}?${queryString}`;
       }
     }
 
-    // Get CSRF token from cookie for state-changing requests
-    const method = options.method?.toUpperCase() || 'GET';
-    const needsCsrf = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
-    let csrfToken: string | undefined;
-
-    if (needsCsrf && typeof document !== 'undefined') {
-      const cookies = document.cookie.split(';');
-      const csrfCookie = cookies.find((cookie) => cookie.trim().startsWith('csrf-token='));
-      csrfToken = csrfCookie?.split('=')[1]?.trim();
-    }
-
-    const config: RequestInit & { params?: QueryParams } = {
+    const config: RequestInit = {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...(token !== null && { Authorization: `Bearer ${token}` }),
-        ...(csrfToken !== undefined && needsCsrf && { 'x-csrf-token': csrfToken }),
-        ...((options.headers as Record<string, string>) || {}),
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
       },
-      credentials: 'include', // Ensure cookies are sent
     };
 
     // Remove params from config as they're in the URL
-    const finalConfig = { ...config } as RequestInit & { params?: Record<string, unknown> };
-    delete finalConfig.params;
+    delete (config as any).params;
 
     try {
-      const response = await fetch(finalUrl, finalConfig);
+      const response = await fetch(finalUrl, config);
 
       if (!response.ok) {
         if (response.status === 401 && retryCount === 0) {
           // Try to refresh token
           const refreshed = await this.refreshAccessToken();
           if (refreshed) {
-            return await this.request<T>(endpoint, options, retryCount + 1);
-          } else {
-            this.clearToken();
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login';
-            }
+            return this.request<T>(endpoint, options, retryCount + 1);
           }
+          // Clear tokens and let caller/middleware handle navigation
+          this.clearToken();
         }
-
-        const errorData = (await response.json().catch(() => null)) as {
-          message?: string;
-          error?: string;
-          msg?: string;
-          code?: string;
-          errorCode?: string;
-        } | null;
-        const errorObj = errorData;
-        const message =
-          errorObj !== null
-            ? (errorObj.message ??
-              errorObj.error ??
-              errorObj.msg ??
-              `API Error: ${String(response.status)} ${response.statusText}`)
-            : `API Error: ${String(response.status)} ${response.statusText}`;
-        const code = errorObj !== null ? (errorObj.code ?? errorObj.errorCode) : undefined;
-        throw new ApiError(response.status, message, code, errorData ?? undefined);
-      }
-
-      const contentType = response.headers.get('content-type') ?? '';
-      if (contentType.includes('application/json')) {
+        
+        let errorMessage = `API Error: ${response.statusText}`;
         try {
-          return (await response.json()) as T;
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
         } catch {
-          // No body or invalid JSON
-          return {} as T;
+          // If JSON parsing fails, use default message
         }
-      } else {
-        const text = await response.text();
-        return text as unknown as T;
+        
+        return {
+          success: false,
+          data: null as any,
+          error: errorMessage
+        };
       }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data: data.data || data
+      };
     } catch (error: unknown) {
-      apiLogger.error('API request failed:', error);
-      if (error instanceof ApiError) throw error;
-      const message = error instanceof Error ? error.message : 'Network error';
-      throw new ApiError(-1, message, undefined, error);
+      if (retryCount < this.retryAttempts) {
+        logger.warn(`Retrying request to ${endpoint} (attempt ${retryCount + 1})`);
+        await new Promise(resolve => setTimeout(resolve, this.retryDelay * (retryCount + 1)));
+        return this.request<T>(endpoint, options, retryCount + 1);
+      }
+      
+      logger.error('API request failed:', error);
+      return {
+        success: false,
+        data: null as any,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
     }
   }
 
-  /**
-   * Request with automatic retry using exponential backoff
-   * Retries on 429 (rate limit) and 5xx (server errors)
-   */
-  async requestWithRetry<T>(endpoint: string, options: RequestOptions = {}, retryOptions?: RetryOptions): Promise<T> {
-    return withRetry(
-      () => this.request<T>(endpoint, options),
-      {
-        maxAttempts: retryOptions?.maxAttempts ?? 3,
-        initialDelay: retryOptions?.initialDelay ?? 1000,
-        backoffMultiplier: retryOptions?.backoffMultiplier ?? 2,
-        maxDelay: retryOptions?.maxDelay ?? 10000,
-        ...retryOptions,
-      },
-    );
-  }
-
   // Auth endpoints
-  async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/auth/login', {
+  async login(email: string, password: string) {
+    const response = await this.request<{ success: boolean; data: { accessToken: string; refreshToken: string; user: User } }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    this.setToken(response.token, response.refreshToken);
-    return response;
+    this.setToken(response.data.accessToken, response.data.refreshToken);
+    return response.data;
   }
 
-  async register(data: {
-    email: string;
-    password: string;
-    name: string;
-    dateOfBirth?: string;
-    location?: string;
-  }): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>('/auth/register', {
+  async register(data: UserRegistrationData) {
+    const response = await this.request<{ success: boolean; data: { accessToken: string; refreshToken: string; user: User } }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    this.setToken(response.token, response.refreshToken);
-    return response;
+    this.setToken(response.data.accessToken, response.data.refreshToken);
+    return response.data;
   }
 
-  async logout(): Promise<void> {
+  async logout() {
     try {
       await this.request('/auth/logout', { method: 'POST' });
     } finally {
@@ -645,164 +337,170 @@ class ApiService {
     }
   }
 
-  async forgotPassword(email: string): Promise<unknown> {
-    return await this.request('/auth/forgot-password', {
+  async forgotPassword(email: string) {
+    return this.request('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
   }
 
-  async resetPassword(token: string, password: string, confirmPassword: string): Promise<unknown> {
-    return await this.request('/auth/reset-password', {
+  async resetPassword(token: string, password: string) {
+    return this.request(`/auth/reset-password`, {
       method: 'POST',
-      body: JSON.stringify({ token, password, confirmPassword }),
+      body: JSON.stringify({ token, password }),
     });
   }
 
-  async getCurrentUser(): Promise<CurrentUserResponse> {
-    return await this.request<CurrentUserResponse>('/auth/me', {
-      method: 'GET',
+  async forgotPassword(email: string) {
+    return this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
     });
   }
 
   // Pet endpoints
-  async getPets(): Promise<unknown> {
-    return await this.request('/pets');
+  async getPets() {
+    return this.request('/pets/my-pets');
   }
 
-  async getPet(id: string): Promise<unknown> {
-    return await this.request(`/pets/${id}`);
+  async getPet(id: string) {
+    return this.request(`/pets/${id}`);
   }
 
-  async createPet(data: PetCreateData): Promise<unknown> {
-    return await this.request('/pets', {
+  async createPet(data: PetCreationData) {
+    return this.request('/pets', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updatePet(id: string, data: PetUpdateData): Promise<unknown> {
-    return await this.request(`/pets/${id}`, {
+  async updatePet(id: string, data: Partial<Pet>) {
+    return this.request(`/pets/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async deletePet(id: string): Promise<unknown> {
-    return await this.request(`/pets/${id}`, {
+  async deletePet(id: string) {
+    return this.request(`/pets/${id}`, {
       method: 'DELETE',
     });
   }
 
-  async updatePetProfile(data: Partial<PetCreateData>): Promise<unknown> {
-    return await this.request('/pets/profile', {
+  // Additional endpoints used by hooks
+  async getMyPets() {
+    return this.request('/pets/my-pets');
+  }
+
+  async getSwipeQueue(params?: SwipeParams) {
+    return this.request('/pets/discover', { params });
+  }
+
+  async updatePetProfile(data: Partial<Pet>) {
+    return this.request('/users/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   // Match endpoints
-  async getMatches(filters?: PetFilters): Promise<unknown> {
-    try {
-      const params = new URLSearchParams();
-      if (filters?.species) params.append('species', filters.species);
-      if (filters?.minAge) params.append('minAge', filters.minAge.toString());
-      if (filters?.maxAge) params.append('maxAge', filters.maxAge.toString());
-      if (filters?.size) params.append('size', filters.size);
-      if (filters?.intent) params.append('intent', filters.intent);
-      if (filters?.maxDistance) params.append('maxDistance', filters.maxDistance.toString());
-      if (filters?.personalityTags?.length) {
-        params.append('personalityTags', filters.personalityTags.join(','));
-      }
-
-      const queryString = params.toString();
-      const endpoint = queryString ? `/matches?${queryString}` : '/matches';
-
-      return await this.request(endpoint);
-    } catch (error) {
-      logger.error('Failed to get matches:', { error });
-      throw error;
-    }
+  async getMatches() {
+    return this.request('/matches');
   }
 
-  // Pet Actions API
-  async likePet(petId: string): Promise<{ matched?: boolean; matchId?: string }> {
-    try {
-      return await this.request<{ matched?: boolean; matchId?: string }>(`/pets/${petId}/like`, {
-        method: 'POST',
-      });
-    } catch (error) {
-      logger.error('Failed to like pet', { error, petId });
-      throw error;
-    }
+  async swipe(petId: string, action: 'like' | 'pass' | 'superlike') {
+    return this.request('/matches/swipe', {
+      method: 'POST',
+      body: JSON.stringify({ petId, action }),
+    });
   }
 
-  async passPet(petId: string): Promise<{ success: boolean }> {
-    try {
-      return await this.request<{ success: boolean }>(`/pets/${petId}/pass`, {
-        method: 'POST',
-      });
-    } catch (error) {
-      logger.error('Failed to pass pet', { error, petId });
-      throw error;
-    }
+  // Chat endpoints
+  async getMessages(matchId: string) {
+    return this.request(`/matches/${matchId}/messages`);
+  }
+
+  async sendMessage(matchId: string, content: string) {
+    return this.request(`/matches/${matchId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  // Weather endpoints
+  async getWeather(lat?: number, lon?: number) {
+    // No backend route present; return a stub to avoid runtime errors
+    return { success: true, data: { weather: null } } as any;
+  }
+
+  // Location endpoints
+  async updateLocation(lat: number, lon: number) {
+    return this.request('/users/location', {
+      method: 'PUT',
+      body: JSON.stringify({ coordinates: [lon, lat] }),
+    });
+  }
+
+  async updateProfile(data: Partial<User>) {
+    return this.request('/users/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getCurrentUser() {
+    return this.request('/auth/me', { method: 'GET' });
+  }
+
+  // Preferences endpoints
+  async syncPreferences(preferences: UserPreferences) {
+    return this.request('/users/preferences', {
+      method: 'PUT',
+      body: JSON.stringify(preferences),
+    });
   }
 }
 
 // Create singleton instance
 const apiInstance = new ApiService();
 
-// Pet filters interface - aligned with core types
-interface PetFilters {
-  species?: string;
-  minAge?: number;
-  maxAge?: number;
-  size?: string;
-  intent?: string;
-  maxDistance?: number;
-  personalityTags?: string[];
-  // Legacy properties for backward compatibility
-  ageRange?: { min: number; max: number };
-  sizePreference?: ('small' | 'medium' | 'large')[];
-  breedPreference?: string[];
-  temperamentPreference?: string[];
-  energyLevel?: ('low' | 'medium' | 'high')[];
-  goodWithKids?: boolean;
-  goodWithPets?: boolean;
-  houseTrained?: boolean;
-}
-
 // Pets API endpoints
 export const petsAPI = {
-  async getSwipeablePets(filters?: PetFilters): Promise<unknown> {
-    return await apiInstance.request('/pets/discover', {
-      params: filters as unknown as QueryParams,
+  async getSwipeablePets(filters?: SwipeParams) {
+    return apiInstance.request('/pets/discover', {
+      params: filters,
     });
   },
-
-  async likePet(petId: string): Promise<unknown> {
-    return await apiInstance.request(`/pets/${petId}/swipe`, {
+  
+  async discoverPets(filters?: SwipeParams) {
+    return apiInstance.request('/pets/discover', {
+      params: filters,
+    });
+  },
+  
+  async likePet(petId: string) {
+    return apiInstance.request(`/pets/${petId}/swipe`, {
       method: 'POST',
       body: JSON.stringify({ action: 'like' }),
     });
   },
-
-  async passPet(petId: string): Promise<unknown> {
-    return await apiInstance.request(`/pets/${petId}/swipe`, {
+  
+  async passPet(petId: string) {
+    return apiInstance.request(`/pets/${petId}/swipe`, {
       method: 'POST',
       body: JSON.stringify({ action: 'pass' }),
     });
   },
-
-  async superLikePet(petId: string): Promise<unknown> {
-    return await apiInstance.request(`/pets/${petId}/swipe`, {
+  
+  async superLikePet(petId: string) {
+    return apiInstance.request(`/pets/${petId}/swipe`, {
       method: 'POST',
       body: JSON.stringify({ action: 'superlike' }),
     });
   },
-
-  async reportPet(petId: string, reason: string): Promise<unknown> {
-    return await apiInstance.request(`/pets/${petId}/report`, {
+  
+  async reportPet(petId: string, reason: string) {
+    return apiInstance.request(`/pets/${petId}/report`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
@@ -811,16 +509,16 @@ export const petsAPI = {
 
 // Matches API endpoints
 export const matchesAPI = {
-  async getMatches(filters?: PetFilters): Promise<unknown> {
-    return await apiInstance.getMatches(filters);
+  async getMatches() {
+    return apiInstance.request('/matches');
   },
-
-  async getMatch(matchId: string): Promise<unknown> {
-    return await apiInstance.request(`/matches/${matchId}`);
+  
+  async getMatch(matchId: string) {
+    return apiInstance.request(`/matches/${matchId}`);
   },
-
-  async unmatch(matchId: string): Promise<unknown> {
-    return await apiInstance.request(`/matches/${matchId}/unmatch`, {
+  
+  async unmatch(matchId: string) {
+    return apiInstance.request(`/matches/${matchId}/unmatch`, {
       method: 'POST',
     });
   },
@@ -828,299 +526,133 @@ export const matchesAPI = {
 
 // Chat API endpoints
 export const chatAPI = {
-  async getConversations(): Promise<unknown> {
-    return await apiInstance.request('/chat/conversations');
+  async getConversations() {
+    // Align with existing endpoints: use matches as conversations
+    return apiInstance.request('/matches');
   },
-
-  async getMessages(conversationId: string): Promise<unknown> {
-    return await apiInstance.request(`/chat/conversations/${conversationId}/messages`);
+  
+  async getMessages(conversationId: string) {
+    return apiInstance.request(`/matches/${conversationId}/messages`);
   },
-
-  async sendMessage(
-    conversationId: string,
-    message: string,
-    attachments?: MessageAttachment[],
-  ): Promise<unknown> {
-    return await apiInstance.request(`/chat/conversations/${conversationId}/messages`, {
+  
+  async sendMessage(conversationId: string, message: string, attachments?: MessageAttachment[]) {
+    return apiInstance.request(`/matches/${conversationId}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ message, attachments }),
+      body: JSON.stringify({ content: message, attachments }),
     });
   },
-
-  async markAsRead(conversationId: string): Promise<unknown> {
-    return await apiInstance.request(`/chat/conversations/${conversationId}/read`, {
+  
+  async markAsRead(conversationId: string) {
+    return apiInstance.request(`/chat/conversations/${conversationId}/read`, {
       method: 'POST',
-    });
-  },
-
-  async reactToMessage(matchId: string, messageId: string, emoji: string): Promise<unknown> {
-    return await apiInstance.request(`/chat/${matchId}/messages/${messageId}/react`, {
-      method: 'POST',
-      body: JSON.stringify({ emoji }),
     });
   },
 };
 
 // AI API endpoints
 export const aiAPI = {
-  async generateBio(data: {
-    petName: string;
-    breed: string;
-    age: number;
-    temperament: string[];
-    specialTraits?: string[];
-  }): Promise<unknown> {
-    return await apiInstance.request('/ai/generate-bio', {
+  async generateBio(data: BioGenerationData) {
+    return apiInstance.request('/ai/generate-bio', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
-
-  async analyzePhoto(formData: FormData): Promise<unknown> {
+  
+  async analyzePhoto(formData: FormData) {
     const token = apiInstance.getToken();
-    return await fetch(`${API_BASE_URL}/ai/analyze-photo`, {
+    return fetch(`${API_BASE_URL}/ai/analyze-photo`, {
       method: 'POST',
       headers: {
-        ...(token !== null && { Authorization: `Bearer ${token}` }),
+        ...(token && { Authorization: `Bearer ${token}` }),
       },
       body: formData,
-    }).then((res) => res.json());
+    }).then(res => res.json());
   },
-
-  async analyzeCompatibility(
-    petAId: string,
-    petBId: string,
-    options?: AIAnalysisOptions,
-  ): Promise<unknown> {
-    return await apiInstance.request('/ai/analyze-compatibility', {
+  
+  async analyzeCompatibility(petAId: string, petBId: string, options?: CompatibilityOptions) {
+    return apiInstance.request('/ai/analyze-compatibility', {
       method: 'POST',
       body: JSON.stringify({ petAId, petBId, ...options }),
     });
   },
-
-  async getChatSuggestions(matchId: string): Promise<unknown> {
-    return await apiInstance.request(`/ai/chat-suggestions/${matchId}`, {
+  
+  async getChatSuggestions(matchId: string) {
+    return apiInstance.request(`/ai/chat-suggestions/${matchId}`, {
       method: 'GET',
     });
   },
-
-  async getSmartRecommendations(userId: string): Promise<unknown> {
-    return await apiInstance.request('/ai/recommendations', {
+  
+  async getSmartRecommendations(userId: string) {
+    return apiInstance.request('/ai/recommendations', {
       params: { userId },
     });
   },
-
-  async analyzeBehavior(petId: string, data: BehaviorAnalysisData): Promise<unknown> {
-    return await apiInstance.request('/ai/behavior-analysis', {
+  
+  async analyzeBehavior(petId: string, data: BehaviorAnalysisData) {
+    return apiInstance.request('/ai/behavior-analysis', {
       method: 'POST',
       body: JSON.stringify({ petId, ...data }),
     });
   },
 };
 
-// Import subscription API types
-import type {
-  ApiResponse,
-  CheckoutSessionData,
-  CheckoutSessionRequest,
-  SubscriptionApi,
-  SubscriptionData,
-  SubscriptionUpdateRequest,
-  UsageStatsData,
-  WebhookEventData,
-} from './api.subscription';
-
 // Subscription API endpoints
-export const subscriptionAPI: SubscriptionApi = {
+export const subscriptionAPI = {
   async getCurrentSubscription() {
-    return await apiInstance.request<ApiResponse<{ subscription: SubscriptionData }>>(
-      '/subscription/current',
-    );
+    // Not implemented on backend; stub
+    return { success: true, data: { plan: 'basic' } } as any;
   },
-
+  
   async getUsageStats() {
-    return await apiInstance.request<ApiResponse<UsageStatsData>>('/subscription/usage');
+    return apiInstance.request('/subscription/usage');
   },
-
-  async createCheckoutSession(data: CheckoutSessionRequest) {
-    return await apiInstance.request<ApiResponse<CheckoutSessionData>>(
-      '/subscription/create-checkout',
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      },
-    );
+  
+  async createCheckoutSession(data: {
+    plan: string;
+    interval: 'month' | 'year';
+  }) {
+    return apiInstance.request('/premium/subscribe', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
-
-  async cancelSubscription(subscriptionId: string) {
-    return await apiInstance.request<ApiResponse<SubscriptionData>>(
-      `/subscription/${subscriptionId}/cancel`,
-      {
-        method: 'POST',
-      },
-    );
-  },
-
-  async reactivateSubscription(subscriptionId: string) {
-    return await apiInstance.request<ApiResponse>(`/subscription/${subscriptionId}/reactivate`, {
+  
+  async cancelSubscription() {
+    return apiInstance.request(`/premium/cancel`, {
       method: 'POST',
     });
   },
-
-  async getPlans() {
-    return await apiInstance.request<ApiResponse<{ id: string; name: string; price: number }[]>>(
-      '/subscription/plans',
-    );
+  
+  async reactivateSubscription(subscriptionId: string) {
+    return apiInstance.request(`/subscription/${subscriptionId}/reactivate`, {
+      method: 'POST',
+    });
   },
-
+  
+  async getPlans() {
+    return apiInstance.request('/subscription/plans');
+  },
+  
   async updatePaymentMethod(paymentMethodId: string) {
-    return await apiInstance.request<ApiResponse>('/subscription/payment-method', {
+    return apiInstance.request('/subscription/payment-method', {
       method: 'PUT',
       body: JSON.stringify({ paymentMethodId }),
-    });
-  },
-
-  async handleWebhook(event: WebhookEventData) {
-    return await apiInstance.request<ApiResponse>('/subscription/webhook', {
-      method: 'POST',
-      body: JSON.stringify(event),
-    });
-  },
-
-  async updateSubscription(subscriptionId: string, data: SubscriptionUpdateRequest) {
-    return await apiInstance.request<ApiResponse<SubscriptionData>>(
-      `/subscription/${subscriptionId}/update`,
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      },
-    );
-  },
-};
-
-// Analytics API endpoints
-export const analyticsAPI = {
-  async trackUserEvent(
-    eventType: string,
-    metadata: Record<string, unknown> = {},
-  ): Promise<unknown> {
-    return await apiInstance.request('/analytics/user', {
-      method: 'POST',
-      body: JSON.stringify({ eventType, metadata }),
-    });
-  },
-
-  async trackPetEvent(
-    petId: string,
-    eventType: string,
-    metadata: Record<string, unknown> = {},
-  ): Promise<unknown> {
-    return await apiInstance.request('/analytics/pet', {
-      method: 'POST',
-      body: JSON.stringify({ petId, eventType, metadata }),
-    });
-  },
-
-  async trackMatchEvent(
-    matchId: string,
-    eventType: string,
-    metadata: Record<string, unknown> = {},
-  ): Promise<unknown> {
-    return await apiInstance.request('/analytics/match', {
-      method: 'POST',
-      body: JSON.stringify({ matchId, eventType, metadata }),
-    });
-  },
-
-  async getUserAnalytics(): Promise<unknown> {
-    return await apiInstance.request('/analytics/user');
-  },
-
-  async getPetAnalytics(petId: string): Promise<unknown> {
-    return await apiInstance.request(`/analytics/pet/${petId}`);
-  },
-
-  async getMatchAnalytics(matchId: string): Promise<unknown> {
-    return await apiInstance.request(`/analytics/match/${matchId}`);
-  },
-};
-
-// Matching API endpoints
-export const matchingAPI = {
-  async getRecommendations(userId: string): Promise<unknown> {
-    return await apiInstance.request(`/matching/recommendations/${userId}`);
-  },
-
-  async getCompatibilityAnalysis(petId1: string, petId2: string): Promise<unknown> {
-    return await apiInstance.request(`/matching/compatibility/${petId1}/${petId2}`);
-  },
-};
-
-// Video Call API endpoints
-export const videoCallAPI = {
-  async createCall(receiverId: string): Promise<unknown> {
-    return await apiInstance.request('/video-call/create', {
-      method: 'POST',
-      body: JSON.stringify({ receiverId }),
-    });
-  },
-
-  async joinCall(callId: string): Promise<unknown> {
-    return await apiInstance.request(`/video-call/${callId}/join`, {
-      method: 'POST',
-    });
-  },
-
-  async endCall(callId: string): Promise<unknown> {
-    return await apiInstance.request(`/video-call/${callId}/end`, {
-      method: 'POST',
-    });
-  },
-
-  async sendOffer(callId: string, offer: RTCSessionDescriptionInit): Promise<unknown> {
-    return await apiInstance.request(`/video-call/${callId}/offer`, {
-      method: 'POST',
-      body: JSON.stringify({ offer }),
-    });
-  },
-
-  async getAnswer(callId: string): Promise<unknown> {
-    return await apiInstance.request(`/video-call/${callId}/answer`);
-  },
-
-  async sendIceCandidate(callId: string, candidate: unknown): Promise<unknown> {
-    return await apiInstance.request(`/video-call/${callId}/ice-candidate`, {
-      method: 'POST',
-      body: JSON.stringify({ candidate }),
-    });
-  },
-
-  async startRecording(callId: string): Promise<unknown> {
-    return await apiInstance.request(`/video-call/${callId}/recording/start`, {
-      method: 'POST',
-    });
-  },
-
-  async stopRecording(callId: string): Promise<unknown> {
-    return await apiInstance.request(`/video-call/${callId}/recording/stop`, {
-      method: 'POST',
     });
   },
 };
 
 // Export the main API instance and all sub-APIs
 export const api = {
-  request: apiInstance.request.bind(apiInstance),
-  requestWithRetry: apiInstance.requestWithRetry.bind(apiInstance),
+  ...apiInstance,
   setToken: apiInstance.setToken.bind(apiInstance),
   clearToken: apiInstance.clearToken.bind(apiInstance),
   getToken: apiInstance.getToken.bind(apiInstance),
+  syncTokensFromStore: apiInstance.syncTokensFromStore.bind(apiInstance),
   login: apiInstance.login.bind(apiInstance),
   register: apiInstance.register.bind(apiInstance),
   logout: apiInstance.logout.bind(apiInstance),
   forgotPassword: apiInstance.forgotPassword.bind(apiInstance),
   resetPassword: apiInstance.resetPassword.bind(apiInstance),
-  getCurrentUser: apiInstance.getCurrentUser.bind(apiInstance),
   getPets: apiInstance.getPets.bind(apiInstance),
   getPet: apiInstance.getPet.bind(apiInstance),
   createPet: apiInstance.createPet.bind(apiInstance),
@@ -1129,22 +661,16 @@ export const api = {
   updatePetProfile: apiInstance.updatePetProfile.bind(apiInstance),
   getMatches: apiInstance.getMatches.bind(apiInstance),
   swipe: apiInstance.swipe.bind(apiInstance),
-  getMessages: (matchId: string, params?: { page?: number; limit?: number }) => apiInstance.getMessages(matchId, params),
+  getMessages: apiInstance.getMessages.bind(apiInstance),
   sendMessage: apiInstance.sendMessage.bind(apiInstance),
   getWeather: apiInstance.getWeather.bind(apiInstance),
   updateLocation: apiInstance.updateLocation.bind(apiInstance),
   syncPreferences: apiInstance.syncPreferences.bind(apiInstance),
-  getSubscription: subscriptionAPI.getCurrentSubscription.bind(subscriptionAPI),
-  createSubscription: subscriptionAPI.createCheckoutSession.bind(subscriptionAPI),
-  cancelSubscription: subscriptionAPI.cancelSubscription.bind(subscriptionAPI),
   pets: petsAPI,
   matches: matchesAPI,
   chat: chatAPI,
   ai: aiAPI,
   subscription: subscriptionAPI,
-  analytics: analyticsAPI,
-  matching: matchingAPI,
-  videoCall: videoCallAPI,
 };
 
 export default api;

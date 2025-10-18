@@ -1,27 +1,30 @@
-import { logger } from '@pawfectmatch/core';
-import { BlurView } from '@react-native-community/blur';
+import { useAuthStore } from '@pawfectmatch/core';
 import Geolocation from '@react-native-community/geolocation';
+import { useNavigation } from '@react-navigation/native';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Animated, Dimensions, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  Dimensions,
+  Modal,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import type { Region } from 'react-native-maps';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { PERMISSIONS, request, RESULTS } from 'react-native-permissions';
-// import { useAuthStore } from '@pawfectmatch/core';
+import { PERMISSIONS, RESULTS, request } from 'react-native-permissions';
 import type { Socket } from 'socket.io-client';
 import io from 'socket.io-client';
-import type { TabScreenProps } from '../navigation/types';
+ 
 
-const { width } = Dimensions.get('window');
-
-interface PulsePin {
-  _id: string;
-  coordinates: [number, number];
-  activity: string;
-  message?: string;
-  createdAt: string;
-  userId: string;
-}
+const { width, height } = Dimensions.get('window');
 
 interface MapFilters {
   showMyPets: boolean;
@@ -38,71 +41,85 @@ interface MapStats {
   recentActivity: number;
 }
 
-type MapScreenProps = TabScreenProps<'Map'>;
+interface PulsePin {
+  _id: string;
+  latitude: number;
+  longitude: number;
+  coordinates?: [number, number]; // For backward compatibility
+  activity: string;
+  petId: string;
+  userId: string;
+  timestamp: string;
+  message?: string;
+  createdAt: string;
+}
 
-const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
-  // const { user } = useAuthStore(); // Currently unused
+interface ActivityType {
+  id: string;
+  name: string;
+  label: string;
+  emoji: string;
+  color: string;
+}
+
+interface MapScreenProps {
+  navigation?: any;
+}
+
+const MapScreen: React.FC<MapScreenProps> = ({ navigation: _navProp }) => {
+  const { user } = useAuthStore();
+  const navigation = useNavigation();
   const [region, setRegion] = useState<Region>({
     latitude: 40.7589,
     longitude: -73.9851,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
-
+  
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [pins, setPins] = useState<PulsePin[]>([]);
   const [selectedPin, setSelectedPin] = useState<PulsePin | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [stats, setStats] = useState<MapStats>({
-    totalPets: 0,
-    activePets: 0,
-    nearbyMatches: 0,
-    recentActivity: 0
-  });
-
   const [filters, setFilters] = useState<MapFilters>({
     showMyPets: true,
     showMatches: true,
     showNearby: true,
-    activityTypes: ['walking', 'playing', 'park'],
-    radius: 5
+    activityTypes: ['walking', 'playing', 'feeding'],
+    radius: 5,
   });
+  const [stats, setStats] = useState<MapStats>({
+    totalPets: 0,
+    activePets: 0,
+    nearbyMatches: 0,
+    recentActivity: 0,
+  });
+  const [filterPanelHeight] = useState(new Animated.Value(0));
+  const [statsOpacity] = useState(new Animated.Value(1));
+  const [socket, setSocket] = useState<Socket | null>(null);
 
-  // Animated values for UI
-  const filterPanelHeight = new Animated.Value(0);
-  const statsOpacity = new Animated.Value(1);
-
-  // Activity type configurations
-  const activityTypes = [
-    { id: 'walking', label: 'Walking', emoji: '🚶', color: '#3B82F6' },
-    { id: 'playing', label: 'Playing', emoji: '🎾', color: '#10B981' },
-    { id: 'grooming', label: 'Grooming', emoji: '✂️', color: '#8B5CF6' },
-    { id: 'vet', label: 'Vet Visit', emoji: '🏥', color: '#EF4444' },
-    { id: 'park', label: 'Dog Park', emoji: '🏞️', color: '#059669' },
-    { id: 'other', label: 'Other', emoji: '📍', color: '#6B7280' }
+  // Activity types configuration
+  const activityTypes: ActivityType[] = [
+    { id: 'walking', name: 'Walking', label: 'Walking', emoji: '🚶‍♂️', color: '#4CAF50' },
+    { id: 'playing', name: 'Playing', label: 'Playing', emoji: '🎾', color: '#FF9800' },
+    { id: 'feeding', name: 'Feeding', label: 'Feeding', emoji: '🍽️', color: '#9C27B0' },
+    { id: 'resting', name: 'Resting', label: 'Resting', emoji: '😴', color: '#607D8B' },
+    { id: 'training', name: 'Training', label: 'Training', emoji: '🎯', color: '#E91E63' },
   ];
 
-  // Request location permissions
+  // Location permission request
   const requestLocationPermission = useCallback(async () => {
     try {
-      const permission = Platform.OS === 'ios'
-        ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
-        : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
-
-      const result = await request(permission);
-
-      if (result === RESULTS.GRANTED) {
+      const permission = await request(
+        Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION
+      );
+      
+      if (permission === RESULTS.GRANTED) {
         getCurrentLocation();
       } else {
-        Alert.alert(
-          'Location Permission',
-          'Location access is needed to show nearby pets and activities.',
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Location Permission', 'Please enable location access to see nearby pets.');
       }
     } catch (error) {
-      logger.warn('Location permission error:', { error });
+      console.error('Location permission error:', error);
     }
   }, []);
 
@@ -120,31 +137,31 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
         });
       },
       (error) => {
-        logger.warn('Geolocation error:', { error });
+        console.error('Location error:', error);
         Alert.alert('Location Error', 'Unable to get your current location.');
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
   }, []);
 
-  // Initialize socket connection
+ 
+
   useEffect(() => {
-    const socketUrl = process.env['REACT_APP_SOCKET_URL'] || 'http://localhost:5000';
+    const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
     const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       upgrade: true,
     });
 
     newSocket.on('connect', () => {
-      logger.info('📱 Mobile map connected to socket');
-      // Note: Authentication token access would need to be added to useAuthStore
-      // if (user?.token) {
-      //   newSocket.emit('authenticate', user.token);
-      // }
+      console.log('📱 Mobile map connected to socket');
+      if (user?._id) {
+        newSocket.emit('join', { userId: user._id });
+      }
     });
 
     newSocket.on('authenticated', () => {
-      logger.info('✅ Mobile map authenticated');
+      console.log('✅ Mobile map authenticated');
       newSocket.emit('request:initial-pins', { radius: filters.radius });
     });
 
@@ -168,7 +185,7 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
     return () => {
       newSocket.disconnect();
     };
-  }, [filters.radius]); // Removed user?.token since it's not available
+  }, [user?._id, filters.radius]);
 
   // Request location permission on mount
   useEffect(() => {
@@ -192,31 +209,33 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
   }, [pins.length]);
 
   // Filter pins based on current filters
-  const filteredPins = useMemo(() => pins.filter(pin => {
-    if (!filters.activityTypes.includes(pin.activity)) return false;
-    // Add distance filtering if user location is available
-    if (userLocation && filters.radius) {
-      const distance = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        pin.coordinates[1],
-        pin.coordinates[0]
-      );
-      return distance <= filters.radius;
-    }
-    return true;
-  }), [pins, filters, userLocation]);
+  const filteredPins = useMemo(() => {
+    return pins.filter(pin => {
+      if (!filters.activityTypes.includes(pin.activity)) return false;
+      // Add distance filtering if user location is available
+      if (userLocation && filters.radius) {
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          pin.latitude,
+          pin.longitude
+        );
+        return distance <= filters.radius;
+      }
+      return true;
+    });
+  }, [pins, filters, userLocation]);
 
   // Calculate distance between two points
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371; // Earth's radius in kilometers
     const dLat = toRadians(lat2 - lat1);
     const dLon = toRadians(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
   };
 
@@ -231,7 +250,7 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
   const toggleFilters = useCallback(() => {
     const toValue = showFilters ? 0 : 300;
     setShowFilters(!showFilters);
-
+    
     Animated.spring(filterPanelHeight, {
       toValue,
       useNativeDriver: false,
@@ -251,7 +270,7 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
   }, []);
 
   // Get marker color based on activity
-  const getMarkerColor = (activity: string, isMatch: boolean = false): string => {
+  const getMarkerColor = (activity: string, isMatch = false): string => {
     if (isMatch) return '#EC4899';
     const activityType = activityTypes.find(a => a.id === activity);
     return activityType?.color || '#6B7280';
@@ -272,7 +291,7 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1F2937" />
-
+      
       {/* Header */}
       <LinearGradient
         colors={['#1F2937', '#374151']}
@@ -288,7 +307,7 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
               <Text style={styles.headerSubtitle}>Real-time locations</Text>
             </View>
           </View>
-
+          
           <TouchableOpacity
             style={styles.filterButton}
             onPress={toggleFilters}
@@ -298,7 +317,7 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
         </View>
 
         {/* Stats Bar */}
-        <Animated.View style={[styles.statsContainer, { opacity: statsOpacity } as any]}>
+        <Animated.View style={[styles.statsContainer, { opacity: statsOpacity }]}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{stats.activePets}</Text>
             <Text style={styles.statLabel}>Active</Text>
@@ -320,59 +339,61 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
         style={styles.map}
         region={region}
         onRegionChangeComplete={setRegion}
-        showsUserLocation
+        showsUserLocation={true}
         showsMyLocationButton={false}
-        loadingEnabled
+        loadingEnabled={true}
       >
         {/* User location marker */}
-        {userLocation ? <Marker
-          coordinate={userLocation}
-          title="Your Location"
-          pinColor="#EC4899"
-        /> : null}
+        {userLocation && (
+          <Marker
+            coordinate={userLocation}
+            title="Your Location"
+            pinColor="#EC4899"
+          />
+        )}
 
         {/* Pet activity markers */}
         {filteredPins.map((pin) => {
           const isMatch = Math.random() > 0.7; // Simulate matches
           return (
-            <Fragment key={pin._id}>
+            <React.Fragment key={pin._id}>
               <Marker
                 coordinate={{
-                  latitude: pin.coordinates[1],
-                  longitude: pin.coordinates[0]
+                  latitude: pin.latitude,
+                  longitude: pin.longitude
                 }}
                 title={pin.activity}
                 description={pin.message || 'Pet activity'}
                 pinColor={getMarkerColor(pin.activity, isMatch)}
                 onPress={() => handleMarkerPress(pin)}
               />
-
+              
               {/* Activity radius circle */}
               <Circle
                 center={{
-                  latitude: pin.coordinates[1],
-                  longitude: pin.coordinates[0]
+                  latitude: pin.latitude,
+                  longitude: pin.longitude
                 }}
                 radius={100}
                 strokeColor={getMarkerColor(pin.activity, isMatch)}
                 fillColor={`${getMarkerColor(pin.activity, isMatch)}20`}
                 strokeWidth={2}
               />
-            </Fragment>
+            </React.Fragment>
           );
         })}
       </MapView>
 
       {/* Filter Panel */}
-      <Animated.View style={[styles.filterPanel, { height: filterPanelHeight } as any]}>
+      <Animated.View style={[styles.filterPanel, { height: filterPanelHeight }]}>
         <BlurView
           style={styles.filterBlur}
-          blurType="light"
-          blurAmount={10}
+          intensity={50}
+          tint="light"
         >
           <ScrollView style={styles.filterContent}>
             <Text style={styles.filterTitle}>Map Filters</Text>
-
+            
             {/* Activity Types */}
             <Text style={styles.filterSectionTitle}>Activity Types</Text>
             <View style={styles.activityGrid}>
@@ -411,7 +432,7 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
             <View style={styles.sliderContainer}>
               {/* Simple slider implementation */}
               <View style={styles.sliderTrack}>
-                <View
+                <View 
                   style={[
                     styles.sliderThumb,
                     { left: `${(filters.radius / 50) * 100}%` }
@@ -429,21 +450,21 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
           style={[styles.fab, styles.arFab]}
           onPress={() => {
             // Navigate to AR Scent Trails
-            navigation.navigate('ARScentTrails', {
+            (navigation as any).navigate('ARScentTrails', {
               initialLocation: userLocation
             });
           }}
         >
           <Text style={styles.fabIcon}>👁️</Text>
         </TouchableOpacity>
-
+        
         <TouchableOpacity
           style={[styles.fab, styles.locationFab]}
           onPress={getCurrentLocation}
         >
           <Text style={styles.fabIcon}>📍</Text>
         </TouchableOpacity>
-
+        
         <TouchableOpacity
           style={[styles.fab, styles.updateFab]}
           onPress={updateUserLocation}
@@ -455,46 +476,50 @@ const MapScreen = ({ navigation }: MapScreenProps): React.JSX.Element => {
       {/* Pin Detail Modal */}
       <Modal
         visible={!!selectedPin}
-        transparent
+        transparent={true}
         animationType="slide"
         onRequestClose={() => setSelectedPin(null)}
       >
         <View style={styles.modalOverlay}>
-          <BlurView style={styles.modalBlur} blurType="dark" blurAmount={10}>
+          <BlurView style={styles.modalBlur} intensity={80} tint="dark">
             <View style={styles.modalContent}>
-              {selectedPin ? <>
-                <Text style={styles.modalTitle}>
-                  {activityTypes.find(a => a.id === selectedPin.activity)?.emoji} {' '}
-                  {selectedPin.activity.charAt(0).toUpperCase() + selectedPin.activity.slice(1)}
-                </Text>
-
-                {selectedPin.message ? <Text style={styles.modalMessage}>{selectedPin.message}</Text> : null}
-
-                <Text style={styles.modalTime}>
-                  {new Date(selectedPin.createdAt).toLocaleTimeString()}
-                </Text>
-
-                <View style={styles.modalActions}>
+              {selectedPin && (
+                <>
+                  <Text style={styles.modalTitle}>
+                    {activityTypes.find(a => a.id === selectedPin.activity)?.emoji} {' '}
+                    {selectedPin.activity.charAt(0).toUpperCase() + selectedPin.activity.slice(1)}
+                  </Text>
+                  
+                  {selectedPin.message && (
+                    <Text style={styles.modalMessage}>{selectedPin.message}</Text>
+                  )}
+                  
+                  <Text style={styles.modalTime}>
+                    {new Date(selectedPin.createdAt).toLocaleTimeString()}
+                  </Text>
+                  
+                  <View style={styles.modalActions}>
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.likeButton]}
+                    >
+                      <Text style={styles.modalButtonText}>❤️ Like</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={[styles.modalButton, styles.chatButton]}
+                    >
+                      <Text style={styles.modalButtonText}>💬 Chat</Text>
+                    </TouchableOpacity>
+                  </View>
+                  
                   <TouchableOpacity
-                    style={[styles.modalButton, styles.likeButton]}
+                    style={styles.closeButton}
+                    onPress={() => setSelectedPin(null)}
                   >
-                    <Text style={styles.modalButtonText}>❤️ Like</Text>
+                    <Text style={styles.closeButtonText}>Close</Text>
                   </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.chatButton]}
-                  >
-                    <Text style={styles.modalButtonText}>💬 Chat</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setSelectedPin(null)}
-                >
-                  <Text style={styles.closeButtonText}>Close</Text>
-                </TouchableOpacity>
-              </> : null}
+                </>
+              )}
             </View>
           </BlurView>
         </View>

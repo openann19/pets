@@ -129,13 +129,20 @@ function initializeSocket(httpServer) {
   });
 
   // Heartbeat to detect stale connections
-  setInterval(() => {
+  const heartbeatInterval = setInterval(() => {
     io.emit('ping');
   }, 30000);
 
   logger.info('🚀 WebSocket server initialized');
 
-  return io;
+  // Return both io instance and cleanup function
+  return {
+    io,
+    cleanup: () => {
+      clearInterval(heartbeatInterval);
+      io.close();
+    }
+  };
 }
 
 module.exports = { initializeSocket };

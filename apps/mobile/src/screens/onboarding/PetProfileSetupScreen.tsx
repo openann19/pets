@@ -1,84 +1,68 @@
-import { logger } from '@pawfectmatch/core';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { SPECIES_OPTIONS, SIZE_OPTIONS, INTENT_OPTIONS, PERSONALITY_TAGS } from '@pawfectmatch/core';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React, { useState } from 'react';
 import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
 } from 'react-native';
 import Animated, {
-  useAnimatedStyle,
   useSharedValue,
+  useAnimatedStyle,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { z } from 'zod';
-import type { OnboardingScreenProps } from '../../navigation/types';
 
-import { api } from '../../services/api';
-
-type PetProfileSetupScreenProps = OnboardingScreenProps<'PetProfileSetup'>;
-
-const PetProfileSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  species: z.enum(['dog', 'cat', 'bird', 'small_furry']),
-  breed: z.string().min(2, 'Breed is required'),
-  age: z.number().positive('Age must be a positive number'),
-  gender: z.enum(['male', 'female']),
-  size: z.enum(['small', 'medium', 'large']),
-  description: z.string().optional(),
-  intent: z.enum(['adoption', 'foster', 'playdate', 'all']),
-  personalityTags: z.array(z.string()).min(1, 'Select at least one personality tag'),
-  healthInfo: z.object({
-    vaccinated: z.boolean(),
-    spayedNeutered: z.boolean(),
-    microchipped: z.boolean(),
-  }),
-});
-
-type PetFormData = z.infer<typeof PetProfileSchema>;
-
-// Options for dropdowns
-type Option = {
-  label: string;
-  value: string;
+type OnboardingStackParamList = {
+  UserIntent: undefined;
+  PetProfileSetup: { userIntent: string };
+  PreferencesSetup: { userIntent: string };
+  Welcome: undefined;
 };
 
-const SPECIES_OPTIONS: Option[] = [
-  { label: 'Dog', value: 'dog' },
-  { label: 'Cat', value: 'cat' },
-  { label: 'Bird', value: 'bird' },
-  { label: 'Small & Furry', value: 'small_furry' },
-];
+type PetProfileSetupScreenProps = NativeStackScreenProps<OnboardingStackParamList, 'PetProfileSetup'>;
 
-const SIZE_OPTIONS: Option[] = [
-  { label: 'Small', value: 'small' },
-  { label: 'Medium', value: 'medium' },
-  { label: 'Large', value: 'large' },
-];
+interface PetFormData {
+  name: string;
+  species: string;
+  breed: string;
+  age: string;
+  gender: string;
+  size: string;
+  description: string;
+  intent: string;
+  personalityTags: string[];
+  healthInfo: {
+    vaccinated: boolean;
+    spayedNeutered: boolean;
+    microchipped: boolean;
+  };
+}
 
-const INTENT_OPTIONS: Option[] = [
-  { label: 'Adoption', value: 'adoption' },
-  { label: 'Foster', value: 'foster' },
-  { label: 'Playdate', value: 'playdate' },
-];
+const SPRING_CONFIG = {
+  damping: 15,
+  stiffness: 300,
+  mass: 1,
+};
 
-const PERSONALITY_TAGS: string[] = [
-  'Friendly', 'Shy', 'Energetic', 'Calm', 'Playful',
-  'Affectionate', 'Independent', 'Loyal', 'Smart', 'Curious',
-  'Gentle', 'Protective', 'Social', 'Vocal', 'Quiet',
-];
-
-const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps) => {
+const PetProfileSetupScreen = ({ navigation, route }: PetProfileSetupScreenProps) => {
   const { userIntent } = route.params;
   const [currentStep, setCurrentStep] = useState(0);
-  const [formErrors, setFormErrors] = useState<z.ZodFormattedError<PetFormData, string> | null>(null);
-  const [formData, setFormData] = useState<Partial<PetFormData>>({
+  const [formData, setFormData] = useState<PetFormData>({
+    name: '',
+    species: '',
+    breed: '',
+    age: '',
+    gender: '',
+    size: '',
+    description: '',
     intent: userIntent === 'list' ? 'adoption' : 'all',
     personalityTags: [],
     healthInfo: {
@@ -89,71 +73,60 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
   });
 
   const progressValue = useSharedValue(0);
+  const slideValue = useSharedValue(0);
 
-  useEffect(() => {
+  React.useEffect(() => {
     progressValue.value = withTiming((currentStep + 1) / 4, { duration: 300 });
-  }, [currentStep, progressValue]);
-
-  const progressStyle = useAnimatedStyle(() => ({
-    width: `${progressValue.value * 100}%` as any,
-  }));
-
-  const getStepSchema = useMemo(() => {
-    switch (currentStep) {
-      case 0:
-        return PetProfileSchema.pick({ name: true, species: true, breed: true });
-      case 1:
-        return PetProfileSchema.pick({ age: true, gender: true, size: true });
-      case 2:
-        return PetProfileSchema.pick({ intent: true, personalityTags: true });
-      case 3:
-        return PetProfileSchema.pick({ healthInfo: true });
-      default:
-        return z.object({});
-    }
   }, [currentStep]);
 
-  const isStepValid = useMemo(() => getStepSchema.safeParse(formData).success, [formData, getStepSchema]);
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progressValue.value * 100}%`,
+  }));
 
-  const updateFormData = useCallback(<K extends keyof PetFormData>(field: K, value: PetFormData[K]) => {
-    setFormData((prev) => ({
+  const updateFormData = (field: string, value: any) => {
+    setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
-  }, []);
+  };
 
-  const updateHealthInfo = useCallback((field: keyof PetFormData['healthInfo'], value: boolean) => {
-    setFormData((prev) => ({
+  const updateHealthInfo = (field: string, value: boolean) => {
+    setFormData(prev => ({
       ...prev,
       healthInfo: {
-        ...(prev.healthInfo || { vaccinated: false, spayedNeutered: false, microchipped: false }),
+        ...prev.healthInfo,
         [field]: value,
       },
     }));
-  }, []);
+  };
 
-  const togglePersonalityTag = useCallback((tag: string) => {
-    setFormData((prev) => ({
+  const togglePersonalityTag = (tag: string) => {
+    setFormData(prev => ({
       ...prev,
-      personalityTags: prev.personalityTags?.includes(tag)
-        ? prev.personalityTags.filter((t) => t !== tag)
-        : [...(prev.personalityTags || []), tag],
+      personalityTags: prev.personalityTags.includes(tag)
+        ? prev.personalityTags.filter(t => t !== tag)
+        : [...prev.personalityTags, tag],
     }));
-  }, []);
+  };
 
-  const validateStep = useCallback((): boolean => {
-    const result = getStepSchema.safeParse(formData);
-    if (!result.success) {
-      setFormErrors(result.error.format());
-    } else {
-      setFormErrors(null);
+  const validateStep = () => {
+    switch (currentStep) {
+      case 0:
+        return formData.name.trim() && formData.species && formData.breed.trim();
+      case 1:
+        return formData.age && formData.gender && formData.size;
+      case 2:
+        return formData.intent && formData.personalityTags.length > 0;
+      case 3:
+        return true; // Health info is optional
+      default:
+        return false;
     }
-    return result.success;
-  }, [formData, getStepSchema]);
+  };
 
-  const handleNext = (): void => {
+  const handleNext = () => {
     if (!validateStep()) {
-      Alert.alert('Missing Information', 'Please fill in all required fields correctly to continue.');
+      Alert.alert('Missing Information', 'Please fill in all required fields to continue.');
       return;
     }
 
@@ -164,7 +137,7 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
     }
   };
 
-  const handleBack = (): void => {
+  const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
     } else {
@@ -173,33 +146,18 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
   };
 
   const handleComplete = async () => {
-    const result = PetProfileSchema.safeParse(formData);
-    if (!result.success) {
-      Alert.alert('Validation Error', 'Please review all steps and fill in the required information.');
-      setFormErrors(result.error.format());
-      // Find the first step with an error and navigate to it
-      const errorFields = Object.keys(result.error.flatten().fieldErrors) as (keyof PetFormData)[];
-      const errorField = errorFields[0];
-      if (errorField) {
-        if (['name', 'species', 'breed'].includes(errorField as string)) setCurrentStep(0);
-        else if (['age', 'gender', 'size'].includes(errorField as string)) setCurrentStep(1);
-        else if (['intent', 'personalityTags'].includes(errorField as string)) setCurrentStep(2);
-        else setCurrentStep(3);
-      }
-      return;
-    }
-
     try {
-      logger.info('Creating pet profile:', { formData: result.data });
-      const newPet = await api.createPet(result.data);
-      navigation.navigate('PreferencesSetup', { userIntent, petId: newPet._id });
+      // Here you would save the pet profile to your backend
+      console.log('Creating pet profile:', formData);
+      
+      // Navigate to preferences setup or welcome screen
+      navigation.navigate('PreferencesSetup', { userIntent });
     } catch (error) {
-      logger.error('Failed to create pet profile', { error });
       Alert.alert('Error', 'Failed to create pet profile. Please try again.');
     }
   };
 
-  const renderStep = (): React.ReactElement => {
+  const renderStep = () => {
     switch (currentStep) {
       case 0:
         return renderBasicInfoStep();
@@ -210,11 +168,11 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
       case 3:
         return renderHealthInfoStep();
       default:
-        return <View />;
+        return null;
     }
   };
 
-  const renderBasicInfoStep = (): React.ReactElement => (
+  const renderBasicInfoStep = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Basic Information</Text>
       <Text style={styles.stepSubtitle}>Tell us about your pet</Text>
@@ -223,11 +181,10 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
         <Text style={styles.label}>Pet Name *</Text>
         <TextInput
           style={styles.input}
-          value={formData.name || ''}
+          value={formData.name}
           onChangeText={(text) => updateFormData('name', text)}
           placeholder="e.g., Buddy, Luna, Max"
         />
-        {formErrors?.name?._errors && <Text style={styles.errorText}>{formErrors.name._errors.join(', ')}</Text>}
       </View>
 
       <View style={styles.inputGroup}>
@@ -240,7 +197,7 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
                 styles.optionButton,
                 formData.species === option.value && styles.selectedOption,
               ]}
-              onPress={() => updateFormData('species', option.value as 'dog' | 'cat' | 'bird' | 'small_furry')}
+              onPress={() => updateFormData('species', option.value)}
             >
               <Text style={[
                 styles.optionText,
@@ -251,23 +208,21 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
             </TouchableOpacity>
           ))}
         </View>
-        {formErrors?.species?._errors && <Text style={styles.errorText}>{formErrors.species._errors.join(', ')}</Text>}
       </View>
 
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Breed *</Text>
         <TextInput
           style={styles.input}
-          value={formData.breed || ''}
+          value={formData.breed}
           onChangeText={(text) => updateFormData('breed', text)}
           placeholder="e.g., Golden Retriever, Persian Cat"
         />
-        {formErrors?.breed?._errors && <Text style={styles.errorText}>{formErrors.breed._errors.join(', ')}</Text>}
       </View>
     </View>
   );
 
-  const renderPhysicalInfoStep = (): React.ReactElement => (
+  const renderPhysicalInfoStep = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Physical Details</Text>
       <Text style={styles.stepSubtitle}>Help others find the perfect match</Text>
@@ -276,12 +231,11 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
         <Text style={styles.label}>Age (years) *</Text>
         <TextInput
           style={styles.input}
-          value={formData.age?.toString() || ''}
-          onChangeText={(text) => updateFormData('age', Number(text) || 0)}
+          value={formData.age}
+          onChangeText={(text) => updateFormData('age', text)}
           placeholder="e.g., 2"
           keyboardType="numeric"
         />
-        {formErrors?.age?._errors && <Text style={styles.errorText}>{formErrors.age._errors.join(', ')}</Text>}
       </View>
 
       <View style={styles.inputGroup}>
@@ -294,7 +248,7 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
                 styles.optionButton,
                 formData.gender === gender && styles.selectedOption,
               ]}
-              onPress={() => updateFormData('gender', gender as 'male' | 'female')}
+              onPress={() => updateFormData('gender', gender)}
             >
               <Text style={[
                 styles.optionText,
@@ -305,7 +259,6 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
             </TouchableOpacity>
           ))}
         </View>
-        {formErrors?.gender?._errors && <Text style={styles.errorText}>{formErrors.gender._errors.join(', ')}</Text>}
       </View>
 
       <View style={styles.inputGroup}>
@@ -318,7 +271,7 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
                 styles.optionButton,
                 formData.size === option.value && styles.selectedOption,
               ]}
-              onPress={() => updateFormData('size', option.value as 'small' | 'medium' | 'large')}
+              onPress={() => updateFormData('size', option.value)}
             >
               <Text style={[
                 styles.optionText,
@@ -329,7 +282,6 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
             </TouchableOpacity>
           ))}
         </View>
-        {formErrors?.size?._errors && <Text style={styles.errorText}>{formErrors.size._errors.join(', ')}</Text>}
       </View>
     </View>
   );
@@ -340,8 +292,8 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
       <Text style={styles.stepSubtitle}>What makes your pet special?</Text>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Primary Goal</Text>
-        <View style={styles.optionsRow}>
+        <Text style={styles.label}>What are you looking for? *</Text>
+        <View style={styles.optionsGrid}>
           {INTENT_OPTIONS.map((option) => (
             <TouchableOpacity
               key={option.value}
@@ -349,7 +301,7 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
                 styles.optionButton,
                 formData.intent === option.value && styles.selectedOption,
               ]}
-              onPress={() => updateFormData('intent', option.value as 'adoption' | 'foster' | 'playdate' | 'all')}
+              onPress={() => updateFormData('intent', option.value)}
             >
               <Text style={[
                 styles.optionText,
@@ -360,87 +312,78 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
             </TouchableOpacity>
           ))}
         </View>
-        {formErrors?.intent?._errors && <Text style={styles.errorText}>{formErrors.intent._errors.join(', ')}</Text>}
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Personality Tags (select at least one)</Text>
-        <View style={styles.tagCloud}>
+        <Text style={styles.label}>Personality Tags * (Select at least one)</Text>
+        <View style={styles.tagsContainer}>
           {PERSONALITY_TAGS.slice(0, 12).map((tag) => (
             <TouchableOpacity
               key={tag}
               style={[
                 styles.tagButton,
-                formData.personalityTags?.includes(tag) && styles.selectedTag,
+                formData.personalityTags.includes(tag) && styles.selectedTag,
               ]}
               onPress={() => togglePersonalityTag(tag)}
             >
               <Text style={[
                 styles.tagText,
-                formData.personalityTags?.includes(tag) && styles.selectedTagText,
+                formData.personalityTags.includes(tag) && styles.selectedTagText,
               ]}>
                 {tag}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
-        {formErrors?.personalityTags?._errors && <Text style={styles.errorText}>{formErrors.personalityTags._errors.join(', ')}</Text>}
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Description (Optional)</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={formData.description}
+          onChangeText={(text) => updateFormData('description', text)}
+          placeholder="Tell us more about your pet's personality, habits, or special needs..."
+          multiline
+          numberOfLines={4}
+        />
       </View>
     </View>
   );
 
-  const renderHealthInfoStep = (): React.ReactElement => {
-    const healthOptions: Array<{ key: keyof PetFormData['healthInfo']; label: string; icon: string }> = [
-      { key: 'vaccinated', label: 'Vaccinated', icon: '💉' },
-      { key: 'spayedNeutered', label: 'Spayed/Neutered', icon: '🏥' },
-      { key: 'microchipped', label: 'Microchipped', icon: '🔍' },
-    ];
+  const renderHealthInfoStep = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>Health Information</Text>
+      <Text style={styles.stepSubtitle}>Help potential matches know your pet's health status</Text>
 
-    return (
-      <View style={styles.stepContainer}>
-        <Text style={styles.stepTitle}>Health Information</Text>
-        <Text style={styles.stepSubtitle}>Help potential matches know your pet's health status</Text>
-
-        <View style={styles.healthOptions}>
-          {healthOptions.map((option) => (
-            <TouchableOpacity
-              key={option.key}
-              style={[
-                styles.healthOption,
-                formData.healthInfo?.[option.key] && styles.selectedHealthOption,
-              ]}
-              onPress={() => updateHealthInfo(option.key, !formData.healthInfo?.[option.key])}
-            >
-              <Text style={styles.healthIcon}>{option.icon}</Text>
-              <Text style={[
-                styles.healthLabel,
-                formData.healthInfo?.[option.key] && styles.selectedHealthLabel,
-              ]}>
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.healthNote}>
-          💡 Providing health information helps build trust with potential adopters and ensures better matches.
-        </Text>
+      <View style={styles.healthOptions}>
+        {[
+          { key: 'vaccinated', label: 'Vaccinated', icon: '💉' },
+          { key: 'spayedNeutered', label: 'Spayed/Neutered', icon: '🏥' },
+          { key: 'microchipped', label: 'Microchipped', icon: '🔍' },
+        ].map((option) => (
+          <TouchableOpacity
+            key={option.key}
+            style={[
+              styles.healthOption,
+              formData.healthInfo[option.key as keyof typeof formData.healthInfo] && styles.selectedHealthOption,
+            ]}
+            onPress={() => updateHealthInfo(option.key, !formData.healthInfo[option.key as keyof typeof formData.healthInfo])}
+          >
+            <Text style={styles.healthIcon}>{option.icon}</Text>
+            <Text style={[
+              styles.healthLabel,
+              formData.healthInfo[option.key as keyof typeof formData.healthInfo] && styles.selectedHealthLabel,
+            ]}>
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
-    );
-  };
 
-  const renderFooter = () => (
-    <View style={styles.footer}>
-      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-        <Text style={styles.backButtonText}>Back</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.nextButton, !isStepValid && styles.disabledButton]}
-        onPress={handleNext}
-        disabled={!isStepValid}
-      >
-        <Text style={styles.nextButtonText}>{currentStep < 3 ? 'Next' : 'Complete'}</Text>
-      </TouchableOpacity>
+      <Text style={styles.healthNote}>
+        💡 Providing health information helps build trust with potential adopters and ensures better matches.
+      </Text>
     </View>
   );
 
@@ -452,8 +395,11 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.progressBarContainer}>
-            <Animated.View style={[styles.progressBar, progressStyle]} />
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <Animated.View style={[styles.progressFill, progressStyle]} />
+            </View>
+            <Text style={styles.progressText}>Step {currentStep + 1} of 4</Text>
           </View>
         </View>
 
@@ -463,7 +409,21 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
         </ScrollView>
 
         {/* Footer */}
-        {renderFooter()}
+        <View style={styles.footer}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.nextButton, !validateStep() && styles.disabledButton]} 
+            onPress={handleNext}
+            disabled={!validateStep()}
+          >
+            <Text style={styles.nextButtonText}>
+              {currentStep === 3 ? 'Complete' : 'Next'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -472,121 +432,129 @@ const PetProfileSetupScreen = ({ route, navigation }: PetProfileSetupScreenProps
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F7FC',
-  },
-  errorText: {
-    color: 'red',
-    marginTop: 4,
-    fontSize: 12,
-  },
-  safeArea: {
-    flex: 1,
+    backgroundColor: '#fff',
   },
   keyboardView: {
     flex: 1,
   },
   header: {
-    padding: 16,
+    padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: '#f3f4f6',
   },
-  progressBarContainer: {
-    height: 8,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 4,
-    overflow: 'hidden',
+  progressContainer: {
+    alignItems: 'center',
   },
   progressBar: {
+    width: '100%',
+    height: 4,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 2,
+    marginBottom: 8,
+  },
+  progressFill: {
     height: '100%',
-    backgroundColor: '#4A90E2',
-    borderRadius: 4,
+    backgroundColor: '#ec4899',
+    borderRadius: 2,
+  },
+  progressText: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
   },
   content: {
     flex: 1,
+    padding: 20,
   },
   stepContainer: {
-    padding: 24,
+    flex: 1,
   },
   stepTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#1f2937',
     marginBottom: 8,
   },
   stepSubtitle: {
     fontSize: 16,
-    color: '#666',
-    marginBottom: 24,
+    color: '#6b7280',
+    marginBottom: 32,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#444',
+    color: '#374151',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#f9fafb',
     borderWidth: 1,
-    borderColor: '#CCC',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 16,
     fontSize: 16,
+    color: '#1f2937',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
   },
   optionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
   },
   optionsRow: {
     flexDirection: 'row',
     gap: 12,
   },
   optionButton: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#f9fafb',
     borderWidth: 1,
-    borderColor: '#CCC',
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    minWidth: 80,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   selectedOption: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
+    backgroundColor: '#fdf2f8',
+    borderColor: '#ec4899',
   },
   optionText: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
   },
   selectedOptionText: {
-    color: '#FFF',
-    fontWeight: 'bold',
+    color: '#ec4899',
+    fontWeight: '600',
   },
-  tagCloud: {
+  tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   tagButton: {
-    backgroundColor: '#EAEAEA',
-    borderRadius: 16,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 16,
   },
   selectedTag: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#ec4899',
   },
   tagText: {
-    color: '#333',
     fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
   },
   selectedTagText: {
-    color: '#FFF',
-    fontWeight: 'bold',
+    color: '#fff',
   },
   healthOptions: {
     gap: 16,
@@ -627,38 +595,37 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 24,
+    padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    backgroundColor: '#FFF',
+    borderTopColor: '#f3f4f6',
   },
   backButton: {
-    backgroundColor: '#D3D3D3',
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 25,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   backButtonText: {
-    color: '#333',
     fontSize: 16,
-    fontWeight: 'bold',
+    color: '#6b7280',
+    fontWeight: '600',
   },
   nextButton: {
-    backgroundColor: '#4A90E2',
-    paddingVertical: 14,
+    backgroundColor: '#ec4899',
+    paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 25,
-    flex: 1,
-    marginLeft: 12,
+    borderRadius: 8,
+    minWidth: 100,
     alignItems: 'center',
   },
   disabledButton: {
-    backgroundColor: '#A9C9E8',
+    backgroundColor: '#d1d5db',
   },
   nextButtonText: {
-    color: '#FFF',
     fontSize: 16,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontWeight: '600',
   },
 });
 

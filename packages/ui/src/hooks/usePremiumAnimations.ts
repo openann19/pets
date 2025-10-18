@@ -13,56 +13,71 @@ interface AnimationConfig {
  * This enhances the base animation hook with additional premium animations
  */
 export function usePremiumAnimations(): {
-  premiumAnimations: Record<string, (elementId: string, config?: Partial<AnimationConfig>) => Promise<void>>;
+  premiumAnimations: Record<
+    'flip' | 'rotate' | 'morph' | 'glow' | 'wave' | 'confetti',
+    (elementId: string, config?: Partial<AnimationConfig>) => void
+  >;
   isAnimating: (elementId: string) => boolean;
 } {
   const { triggerAnimation, isAnimating } = usePawfectAnimations();
-  
+
   // All premium animations are now available to everyone
   const premiumAnimations = {
-    flip: (elementId: string, config?: { duration?: number; delay?: number; onComplete?: () => void }) => { triggerAnimation(elementId, {
+    flip: (elementId: string, config?: Partial<AnimationConfig>) => {
+      triggerAnimation(elementId, {
         type: 'flip',
-        duration: config?.duration || 600,
-        delay: config?.delay || 0,
-        onComplete: config?.onComplete || undefined
-      }); },
-    
-    rotate: (elementId: string, config?: { duration?: number; delay?: number; onComplete?: () => void }) => { triggerAnimation(elementId, {
+        duration: config?.duration ?? 600,
+        delay: config?.delay ?? 0,
+        onComplete: config?.onComplete
+      });
+    },
+
+    rotate: (elementId: string, config?: Partial<AnimationConfig>) => {
+      triggerAnimation(elementId, {
         type: 'rotate',
-        duration: config?.duration || 600,
-        delay: config?.delay || 0,
-        onComplete: config?.onComplete || undefined
-      }); },
-    
-    morph: (elementId: string, config?: { duration?: number; delay?: number; onComplete?: () => void }) => { triggerAnimation(elementId, {
+        duration: config?.duration ?? 600,
+        delay: config?.delay ?? 0,
+        onComplete: config?.onComplete
+      });
+    },
+
+    morph: (elementId: string, config?: Partial<AnimationConfig>) => {
+      triggerAnimation(elementId, {
         type: 'morph',
-        duration: config?.duration || 600,
-        delay: config?.delay || 0,
-        onComplete: config?.onComplete || undefined
-      }); },
-    
-    glow: (elementId: string, config?: { duration?: number; delay?: number; onComplete?: () => void }) => { triggerAnimation(elementId, {
+        duration: config?.duration ?? 600,
+        delay: config?.delay ?? 0,
+        onComplete: config?.onComplete
+      });
+    },
+
+    glow: (elementId: string, config?: Partial<AnimationConfig>) => {
+      triggerAnimation(elementId, {
         type: 'glow',
-        duration: config?.duration || 600,
-        delay: config?.delay || 0,
-        onComplete: config?.onComplete || undefined
-      }); },
-    
-    wave: (elementId: string, config?: { duration?: number; delay?: number; onComplete?: () => void }) => { triggerAnimation(elementId, {
+        duration: config?.duration ?? 600,
+        delay: config?.delay ?? 0,
+        onComplete: config?.onComplete
+      });
+    },
+
+    wave: (elementId: string, config?: Partial<AnimationConfig>) => {
+      triggerAnimation(elementId, {
         type: 'wave',
-        duration: config?.duration || 600,
-        delay: config?.delay || 0,
-        onComplete: config?.onComplete || undefined
-      }); },
-    
-    confetti: (elementId: string, config?: { duration?: number; delay?: number; onComplete?: () => void }) => { triggerAnimation(elementId, {
+        duration: config?.duration ?? 600,
+        delay: config?.delay ?? 0,
+        onComplete: config?.onComplete
+      });
+    },
+
+    confetti: (elementId: string, config?: Partial<AnimationConfig>) => {
+      triggerAnimation(elementId, {
         type: 'confetti',
-        duration: config?.duration || 600,
-        delay: config?.delay || 0,
-        onComplete: config?.onComplete || undefined
-      }); }
+        duration: config?.duration ?? 600,
+        delay: config?.delay ?? 0,
+        onComplete: config?.onComplete
+      });
+    }
   };
-  
+
   return {
     premiumAnimations,
     isAnimating

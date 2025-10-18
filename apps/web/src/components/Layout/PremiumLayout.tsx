@@ -1,132 +1,137 @@
 'use client';
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import {} from '@/constants/animations';
+import React, { useEffect, useRef, useState } from 'react';
+
+import UniversalHeader from './UniversalHeader';
+
 import HoloLogo from '@/components/Brand/HoloLogo';
-import PremiumButton from '@/components/ui/PremiumButton';
-import ThemeToggle from '../ThemeToggle';
+import LanguageSelect from '@/components/UI/LanguageSelect';
+import PremiumButton from '@/components/UI/PremiumButton';
+import { useAuthStore } from '@/lib/auth-store';
 
 interface PremiumLayoutProps {
   children: React.ReactNode;
   showHeader?: boolean;
   showFooter?: boolean;
   className?: string;
+  useUniversalHeader?: boolean;
 }
 
-const PremiumLayout = ({
+const PremiumLayout: React.FC<PremiumLayoutProps> = ({
   children,
   showHeader = true,
   showFooter = false,
   className = '',
-}: PremiumLayoutProps) => {
-  const videos = ['/media/landing-cat.mp4', '/media/landing-cat-2.mp4'];
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [pinkFlash, setPinkFlash] = useState(false);
+  useUniversalHeader = true,
+}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % videos.length);
-    }, 12000);
-    return () => clearInterval(intervalId);
-  }, [videos.length]);
-
-  useEffect(() => {
-    const handleMouseMove = (): void => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const { isAuthenticated } = useAuthStore();
+  
+  // Handle missing translations gracefully
+  let t: any;
+  try {
+    t = useTranslations();
+  } catch (error) {
+    // Fallback translations if context is missing
+    t = (key: string) => {
+      const fallbacks: Record<string, string> = {
+        'navigation.browse': 'Browse',
+        'navigation.matches': 'Matches',
+        'navigation.dashboard': 'Dashboard',
+        'navigation.map': 'Map',
+        'navigation.premium': 'Premium',
+        'navigation.aiBio': 'AI Bio',
+        'navigation.aiPhoto': 'AI Photo',
+        'common.getStarted': 'Get Started',
+        'landing.browsePets': 'Browse Pets',
+        'landing.myMatches': 'My Matches',
+        'landing.petMap': 'Pet Map',
+      };
+      return fallbacks[key] || key;
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+  }
 
+  // Dismiss mobile menu on outside click and Esc; restore focus
   useEffect(() => {
-    const flashInterval = setInterval(
-      () => {
-        setPinkFlash(true);
-        setTimeout(() => setPinkFlash(false), 200);
-      },
-      4000 + Math.random() * 2000,
+    if (!mobileMenuOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+        requestAnimationFrame(() => mobileMenuButtonRef.current?.focus());
+      }
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(target) &&
+        mobileMenuButtonRef.current &&
+        !mobileMenuButtonRef.current.contains(target)
+      ) {
+        setMobileMenuOpen(false);
+        requestAnimationFrame(() => mobileMenuButtonRef.current?.focus());
+      }
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Focus first link on open
+    requestAnimationFrame(() => {
+      const first = mobileMenuRef.current?.querySelector<HTMLElement>('a,button,[tabindex]:not([tabindex="-1"])');
+      first?.focus();
+    });
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mobileMenuOpen]);
+
+  // Use UniversalHeader for authenticated users
+  if (showHeader && useUniversalHeader && isAuthenticated) {
+    return (
+      <div className={`relative min-h-screen text-white ${className}`}>
+        <UniversalHeader />
+        <main className="relative z-40">
+          {children}
+        </main>
+      </div>
     );
-    return () => clearInterval(flashInterval);
-  }, []);
+  }
 
   return (
     <div className={`relative min-h-screen text-white ${className}`}>
-      {/* Background videos (crossfade montage) */}
-      <div className="fixed inset-0">
-        {videos.map((src, i) => (
-          <motion.video
-            key={src}
-            className="absolute inset-0 w-full h-full object-cover"
-            src={src}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            aria-hidden="true"
-            style={{
-              filter: pinkFlash
-                ? 'brightness(1.05) contrast(1.12) saturate(1.18) hue-rotate(320deg) saturate(1.8)'
-                : 'brightness(1.05) contrast(1.12) saturate(1.18)',
-              transition: 'filter 0.1s ease-out',
-            }}
-            initial={{ opacity: i === 0 ? 1 : 0 }}
-            animate={{ opacity: activeIndex === i ? 1 : 0 }}
-            transition={SPRING_CONFIG}
-          />
-        ))}
-      </div>
-
-      {/* Enhanced overlays with mouse interaction */}
-      <div className="pointer-events-none fixed inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/50" />
-      <motion.div
-        className="pointer-events-none fixed inset-0"
-        style={{
-          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.06), transparent 70%)`,
-        }}
-      />
-
-      {/* Floating particles */}
-      {[...Array(6)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="pointer-events-none fixed w-2 h-2 bg-white/20 rounded-full blur-sm"
-          animate={{
-            x: [0, 100, -50, 0],
-            y: [0, -100, 50, 0],
-            opacity: [0.2, 0.6, 0.3, 0.2],
-          }}
-          transition={{
-            duration: 20 + i * 5,
-            repeat: Infinity,
-            ease: 'linear',
-            delay: i * 3,
-          }}
-          style={{
-            left: `${20 + i * 15}%`,
-            top: `${30 + i * 10}%`,
-          }}
-        />
-      ))}
+      {/* Skip to content for accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[2000] bg-white text-black px-3 py-2 rounded"
+      >
+        Skip to content
+      </a>
+      {/* Three.js background is provided by BackgroundProvider at root level */}
 
       {/* Header */}
-      {showHeader !== undefined && (
+      {showHeader && (
         <header className="fixed top-0 left-0 right-0 z-50">
           <div className="relative mx-auto max-w-7xl px-6 py-4">
             <motion.div
               className="relative rounded-2xl border border-white/12 bg-transparent backdrop-blur text-white transform-gpu overflow-hidden"
-              whileHover={{
+              whileHover={{ 
                 scale: 1.02,
                 y: -2,
                 rotateX: 2,
-                transition: { type: 'spring', stiffness: 400, damping: 25 },
+                transition: { type: "spring", stiffness: 400, damping: 25 }
               }}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
               style={{
                 transformStyle: 'preserve-3d',
               }}
@@ -139,154 +144,66 @@ const PremiumLayout = ({
               <div className="relative">
                 <div className="flex items-center justify-between px-4 py-3">
                   <Link href="/">
-                    <HoloLogo
-                      size={44}
-                      withText
-                      monochrome
-                    />
+                    <HoloLogo size={44} withText monochrome />
                   </Link>
-
+                  
                   {/* Desktop Navigation */}
                   <nav className="hidden md:flex items-center gap-6">
-                    <Link
-                      href="/browse"
-                      className="text-white/80 hover:text-white transition-colors"
-                    >
-                      Browse
-                    </Link>
-                    <Link
-                      href="/matches"
-                      className="text-white/80 hover:text-white transition-colors"
-                    >
-                      Matches
-                    </Link>
-                    <Link
-                      href="/dashboard"
-                      className="text-white/80 hover:text-white transition-colors"
-                    >
-                      Dashboard
-                    </Link>
-                    <Link
-                      href="/map"
-                      className="text-white/80 hover:text-white transition-colors"
-                    >
-                      Map
-                    </Link>
-                    <Link
-                      href="/premium"
-                      className="text-white/80 hover:text-white transition-colors"
-                    >
-                      Premium
-                    </Link>
+                    <Link href="/browse" className="text-white/80 hover:text-white transition-colors">{t('navigation.browse')}</Link>
+                    <Link href="/matches" className="text-white/80 hover:text-white transition-colors">{t('navigation.matches')}</Link>
+                    <Link href="/dashboard" className="text-white/80 hover:text-white transition-colors">{t('navigation.dashboard')}</Link>
+                    <Link href="/map" className="text-white/80 hover:text-white transition-colors">{t('navigation.map')}</Link>
+                    <Link href="/premium" className="text-white/80 hover:text-white transition-colors">{t('navigation.premium')}</Link>
                   </nav>
 
                   {/* Right actions */}
                   <div className="hidden md:flex items-center gap-3">
-                    <div className="relative z-50">
-                      <ThemeToggle />
-                    </div>
-                    <Link
-                      href="/register"
-                      aria-label="Get Started"
-                    >
-                      <PremiumButton
-                        variant="outline"
-                        magneticEffect
-                      >
-                        Get Started
+                    <div className="relative z-50"><LanguageSelect /></div>
+                    <Link href="/register" aria-label="Get Started">
+                      <PremiumButton variant="outline" magneticEffect>
+                        {t('common.getStarted')}
                       </PremiumButton>
                     </Link>
                   </div>
 
                   {/* Mobile actions */}
                   <div className="flex md:hidden items-center gap-3">
-                    <div className="relative z-50">
-                      <ThemeToggle />
-                    </div>
+                    <div className="relative z-50"><LanguageSelect /></div>
                     <button
                       className="text-white/80 hover:text-white transition-colors"
                       onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                      ref={mobileMenuButtonRef}
                       aria-label="Toggle menu"
                     >
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 6h16M4 12h16M4 18h16"
-                        />
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                       </svg>
                     </button>
-                    <Link
-                      href="/register"
-                      aria-label="Get Started"
-                    >
-                      <PremiumButton
-                        variant="outline"
-                        magneticEffect
-                      >
-                        Get Started
+                    <Link href="/register" aria-label={t('common.getStarted')}>
+                      <PremiumButton variant="outline" magneticEffect>
+                        {t('common.getStarted')}
                       </PremiumButton>
                     </Link>
                   </div>
                 </div>
 
                 {/* Mobile Navigation Menu */}
-                {mobileMenuOpen !== undefined && (
+                {mobileMenuOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     className="md:hidden border-t border-white/10 bg-black/20 backdrop-blur-md"
+                    ref={mobileMenuRef}
                   >
                     <div className="px-4 py-3 space-y-2">
-                      <Link
-                        href="/browse"
-                        className="block text-white/80 hover:text-white transition-colors py-2"
-                      >
-                        Browse Pets
-                      </Link>
-                      <Link
-                        href="/matches"
-                        className="block text-white/80 hover:text-white transition-colors py-2"
-                      >
-                        My Matches
-                      </Link>
-                      <Link
-                        href="/dashboard"
-                        className="block text-white/80 hover:text-white transition-colors py-2"
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        href="/map"
-                        className="block text-white/80 hover:text-white transition-colors py-2"
-                      >
-                        Pet Map
-                      </Link>
-                      <Link
-                        href="/premium"
-                        className="block text-white/80 hover:text-white transition-colors py-2"
-                      >
-                        Premium
-                      </Link>
-                      <Link
-                        href="/ai/bio"
-                        className="block text-white/80 hover:text-white transition-colors py-2"
-                      >
-                        AI Bio
-                      </Link>
-                      <Link
-                        href="/ai/photo"
-                        className="block text-white/80 hover:text-white transition-colors py-2"
-                      >
-                        AI Photo
-                      </Link>
+                      <Link href="/browse" className="block text-white/80 hover:text-white transition-colors py-2">{t('landing.browsePets')}</Link>
+                      <Link href="/matches" className="block text-white/80 hover:text-white transition-colors py-2">{t('landing.myMatches')}</Link>
+                      <Link href="/dashboard" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.dashboard')}</Link>
+                      <Link href="/map" className="block text-white/80 hover:text-white transition-colors py-2">{t('landing.petMap')}</Link>
+                      <Link href="/premium" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.premium')}</Link>
+                      <Link href="/ai/bio" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.aiBio')}</Link>
+                      <Link href="/ai/photo" className="block text-white/80 hover:text-white transition-colors py-2">{t('navigation.aiPhoto')}</Link>
                     </div>
                   </motion.div>
                 )}
@@ -297,10 +214,12 @@ const PremiumLayout = ({
       )}
 
       {/* Main Content */}
-      <main className={`relative z-40 ${showHeader ? 'pt-24' : ''}`}>{children}</main>
+      <main id="main-content" className={`relative z-40 ${showHeader ? 'pt-24' : ''}`} role="main">
+        {children}
+      </main>
 
       {/* Footer */}
-      {showFooter !== undefined && (
+      {showFooter && (
         <footer className="fixed bottom-0 left-0 right-0 z-50">
           <div className="relative mx-auto max-w-7xl px-6 py-4">
             <div className="relative rounded-2xl glass-dark border border-white/10 bg-black/20 backdrop-blur-md">

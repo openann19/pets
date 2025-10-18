@@ -49,6 +49,8 @@
     <string>PawfectMatch uses the camera for pet photo uploads and AR discovery features</string>
     <key>NSContactsUsageDescription</key>
     <string>PawfectMatch can sync your contacts to help you find friends who use the app</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to use Face ID</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>Allow PawfectMatch to use your location to find pets near you and suggest nearby meetup locations.</string>
     <key>NSLocationAlwaysUsageDescription</key>

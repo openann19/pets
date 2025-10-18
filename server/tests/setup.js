@@ -4,6 +4,9 @@
  * This file is run before each test file to set up the testing environment
  */
 
+// Load test environment variables FIRST (before any module imports)
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env.test') });
+
 // Make Jest globals available in test files
 /* eslint-disable no-undef */
 global.jest = jest;
@@ -17,12 +20,13 @@ global.beforeEach = beforeEach;
 global.afterEach = afterEach;
 /* eslint-enable no-undef */
 
-// Set environment variables for tests
-process.env.JWT_SECRET = 'test-secret';
-process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
-process.env.STRIPE_SECRET_KEY = 'test_stripe_secret';
-process.env.STRIPE_WEBHOOK_SECRET = 'test_webhook_secret';
-process.env.CLIENT_URL = 'http://localhost:3000';
+// Override any missing env vars with safe test defaults
+process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-key-minimum-32-characters-for-testing-only';
+process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'test-refresh-secret-key-minimum-32-characters';
+process.env.STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || 'sk_test_51MockTestKeyForJestTestsOnly123456789012345678901234567890123456789012345678901234567890';
+process.env.STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test_webhook_secret_for_testing_only_minimum_32_characters_required';
+process.env.CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
 // Mock external services
 /* eslint-disable no-undef */

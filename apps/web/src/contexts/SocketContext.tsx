@@ -1,9 +1,8 @@
 'use client';
 
-import React, { createContext, useContext } from 'react';
-import type { ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { useSocket } from '../hooks/useSocket';
-import type { Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -12,15 +11,18 @@ interface SocketContextType {
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
-export function SocketProvider({ children }: { children: ReactNode }): JSX.Element {
-  const { socket, isConnected } = useSocket();
+export function SocketProvider({ children }: { children: ReactNode }) {
+  const socket = useSocket();
+  const isConnected = socket?.connected || false;
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected }}>{children}</SocketContext.Provider>
+    <SocketContext.Provider value={{ socket, isConnected }}>
+      {children}
+    </SocketContext.Provider>
   );
 }
 
-export function useSocketContext(): SocketContextType {
+export function useSocketContext() {
   const context = useContext(SocketContext);
   if (context === undefined) {
     throw new Error('useSocketContext must be used within a SocketProvider');

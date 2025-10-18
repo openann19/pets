@@ -1,6 +1,6 @@
 import React from 'react';
-import {} from '@testing-library/react';
-import {} from '../BioGenerator';
+import { render, screen } from '@testing-library/react';
+import { BioGenerator } from '../BioGenerator';
 
 // Mock the useAuthStore hook
 jest.mock('@pawfectmatch/core', () => ({

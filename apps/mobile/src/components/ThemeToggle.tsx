@@ -1,15 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  TouchableOpacity,
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+} from 'react-native';
+
 import { useThemeToggle } from '../hooks/useThemeToggle';
-import { BorderRadius, Spacing, Typography } from '../styles/GlobalStyles';
+import { Spacing, BorderRadius, Typography } from '../styles/GlobalStyles';
 
 interface ThemeToggleProps {
   variant?: 'icon' | 'button' | 'selector';
   size?: 'small' | 'medium' | 'large';
   showLabel?: boolean;
-  // Accept typical style props that RN TouchableOpacity supports
-  style?: import('react-native').StyleProp<import('react-native').ViewStyle>;
+  style?: any;
 }
 
 export const ThemeToggle: React.FC<ThemeToggleProps> = ({
@@ -18,13 +24,13 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   showLabel = false,
   style,
 }) => {
-  const {
-    isDark,
-    themeMode,
-    colors,
-    styles,
-    toggleTheme,
-    showThemeSelector
+  const { 
+    isDark, 
+    themeMode, 
+    colors, 
+    styles, 
+    toggleTheme, 
+    showThemeSelector 
   } = useThemeToggle();
 
   const animatedValue = React.useRef(new Animated.Value(isDark ? 1 : 0)).current;
@@ -42,22 +48,24 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
     small: 20,
     medium: 24,
     large: 28,
-  } as const;
+  };
 
   // Button sizes
   const buttonSizes = {
     small: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
     medium: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
     large: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.lg },
-  } as const;
+  };
 
   const iconColor = animatedValue.interpolate({
     inputRange: [0, 1],
     outputRange: [colors.warning, colors.primary],
   });
 
-  // Use iconColor to animate opacity of wrapper; keeps variable referenced
-  const animatedTintStyle = React.useMemo(() => ({ opacity: iconColor as any }), [iconColor]);
+  const backgroundColor = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.gray100, colors.gray800],
+  });
 
   if (variant === 'icon') {
     return (
@@ -71,16 +79,18 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         ]}
         activeOpacity={0.7}
       >
-        <Animated.View style={animatedTintStyle}>
+        <Animated.View>
           <Ionicons
             name={isDark ? 'moon' : 'sunny'}
             size={iconSizes[size]}
             color={isDark ? colors.primary : colors.warning}
           />
         </Animated.View>
-        {showLabel ? <Text style={[themeStyles.label, { color: colors.gray600 }]}>
-          {isDark ? 'Dark' : 'Light'}
-        </Text> : null}
+        {showLabel && (
+          <Text style={[themeStyles.label, { color: colors.gray600 }]}>
+            {isDark ? 'Dark' : 'Light'}
+          </Text>
+        )}
       </TouchableOpacity>
     );
   }
@@ -92,7 +102,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         style={[
           themeStyles.buttonContainer,
           buttonSizes[size],
-          styles['buttonSecondary'],
+          styles.buttonSecondary,
           style,
         ]}
         activeOpacity={0.8}
@@ -116,7 +126,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
       light: 'Light',
       dark: 'Dark',
       system: 'Auto',
-    } as const;
+    };
 
     return (
       <TouchableOpacity
@@ -133,11 +143,11 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
           <View style={themeStyles.selectorLeft}>
             <Ionicons
               name={
-                themeMode === 'system'
-                  ? 'phone-portrait'
-                  : isDark
-                    ? 'moon'
-                    : 'sunny'
+                themeMode === 'system' 
+                  ? 'phone-portrait' 
+                  : isDark 
+                  ? 'moon' 
+                  : 'sunny'
               }
               size={iconSizes[size]}
               color={colors.primary}
@@ -167,49 +177,49 @@ const themeStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.xs,
   },
-
+  
   buttonContainer: {
     borderRadius: BorderRadius.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
+  
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
   },
-
+  
   buttonText: {
     fontSize: Typography.sizes.base,
     fontWeight: Typography.weights.semibold,
   },
-
+  
   selectorContainer: {
     borderRadius: BorderRadius.lg,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
+  
   selectorContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
   },
-
+  
   selectorLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
   },
-
+  
   selectorText: {
     fontSize: Typography.sizes.base,
     fontWeight: Typography.weights.medium,
   },
-
+  
   label: {
     fontSize: Typography.sizes.sm,
     fontWeight: Typography.weights.medium,

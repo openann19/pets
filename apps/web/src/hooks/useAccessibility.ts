@@ -1,266 +1,289 @@
 /**
- * Accessibility Hooks
- * Provides utilities for keyboard navigation, screen readers, and accessibility features
+ * ♿ Comprehensive Accessibility Hook
+ * Provides accessibility utilities and user preference detection
  */
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-/**
- * Hook for managing keyboard navigation
- */
-export function useKeyboardNavigation(
-  onEnter?: () => void,
-  onEscape?: () => void,
-  onArrowUp?: () => void,
-  onArrowDown?: () => void,
-  onArrowLeft?: () => void,
-  onArrowRight?: () => void,
-) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case 'Enter':
-          onEnter?.();
-          break;
-        case 'Escape':
-          onEscape?.();
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          onArrowUp?.();
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          onArrowDown?.();
-          break;
-        case 'ArrowLeft':
-          onArrowLeft?.();
-          break;
-        case 'ArrowRight':
-          onArrowRight?.();
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onEnter, onEscape, onArrowUp, onArrowDown, onArrowLeft, onArrowRight]);
+interface AccessibilityState {
+  isReducedMotion: boolean;
+  isHighContrast: boolean;
+  isScreenReader: boolean;
+  isKeyboardUser: boolean;
+  fontSize: 'small' | 'medium' | 'large' | 'xlarge';
+  colorScheme: 'light' | 'dark' | 'auto';
 }
 
-/**
- * Hook for detecting reduced motion preference
- */
-export function useReducedMotion(): boolean {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+interface AccessibilityActions {
+  announce: (message: string, priority?: 'polite' | 'assertive') => void;
+  focusElement: (element: HTMLElement | null) => void;
+  trapFocus: (container: HTMLElement) => () => void;
+  restoreFocus: () => void;
+  saveFocus: () => void;
+}
 
+export const useAccessibility = (): AccessibilityState & AccessibilityActions => {
+  const [state, setState] = useState<AccessibilityState>({
+    isReducedMotion: false,
+    isHighContrast: false,
+    isScreenReader: false,
+    isKeyboardUser: false,
+    fontSize: 'medium',
+    colorScheme: 'auto',
+  });
+
+  const [previousFocus, setPreviousFocus] = useState<HTMLElement | null>(null);
+
+  // Detect user preferences
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
+    // Reduced motion preference
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setState(prev => ({ ...prev, isReducedMotion: reducedMotionQuery.matches }));
 
-    const handleChange = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
+    const handleReducedMotionChange = (e: MediaQueryListEvent) => {
+      setState(prev => ({ ...prev, isReducedMotion: e.matches }));
     };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    // High contrast preference
+    const highContrastQuery = window.matchMedia('(prefers-contrast: high)');
+    setState(prev => ({ ...prev, isHighContrast: highContrastQuery.matches }));
+
+    const handleHighContrastChange = (e: MediaQueryListEvent) => {
+      setState(prev => ({ ...prev, isHighContrast: e.matches }));
+    };
+
+    // Color scheme preference
+    const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setState(prev => ({ 
+      ...prev, 
+      colorScheme: colorSchemeQuery.matches ? 'dark' : 'light' 
+    }));
+
+    const handleColorSchemeChange = (e: MediaQueryListEvent) => {
+      setState(prev => ({ 
+        ...prev, 
+        colorScheme: e.matches ? 'dark' : 'light' 
+      }));
+    };
+
+    // Screen reader detection (basic)
+    const isScreenReaderActive = 
+      window.navigator.userAgent.includes('NVDA') ||
+      window.navigator.userAgent.includes('JAWS') ||
+      window.navigator.userAgent.includes('VoiceOver') ||
+      window.navigator.userAgent.includes('TalkBack');
+    
+    setState(prev => ({ ...prev, isScreenReader: isScreenReaderActive }));
+
+    // Keyboard user detection
+    const handleKeyDown = () => {
+      setState(prev => ({ ...prev, isKeyboardUser: true }));
+    };
+
+    const handleMouseDown = () => {
+      setState(prev => ({ ...prev, isKeyboardUser: false }));
+    };
+
+    // Font size detection
+    const detectFontSize = () => {
+      const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      if (rootFontSize <= 14) return 'small';
+      if (rootFontSize <= 16) return 'medium';
+      if (rootFontSize <= 18) return 'large';
+      return 'xlarge';
+    };
+
+    setState(prev => ({ ...prev, fontSize: detectFontSize() }));
+
+    // Event listeners
+    reducedMotionQuery.addEventListener('change', handleReducedMotionChange);
+    highContrastQuery.addEventListener('change', handleHighContrastChange);
+    colorSchemeQuery.addEventListener('change', handleColorSchemeChange);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleMouseDown);
+
+    return () => {
+      reducedMotionQuery.removeEventListener('change', handleReducedMotionChange);
+      highContrastQuery.removeEventListener('change', handleHighContrastChange);
+      colorSchemeQuery.removeEventListener('change', handleColorSchemeChange);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
   }, []);
 
-  return prefersReducedMotion;
-}
+  // Announce messages to screen readers
+  const announce = useCallback((message: string, priority: 'polite' | 'assertive' = 'polite') => {
+    const announcement = document.createElement('div');
+    announcement.setAttribute('aria-live', priority);
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.className = 'sr-only';
+    announcement.textContent = message;
+    
+    document.body.appendChild(announcement);
+    
+    // Remove after screen reader has time to read it
+    setTimeout(() => {
+      document.body.removeChild(announcement);
+    }, 1000);
+  }, []);
 
-/**
- * Hook for managing focus trap
- */
-export function useFocusTrap(isActive: boolean) {
-  const containerRef = useRef<HTMLElement | null>(null);
+  // Focus management
+  const focusElement = useCallback((element: HTMLElement | null) => {
+    if (element) {
+      element.focus();
+    }
+  }, []);
 
-  useEffect(() => {
-    if (!isActive || !containerRef.current) return;
+  const saveFocus = useCallback(() => {
+    setPreviousFocus(document.activeElement as HTMLElement);
+  }, []);
 
-    const container = containerRef.current;
-    const focusableElements = container.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+  const restoreFocus = useCallback(() => {
+    if (previousFocus) {
+      previousFocus.focus();
+      setPreviousFocus(null);
+    }
+  }, [previousFocus]);
+
+  // Focus trap implementation
+  const trapFocus = useCallback((container: HTMLElement) => {
+    const focusableElements = container.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
 
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
     const handleTabKey = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;
 
       if (e.shiftKey) {
         if (document.activeElement === firstElement) {
+          lastElement.focus();
           e.preventDefault();
-          lastElement?.focus();
         }
       } else {
         if (document.activeElement === lastElement) {
+          firstElement.focus();
           e.preventDefault();
-          firstElement?.focus();
         }
       }
     };
 
-    container.addEventListener('keydown', handleTabKey);
+    // Focus first element when trap activates
     firstElement?.focus();
 
+    container.addEventListener('keydown', handleTabKey);
+
+    // Return cleanup function
     return () => {
       container.removeEventListener('keydown', handleTabKey);
     };
-  }, [isActive]);
-
-  return containerRef;
-}
-
-/**
- * Hook for announcing messages to screen readers
- */
-export function useScreenReaderAnnouncement() {
-  const [announcement, setAnnouncement] = useState('');
-
-  const announce = useCallback((message: string, _priority: 'polite' | 'assertive' = 'polite') => {
-    setAnnouncement(''); // Clear first to ensure re-announcement
-    setTimeout(() => {
-      setAnnouncement(message);
-    }, 100);
   }, []);
 
-  return { announcement, announce };
-}
+  return {
+    ...state,
+    announce,
+    focusElement,
+    trapFocus,
+    restoreFocus,
+    saveFocus,
+  };
+};
 
-/**
- * Hook for detecting high contrast mode
- */
-export function useHighContrast(): boolean {
-  const [isHighContrast, setIsHighContrast] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-contrast: high)');
-    setIsHighContrast(mediaQuery.matches);
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsHighContrast(e.matches);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
-  return isHighContrast;
-}
-
-/**
- * Hook for managing skip links
- */
-export function useSkipLink() {
-  const skipToContent = useCallback(() => {
-    const mainContent = document.getElementById('main-content');
-    if (mainContent) {
-      mainContent.focus();
-      mainContent.scrollIntoView({ behavior: 'smooth' });
+// Haptic feedback hook
+export const useHaptics = () => {
+  const triggerHaptic = useCallback((intensity: 'light' | 'medium' | 'heavy' = 'medium') => {
+    if (typeof window === 'undefined') return;
+    
+    if ('vibrate' in navigator) {
+      const patterns = {
+        light: [8],
+        medium: [15],
+        heavy: [25, 10, 15],
+      };
+      navigator.vibrate(patterns[intensity]);
     }
   }, []);
 
-  return { skipToContent };
-}
+  return { triggerHaptic };
+};
 
-/**
- * Hook for text scaling detection
- */
-export function useTextScale(): number {
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    const checkScale = () => {
-      const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-      const defaultFontSize = 16; // Default browser font size
-      setScale(rootFontSize / defaultFontSize);
-    };
-
-    checkScale();
-    window.addEventListener('resize', checkScale);
-    return () => window.removeEventListener('resize', checkScale);
-  }, []);
-
-  return scale;
-}
-
-/**
- * Hook for managing ARIA live regions
- */
-export function useAriaLive() {
-  const liveRegionRef = useRef<HTMLDivElement | null>(null);
-
-  const announce = useCallback((message: string, priority: 'polite' | 'assertive' = 'polite') => {
-    if (liveRegionRef.current) {
-      liveRegionRef.current.setAttribute('aria-live', priority);
-      liveRegionRef.current.textContent = message;
+// Sound feedback hook
+export const useSoundFeedback = () => {
+  const triggerSound = useCallback((type: 'hover' | 'press' | 'success' | 'error' = 'press') => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      const frequencies = { 
+        hover: 800, 
+        press: 600, 
+        success: 1000, 
+        error: 300 
+      };
+      
+      oscillator.frequency.setValueAtTime(frequencies[type], audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+      console.debug('Audio feedback not available');
     }
   }, []);
 
-  return { liveRegionRef, announce };
-}
+  return { triggerSound };
+};
 
-/**
- * Hook for keyboard shortcuts
- */
-export function useKeyboardShortcuts(shortcuts: Record<string, () => void>) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const key = `${e.ctrlKey ? 'Ctrl+' : ''}${e.shiftKey ? 'Shift+' : ''}${
-        e.altKey ? 'Alt+' : ''
-      }${e.key}`;
-
-      if (shortcuts[key]) {
-        e.preventDefault();
-        shortcuts[key]();
-      }
+// Color contrast utility
+export const useColorContrast = () => {
+  const getContrastRatio = useCallback((color1: string, color2: string): number => {
+    const getLuminance = (color: string): number => {
+      const rgb = hexToRgb(color);
+      if (!rgb) return 0;
+      
+      const [r, g, b] = [rgb.r, rgb.g, rgb.b].map(c => {
+        c = c / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      });
+      
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [shortcuts]);
-}
-
-/**
- * Hook for managing focus visible
- */
-export function useFocusVisible() {
-  const [isFocusVisible, setIsFocusVisible] = useState(false);
-
-  useEffect(() => {
-    let hadKeyboardEvent = false;
-
-    const handleKeyDown = () => {
-      hadKeyboardEvent = true;
-    };
-
-    const handlePointerDown = () => {
-      hadKeyboardEvent = false;
-    };
-
-    const handleFocus = () => {
-      if (hadKeyboardEvent) {
-        setIsFocusVisible(true);
-      }
-    };
-
-    const handleBlur = () => {
-      setIsFocusVisible(false);
-    };
-
-    window.addEventListener('keydown', handleKeyDown, true);
-    window.addEventListener('pointerdown', handlePointerDown, true);
-    window.addEventListener('focus', handleFocus, true);
-    window.addEventListener('blur', handleBlur, true);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown, true);
-      window.removeEventListener('pointerdown', handlePointerDown, true);
-      window.removeEventListener('focus', handleFocus, true);
-      window.removeEventListener('blur', handleBlur, true);
-    };
+    
+    const lum1 = getLuminance(color1);
+    const lum2 = getLuminance(color2);
+    const brightest = Math.max(lum1, lum2);
+    const darkest = Math.min(lum1, lum2);
+    
+    return (brightest + 0.05) / (darkest + 0.05);
   }, []);
 
-  return isFocusVisible;
-}
+  const meetsWCAG = useCallback((ratio: number, level: 'AA' | 'AAA' = 'AA'): boolean => {
+    const requirements = {
+      AA: { normal: 4.5, large: 3 },
+      AAA: { normal: 7, large: 4.5 }
+    };
+    
+    return ratio >= requirements[level].normal;
+  }, []);
+
+  return { getContrastRatio, meetsWCAG };
+};
+
+// Helper function to convert hex to RGB
+const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+};

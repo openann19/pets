@@ -1,96 +1,96 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState, type JSX } from 'react';
 
 export interface GestureInteractionProps {
   /**
    * Element to apply gesture detection to
    */
   children: React.ReactNode;
-  
+
   /**
    * Callback for swipe left gesture
    */
   onSwipeLeft?: () => void;
-  
+
   /**
    * Callback for swipe right gesture
    */
   onSwipeRight?: () => void;
-  
+
   /**
    * Callback for swipe up gesture
    */
   onSwipeUp?: () => void;
-  
+
   /**
    * Callback for swipe down gesture
    */
   onSwipeDown?: () => void;
-  
+
   /**
    * Callback for pinch in gesture
    */
   onPinchIn?: () => void;
-  
+
   /**
    * Callback for pinch out gesture
    */
   onPinchOut?: () => void;
-  
+
   /**
    * Callback for rotation gesture
    */
   onRotate?: (angle: number) => void;
-  
+
   /**
    * Callback for tap gesture
    */
   onTap?: () => void;
-  
+
   /**
    * Callback for double tap gesture
    */
   onDoubleTap?: () => void;
-  
+
   /**
    * Callback for long press gesture
    */
   onLongPress?: () => void;
-  
+
   /**
    * Minimum swipe distance to trigger callback (in pixels)
    */
   swipeThreshold?: number;
-  
+
   /**
    * Minimum pinch distance to trigger callback (in pixels)
    */
   pinchThreshold?: number;
-  
+
   /**
    * Minimum rotation angle to trigger callback (in degrees)
    */
   rotateThreshold?: number;
-  
+
   /**
    * Duration for long press (in milliseconds)
    */
   longPressDuration?: number;
-  
+
   /**
    * Show visual feedback for gestures
    */
   showVisualFeedback?: boolean;
-  
+
   /**
    * Whether to disable all gestures
    */
   disabled?: boolean;
-  
+
   /**
    * Additional CSS classes
    */
   className?: string;
-  
+
   /**
    * Whether to prevent default browser behavior
    */
@@ -110,7 +110,7 @@ interface GestureState {
   touches: TouchData[];
   pinchDistance: number | null;
   rotation: number | null;
-  longPressTimer: NodeJS.Timeout | null;
+  longPressTimer: ReturnType<typeof setTimeout> | null;
   lastTapTime: number | null;
 }
 
@@ -149,36 +149,36 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
     longPressTimer: null,
     lastTapTime: null
   });
-  
+
   // Visual feedback states
   const [feedbackVisible, setFeedbackVisible] = useState<boolean>(false);
   const [feedbackType, setFeedbackType] = useState<string>('');
   const [feedbackPosition, setFeedbackPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
   const [feedbackAngle, setFeedbackAngle] = useState<number>(0);
-  
+
   // Calculate distance between two touch points
   const getDistance = (touch1: TouchData, touch2: TouchData): number => {
     const dx = touch1.lastX - touch2.lastX;
     const dy = touch1.lastY - touch2.lastY;
     return Math.sqrt(dx * dx + dy * dy);
   };
-  
+
   // Calculate angle between two touch points
   const getAngle = (touch1: TouchData, touch2: TouchData): number => {
     const dx = touch2.lastX - touch1.lastX;
     const dy = touch2.lastY - touch1.lastY;
     return Math.atan2(dy, dx) * 180 / Math.PI;
   };
-  
+
   // Show visual feedback
   const showFeedback = (type: string, x: number, y: number, angle = 0): void => {
     if (!showVisualFeedback) return;
-    
+
     setFeedbackType(type);
     setFeedbackPosition({ x, y });
     setFeedbackAngle(angle);
     setFeedbackVisible(true);
-    
+
     // Hide feedback after animation
     setTimeout(() => {
       setFeedbackVisible(false);
@@ -189,7 +189,7 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
   const handleTouchStart = (e: React.TouchEvent): void => {
     if (disabled) return;
     if (preventDefault) e.preventDefault();
-    
+
     const newTouches = Array.from(e.touches).map(touch => ({
       identifier: touch.identifier,
       startX: touch.clientX,
@@ -198,33 +198,44 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
       lastY: touch.clientY,
       startTime: Date.now()
     }));
-    
+
     // Clear existing long press timer
     if (gestureState.longPressTimer) {
       clearTimeout(gestureState.longPressTimer);
     }
-    
+
     // Set long press timer for single touch
-    let longPressTimer: NodeJS.Timeout | null = null;
+    let longPressTimer: ReturnType<typeof setTimeout> | null = null;
     if (newTouches.length === 1 && onLongPress) {
-      longPressTimer = setTimeout(() => {
-        onLongPress();
-        showFeedback('longpress', newTouches[0].startX, newTouches[0].startY);
-      }, longPressDuration) as unknown as NodeJS.Timeout;
+      const firstTouch = newTouches[0];
+      if (firstTouch) {
+        longPressTimer = setTimeout(() => {
+          onLongPress();
+          showFeedback('longpress', firstTouch.startX, firstTouch.startY);
+        }, longPressDuration);
+      }
     }
-    
+
     // Set initial pinch distance for two touches
     let pinchDistance = null;
     if (newTouches.length === 2) {
-      pinchDistance = getDistance(newTouches[0], newTouches[1]);
+      const touch1 = newTouches[0];
+      const touch2 = newTouches[1];
+      if (touch1 && touch2) {
+        pinchDistance = getDistance(touch1, touch2);
+      }
     }
-    
+
     // Set initial rotation for two touches
     let rotation = null;
     if (newTouches.length === 2) {
-      rotation = getAngle(newTouches[0], newTouches[1]);
+      const touch1 = newTouches[0];
+      const touch2 = newTouches[1];
+      if (touch1 && touch2) {
+        rotation = getAngle(touch1, touch2);
+      }
     }
-    
+
     setGestureState({
       ...gestureState,
       touches: newTouches,
@@ -233,12 +244,12 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
       longPressTimer
     });
   };
-  
+
   // Handle touch move
   const handleTouchMove = (e: React.TouchEvent): void => {
     if (disabled || gestureState.touches.length === 0) return;
     if (preventDefault) e.preventDefault();
-    
+
     // Update touch positions
     const updatedTouches = gestureState.touches.map(touch => {
       const activeTouch = Array.from(e.touches).find(t => t.identifier === touch.identifier);
@@ -251,26 +262,30 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
       }
       return touch;
     });
-    
+
     // Process pinch gesture
     if (updatedTouches.length === 2 && gestureState.pinchDistance !== null) {
-      const currentDistance = getDistance(updatedTouches[0], updatedTouches[1]);
+      const touch1 = updatedTouches[0];
+      const touch2 = updatedTouches[1];
+      if (!touch1 || !touch2) return;
+
+      const currentDistance = getDistance(touch1, touch2);
       const pinchDiff = currentDistance - gestureState.pinchDistance;
-      
+
       // Detect pinch in/out beyond threshold
       if (Math.abs(pinchDiff) > pinchThreshold) {
         if (pinchDiff < 0 && onPinchIn) {
           onPinchIn();
-          const centerX = (updatedTouches[0].lastX + updatedTouches[1].lastX) / 2;
-          const centerY = (updatedTouches[0].lastY + updatedTouches[1].lastY) / 2;
+          const centerX = (touch1.lastX + touch2.lastX) / 2;
+          const centerY = (touch1.lastY + touch2.lastY) / 2;
           showFeedback('pinchin', centerX, centerY);
         } else if (pinchDiff > 0 && onPinchOut) {
           onPinchOut();
-          const centerX = (updatedTouches[0].lastX + updatedTouches[1].lastX) / 2;
-          const centerY = (updatedTouches[0].lastY + updatedTouches[1].lastY) / 2;
+          const centerX = (touch1.lastX + touch2.lastX) / 2;
+          const centerY = (touch1.lastY + touch2.lastY) / 2;
           showFeedback('pinchout', centerX, centerY);
         }
-        
+
         // Update pinch distance
         setGestureState(prev => ({
           ...prev,
@@ -280,23 +295,27 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
         return;
       }
     }
-    
+
     // Process rotation gesture
     if (updatedTouches.length === 2 && gestureState.rotation !== null && onRotate) {
-      const currentRotation = getAngle(updatedTouches[0], updatedTouches[1]);
+      const touch1 = updatedTouches[0];
+      const touch2 = updatedTouches[1];
+      if (!touch1 || !touch2) return;
+
+      const currentRotation = getAngle(touch1, touch2);
       let rotationDiff = currentRotation - gestureState.rotation;
-      
+
       // Normalize rotation difference
       if (rotationDiff > 180) rotationDiff -= 360;
       if (rotationDiff < -180) rotationDiff += 360;
-      
+
       // Detect rotation beyond threshold
       if (Math.abs(rotationDiff) > rotateThreshold) {
         onRotate(rotationDiff);
-        const centerX = (updatedTouches[0].lastX + updatedTouches[1].lastX) / 2;
-        const centerY = (updatedTouches[0].lastY + updatedTouches[1].lastY) / 2;
+        const centerX = (touch1.lastX + touch2.lastX) / 2;
+        const centerY = (touch1.lastY + touch2.lastY) / 2;
         showFeedback('rotate', centerX, centerY, rotationDiff);
-        
+
         // Update rotation value
         setGestureState(prev => ({
           ...prev,
@@ -306,15 +325,16 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
         return;
       }
     }
-    
+
     // Cancel long press if moved too much
     if (gestureState.longPressTimer && updatedTouches.length === 1) {
       const touch = updatedTouches[0];
+      if (!touch) return;
       const moveDistance = Math.sqrt(
-        Math.pow(touch.lastX - touch.startX, 2) + 
+        Math.pow(touch.lastX - touch.startX, 2) +
         Math.pow(touch.lastY - touch.startY, 2)
       );
-      
+
       if (moveDistance > 10) {
         clearTimeout(gestureState.longPressTimer);
         setGestureState(prev => ({
@@ -324,38 +344,39 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
         }));
       }
     }
-    
+
     setGestureState(prev => ({
       ...prev,
       touches: updatedTouches
     }));
   };
-  
+
   // Handle touch end
   const handleTouchEnd = (e: React.TouchEvent): void => {
     if (disabled || gestureState.touches.length === 0) return;
     if (preventDefault) e.preventDefault();
-    
+
     // Clear long press timer
     if (gestureState.longPressTimer) {
       clearTimeout(gestureState.longPressTimer);
     }
-    
+
     const endedTouches = gestureState.touches.filter(touch => Array.from(e.touches).some(t => t.identifier === touch.identifier));
-    
+
     // Handle swipe gestures
-    if (gestureState.touches.length === 1 && gestureState.touches[0].startTime) {
-      const touch = gestureState.touches[0];
+    const firstTouch = gestureState.touches[0];
+    if (gestureState.touches.length === 1 && firstTouch?.startTime) {
+      const touch = firstTouch;
       const touchDuration = Date.now() - touch.startTime;
       const dx = touch.lastX - touch.startX;
       const dy = touch.lastY - touch.startY;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
+
       // Only process if it's a quick movement (swipe)
       if (touchDuration < 300 && distance > swipeThreshold) {
         const absX = Math.abs(dx);
         const absY = Math.abs(dy);
-        
+
         // Horizontal swipe
         if (absX > absY) {
           if (dx > 0 && onSwipeRight) {
@@ -365,7 +386,7 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
             onSwipeLeft();
             showFeedback('swipeleft', touch.lastX, touch.lastY);
           }
-        } 
+        }
         // Vertical swipe
         else {
           if (dy > 0 && onSwipeDown) {
@@ -403,7 +424,7 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
         }
       }
     }
-    
+
     setGestureState(prev => ({
       ...prev,
       touches: endedTouches,
@@ -415,13 +436,13 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
 
   // Clean up timers
   useEffect(() => () => {
-      if (gestureState.longPressTimer) {
-        clearTimeout(gestureState.longPressTimer);
-      }
-    }, [gestureState.longPressTimer]);
+    if (gestureState.longPressTimer) {
+      clearTimeout(gestureState.longPressTimer);
+    }
+  }, [gestureState.longPressTimer]);
 
   // Render visual feedback
-  const renderFeedback = (): JSX.Element => {
+  const renderFeedback = (): JSX.Element | null => {
     if (!showVisualFeedback || !feedbackVisible) {
       return null;
     }
@@ -561,7 +582,7 @@ export const GestureInteraction: React.FC<GestureInteractionProps> = ({
     >
       {children}
       {renderFeedback()}
-      <style jsx global>{`
+      <style>{`
         @keyframes slide-left {
           0% { transform: translate(-50%, -50%) translateX(0); opacity: 0.7; }
           100% { transform: translate(-50%, -50%) translateX(-50px); opacity: 0; }

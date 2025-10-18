@@ -5,7 +5,7 @@
 
 const express = require('express');
 const { body, param, query } = require('express-validator');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/adminAuth');
 const {
   getEnhancedFeaturesOverview,
   getBiometricManagement,
@@ -20,7 +20,7 @@ const {
 const router = express.Router();
 
 // Apply admin authentication to all routes
-router.use(authenticateToken);
+router.use(requireAuth);
 router.use(requireAdmin);
 
 // Validation rules

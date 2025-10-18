@@ -4,8 +4,7 @@
  * Provides smooth messaging with haptic feedback and optimized performance
  */
 
-import { logger } from '@pawfectmatch/core';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { useSocket } from './useSocket';
 
 interface Message {
@@ -15,7 +14,7 @@ interface Message {
   timestamp: string;
   read: boolean;
   type: 'text' | 'image' | 'emoji' | 'gift';
-  metadata?: Record<string, unknown>;
+  metadata?: any;
 }
 
 interface ChatConfig {
@@ -38,7 +37,7 @@ export const useOptimizedChat = (
   matchId: string,
   userId: string,
   config: ChatConfig = {},
-  callbacks: ChatCallbacks = {},
+  callbacks: ChatCallbacks = {}
 ) => {
   const {
     hapticEnabled = true,
@@ -48,177 +47,148 @@ export const useOptimizedChat = (
     retryDelay = 1000,
   } = config;
 
-  const { onMessageReceived, onMessageSent, onTypingStart, onTypingStop, onConnectionChange } =
-    callbacks;
+  const {
+    onMessageReceived,
+    onMessageSent,
+    onTypingStart,
+    onTypingStop,
+    onConnectionChange,
+  } = callbacks;
 
-  const { socket } = useSocket();
+  const socket = useSocket();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
-  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const retryTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const messageQueueRef = useRef<Message[]>([]);
 
   // Enhanced haptic feedback
-  const triggerHaptic = useCallback(
-    (type: 'light' | 'medium' | 'heavy' = 'medium') => {
-      if (!hapticEnabled || !('vibrate' in navigator)) return;
-
-      const patterns = {
-        light: [10],
-        medium: [20],
-        heavy: [30, 10, 30],
-      };
-
-      navigator.vibrate(patterns[type]);
-    },
-    [hapticEnabled],
-  );
+  const triggerHaptic = useCallback((type: 'light' | 'medium' | 'heavy' = 'medium') => {
+    if (!hapticEnabled || !('vibrate' in navigator)) return;
+    
+    const patterns = {
+      light: [10],
+      medium: [20],
+      heavy: [30, 10, 30]
+    };
+    
+    navigator.vibrate(patterns[type]);
+  }, [hapticEnabled]);
 
   // Enhanced sound feedback
-  const triggerSound = useCallback(
-    (type: 'message' | 'typing' | 'connection') => {
-      if (!soundEnabled) return;
-
-      try {
-        const sounds = {
-          message: '/sounds/message.mp3',
-          typing: '/sounds/typing.mp3',
-          connection: '/sounds/connection.mp3',
-        };
-
-        const audio = new Audio(sounds[type]);
-        audio.volume = 0.2;
-        audio.play().catch(() => {
-          // Fallback to haptic feedback
-          triggerHaptic('light');
-        });
-      } catch {
+  const triggerSound = useCallback((type: 'message' | 'typing' | 'connection') => {
+    if (!soundEnabled) return;
+    
+    try {
+      const sounds = {
+        message: '/sounds/message.mp3',
+        typing: '/sounds/typing.mp3',
+        connection: '/sounds/connection.mp3'
+      };
+      
+      const audio = new Audio(sounds[type]);
+      audio.volume = 0.2;
+      audio.play().catch(() => {
+        // Fallback to haptic feedback
         triggerHaptic('light');
-      }
-    },
-    [soundEnabled, triggerHaptic],
-  );
+      });
+    } catch (error) {
+      triggerHaptic('light');
+    }
+  }, [soundEnabled, triggerHaptic]);
 
   // Optimized message handling
-  const handleNewMessage = useCallback(
-    (message: Message) => {
-      setMessages((prev) => [...prev, message]);
-
-      // Enhanced feedback for received messages
-      if (message.senderId !== userId) {
-        triggerHaptic('medium');
-        triggerSound('message');
-        onMessageReceived?.(message);
-      } else {
-        onMessageSent?.(message);
-      }
-    },
-    [userId, triggerHaptic, triggerSound, onMessageReceived, onMessageSent],
-  );
+  const handleNewMessage = useCallback((message: Message) => {
+    setMessages(prev => [...prev, message]);
+    
+    // Enhanced feedback for received messages
+    if (message.senderId !== userId) {
+      triggerHaptic('medium');
+      triggerSound('message');
+      onMessageReceived?.(message);
+    } else {
+      onMessageSent?.(message);
+    }
+  }, [userId, triggerHaptic, triggerSound, onMessageReceived, onMessageSent]);
 
   // Optimized typing indicator
-  const handleTyping = useCallback(
-    ({ userId: typingUserId, isTyping: typing }: { userId: string; isTyping: boolean }) => {
-      if (typingUserId !== userId) {
-        if (typing) {
-          triggerHaptic('light');
-          triggerSound('typing');
-          onTypingStart?.(typingUserId);
-        } else {
-          onTypingStop?.(typingUserId);
-        }
+  const handleTyping = useCallback(({ userId: typingUserId, isTyping: typing }: { userId: string; isTyping: boolean }) => {
+    if (typingUserId !== userId) {
+      if (typing) {
+        triggerHaptic('light');
+        triggerSound('typing');
+        onTypingStart?.(typingUserId);
+      } else {
+        onTypingStop?.(typingUserId);
       }
-    },
-    [userId, triggerHaptic, triggerSound, onTypingStart, onTypingStop],
-  );
+    }
+  }, [userId, triggerHaptic, triggerSound, onTypingStart, onTypingStop]);
 
   // Enhanced connection handling
-  const handleConnectionChange = useCallback(
-    (connected: boolean) => {
-      setIsConnected(connected);
-
-      if (connected) {
-        triggerHaptic('light');
-        triggerSound('connection');
-        setRetryCount(0);
-
-        // Process queued messages
-        if (messageQueueRef.current.length > 0) {
-          messageQueueRef.current.forEach((message) => {
-            socket?.emit('send_message', { matchId, message });
-          });
-          messageQueueRef.current = [];
-        }
-      } else {
-        // Start retry logic
-        if (retryCount < maxRetries) {
-          retryTimeoutRef.current = setTimeout(
-            () => {
-              setRetryCount((prev) => prev + 1);
-              // Trigger reconnection
-              socket?.connect();
-            },
-            retryDelay * Math.pow(2, retryCount),
-          ); // Exponential backoff
-        }
+  const handleConnectionChange = useCallback((connected: boolean) => {
+    setIsConnected(connected);
+    
+    if (connected) {
+      triggerHaptic('light');
+      triggerSound('connection');
+      setRetryCount(0);
+      
+      // Process queued messages
+      if (messageQueueRef.current.length > 0) {
+        messageQueueRef.current.forEach(message => {
+          socket?.emit('send_message', { matchId, message });
+        });
+        messageQueueRef.current = [];
       }
-
-      onConnectionChange?.(connected);
-    },
-    [
-      socket,
-      matchId,
-      retryCount,
-      maxRetries,
-      retryDelay,
-      triggerHaptic,
-      triggerSound,
-      onConnectionChange,
-    ],
-  );
+    } else {
+      // Start retry logic
+      if (retryCount < maxRetries) {
+        retryTimeoutRef.current = setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          // Trigger reconnection
+          socket?.connect();
+        }, retryDelay * Math.pow(2, retryCount)); // Exponential backoff
+      }
+    }
+    
+    onConnectionChange?.(connected);
+  }, [socket, matchId, retryCount, maxRetries, retryDelay, triggerHaptic, triggerSound, onConnectionChange]);
 
   // Optimized message sending
-  const sendMessage = useCallback(
-    async (
-      content: string,
-      type: 'text' | 'image' | 'emoji' = 'text',
-      metadata?: Record<string, unknown>,
-    ) => {
-      if (!content.trim() || !socket) return;
+  const sendMessage = useCallback(async (content: string, type: 'text' | 'image' | 'emoji' = 'text', metadata?: any) => {
+    if (!content.trim() || !socket) return;
 
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        senderId: userId,
-        content,
-        timestamp: new Date().toISOString(),
-        read: false,
-        type,
-        ...(metadata ? { metadata } : {}),
-      };
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      senderId: userId,
+      content,
+      timestamp: new Date().toISOString(),
+      read: false,
+      type,
+      metadata,
+    };
 
-      // Optimistic update
-      setMessages((prev) => [...prev, newMessage]);
-      triggerHaptic('light');
+    // Optimistic update
+    setMessages(prev => [...prev, newMessage]);
+    triggerHaptic('light');
 
-      // Send via socket with retry logic
-      try {
-        if (isConnected) {
-          socket.emit('send_message', { matchId, message: newMessage });
-        } else {
-          // Queue message for when connection is restored
-          messageQueueRef.current.push(newMessage);
-        }
-      } catch (error) {
-        logger.error('Failed to send message:', { error });
-        // Remove optimistic update on error
-        setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+    // Send via socket with retry logic
+    try {
+      if (isConnected) {
+        socket.emit('send_message', { matchId, message: newMessage });
+      } else {
+        // Queue message for when connection is restored
+        messageQueueRef.current.push(newMessage);
       }
-    },
-    [socket, userId, matchId, isConnected, triggerHaptic],
-  );
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Remove optimistic update on error
+      setMessages(prev => prev.filter(msg => msg.id !== newMessage.id));
+    }
+  }, [socket, userId, matchId, isConnected, triggerHaptic]);
 
   // Enhanced typing detection
   const handleTypingInput = useCallback(() => {
@@ -228,12 +198,12 @@ export const useOptimizedChat = (
         socket.emit('typing', { matchId, userId, isTyping: true });
       }
     }
-
+    
     // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-
+    
     // Set new timeout with optimized debouncing
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
@@ -256,21 +226,21 @@ export const useOptimizedChat = (
     try {
       const formData = new FormData();
       formData.append('image', file);
-
-      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/api/upload`, {
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('auth-token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
         },
         body: formData,
       });
-
+      
       if (!response.ok) throw new Error('Upload failed');
-
+      
       const { url } = await response.json();
       return url;
     } catch (error) {
-      logger.error('Upload failed:', { error });
+      console.error('Upload failed:', error);
       throw error;
     }
   }, []);
@@ -309,13 +279,15 @@ export const useOptimizedChat = (
   }, [socket, handleNewMessage, handleTyping, handleConnectionChange]);
 
   // Cleanup timeouts
-  useEffect(() => () => {
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-    }
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
   }, []);
 
   return {
@@ -324,13 +296,13 @@ export const useOptimizedChat = (
     isTyping,
     isConnected,
     retryCount,
-
+    
     // Actions
     sendMessage,
     handleTypingInput,
     uploadPhoto,
     showNotification,
-
+    
     // Utilities
     triggerHaptic,
     triggerSound,

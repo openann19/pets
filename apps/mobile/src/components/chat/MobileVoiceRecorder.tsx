@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { logger } from '@pawfectmatch/core';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -50,19 +50,7 @@ export const MobileVoiceRecorder: React.FC<MobileVoiceRecorderProps> = ({
   const [recording, setRecording] = useState<RecordingInstance | null>(null);
   const timerRef = useRef<number | undefined>(undefined);
 
-  useEffect(() => {
-    startRecording();
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      if (recording) {
-        recording.stopAndUnloadAsync();
-      }
-    };
-  }, []);
-
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     try {
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
@@ -97,7 +85,19 @@ export const MobileVoiceRecorder: React.FC<MobileVoiceRecorderProps> = ({
       alert('Failed to start recording. Please try again.');
       onCancel();
     }
-  };
+  }, [onCancel]);
+
+  useEffect(() => {
+    startRecording();
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      if (recording) {
+        recording.stopAndUnloadAsync();
+      }
+    };
+  }, [startRecording, recording]);
 
   const stopRecording = async () => {
     if (!recording) return;

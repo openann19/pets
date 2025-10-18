@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion';
+import type { MotionStyle } from 'framer-motion';
 import React from 'react';
+import { MotionDiv } from '../../utils/Motion';
 
 export interface SkeletonLoaderProps {
   /**
@@ -131,8 +132,8 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
   const renderSkeletonLines = () => {
     if (lines === 1) {
       return (
-        <motion.div
-          style={getVariantStyles()}
+        <MotionDiv
+          style={getVariantStyles() as MotionStyle & React.CSSProperties}
           className={`skeleton-loader ${className}`}
           variants={animationVariants}
           animate={variant}
@@ -146,12 +147,12 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
     return (
       <div className={`skeleton-loader-container ${className}`} aria-label={ariaLabel} role="status" aria-live="polite">
         {Array.from({ length: lines }, (_, index) => (
-          <motion.div
+          <MotionDiv
             key={index}
             style={{
               ...getVariantStyles(),
               marginBottom: index < lines - 1 ? (typeof spacing === 'number' ? `${spacing}px` : spacing) : 0
-            }}
+            } as MotionStyle & React.CSSProperties}
             className="skeleton-loader"
             variants={animationVariants}
             animate={variant}
@@ -199,62 +200,62 @@ export const SkeletonCard: React.FC<{ className?: string; isLoading?: boolean; c
   </SkeletonLoader>
 );
 
-export const SkeletonText: React.FC<{ 
-  lines?: number; 
-  className?: string; 
-  isLoading?: boolean; 
-  children?: React.ReactNode 
+export const SkeletonText: React.FC<{
+  lines?: number;
+  className?: string;
+  isLoading?: boolean;
+  children?: React.ReactNode
 }> = ({
   lines = 3,
   className = '',
   isLoading = true,
   children
 }) => (
-  <SkeletonLoader
-    width="100%"
-    height="16px"
-    borderRadius="4px"
-    lines={lines}
-    spacing="6px"
-    variant="pulse"
-    isLoading={isLoading}
-    className={`skeleton-text ${className}`}
-    ariaLabel="Loading text content"
-  >
-    {children}
-  </SkeletonLoader>
-);
+    <SkeletonLoader
+      width="100%"
+      height="16px"
+      borderRadius="4px"
+      lines={lines}
+      spacing="6px"
+      variant="pulse"
+      isLoading={isLoading}
+      className={`skeleton-text ${className}`}
+      ariaLabel="Loading text content"
+    >
+      {children}
+    </SkeletonLoader>
+  );
 
-export const SkeletonAvatar: React.FC<{ 
-  size?: number; 
-  className?: string; 
-  isLoading?: boolean; 
-  children?: React.ReactNode 
+export const SkeletonAvatar: React.FC<{
+  size?: number;
+  className?: string;
+  isLoading?: boolean;
+  children?: React.ReactNode
 }> = ({
   size = 40,
   className = '',
   isLoading = true,
   children
 }) => (
-  <SkeletonLoader
-    width={size}
-    height={size}
-    borderRadius="50%"
-    variant="wave"
-    isLoading={isLoading}
-    className={`skeleton-avatar ${className}`}
-    ariaLabel="Loading avatar"
-  >
-    {children}
-  </SkeletonLoader>
-);
+    <SkeletonLoader
+      width={size}
+      height={size}
+      borderRadius="50%"
+      variant="wave"
+      isLoading={isLoading}
+      className={`skeleton-avatar ${className}`}
+      ariaLabel="Loading avatar"
+    >
+      {children}
+    </SkeletonLoader>
+  );
 
-export const SkeletonButton: React.FC<{ 
-  width?: string | number; 
-  height?: string | number; 
-  className?: string; 
-  isLoading?: boolean; 
-  children?: React.ReactNode 
+export const SkeletonButton: React.FC<{
+  width?: string | number;
+  height?: string | number;
+  className?: string;
+  isLoading?: boolean;
+  children?: React.ReactNode
 }> = ({
   width = '120px',
   height = '40px',
@@ -262,17 +263,17 @@ export const SkeletonButton: React.FC<{
   isLoading = true,
   children
 }) => (
-  <SkeletonLoader
-    width={width}
-    height={height}
-    borderRadius="8px"
-    variant="pulse"
-    isLoading={isLoading}
-    className={`skeleton-button ${className}`}
-    ariaLabel="Loading button"
-  >
-    {children}
-  </SkeletonLoader>
-);
+    <SkeletonLoader
+      width={width}
+      height={height}
+      borderRadius="8px"
+      variant="pulse"
+      isLoading={isLoading}
+      className={`skeleton-button ${className}`}
+      ariaLabel="Loading button"
+    >
+      {children}
+    </SkeletonLoader>
+  );
 
 export default SkeletonLoader;

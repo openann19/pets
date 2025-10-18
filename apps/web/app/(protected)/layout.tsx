@@ -1,31 +1,37 @@
 'use client';
 
-import { _useAuthStore } from '../../src/stores/auth-store';
+import LoadingSpinner from '@/components/UI/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { isAuthDisabled } from '../../src/config/dev';
+import { useAuthStore } from '../../src/lib/auth-store';
 
-export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = _useAuthStore();
+export default function ProtectedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { isAuthenticated, isLoading } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isAuthDisabled() && !isLoading && !isAuthenticated) {
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);
 
-  if (isLoading) {
+  if (!isAuthDisabled() && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+        <LoadingSpinner size="lg" variant="gradient" />
       </div>
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthDisabled() && !isAuthenticated) {
     return null;
   }
 
+  // In development, always render children
   return <>{children}</>;
 }

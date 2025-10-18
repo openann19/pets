@@ -1,4 +1,5 @@
 const AdminActivityLog = require('../models/AdminActivityLog');
+const logger = require('../utils/logger');
 
 /**
  * Create an admin activity log entry
@@ -13,7 +14,7 @@ const AdminActivityLog = require('../models/AdminActivityLog');
 const logAdminActivity = async (req, action, details = {}, success = true, errorMessage = null) => {
   try {
     if (!req.user || !req.user._id) {
-      console.error('Cannot log admin activity: No user in request');
+      logger.error('Cannot log admin activity: No user in request');
       return null;
     }
 
@@ -31,7 +32,7 @@ const logAdminActivity = async (req, action, details = {}, success = true, error
     return logEntry;
   } catch (error) {
     // Log to console but don't throw - this should never break the main flow
-    console.error('Error logging admin activity:', error);
+    logger.error('Error logging admin activity:', { error: error.message });
     return null;
   }
 };
@@ -54,7 +55,7 @@ const adminActionLogger = (action) => {
       const errorMessage = !success && data.message ? data.message : null;
       
       logAdminActivity(req, action, req.body, success, errorMessage)
-        .catch(error => console.error('Failed to log admin activity:', error));
+        .catch(error => logger.error('Failed to log admin activity:', { error: error.message }));
       
       // Call the original res.json with the data
       return originalJson.call(this, data);

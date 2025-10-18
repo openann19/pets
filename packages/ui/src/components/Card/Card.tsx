@@ -1,24 +1,24 @@
+import { useFocusRing } from '@react-aria/focus';
+import { useHover } from '@react-aria/interactions';
+import { mergeProps } from '@react-aria/utils';
 import React from 'react';
-import {  } from '@react-aria/focus';
-import {  } from '@react-aria/interactions';
-import {  } from '@react-aria/utils';
 
 export interface CardProps {
   /**
    * Card content
    */
   children: React.ReactNode;
-  
+
   /**
    * Whether the card is interactive/clickable
    */
   interactive?: boolean;
-  
+
   /**
    * Additional CSS class name
    */
   className?: string;
-  
+
   /**
    * Click handler for interactive cards
    */
@@ -40,14 +40,14 @@ export interface CardProps {
  */
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   (props, forwardedRef) => {
-    const { 
-      children, 
-      interactive = false, 
+    const {
+      children,
+      interactive = false,
       className = '',
       onClick,
-      ...otherProps 
+      ...otherProps
     } = props;
-    
+
     const ref = React.useRef<HTMLDivElement>(null);
     const { focusProps, isFocused } = useFocusRing();
     const { hoverProps, isHovered } = useHover({});
@@ -62,8 +62,8 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         aria-label={props['aria-label']}
         tabIndex={interactive ? 0 : undefined}
         role={props.role || (interactive ? 'button' : undefined)}
-        data-focused={interactive !== undefined &&  isFocused ? true : undefined}
-        data-hovered={interactive !== undefined &&  isHovered ? true : undefined}
+        data-focused={interactive !== undefined && isFocused ? true : undefined}
+        data-hovered={interactive !== undefined && isHovered ? true : undefined}
         data-interactive={interactive || undefined}
         className={className}
         onClick={interactive ? onClick : undefined}

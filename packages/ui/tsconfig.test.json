@@ -1,0 +1,31 @@
+{
+    "extends": "../../../tsconfig.json",
+    "compilerOptions": {
+        "types": [
+            "jest",
+            "@testing-library/jest-dom",
+            "node"
+        ],
+        "moduleResolution": "node",
+        "verbatimModuleSyntax": false,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "module": "commonjs",
+        "target": "ES2021",
+        "jsx": "react-jsx",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "src/*"
+            ],
+            "@pawfectmatch/core": [
+                "../../core/dist"
+            ]
+        }
+    },
+    "include": [
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "src/test-utils/**/*"
+    ]
+}

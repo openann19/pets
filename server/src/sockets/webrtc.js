@@ -1,5 +1,6 @@
 // WebRTC signaling socket handler for PawfectMatch calling
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
 
 module.exports = function attachWebRTCNamespace(io) {
   const nsp = io.of('/webrtc');
@@ -37,8 +38,10 @@ module.exports = function attachWebRTCNamespace(io) {
 
     // Handle call initiation
     socket.on('initiate-call', async (callData) => {
+      let callId = null;
       try {
-        const { callId, matchId, callerId, callerName, callType } = callData;
+        const { callId: extractedCallId, matchId, callerId, callerName, callType } = callData;
+        callId = extractedCallId;
         
         // Get the match to find the other user
         // In a real implementation, you'd query your database
@@ -77,7 +80,7 @@ module.exports = function attachWebRTCNamespace(io) {
           activeCalls.delete(callId);
         }
       } catch (error) {
-        console.error('Error initiating call:', error);
+        logger.error('Error initiating call:', { error: error.message, callId, callerId: socket.userId });
         socket.emit('call-error', { message: 'Failed to initiate call' });
       }
     });
@@ -137,7 +140,7 @@ module.exports = function attachWebRTCNamespace(io) {
         
         // Log call duration for analytics
         const duration = Date.now() - (call.answeredTime || call.startTime);
-        console.log(`Call ${callId} ended. Duration: ${duration}ms`);
+        logger.info('Call ended', { callId, duration, callerId: call.callerId, calleeId: call.calleeId });
         
         activeCalls.delete(callId);
       }

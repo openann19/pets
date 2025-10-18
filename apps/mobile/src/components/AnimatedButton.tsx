@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { TextStyle, ViewStyle } from 'react-native';
 import { AccessibilityInfo, Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import Animated, {
@@ -51,7 +51,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   const [reduceMotion, setReduceMotion] = useState(false);
 
   // Get animation configuration (fallback values)
-  const buttonConfig = {
+  const buttonConfig = useMemo(() => ({
     pressScale: 0.95,
     bounceScale: 1.02,
     springDamping: 15,
@@ -60,11 +60,11 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
     loadingAnimation: true,
     hapticFeedback: true,
     enabled: true
-  };
+  }), []);
   const mobileConfig = {
     hapticFeedback: true
   };
-  const isEnabled = true && buttonConfig.enabled;
+  const isEnabled = Boolean(buttonConfig.enabled);
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => setReduceMotion(false));
@@ -159,7 +159,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
         withTiming(0, { duration: 0 })
       );
     }
-  }, [loading, rotation]);
+  }, [loading, rotation, reduceMotion]);
 
   const variantStyles = {
     primary: styles.primaryButton,

@@ -1,588 +1,756 @@
 import { Ionicons } from '@expo/vector-icons';
-import { logger, useAuthStore } from '@pawfectmatch/core';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import * as Haptics from 'expo-haptics';
-import { useEffect, useState } from 'react';
-import { Alert, Dimensions, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ShimmerPlaceholder } from '../components/ShimmerPlaceholder';
-import SwipeCard from '../components/SwipeCard';
-import { useTheme } from '../contexts/ThemeContext';
-import type { TabParamList } from '../navigation/types';
-import { _analyticsAPI, api } from '../services/api';
-import { premiumService } from '../services/PremiumService';
-import { UsageTrackingService } from '../services/usageTracking';
+import { useAuthStore, useSwipeLogic, type Pet, type PetFilters } from '@pawfectmatch/core';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  Dimensions,
+  Image,
+  PanResponder,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-type SwipeScreenProps = BottomTabScreenProps<TabParamList, 'Swipe'>;
+import { 
+  EliteContainer,
+  EliteHeader,
+  EliteCard,
+  EliteButton,
+  EliteLoading,
+  FadeInUp,
+  ScaleIn,
+  StaggeredContainer,
+  GestureWrapper,
+  GlassContainer,
+  GlassCard,
+  HolographicContainer,
+  HolographicCard,
+  GlowContainer,
+  GlowingCard,
+  GradientText,
+  PremiumHeading,
+  PremiumBody,
+  ParticleEffect,
+} from '../components/PremiumComponents';
+import { useTheme } from '../contexts/ThemeContext';
+import { matchesAPI } from '../services/api';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-interface Pet {
-  _id: string;
-  name: string;
-  species: string;
-  breed: string;
-  age: number;
-  size: string;
-  intent: string;
-  description: string;
-  photos: Array<{ url: string; isPrimary: boolean }>;
-  personalityTags: string[];
-  aiData: {
-    personalityScore: {
-      friendliness: number;
-      energy: number;
-      trainability: number;
-      socialness: number;
-      aggression: number;
-    };
-    compatibilityTags: string[];
-  };
-}
 
-export default function SwipeScreen({ navigation }: SwipeScreenProps): React.JSX.Element {
-  const { colors } = useTheme();
+type RootStackParamList = {
+  Swipe: undefined;
+  Matches: undefined;
+  Chat: { matchId: string; petName: string };
+};
+
+type SwipeScreenProps = NativeStackScreenProps<RootStackParamList, 'Swipe'>;
+
+export default function SwipeScreen({ navigation }: SwipeScreenProps) {
   const { user } = useAuthStore();
+  
+  // Real API calls for pets
   const [pets, setPets] = useState<Pet[]>([]);
-  const [currentPetIndex, setCurrentPetIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [swipeHistory, setSwipeHistory] = useState<{ pet: Pet; direction: 'left' | 'right' }[]>([]);
-  const [reportModalVisible, setReportModalVisible] = useState(false);
-  const [superLikesLeft, setSuperLikesLeft] = useState(3); // Free users get 3 per day
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { handleLike, handlePass, handleSuperLike } = useSwipeLogic({
+    onMatch: (result) => {
+      if (result.isMatch) {
+        setShowMatchModal(true);
+      }
+    }
+  });
 
+  // Filter state for mobile
+  const [filters, setFilters] = useState<PetFilters>({
+    breed: '',
+    species: '',
+    size: '',
+    maxDistance: 25
+  });
+
+  const loadPets = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // ✅ REAL API - Fetch pets from backend with proper typing
+      const realPets = await matchesAPI.getPets(filters);
+      setPets(realPets);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load pets. Please check your connection.';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters]);
+
+  const swipePet = useCallback(async (petId: string, action: 'like' | 'pass' | 'superlike') => {
+    try {
+      const pet = pets.find(p => p._id === petId);
+      if (!pet) return null;
+
+      // Convert mobile Pet to core Pet type with proper typing
+      const corePet = {
+        ...pet,
+        bio: pet.description ?? '',
+        distance: 0,
+        compatibility: 0,
+        isVerified: true,
+        owner: { _id: 'owner1', name: 'Owner' }
+      };
+
+      switch (action) {
+        case 'like':
+          return await handleLike(corePet);
+        case 'pass':
+          return await handlePass(corePet);
+        case 'superlike':
+          return await handleSuperLike(corePet);
+        default:
+          return null;
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      Alert.alert('Error', `Failed to process swipe: ${errorMessage}`);
+      return null;
+    }
+  }, [pets, handleLike, handlePass, handleSuperLike]);
+
+  const refreshPets = useCallback(() => {
+    void loadPets();
+  }, [loadPets]);
+  
+  // Load pets on component mount
   useEffect(() => {
-    loadPets();
-  }, []);
+    void loadPets();
+  }, [loadPets]);
 
-  const loadPets = async () => {
-    try {
-      const data = await api.request<Pet[]>("/pets");
-      setPets(data);
-      setLoading(false);
-    } catch (error) {
-      logger.error('Failed to load pets:', error);
-      Alert.alert('Error', 'Failed to load pets');
-      setLoading(false);
-    }
-  };
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [matchedPet, setMatchedPet] = useState<Pet | null>(null);
+  
+  const [showFilters, setShowFilters] = useState(false);
 
-  const handleSwipe = async (direction: 'left' | 'right') => {
-    const currentPet = pets[currentPetIndex];
-    if (!currentPet) return;
-    try {
-      // Track the swipe event with real usage tracking service
-      const action = direction === 'right' ? 'like' : 'pass';
-      await UsageTrackingService.trackSwipe(user?._id || '', currentPet._id, action);
-      await _analyticsAPI.trackPetEvent(
-        currentPet._id,
-        direction === 'right' ? 'pet_like' : 'pet_pass',
-        {
-          fromUserId: user?._id,
-          intent: currentPet.intent
-        }
-      );
-      // Save swipe history (limit to last 5)
-      setSwipeHistory(prev => {
-        const updated = [...prev, { pet: currentPet, direction }];
-        return updated.length > 5 ? updated.slice(updated.length - 5) : updated;
-      });
-      // Move to next pet
-      if (currentPetIndex < pets.length - 1) {
-        setCurrentPetIndex(currentPetIndex + 1);
+  // Animation values
+  const position = new Animated.ValueXY();
+  const rotate = position.x.interpolate({
+    inputRange: [-screenWidth / 2, 0, screenWidth / 2],
+    outputRange: ['-30deg', '0deg', '30deg'],
+    extrapolate: 'clamp',
+  });
+
+  const likeOpacity = position.x.interpolate({
+    inputRange: [0, screenWidth / 4],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  const nopeOpacity = position.x.interpolate({
+    inputRange: [-screenWidth / 4, 0],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  // Pan responder for swipe gestures
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderMove: Animated.event([null, { dx: position.x, dy: position.y }], {
+      useNativeDriver: false,
+    }),
+    onPanResponderRelease: (_evt, gestureState) => {
+      const { dx, dy } = gestureState;
+      const swipeThreshold = screenWidth * 0.3;
+
+      if (dx > swipeThreshold) {
+        // Swipe right - like
+        handleSwipe('like');
+      } else if (dx < -swipeThreshold) {
+        // Swipe left - pass
+        handleSwipe('pass');
+      } else if (dy < -swipeThreshold) {
+        // Swipe up - super like
+        handleSwipe('superlike');
       } else {
-        loadPets();
-        setCurrentPetIndex(0);
+        // Snap back
+        Animated.spring(position, {
+          toValue: { x: 0, y: 0 },
+          useNativeDriver: false,
+        }).start();
       }
-    } catch (error) {
-      logger.error('Failed to track swipe:', error);
-    }
-  };
+    },
+  });
 
-  // Undo Last Swipe logic - Premium feature
-  const handleUndoSwipe = async () => {
+  const handleSwipe = useCallback(async (action: 'like' | 'pass' | 'superlike') => {
+    const currentPet = pets[currentIndex];
+    if (!currentPet) return;
+
     try {
-      // Check if user has premium (real check now)
-      const hasPremium = await premiumService.hasActiveSubscription();
+      // Animate card off screen
+      const toValue = action === 'like' ? screenWidth : action === 'pass' ? -screenWidth : 0;
+      
+      Animated.timing(position, {
+        toValue: { x: toValue, y: action === 'superlike' ? -screenHeight : 0 },
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        // Reset position for next card
+        position.setValue({ x: 0, y: 0 });
+        
+        // Move to next pet
+        setCurrentIndex(prev => prev + 1);
+      });
 
-      if (!hasPremium) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert(
-          'Premium Feature',
-          'Unlimited swipe undo is a premium feature. Upgrade to undo your last swipes!',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Upgrade', onPress: () => navigation.navigate('Premium') },
-          ]
-        );
-        return;
+      // Use real API call from web hook
+      const result = await swipePet(currentPet._id, action);
+      if (result?.isMatch) {
+        setMatchedPet(currentPet);
+        setShowMatchModal(true);
       }
-
-      if (swipeHistory.length === 0) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert('No Swipes to Undo', 'You haven\'t swiped on any pets yet.');
-        return;
+      
+      // Load more pets when running low
+      if (currentIndex >= pets.length - 2) {
+        void loadPets();
       }
-
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-      // Track premium feature usage
-      await premiumService.trackUsage('undo_swipe');
-
-      setCurrentPetIndex(idx => Math.max(0, idx - 1));
-      setSwipeHistory(prev => prev.slice(0, -1)); // Remove last swipe from history
-
-      Alert.alert('Swipe Undone', 'Your last swipe has been undone. You can now swipe again!');
     } catch (error) {
-      logger.error('Failed to check premium status for undo', { error });
-      Alert.alert('Error', 'Unable to verify premium status. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process swipe';
+      Alert.alert('Error', errorMessage);
     }
-  };
+  }, [pets, currentIndex, position, swipePet, loadPets]);
 
-  const [superLikeAnimation, setSuperLikeAnimation] = useState(false);
+  const handleButtonSwipe = useCallback((action: 'like' | 'pass' | 'superlike') => {
+    void handleSwipe(action);
+  }, [handleSwipe]);
 
-  // Trigger super like animation
-  const triggerSuperLikeAnimation = () => {
-    setSuperLikeAnimation(true);
-    setTimeout(() => setSuperLikeAnimation(false), 1000);
-  };
+  const currentPet = pets[currentIndex];
 
-  const handleSuperLike = async () => {
-    try {
-      // Check premium limits for super likes
-      const limits = await premiumService.getPremiumLimits();
-
-      // If user has unlimited super likes (premium), or has remaining free ones
-      const canSuperLike = limits.superLikesPerDay === -1 || superLikesLeft > 0;
-
-      if (!canSuperLike) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert(
-          'No Super Likes Left',
-          'You\'ve used all your Super Likes for today. Upgrade to Premium for unlimited Super Likes!',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Upgrade', onPress: () => navigation.navigate('Premium') },
-          ]
-        );
-        return;
-      }
-
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      Alert.alert(
-        'Super Like',
-        `Send a Super Like to ${currentPet.name}? This will make your profile stand out!`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Send Super Like',
-            onPress: async () => {
-              try {
-                setSuperLikesLeft(prev => prev - 1);
-                triggerSuperLikeAnimation();
-
-                // Track premium feature usage
-                await premiumService.trackUsage('super_like');
-
-                // Treat as like for now (could be extended to super like API)
-                void handleSwipe('right');
-
-                logger.info('Super Like sent', { petId: currentPet._id });
-              } catch (error) {
-                logger.error('Failed to send super like', { error });
-                Alert.alert('Error', 'Failed to send super like. Please try again.');
-              }
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      logger.error('Failed to check premium limits for super like', { error });
-      Alert.alert('Error', 'Unable to verify premium status. Please try again.');
-    }
-  };
-
-  const handleBoost = async () => {
-    try {
-      // Check if user can boost (premium feature)
-      const canBoost = await premiumService.canUseFeature('canBoostProfile');
-
-      if (!canBoost) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert(
-          'Premium Feature',
-          'Profile boosting is a premium feature. Be one of the top profiles in your area for 30 minutes!',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Upgrade to Premium', onPress: () => navigation.navigate('Premium') },
-          ]
-        );
-        return;
-      }
-
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-      // Track premium feature usage
-      await premiumService.trackUsage('profile_boost');
-
-      Alert.alert(
-        'Profile Boosted! 🚀',
-        'Your profile is now boosted for 30 minutes. You\'ll appear at the top of everyone\'s feed!',
-        [{ text: 'Awesome!', style: 'default' }]
-      );
-
-      logger.info('Profile boosted');
-    } catch (error) {
-      logger.error('Failed to check premium status for boost', { error });
-      Alert.alert('Error', 'Unable to boost profile. Please try again.');
-    }
-  };
-
-  const handleReportBlock = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    setReportModalVisible(true);
-  };
-
-  const handleReportSubmit = (reason: string) => {
-    Alert.alert(
-      'Report Submitted',
-      `Thank you for reporting this profile. We'll review it within 24 hours.`,
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            setReportModalVisible(false);
-            void handleSwipe('left'); // Remove reported pet from stack
-          },
-        },
-      ]
-    );
-    logger.info('Pet reported', { petId: currentPet._id, reason });
-  };
-
-  const handleBlockUser = () => {
-    Alert.alert(
-      'Block User',
-      `Block ${currentPet.name}? You won't see their profile again.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Block',
-          style: 'destructive',
-          onPress: () => {
-            setReportModalVisible(false);
-            void handleSwipe('left'); // Remove blocked pet from stack
-            logger.info('Pet blocked', { petId: currentPet._id });
-          },
-        },
-      ]
-    );
-  };
-
-  const handleSwipeLeft = (_pet: { _id: string }) => {
-    void handleSwipe('left');
-  };
-
-  const handleSwipeRight = (_pet: { _id: string }) => {
-    void handleSwipe('right');
-  };
-
-  const handleSwipeUp = (_pet: { _id: string }) => {
-    // For super like, perhaps treat as like for now
-    void handleSwipe('right');
-  };
-
-  if (loading) {
+  if (isLoading && pets.length === 0) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.swipeContainer}>
-          <View style={[styles.petCard, { backgroundColor: colors.card }]}>
-            <ShimmerPlaceholder width="100%" height={screenHeight * 0.7} borderRadius={20} />
-          </View>
-        </View>
-      </SafeAreaView>
+      <EliteContainer gradient="primary">
+        <EliteLoading 
+          title="Loading pets..." 
+          subtitle="Finding your perfect matches"
+          variant="paws"
+        />
+      </EliteContainer>
     );
   }
 
-  if (pets.length === 0) {
+  if (error) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <EliteContainer gradient="primary">
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No more pets to swipe!</Text>
-          <TouchableOpacity onPress={loadPets}>
-            <Text>Reload</Text>
-          </TouchableOpacity>
+          <GlowContainer color="error" intensity="medium" animated={true}>
+            <Ionicons name="alert-circle-outline" size={80} color="#ff6b6b" />
+          </GlowContainer>
+          <PremiumHeading level={2} gradient="error" animated={true}>
+            Error loading pets
+          </PremiumHeading>
+          <PremiumBody size="base" weight="regular">
+            {error}
+          </PremiumBody>
+          <EliteButton
+            title="Try Again"
+            variant="primary"
+            size="lg"
+            icon="refresh"
+            magnetic={true}
+            ripple={true}
+            glow={true}
+            onPress={refreshPets}
+          />
         </View>
-      </SafeAreaView>
+      </EliteContainer>
     );
   }
 
-  const currentPet = pets[currentPetIndex]!;
-  const swipeCardPet = {
-    _id: currentPet._id,
-    name: currentPet.name,
-    age: currentPet.age,
-    breed: currentPet.breed,
-    photos: currentPet.photos.map(p => p.url),
-    bio: currentPet.description,
-    distance: 5, // placeholder
-    compatibility: Math.floor(Math.random() * 100), // placeholder
-    isVerified: false, // placeholder
-    tags: currentPet.personalityTags,
-  };
+  if (!currentPet) {
+    return (
+      <EliteContainer gradient="primary">
+        <View style={styles.emptyContainer}>
+          <GlowContainer color="primary" intensity="light" animated={true}>
+            <Ionicons name="heart-outline" size={80} color="#ec4899" />
+          </GlowContainer>
+          <PremiumHeading level={2} gradient="primary" animated={true}>
+            No more pets!
+          </PremiumHeading>
+          <PremiumBody size="base" weight="regular">
+            Check back later for more matches
+          </PremiumBody>
+          <EliteButton
+            title="Refresh"
+            variant="secondary"
+            size="lg"
+            icon="refresh"
+            magnetic={true}
+            ripple={true}
+            glow={true}
+            onPress={loadPets}
+          />
+        </View>
+      </EliteContainer>
+    );
+  }
+
+  const primaryPhoto = currentPet.photos.find((p) => p.isPrimary) || currentPet.photos[0];
+  const ageText = currentPet.age < 1 ? `${Math.round(currentPet.age * 12)} months` : `${currentPet.age} years`;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card }]}>
-        <TouchableOpacity style={styles.backButton} accessibilityLabel="Back" onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Discover</Text>
-        <TouchableOpacity style={styles.filterButton} accessibilityLabel="Filter" onPress={() => setFilterModalVisible(true)}>
-          <Ionicons name="filter" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.filterButton} accessibilityLabel="Undo Last Swipe" onPress={handleUndoSwipe} disabled={swipeHistory.length === 0}>
-          <Ionicons name="arrow-undo" size={24} color={swipeHistory.length === 0 ? '#ccc' : colors.text} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Matches')}>
-          <Ionicons name="chatbubbles-outline" size={24} color={colors.text} />
-        </TouchableOpacity>
-      </View>
-      {/* Filter Modal */}
-      {filterModalVisible && (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', zIndex: 10 }}>
-          <View style={{ backgroundColor: colors.card, borderRadius: 20, padding: 24, width: '90%', maxHeight: '80%' }}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: colors.text }}>Filter Pets</Text>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Species Filter */}
-              <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8, color: colors.text }}>Species</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {['Dog', 'Cat', 'Bird', 'Rabbit', 'Other'].map((species) => (
-                    <TouchableOpacity
-                      key={species}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 16,
-                        borderWidth: 1,
-                        borderColor: colors.primary,
-                        backgroundColor: 'transparent'
-                      }}
-                      onPress={() => {
-                        // TODO: Implement species filter
-                        Haptics.selectionAsync();
-                      }}
-                    >
-                      <Text style={{ color: colors.primary, fontSize: 14 }}>{species}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
+    <EliteContainer gradient="primary">
+      {/* Premium Glass Header */}
+      <EliteHeader
+        title="Discover"
+        subtitle="Find your perfect match"
+        blur={true}
+        onBack={() => navigation.goBack()}
+        rightComponent={
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <EliteButton
+              title="Filter"
+              variant="glass"
+              size="sm"
+              icon="options-outline"
+              magnetic={true}
+              ripple={true}
+              onPress={() => setShowFilters(!showFilters)}
+            />
+            <EliteButton
+              title=""
+              variant="glass"
+              size="sm"
+              icon="heart"
+              magnetic={true}
+              ripple={true}
+              glow={true}
+              onPress={() => navigation.navigate('Matches')}
+            />
+          </View>
+        }
+      />
 
-              {/* Age Range Filter */}
-              <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8, color: colors.text }}>Age Range</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {['Puppy/Kitten (0-1)', 'Young (1-3)', 'Adult (3-7)', 'Senior (7+)'].map((age) => (
-                    <TouchableOpacity
-                      key={age}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 16,
-                        borderWidth: 1,
-                        borderColor: colors.primary,
-                        backgroundColor: 'transparent'
-                      }}
-                      onPress={() => {
-                        // TODO: Implement age filter
-                        Haptics.selectionAsync();
-                      }}
-                    >
-                      <Text style={{ color: colors.primary, fontSize: 14 }}>{age}</Text>
-                    </TouchableOpacity>
-                  ))}
+      {/* Premium Filter Panel */}
+      {showFilters && (
+        <FadeInUp delay={0}>
+          <GlassContainer intensity="medium" transparency="medium" border="light" shadow="medium">
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.filterContent}>
+                {/* Quick Breed Filters */}
+                <PremiumBody size="sm" weight="semibold" gradient="primary">
+                  Popular Breeds:
+                </PremiumBody>
+                <View style={styles.breedFilters}>
+                  {['Shiba Inu', 'Golden Retriever', 'Labrador', 'Border Collie'].map(breed => {
+                    const handleBreedPress = useCallback(() => {
+                      setFilters(prev => ({
+                        ...prev,
+                        breed: prev.breed === breed ? '' : breed,
+                        species: 'dog'
+                      }));
+                    }, [breed]);
+                    
+                    return (
+                      <EliteButton
+                        key={breed}
+                        title={breed}
+                        variant={filters.breed === breed ? "primary" : "glass"}
+                        size="sm"
+                        magnetic={true}
+                        ripple={true}
+                        glow={filters.breed === breed}
+                        onPress={handleBreedPress}
+                      />
+                    );
+                  })}
                 </View>
-              </View>
-
-              {/* Distance Filter */}
-              <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8, color: colors.text }}>Maximum Distance</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {['5 miles', '10 miles', '25 miles', '50 miles', '100+ miles'].map((distance) => (
-                    <TouchableOpacity
-                      key={distance}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 16,
-                        borderWidth: 1,
-                        borderColor: colors.primary,
-                        backgroundColor: 'transparent'
-                      }}
-                      onPress={() => {
-                        // TODO: Implement distance filter
-                        Haptics.selectionAsync();
-                      }}
-                    >
-                      <Text style={{ color: colors.primary, fontSize: 14 }}>{distance}</Text>
-                    </TouchableOpacity>
-                  ))}
+                
+                {/* Species Filter */}
+                <View style={styles.speciesFilters}>
+                  {['All', 'Dogs', 'Cats', 'Birds'].map(species => {
+                    const handleSpeciesPress = useCallback(() => {
+                      setFilters(prev => ({
+                        ...prev,
+                        species: species === 'All' ? '' : species.toLowerCase()
+                      }));
+                    }, [species]);
+                    
+                    return (
+                      <EliteButton
+                        key={species}
+                        title={species}
+                        variant={(species === 'All' ? '' : species.toLowerCase()) === filters.species ? "secondary" : "glass"}
+                        size="sm"
+                        magnetic={true}
+                        ripple={true}
+                        glow={(species === 'All' ? '' : species.toLowerCase()) === filters.species}
+                        onPress={handleSpeciesPress}
+                      />
+                    );
+                  })}
                 </View>
-              </View>
 
-              {/* Size Preference */}
-              <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8, color: colors.text }}>Size Preference</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {['Small', 'Medium', 'Large', 'Extra Large'].map((size) => (
-                    <TouchableOpacity
-                      key={size}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 16,
-                        borderWidth: 1,
-                        borderColor: colors.primary,
-                        backgroundColor: 'transparent'
-                      }}
-                      onPress={() => {
-                        // TODO: Implement size filter
-                        Haptics.selectionAsync();
-                      }}
-                    >
-                      <Text style={{ color: colors.primary, fontSize: 14 }}>{size}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* Breed Filter */}
-              <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8, color: colors.text }}>Breed (Optional)</Text>
-                <TouchableOpacity
-                  style={{
-                    padding: 12,
-                    borderWidth: 1,
-                    borderColor: colors.gray300,
-                    borderRadius: 8,
-                    backgroundColor: colors.gray50
-                  }}
-                  onPress={() => {
-                    // TODO: Open breed selection modal
-                    Haptics.selectionAsync();
-                  }}
-                >
-                  <Text style={{ color: colors.textSecondary }}>Select specific breeds...</Text>
-                </TouchableOpacity>
+                {/* Apply Button */}
+                <EliteButton
+                  title="Apply Filters"
+                  variant="holographic"
+                  size="md"
+                  icon="checkmark"
+                  magnetic={true}
+                  ripple={true}
+                  glow={true}
+                  shimmer={true}
+                  onPress={loadPets}
+                />
               </View>
             </ScrollView>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, gap: 12 }}>
-              <TouchableOpacity
-                onPress={() => {
-                  // TODO: Reset filters
-                  setFilterModalVisible(false);
-                  Haptics.selectionAsync();
-                }}
-                style={{ padding: 12, borderRadius: 8, backgroundColor: colors.gray200, flex: 1 }}
-              >
-                <Text style={{ color: colors.text, textAlign: 'center', fontWeight: '600' }}>Reset</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  setFilterModalVisible(false);
-                  Haptics.selectionAsync();
-                  // TODO: Apply filters
-                }}
-                style={{ padding: 12, borderRadius: 8, backgroundColor: colors.primary, flex: 1 }}
-              >
-                <Text style={{ color: 'white', textAlign: 'center', fontWeight: '600' }}>Apply Filters</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+          </GlassContainer>
+        </FadeInUp>
       )}
 
-      {/* Pet Card */}
-      <View style={styles.swipeContainer}>
-        <SwipeCard
-          pet={swipeCardPet}
-          onSwipeLeft={handleSwipeLeft}
-          onSwipeRight={handleSwipeRight}
-          onSwipeUp={handleSwipeUp}
-        />
-      </View>
-
-      {/* Premium & Safety Actions Footer */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 18, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.08)' }}>
-        <TouchableOpacity accessibilityLabel="Super Like" onPress={handleSuperLike} style={{ alignItems: 'center' }}>
-          <Ionicons name="star" size={28} color="#fbbf24" />
-          <Text style={{ fontSize: 12, color: colors.text }}>Super Like ({superLikesLeft})</Text>
-        </TouchableOpacity>
-        <TouchableOpacity accessibilityLabel="Boost" onPress={handleBoost} style={{ alignItems: 'center' }}>
-          <Ionicons name="rocket" size={28} color="#6366f1" />
-          <Text style={{ fontSize: 12, color: colors.text }}>Boost</Text>
-        </TouchableOpacity>
-        <TouchableOpacity accessibilityLabel="Report/Block" onPress={handleReportBlock} style={{ alignItems: 'center' }}>
-          <Ionicons name="ban" size={28} color="#ef4444" />
-          <Text style={{ fontSize: 12, color: colors.text }}>Report/Block</Text>
-        </TouchableOpacity>
-        <TouchableOpacity accessibilityLabel="Safety Center" onPress={() => navigation.navigate('SafetyCenter')} style={{ alignItems: 'center' }}>
-          <Ionicons name="shield-checkmark" size={28} color="#10b981" />
-          <Text style={{ fontSize: 12, color: colors.text }}>Safety</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Report/Block Modal */}
-      {reportModalVisible && (
-        <View
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', zIndex: 20 }}
-          accessibilityViewIsModal
-          accessibilityLabel="Report or Block Modal"
+      {/* Premium Card Stack */}
+      <View style={styles.cardContainer}>
+        <GestureWrapper
+          onSwipeLeft={() => handleButtonSwipe('pass')}
+          onSwipeRight={() => handleButtonSwipe('like')}
+          onSwipeUp={() => handleButtonSwipe('superlike')}
         >
-          <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 28, width: '90%', shadowColor: '#ec4899', shadowOpacity: 0.15, shadowRadius: 16, elevation: 8 }}>
-            <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 18, color: colors.error }}>Report or Block</Text>
-            <Text style={{ marginBottom: 18, fontSize: 16, color: colors.text }}>Why are you reporting this profile?</Text>
-            <TouchableOpacity onPress={() => handleReportSubmit('Inappropriate Content')} style={{ padding: 14 }} accessibilityLabel="Report Inappropriate Content">
-              <Text style={{ color: colors.error, fontWeight: 'bold', fontSize: 16 }}>Inappropriate Content</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleReportSubmit('Spam or Scam')} style={{ padding: 14 }} accessibilityLabel="Report Spam or Scam">
-              <Text style={{ color: colors.error, fontWeight: 'bold', fontSize: 16 }}>Spam or Scam</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleReportSubmit('Other')} style={{ padding: 14 }} accessibilityLabel="Report Other">
-              <Text style={{ color: colors.error, fontWeight: 'bold', fontSize: 16 }}>Other</Text>
-            </TouchableOpacity>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 28 }}>
-              <TouchableOpacity onPress={handleBlockUser} style={{ padding: 12, borderRadius: 8, backgroundColor: '#f3e8ff' }} accessibilityLabel="Block User">
-                <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16 }}>Block User</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setReportModalVisible(false)} style={{ padding: 12, borderRadius: 8, backgroundColor: '#f8f9fa' }} accessibilityLabel="Cancel">
-                <Text style={{ color: colors.text, fontSize: 16 }}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
+          <Animated.View
+            style={[
+              styles.card,
+              {
+                transform: [
+                  { translateX: position.x },
+                  { translateY: position.y },
+                  { rotate },
+                ],
+              },
+            ]}
+            {...panResponder.panHandlers}
+          >
+            {/* Premium Like/Nope Indicators */}
+            <Animated.View style={[styles.likeIndicator, { opacity: likeOpacity }]}>
+              <GlowContainer color="success" intensity="heavy" animated={true}>
+                <GradientText gradient="success" size="lg" weight="bold" glow={true}>
+                  LIKE
+                </GradientText>
+              </GlowContainer>
+            </Animated.View>
+            <Animated.View style={[styles.nopeIndicator, { opacity: nopeOpacity }]}>
+              <GlowContainer color="error" intensity="heavy" animated={true}>
+                <GradientText gradient="error" size="lg" weight="bold" glow={true}>
+                  NOPE
+                </GradientText>
+              </GlowContainer>
+            </Animated.View>
 
-      {/* Super Like Animation Overlay */}
-      {superLikeAnimation && (
-        <View style={styles.superLikeOverlay}>
-          <View style={styles.superLikeContent}>
-            <Ionicons name="star" size={60} color="#fbbf24" />
-            <Text style={styles.superLikeText}>SUPER LIKE!</Text>
-            <Text style={styles.superLikeSubtext}>Profile highlighted with sparkle ✨</Text>
-          </View>
+            {/* Pet Photo with Glass Effect */}
+            <GlassContainer intensity="light" transparency="light" border="light" shadow="medium">
+              <Image source={{ uri: primaryPhoto?.url }} style={styles.petImage} />
+            </GlassContainer>
+            
+            {/* Premium Featured Badge */}
+            {currentPet.featured?.isFeatured && (
+              <GlowContainer color="neon" intensity="medium" animated={true}>
+                <View style={styles.featuredBadge}>
+                  <Ionicons name="star" size={16} color="#fff" />
+                  <GradientText gradient="neon" size="sm" weight="bold" glow={true}>
+                    Featured
+                  </GradientText>
+                </View>
+              </GlowContainer>
+            )}
+
+            {/* Premium Pet Info Overlay */}
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.8)']}
+              style={styles.infoOverlay}
+            >
+              <View style={styles.petInfo}>
+                <View style={styles.nameRow}>
+                  <GradientText gradient="primary" size="2xl" weight="bold" glow={true}>
+                    {currentPet.name}
+                  </GradientText>
+                  <PremiumBody size="lg" weight="semibold" gradient="secondary">
+                    {ageText}
+                  </PremiumBody>
+                </View>
+                <PremiumBody size="base" weight="medium" gradient="primary">
+                  {currentPet.breed}
+                </PremiumBody>
+                <PremiumBody size="sm" weight="regular">
+                  2.5 km away
+                </PremiumBody>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        </GestureWrapper>
+
+        {/* Next card preview with Glass Effect */}
+        {pets[currentIndex + 1] && (
+          <GlassContainer intensity="light" transparency="light" border="light" shadow="light">
+            <View style={[styles.card, styles.nextCard]}>
+              <Image 
+                source={{ uri: pets[currentIndex + 1]?.photos[0]?.url ?? '' }} 
+                style={styles.petImage} 
+              />
+            </View>
+          </GlassContainer>
+        )}
+      </View>
+
+      {/* Premium Action Buttons */}
+      <StaggeredContainer delay={100}>
+        <View style={styles.actionButtons}>
+          <FadeInUp delay={0}>
+            <EliteButton
+              title=""
+              variant="glass"
+              size="xl"
+              icon="close"
+              magnetic={true}
+              ripple={true}
+              glow={true}
+              onPress={() => handleButtonSwipe('pass')}
+              style={styles.actionButton}
+            />
+          </FadeInUp>
+
+          <FadeInUp delay={100}>
+            <EliteButton
+              title=""
+              variant="holographic"
+              size="lg"
+              icon="star"
+              magnetic={true}
+              ripple={true}
+              glow={true}
+              shimmer={true}
+              onPress={() => handleButtonSwipe('superlike')}
+              style={styles.actionButton}
+            />
+          </FadeInUp>
+
+          <FadeInUp delay={200}>
+            <EliteButton
+              title=""
+              variant="primary"
+              size="xl"
+              icon="heart"
+              magnetic={true}
+              ripple={true}
+              glow={true}
+              onPress={() => handleButtonSwipe('like')}
+              style={styles.actionButton}
+            />
+          </FadeInUp>
+        </View>
+      </StaggeredContainer>
+
+      {/* Premium Match Modal with Particle Effects */}
+      {showMatchModal && matchedPet && (
+        <View style={styles.matchModal}>
+          <ParticleEffect count={20} variant="rainbow" speed="fast" />
+          <HolographicContainer
+            variant="rainbow"
+            speed="fast"
+            animated={true}
+            shimmer={true}
+            glow={true}
+            style={styles.matchModalContent}
+          >
+            <ScaleIn delay={0}>
+              <PremiumHeading level={1} gradient="holographic" animated={true} glow={true}>
+                It's a Match! 🎉
+              </PremiumHeading>
+            </ScaleIn>
+            
+            <FadeInUp delay={200}>
+              <View style={styles.matchPhotos}>
+                <GlowContainer color="primary" intensity="medium" animated={true}>
+                  <Image 
+                    source={{ uri: matchedPet.photos[0]?.url }} 
+                    style={styles.matchPhoto} 
+                  />
+                </GlowContainer>
+                <GlowContainer color="secondary" intensity="medium" animated={true}>
+                  <Image 
+                    source={{ uri: 'https://via.placeholder.com/100' }} 
+                    style={styles.matchPhoto} 
+                  />
+                </GlowContainer>
+              </View>
+            </FadeInUp>
+            
+            <FadeInUp delay={400}>
+              <PremiumBody size="lg" weight="semibold" gradient="primary">
+                You and {matchedPet.name} liked each other!
+              </PremiumBody>
+            </FadeInUp>
+            
+            <FadeInUp delay={600}>
+              <View style={styles.matchButtons}>
+                <EliteButton
+                  title="Keep Swiping"
+                  variant="glass"
+                  size="lg"
+                  magnetic={true}
+                  ripple={true}
+                  onPress={() => setShowMatchModal(false)}
+                />
+                <EliteButton
+                  title="Send Message"
+                  variant="holographic"
+                  size="lg"
+                  icon="chatbubble"
+                  magnetic={true}
+                  ripple={true}
+                  glow={true}
+                  shimmer={true}
+                  onPress={() => {
+                    setShowMatchModal(false);
+                    if (matchedPet) {
+                      navigation.navigate('Chat', { 
+                        matchId: matchedPet._id, 
+                        petName: matchedPet.name 
+                      });
+                    }
+                  }}
+                />
+              </View>
+            </FadeInUp>
+          </HolographicContainer>
         </View>
       )}
-    </SafeAreaView>
+    </EliteContainer>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#333',
+    marginLeft: 4,
+  },
+  filterPanel: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingVertical: 15,
+  },
+  filterContent: {
+    paddingHorizontal: 20,
+    alignItems: 'flex-start',
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  breedFilters: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    gap: 8,
+  },
+  breedButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  breedButtonActive: {
+    backgroundColor: '#e91e63',
+    borderColor: '#e91e63',
+  },
+  breedButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+  },
+  breedButtonTextActive: {
+    color: '#fff',
+  },
+  speciesFilters: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    gap: 6,
+  },
+  speciesButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginBottom: 8,
+  },
+  speciesButtonActive: {
+    backgroundColor: '#2196f3',
+    borderColor: '#2196f3',
+  },
+  speciesButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+  },
+  speciesButtonTextActive: {
+    color: '#fff',
+  },
+  applyButton: {
+    backgroundColor: '#4caf50',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  applyButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
   },
   loadingContainer: {
     flex: 1,
@@ -591,131 +759,160 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 18,
+    color: '#666',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 40,
   },
-  emptyText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
+  emptyTitle: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
   },
-  filterButton: {
-    padding: 8,
+  emptySubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 10,
   },
-  swipeContainer: {
+  refreshButton: {
+    backgroundColor: '#ff6b6b',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 25,
+    marginTop: 30,
+  },
+  refreshButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  cardContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
   },
-  petCard: {
-    width: screenWidth * 0.9,
-    height: screenHeight * 0.7,
+  card: {
+    width: screenWidth - 40,
+    height: screenHeight * 0.65,
+    backgroundColor: '#fff',
     borderRadius: 20,
-    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+    position: 'absolute',
+  },
+  nextCard: {
+    transform: [{ scale: 0.95 }],
+    opacity: 0.8,
+    zIndex: -1,
   },
   petImage: {
     width: '100%',
-    height: '100%',
+    height: '70%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    resizeMode: 'cover',
   },
-  gradientOverlay: {
+  featuredBadge: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    backgroundColor: '#ffd700',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  featuredText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  likeIndicator: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: '#66d7a2',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    zIndex: 10,
+  },
+  likeText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  nopeIndicator: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    backgroundColor: '#ff4458',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    zIndex: 10,
+  },
+  nopeText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  infoOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: '50%',
+    height: '30%',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    justifyContent: 'flex-end',
   },
   petInfo: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     padding: 20,
   },
-  petHeader: {
+  nameRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 5,
   },
   petName: {
     fontSize: 28,
     fontWeight: 'bold',
+    color: '#fff',
+    marginRight: 10,
   },
   petAge: {
-    fontSize: 18,
+    fontSize: 20,
+    color: '#fff',
+    opacity: 0.9,
   },
   petBreed: {
-    fontSize: 20,
-    marginBottom: 10,
-  },
-  petDescription: {
     fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 15,
+    color: '#fff',
+    opacity: 0.8,
+    marginBottom: 5,
   },
-  personalityTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 20,
-  },
-  tag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-  },
-  tagText: {
+  petDistance: {
     fontSize: 14,
-    fontWeight: '600',
+    color: '#fff',
+    opacity: 0.7,
   },
-  aiScores: {
-    gap: 15,
-  },
-  aiScoreItem: {
-    gap: 5,
-  },
-  aiScoreLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  aiScoreBar: {
-    height: 8,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 4,
-  },
-  aiScoreFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  actions: {
+  actionButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 30,
     paddingHorizontal: 40,
   },
   actionButton: {
@@ -724,63 +921,94 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    marginHorizontal: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   passButton: {
-    borderWidth: 2,
-    borderColor: '#ef4444',
+    backgroundColor: '#fff',
+  },
+  superLikeButton: {
+    backgroundColor: '#fff',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   likeButton: {
-    borderWidth: 2,
-    borderColor: '#22c55e',
+    backgroundColor: '#fff',
   },
-  indicator: {
-    position: 'absolute',
-    top: 100,
-    padding: 20,
-    borderRadius: 40,
-    borderWidth: 2,
-  },
-  likeIndicator: {
-    right: 40,
-    borderColor: '#22c55e',
-  },
-  superLikeOverlay: {
+  matchModal: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(251, 191, 36, 0.9)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
   },
-  superLikeContent: {
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: 'white',
+  matchModalContent: {
+    width: screenWidth - 40,
+    padding: 40,
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
+    alignItems: 'center',
   },
-  superLikeText: {
-    fontSize: 24,
+  matchTitle: {
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#fbbf24',
-    marginTop: 10,
-  },
-  superLikeSubtext: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginTop: 5,
+    color: '#fff',
+    marginBottom: 30,
     textAlign: 'center',
+  },
+  matchPhotos: {
+    flexDirection: 'row',
+    marginBottom: 30,
+  },
+  matchPhoto: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginHorizontal: 10,
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+  matchText: {
+    fontSize: 18,
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 30,
+    opacity: 0.9,
+  },
+  matchButtons: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  keepSwipingButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+  keepSwipingText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  sendMessageButton: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  sendMessageText: {
+    color: '#ff6b6b',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

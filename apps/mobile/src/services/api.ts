@@ -1,526 +1,451 @@
-/**
- * API Service for PawfectMatch Mobile App
- * Handles all HTTP requests with proper error handling and typing
- */
-import type {
-  PetFilters
+import { 
+  apiClient, 
+  type Pet, 
+  type User, 
+  type Match, 
+  type Message, 
+  type PetFilters
 } from '@pawfectmatch/core';
-import { logger } from '@pawfectmatch/core';
-import type {
-  AIBioResponse,
-  AICompatibilityResponse,
-  AIPhotoAnalysisResponse,
-  CheckoutSessionResponse,
-  MatchResponse,
-  MessageResponse,
-  NotificationSettingsResponse,
-  PetCreateResponse,
-  SubscriptionPlansResponse,
-  SubscriptionResponse,
-  SwipeResponse,
-  UsageStatsResponse,
-  UserProfileResponse
-} from '@pawfectmatch/core/dist/types/api-responses';
+import { API_BASE_URL, API_TIMEOUT } from '../config/environment';
 
-const BASE_URL = process.env['EXPO_PUBLIC_API_URL'] || (__DEV__ ? 'http://localhost:3001/api' : 'https://api.pawfectmatch.com/api');
-
-class ApiService {
-  public async request<T = any>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${BASE_URL}${endpoint}`;
-
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      logger.error(`API request failed: ${endpoint}`, { error });
-      throw error;
-    }
-  }
-
-  // Chat API
-  async getMessages(matchId: string): Promise<MessageResponse[]> {
-    try {
-      return await this.request<MessageResponse[]>(`/chat/${matchId}/messages`);
-    } catch (error) {
-      if (__DEV__) {
-        logger.error('Failed to get messages:', error);
-      }
-      return [];
-    }
-  }
-
-  async sendMessage(matchId: string, content: string, messageType: 'text' | 'image' = 'text'): Promise<MessageResponse> {
-    const payload: any = { content };
-    if (messageType !== 'text') {
-      payload.messageType = messageType;
-    }
-    return await this.request<MessageResponse>(`/chat/${matchId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-  }
-
-  async markAsRead(matchId: string): Promise<void> {
-    await this.request(`/chat/${matchId}/read`, {
-      method: 'POST',
-    });
-  }
-
-  // Matches API
-  async getMatches(filters?: PetFilters): Promise<MatchResponse[]> {
-    try {
-      const params = new URLSearchParams();
-      if (filters?.species) params.append('species', filters.species);
-      if (filters?.minAge) params.append('minAge', filters.minAge.toString());
-      if (filters?.maxAge) params.append('maxAge', filters.maxAge.toString());
-      if (filters?.size) params.append('size', filters.size);
-      if (filters?.intent) params.append('intent', filters.intent);
-      if (filters?.maxDistance) params.append('maxDistance', filters.maxDistance.toString());
-      if (filters?.personalityTags?.length) {
-        params.append('personalityTags', filters.personalityTags.join(','));
-      }
-
-      const queryString = params.toString();
-      const endpoint = queryString ? `/matches?${queryString}` : '/matches';
-
-      return await this.request<MatchResponse[]>(endpoint);
-    } catch (error) {
-      logger.error('Failed to get matches', { error });
-      return [];
-    }
-  }
-
-  async createMatch(petId: string): Promise<MatchResponse> {
-    return await this.request<MatchResponse>('/matches', {
-      method: 'POST',
-      body: JSON.stringify({ petId }),
-    });
-  }
-
-  async swipePet(petId: string, action: 'like' | 'pass' | 'superlike'): Promise<SwipeResponse> {
-    return await this.request<SwipeResponse>(`/pets/${petId}/swipe`, {
-      method: 'POST',
-      body: JSON.stringify({ action }),
-    });
-  }
-
-  // Subscription API (matches web implementation)
-  async getCurrentSubscription(): Promise<SubscriptionResponse | null> {
-    try {
-      return await this.request<SubscriptionResponse>('/subscription/current');
-    } catch (error) {
-      logger.error('Failed to get subscription', { error });
-      return null;
-    }
-  }
-
-  async getUsageStats(): Promise<UsageStatsResponse | null> {
-    try {
-      return await this.request<UsageStatsResponse>('/subscription/usage');
-    } catch (error) {
-      logger.error('Failed to get usage stats', { error });
-      return null;
-    }
-  }
-
-  async createCheckoutSession(data: {
-    priceId: string;
-    successUrl: string;
-    cancelUrl: string;
-    metadata?: Record<string, unknown>;
-  }): Promise<CheckoutSessionResponse> {
-    return await this.request<CheckoutSessionResponse>('/subscription/create-checkout', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async cancelSubscription(subscriptionId: string): Promise<SubscriptionResponse> {
-    return await this.request<SubscriptionResponse>(`/subscription/${subscriptionId}/cancel`, {
-      method: 'POST',
-    });
-  }
-
-  async reactivateSubscription(subscriptionId: string): Promise<SubscriptionResponse> {
-    return await this.request<SubscriptionResponse>(`/subscription/${subscriptionId}/reactivate`, {
-      method: 'POST',
-    });
-  }
-
-  async getPlans(): Promise<SubscriptionPlansResponse> {
-    try {
-      return await this.request<SubscriptionPlansResponse>('/subscription/plans');
-    } catch (error) {
-      logger.error('Failed to get plans', { error });
-      return { plans: [] };
-    }
-  }
-
-  async updatePaymentMethod(paymentMethodId: string) {
-    return await this.request('/subscription/payment-method', {
-      method: 'PUT',
-      body: JSON.stringify({ paymentMethodId }),
-    });
-  }
-
-  // Notification Settings
-  async getNotificationSettings(): Promise<NotificationSettingsResponse | null> {
-    try {
-      return await this.request<NotificationSettingsResponse>('/notifications/settings');
-    } catch (error) {
-      if (__DEV__) {
-        logger.error('Failed to get notification settings:', error);
-      }
-      return null;
-    }
-  }
-
-  async updateNotificationSettings(settings: Partial<NotificationSettingsResponse>): Promise<NotificationSettingsResponse> {
-    return await this.request<NotificationSettingsResponse>('/notifications/settings', {
-      method: 'PUT',
-      body: JSON.stringify(settings),
-    });
-  }
-
-  // User API
-  async getCurrentUser(): Promise<UserProfileResponse | null> {
-    try {
-      return await this.request<UserProfileResponse>('/user/me');
-    } catch (error) {
-      if (__DEV__) {
-        logger.error('Failed to get current user:', error);
-      }
-      return null;
-    }
-  }
-
-  async updateUserProfile(profileData: Partial<UserProfileResponse>): Promise<UserProfileResponse> {
-    return await this.request<UserProfileResponse>('/user/profile', {
-      method: 'PUT',
-      body: JSON.stringify(profileData),
-    });
-  }
-
-  async updateDeviceToken(token: string): Promise<{ success: boolean }> {
-    return await this.request<{ success: boolean }>('/user/device-token', {
-      method: 'PUT',
-      body: JSON.stringify({ token }),
-    });
-  }
-
-  async getUserProfile(userId: string): Promise<UserProfileResponse | null> {
-    try {
-      return await this.request<UserProfileResponse>(`/users/${userId}/profile`);
-    } catch (error) {
-      if (__DEV__) {
-        logger.error(`Failed to get profile for user ${userId}:`, error);
-      }
-      return null;
-    }
-  }
-
-  // Match Actions
-  async performMatchAction(matchId: string, action: string) {
-    return await this.request(`/matches/${matchId}/action`, {
-      method: 'POST',
-      body: JSON.stringify({ action }),
-    });
-  }
-
-  // Pets API
-  async getPets(): Promise<PetCreateResponse[]> {
-    try {
-      return await this.request<PetCreateResponse[]>('/pets');
-    } catch (error) {
-      if (__DEV__) {
-        logger.error('Failed to get pets:', error);
-      }
-      return [];
-    }
-  }
-
-  async createPet(petData: Record<string, unknown>): Promise<PetCreateResponse> {
-    return await this.request<PetCreateResponse>('/pets', {
-      method: 'POST',
-      body: JSON.stringify(petData),
-    });
-  }
-
-  // AI Features
-  async generateBio(petData: Record<string, unknown>): Promise<AIBioResponse> {
-    return await this.request<AIBioResponse>('/ai/generate-bio', {
-      method: 'POST',
-      body: JSON.stringify(petData),
-    });
-  }
-
-  async analyzePhoto(photoUri: string): Promise<AIPhotoAnalysisResponse> {
-    // This would typically involve a multipart/form-data upload
-    // For simplicity, we'll assume a base64 string is sent
-    return await this.request<AIPhotoAnalysisResponse>('/ai/analyze-photo', {
-      method: 'POST',
-      body: JSON.stringify({ photo: photoUri }),
-    });
-  }
-
-  async getCompatibilityScore(pet1Id: string, pet2Id: string): Promise<AICompatibilityResponse> {
-    return await this.request<AICompatibilityResponse>('/ai/compatibility', {
-      method: 'POST',
-      body: JSON.stringify({ pet1Id, pet2Id }),
-    });
-  }
-
-  // Analytics
-  async trackUserEvent(eventType: string, metadata: Record<string, unknown> = {}) {
-    return await this.request('/analytics/event', {
-      method: 'POST',
-      body: JSON.stringify({ type: 'user', eventType, metadata }),
-    });
-  }
-
-  async trackPetEvent(petId: string, eventType: string, metadata: Record<string, unknown> = {}) {
-    return await this.request('/analytics/event', {
-      method: 'POST',
-      body: JSON.stringify({ type: 'pet', petId, eventType, metadata }),
-    });
-  }
-
-  async trackMatchEvent(matchId: string, eventType: string, metadata: Record<string, unknown> = {}) {
-    return await this.request('/analytics/event', {
-      method: 'POST',
-      body: JSON.stringify({ type: 'match', matchId, eventType, metadata }),
-    });
-  }
-
-  async getUserAnalytics() {
-    return await this.request('/analytics/user');
-  }
-
-  async getPetAnalytics(petId: string) {
-    return await this.request(`/analytics/pet/${petId}`);
-  }
-
-  async getMatchAnalytics(matchId: string) {
-    return await this.request(`/analytics/match/${matchId}`);
-  }
+// Local type definition for adoption application
+interface AdoptionApplication {
+  _id: string;
+  petId: string;
+  applicantId: string;
+  applicant: User;
+  pet: Pet;
+  status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
+  applicationData: {
+    experience: string;
+    livingSituation: string;
+    otherPets: string;
+    timeAlone: string;
+    vetReference?: string;
+    personalReference?: string;
+    additionalInfo?: string;
+  };
+  submittedAt: string;
 }
 
-// Export singleton instance
-export const api = new ApiService();
-
-// Export specific API modules for convenience
-export const _chatAPI = {
-  getMessages: (matchId: string) => api.getMessages(matchId),
-  sendMessage: (matchId: string, content: string, messageType?: 'text' | 'image') => api.sendMessage(matchId, content, messageType),
-  markAsRead: (matchId: string) => api.markAsRead(matchId),
-};
-
-export const _matchesAPI = {
-  getMatches: (filters?: PetFilters) => api.getMatches(filters),
-  createMatch: (petId: string) => api.createMatch(petId),
-};
-
-export const _subscriptionAPI = {
-  getCurrentSubscription: () => api.getCurrentSubscription(),
-  getUsageStats: () => api.getUsageStats(),
-  createCheckoutSession: (data: {
-    priceId: string;
-    successUrl: string;
-    cancelUrl: string;
-    metadata?: Record<string, unknown>;
-  }) => api.createCheckoutSession(data),
-  cancelSubscription: (subscriptionId: string) => api.cancelSubscription(subscriptionId),
-  reactivateSubscription: (subscriptionId: string) => api.reactivateSubscription(subscriptionId),
-  getPlans: () => api.getPlans(),
-  updatePaymentMethod: (paymentMethodId: string) => api.updatePaymentMethod(paymentMethodId),
-};
-
-export const _userAPI = {
-  getProfile: (userId: string) => api.getUserProfile(userId),
-  updateProfile: (data: Record<string, unknown>) => api.updateUserProfile(data),
-};
-
-export const _petAPI = {
-  getPets: () => api.getPets(),
-  createPet: (petData: Record<string, unknown>) => api.createPet(petData),
-};
-
-export const _aiAPI = {
-  generateBio: (petData: Record<string, unknown>) => api.generateBio(petData),
-  analyzePhoto: (photoUri: string) => api.analyzePhoto(photoUri),
-  getCompatibilityScore: (pet1Id: string, pet2Id: string) => api.getCompatibilityScore(pet1Id, pet2Id),
-  analyzeCompatibility: (pet1Id: string, pet2Id: string, options?: Record<string, unknown>) =>
-    api.request(`/ai/compatibility/${pet1Id}/${pet2Id}`, {
-      method: 'POST',
-      body: JSON.stringify(options || {}),
-    }),
-};
-
-export const _analyticsAPI = {
-  trackUserEvent: (eventType: string, metadata: Record<string, unknown> = {}) => api.trackUserEvent(eventType, metadata),
-  trackPetEvent: (petId: string, eventType: string, metadata: Record<string, unknown> = {}) => api.trackPetEvent(petId, eventType, metadata),
-  trackMatchEvent: (matchId: string, eventType: string, metadata: Record<string, unknown> = {}) => api.trackMatchEvent(matchId, eventType, metadata),
-  getUserAnalytics: () => api.getUserAnalytics(),
-  getPetAnalytics: (petId: string) => api.getPetAnalytics(petId),
-  getMatchAnalytics: (matchId: string) => api.getMatchAnalytics(matchId),
-};
-
-// Admin API namespace
-export const _adminAPI = {
-  // User Management
-  getUsers: async (params: { page?: number; limit?: number; search?: string; sort?: string; order?: string } = {}) => {
-    const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.search) queryParams.append('search', params.search);
-    if (params.sort) queryParams.append('sort', params.sort);
-    if (params.order) queryParams.append('order', params.order);
-
-    return await api.request(`/admin/users?${queryParams.toString()}`);
-  },
-
-  suspendUser: async (userId: string) => await api.request(`/admin/users/${userId}/suspend`, {
-    method: 'POST',
-  }),
-
-  activateUser: async (userId: string) => await api.request(`/admin/users/${userId}/activate`, {
-    method: 'POST',
-  }),
-
-  banUser: async (userId: string) => await api.request(`/admin/users/${userId}/ban`, {
-    method: 'POST',
-  }),
-
-  unbanUser: async (userId: string) => await api.request(`/admin/users/${userId}/unban`, {
-    method: 'POST',
-  }),
-
-  // Analytics
-  getAnalytics: async (params?: { period?: string }) => {
-    const query = params?.period ? `?period=${params.period}` : '';
-    return await api.request(`/admin/analytics${query}`);
-  },
-
-  getSystemHealth: async () => await api.request('/admin/system-health'),
-
-  // Security
-  getSecurityAlerts: async (params?: { page?: number; limit?: number; sort?: string; order?: string }) => {
-    const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.sort) queryParams.append('sort', params.sort);
-    if (params?.order) queryParams.append('order', params.order);
-    const query = queryParams.toString();
-    return await api.request(`/admin/security/alerts${query ? `?${query}` : ''}`);
-  },
-
-  getSecurityMetrics: async () => await api.request('/admin/security/metrics'),
-
-  resolveSecurityAlert: async (alertId: string) => await api.request(`/admin/security/alerts/${alertId}/resolve`, {
-    method: 'POST',
-  }),
-
-  blockIPAddress: async (ipAddress: string) => await api.request('/admin/security/block-ip', {
-    method: 'POST',
-    body: JSON.stringify({ ipAddress }),
-  }),
-
-  // Billing
-  getSubscriptions: async (params?: { page?: number; limit?: number; sort?: string; order?: string }) => {
-    const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.sort) queryParams.append('sort', params.sort);
-    if (params?.order) queryParams.append('order', params.order);
-    const query = queryParams.toString();
-    return await api.request(`/admin/billing/subscriptions${query ? `?${query}` : ''}`);
-  },
-
-  getBillingMetrics: async () => await api.request('/admin/billing/metrics'),
-
-  cancelSubscription: async (subscriptionId: string) => await api.request(`/admin/billing/subscriptions/${subscriptionId}/cancel`, {
-    method: 'POST',
-  }),
-
-  reactivateSubscription: async (subscriptionId: string) => await api.request(`/admin/billing/subscriptions/${subscriptionId}/reactivate`, {
-    method: 'POST',
-  }),
-
-  // Chat Moderation
-  getChatMessages: async (params: { filter?: string; search?: string; limit?: number } = {}) => {
-    const queryParams = new URLSearchParams();
-    if (params.filter) queryParams.append('filter', params.filter);
-    if (params.search) queryParams.append('search', params.search);
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-
-    return await api.request(`/admin/chats/messages?${queryParams.toString()}`);
-  },
-
-  moderateMessage: async (data: { messageId: string; action: string; reason?: string }) =>
-    await api.request('/admin/chats/moderate', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-
-  // Upload Management
-  getUploads: async (params: { filter?: string; search?: string; limit?: number } = {}) => {
-    const queryParams = new URLSearchParams();
-    if (params.filter) queryParams.append('filter', params.filter);
-    if (params.search) queryParams.append('search', params.search);
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-
-    return await api.request(`/admin/uploads?${queryParams.toString()}`);
-  },
-
-  moderateUpload: async (data: { uploadId: string; action: string; reason?: string }) =>
-    await api.request('/admin/uploads/moderate', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-
-  // Verification Management
-  getVerifications: async (params: { filter?: string; search?: string; limit?: number } = {}) => {
-    const queryParams = new URLSearchParams();
-    if (params.filter) queryParams.append('filter', params.filter);
-    if (params.search) queryParams.append('search', params.search);
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-
-    return await api.request(`/admin/verifications?${queryParams.toString()}`);
-  },
-
-  processVerification: async (data: { verificationId: string; action: string; reason?: string }) =>
-    await api.request('/admin/verifications/process', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-};
-
-// Analytics API
-export const analyticsAPI = {
-  trackUserEvent: async (eventName: string, data: Record<string, unknown>) => {
-    try {
-      return await api.request('/analytics/events', {
-        method: 'POST',
-        body: JSON.stringify({ eventName, data }),
-      });
-    } catch (error) {
-      logger.error('Failed to track analytics event', { error, eventName });
+// API service for mobile app with proper typing
+export const matchesAPI = {
+  // Get user's matches
+  getMatches: async (): Promise<Match[]> => {
+    const response = await apiClient.get<Match[]>('/matches');
+    if (response.success && response.data) {
+      return response.data;
     }
+    throw new Error(response.error ?? 'Failed to fetch matches');
+  },
+
+  // Get specific match details
+  getMatch: async (matchId: string): Promise<Match> => {
+    const response = await apiClient.get<Match>(`/matches/${matchId}`);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch match');
+  },
+
+  // Create a new match (like/swipe)
+  createMatch: async (petId: string, targetPetId: string): Promise<Match> => {
+    const response = await apiClient.post<Match>('/matches', { petId, targetPetId });
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to create match');
+  },
+
+  // Get chat messages for a match
+  getMessages: async (matchId: string): Promise<Message[]> => {
+    const response = await apiClient.get<Message[]>(`/matches/${matchId}/messages`);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch messages');
+  },
+
+  // Send a message
+  sendMessage: async (matchId: string, content: string): Promise<Message> => {
+    const response = await apiClient.post<Message>(`/matches/${matchId}/messages`, { content });
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to send message');
+  },
+
+  // Get pets for swiping
+  getPets: async (filters?: PetFilters): Promise<Pet[]> => {
+    const queryString = filters ? `?${new URLSearchParams(filters as Record<string, string>).toString()}` : '';
+    const response = await apiClient.get<Pet[]>(`/pets${queryString}`);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch pets');
+  },
+
+  // Get user profile
+  getUserProfile: async (): Promise<User> => {
+    const response = await apiClient.get<User>('/users/me');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch user profile');
+  },
+
+  // Update user profile
+  updateUserProfile: async (profileData: Partial<User>): Promise<User> => {
+    const response = await apiClient.put<User>('/users/me', profileData);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to update user profile');
+  },
+
+  // Upload pet photos
+  uploadPetPhotos: async (petId: string, photos: FormData): Promise<Pet> => {
+    const response = await apiClient.post<Pet>(`/pets/${petId}/photos`, photos, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to upload photos');
+  },
+
+  // Get pet details
+  getPet: async (petId: string): Promise<Pet> => {
+    const response = await apiClient.get<Pet>(`/pets/${petId}`);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch pet');
+  },
+
+  // Create pet profile
+  createPet: async (petData: Partial<Pet>): Promise<Pet> => {
+    const response = await apiClient.post<Pet>('/pets', petData);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to create pet');
+  },
+
+  // Update pet profile
+  updatePet: async (petId: string, petData: Partial<Pet>): Promise<Pet> => {
+    const response = await apiClient.put<Pet>(`/pets/${petId}`, petData);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to update pet');
+  },
+
+  // Delete pet profile
+  deletePet: async (petId: string): Promise<boolean> => {
+    const response = await apiClient.delete<boolean>(`/pets/${petId}`);
+    if (response.success) {
+      return true;
+    }
+    throw new Error(response.error ?? 'Failed to delete pet');
+  },
+
+  // Get adoption applications
+  getAdoptionApplications: async (): Promise<AdoptionApplication[]> => {
+    const response = await apiClient.get<AdoptionApplication[]>('/adoption/applications');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch adoption applications');
+  },
+
+  // Submit adoption application
+  submitAdoptionApplication: async (applicationData: Omit<AdoptionApplication, '_id' | 'submittedAt' | 'applicant' | 'pet'>): Promise<AdoptionApplication> => {
+    const response = await apiClient.post<AdoptionApplication>('/adoption/applications', applicationData);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to submit adoption application');
+  },
+
+  // Get premium features
+  getPremiumFeatures: async (): Promise<Record<string, boolean>> => {
+    const response = await apiClient.get<Record<string, boolean>>('/premium/features');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch premium features');
+  },
+
+  // Subscribe to premium
+  subscribeToPremium: async (subscriptionData: { plan: 'basic' | 'premium' | 'gold'; paymentMethodId: string }): Promise<{ success: boolean; subscriptionId: string }> => {
+    const response = await apiClient.post<{ success: boolean; subscriptionId: string }>('/premium/subscribe', subscriptionData);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to subscribe to premium');
+  },
+
+  // Cancel premium subscription
+  cancelPremiumSubscription: async (): Promise<boolean> => {
+    const response = await apiClient.post<boolean>('/premium/cancel');
+    if (response.success) {
+      return true;
+    }
+    throw new Error(response.error ?? 'Failed to cancel premium subscription');
+  },
+
+  // Get user settings
+  getUserSettings: async (): Promise<User['preferences']> => {
+    const response = await apiClient.get<User['preferences']>('/users/settings');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch user settings');
+  },
+
+  // Update user settings
+  updateUserSettings: async (settings: User['preferences']): Promise<User['preferences']> => {
+    const response = await apiClient.put<User['preferences']>('/users/settings', settings);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to update user settings');
+  },
+
+  // Get notifications
+  getNotifications: async (): Promise<Array<{ _id: string; type: string; title: string; message: string; read: boolean; createdAt: string }>> => {
+    const response = await apiClient.get<Array<{ _id: string; type: string; title: string; message: string; read: boolean; createdAt: string }>>('/notifications');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch notifications');
+  },
+
+  // Mark notification as read
+  markNotificationAsRead: async (notificationId: string): Promise<boolean> => {
+    const response = await apiClient.put<boolean>(`/notifications/${notificationId}/read`);
+    if (response.success) {
+      return true;
+    }
+    throw new Error(response.error ?? 'Failed to mark notification as read');
+  },
+
+  // Delete notification
+  deleteNotification: async (notificationId: string): Promise<boolean> => {
+    const response = await apiClient.delete<boolean>(`/notifications/${notificationId}`);
+    if (response.success) {
+      return true;
+    }
+    throw new Error(response.error ?? 'Failed to delete notification');
+  },
+
+  // Get app statistics
+  getAppStatistics: async (): Promise<Record<string, number>> => {
+    const response = await apiClient.get<Record<string, number>>('/stats');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch app statistics');
+  },
+
+  // Report user or content
+  reportContent: async (reportData: { type: 'user' | 'pet' | 'message'; targetId: string; reason: string; description?: string }): Promise<boolean> => {
+    const response = await apiClient.post<boolean>('/reports', reportData);
+    if (response.success) {
+      return true;
+    }
+    throw new Error(response.error ?? 'Failed to submit report');
+  },
+
+  // Block user
+  blockUser: async (userId: string): Promise<boolean> => {
+    const response = await apiClient.post<boolean>('/users/block', { userId });
+    if (response.success) {
+      return true;
+    }
+    throw new Error(response.error ?? 'Failed to block user');
+  },
+
+  // Unblock user
+  unblockUser: async (userId: string): Promise<boolean> => {
+    const response = await apiClient.post<boolean>('/users/unblock', { userId });
+    if (response.success) {
+      return true;
+    }
+    throw new Error(response.error ?? 'Failed to unblock user');
+  },
+
+  // Get blocked users
+  getBlockedUsers: async (): Promise<User[]> => {
+    const response = await apiClient.get<User[]>('/users/blocked');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch blocked users');
+  },
+
+  // Search pets
+  searchPets: async (query: string, filters?: PetFilters): Promise<Pet[]> => {
+    const params = new URLSearchParams({ q: query, ...(filters as Record<string, string>) });
+    const response = await apiClient.get<Pet[]>(`/search/pets?${params.toString()}`);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to search pets');
+  },
+
+  // Get nearby pets
+  getNearbyPets: async (latitude: number, longitude: number, radius?: number): Promise<Pet[]> => {
+    const params = new URLSearchParams({
+      lat: latitude.toString(),
+      lng: longitude.toString(),
+      ...(radius !== undefined && radius !== null && { radius: radius.toString() })
+    });
+    const response = await apiClient.get<Pet[]>(`/pets/nearby?${params.toString()}`);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch nearby pets');
+  },
+
+  // Get pet compatibility
+  getPetCompatibility: async (pet1Id: string, pet2Id: string): Promise<{ compatibility_score: number; factors: string[]; recommendation: string }> => {
+    const response = await apiClient.get<{ compatibility_score: number; factors: string[]; recommendation: string }>(`/compatibility/${pet1Id}/${pet2Id}`);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch pet compatibility');
+  },
+
+  // Get user activity
+  getUserActivity: async (): Promise<Array<{ type: string; description: string; timestamp: string }>> => {
+    const response = await apiClient.get<Array<{ type: string; description: string; timestamp: string }>>('/users/activity');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch user activity');
+  },
+
+  // Get app version info
+  getAppVersion: async (): Promise<{ version: string; build: string; environment: string }> => {
+    const response = await apiClient.get<{ version: string; build: string; environment: string }>('/version');
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to fetch app version');
+  }
+};
+
+// Export the main API service instance
+// AI Service API
+export const aiAPI = {
+  // Generate AI bio for pet
+  generateBio: async (data: {
+    petName: string;
+    keywords: string[];
+    tone?: 'playful' | 'professional' | 'casual' | 'romantic' | 'funny';
+    length?: 'short' | 'medium' | 'long';
+    petType?: string;
+    age?: number;
+    breed?: string;
+  }): Promise<{
+    bio: string;
+    keywords: string[];
+    sentiment: { score: number; label: string };
+    matchScore: number;
+  }> => {
+    const response = await apiClient.post('/ai/generate-bio', data);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to generate bio');
+  },
+
+  // Analyze pet photos
+  analyzePhotos: async (photos: string[]): Promise<{
+    breed_analysis: {
+      primary_breed: string;
+      confidence: number;
+      secondary_breeds?: Array<{ breed: string; confidence: number }>;
+    };
+    health_assessment: {
+      age_estimate: number;
+      health_score: number;
+      recommendations: string[];
+    };
+    photo_quality: {
+      overall_score: number;
+      lighting_score: number;
+      composition_score: number;
+      clarity_score: number;
+    };
+    matchability_score: number;
+    ai_insights: string[];
+  }> => {
+    const response = await apiClient.post('/ai/analyze-photos', { photos });
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to analyze photos');
+  },
+
+  // Enhanced compatibility analysis
+  analyzeCompatibility: async (data: {
+    pet1Id: string;
+    pet2Id: string;
+  }): Promise<{
+    compatibility_score: number;
+    ai_analysis: string;
+    breakdown: {
+      personality_compatibility: number;
+      lifestyle_compatibility: number;
+      activity_compatibility: number;
+      social_compatibility: number;
+      environment_compatibility: number;
+    };
+    recommendations: {
+      meeting_suggestions: string[];
+      activity_recommendations: string[];
+      supervision_requirements: string[];
+      success_probability: number;
+    };
+  }> => {
+    const response = await apiClient.post('/ai/enhanced-compatibility', data);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to analyze compatibility');
+  },
+
+  // Legacy compatibility (simpler version)
+  getCompatibility: async (data: {
+    pet1Id: string;
+    pet2Id: string;
+  }): Promise<{
+    score: number;
+    analysis: string;
+    factors: {
+      age_compatibility: boolean;
+      size_compatibility: boolean;
+      breed_compatibility: boolean;
+      personality_match: boolean;
+    };
+  }> => {
+    const response = await apiClient.post('/ai/compatibility', data);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error ?? 'Failed to get compatibility');
   },
 };
 
-export default api;
+export const api = {
+  ...matchesAPI,
+  ai: aiAPI,
+};
+
+// Export adoption API (alias for now, can be extended later)
+export const adoptionAPI = matchesAPI;

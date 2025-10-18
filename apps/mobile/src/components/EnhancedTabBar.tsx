@@ -36,6 +36,7 @@ const TabBarIcon: React.FC<TabBarIconProps> = ({
     } else {
       scale.value = withSpring(1, { damping: 15, stiffness: 200 });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focused]);
 
   useEffect(() => {
@@ -46,6 +47,7 @@ const TabBarIcon: React.FC<TabBarIconProps> = ({
       badgeOpacity.value = withTiming(0, { duration: 200 });
       badgeScale.value = withTiming(0, { duration: 200 });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showBadge, badgeCount]);
 
   const getIconName = (): string => {

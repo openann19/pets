@@ -1,25 +1,55 @@
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import {  } from '@testing-library/react-native';
-import {  } from 'react-native';
+import { Vibration } from 'react-native';
+
+// Mock Animated module specifically for this test
+jest.mock('react-native', () => {
+  const RN = jest.requireActual('react-native');
+  const createMockValue = (value) => {
+    const mockValue = jest.fn(() => value);
+    mockValue._value = value;
+    mockValue.setValue = jest.fn();
+    mockValue.interpolate = jest.fn((config) => {
+      const mockInterpolated = jest.fn(() => config.outputRange[0]);
+      mockInterpolated._config = config;
+      mockInterpolated._value = value;
+      return mockInterpolated;
+    });
+    mockValue.addListener = jest.fn();
+    mockValue.removeListener = jest.fn();
+    mockValue.removeAllListeners = jest.fn();
+    return mockValue;
+  };
+
+  return {
+    ...RN,
+    Animated: {
+      View: 'Animated.View',
+      Text: 'Animated.Text',
+      Value: createMockValue,
+      timing: jest.fn(() => ({ start: jest.fn() })),
+      spring: jest.fn(() => ({ start: jest.fn() })),
+      sequence: jest.fn(() => ({ start: jest.fn() })),
+      parallel: jest.fn(() => ({ start: jest.fn() })),
+      stagger: jest.fn(() => ({ start: jest.fn() })),
+      loop: jest.fn(() => ({ start: jest.fn(), stop: jest.fn() })),
+    },
+  };
+});
+
+// Mock WebRTCService before importing IncomingCallScreen
+jest.mock('../../../services/WebRTCService', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+
 import IncomingCallScreen from '../IncomingCallScreen';
 
-// Mock dependencies
-jest.mock('react-native', () => ({
-  ...jest.requireActual('react-native'),
-  Vibration: {
-    vibrate: jest.fn(),
-    cancel: jest.fn(),
-  },
-  Animated: {
-    ...jest.requireActual('react-native').Animated,
-    loop: jest.fn(() => ({ start: jest.fn(), stop: jest.fn() })),
-    sequence: jest.fn(() => ({ start: jest.fn(), stop: jest.fn() })),
-    timing: jest.fn(() => ({ start: jest.fn(), stop: jest.fn() })),
-    Value: jest.fn(() => ({
-      interpolate: jest.fn(() => 0),
-    })),
-  },
-}));
+// Debug: Log what we imported
+console.log('IncomingCallScreen imported:', typeof IncomingCallScreen);
+console.log('IncomingCallScreen:', IncomingCallScreen);
+
+// Mock dependencies - React Native is already mocked in jest.setup.ts
 
 jest.mock('expo-linear-gradient', () => ({
   LinearGradient: 'LinearGradient',
@@ -111,10 +141,7 @@ describe('IncomingCallScreen', () => {
       />
     );
 
-    // Find answer button by looking for the call icon
-    const answerButton = getByTestId('answer-button') || 
-      getByText('call'); // Fallback to icon text if testID not found
-
+    const answerButton = getByTestId('answer-button');
     fireEvent.press(answerButton);
 
     expect(Vibration.cancel).toHaveBeenCalled();
@@ -130,10 +157,7 @@ describe('IncomingCallScreen', () => {
       />
     );
 
-    // Find reject button by looking for the rotated call icon
-    const rejectButton = getByTestId('reject-button') || 
-      getByText('call'); // Fallback to icon text if testID not found
-
+    const rejectButton = getByTestId('reject-button');
     fireEvent.press(rejectButton);
 
     expect(Vibration.cancel).toHaveBeenCalled();

@@ -339,13 +339,7 @@ export interface EnhancedAirQuality {
   xylene: number;
   formaldehyde: number;
   bc: number; // Black carbon
-  category:
-    | 'good'
-    | 'moderate'
-    | 'unhealthy_sensitive'
-    | 'unhealthy'
-    | 'very_unhealthy'
-    | 'hazardous';
+  category: 'good' | 'moderate' | 'unhealthy_sensitive' | 'unhealthy' | 'very_unhealthy' | 'hazardous';
   dominantPollutant: string;
   healthImplications: HealthImplication[];
   sources: PollutionSource[];
@@ -411,33 +405,33 @@ export interface EnhancedDailyForecast {
   moonPhase: string;
   icon: string;
   animatedIcon: string;
-
+  
   // Pet-specific daily data
   petWalkability: number;
   bestWalkTimes: string[];
   outdoorSafetyScore: number;
   groomingNeeds: string;
-
+  
   // Activity recommendations
   morningActivity: string;
   afternoonActivity: string;
   eveningActivity: string;
-
+  
   // Alerts for the day
   alerts: string[];
   petAlerts: string[];
-
+  
   // Energy & productivity
   solarGeneration?: number;
   energyEfficiency: number;
   productivityIndex: number;
-
+  
   // Health indices
   pollenCount?: number;
   allergyRisk: string;
   arthritisIndex: number;
   migraineRisk: number;
-
+  
   // AI confidence
   forecastConfidence: number;
   dataQuality: number;

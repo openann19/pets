@@ -1,24 +1,40 @@
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useState } from 'react';
-import { Dimensions, InteractionManager, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions,
+  StatusBar,
+  InteractionManager,
+} from 'react-native';
 import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
   useSharedValue,
-  withDelay,
-  withSequence,
+  useAnimatedStyle,
   withSpring,
   withTiming,
+  withSequence,
+  withDelay,
+  runOnJS,
+  Easing,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { OnboardingScreenProps } from '../../navigation/types';
 
-const { width: _width } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-type UserIntentScreenProps = OnboardingScreenProps<'UserIntent'>;
+type OnboardingStackParamList = {
+  UserIntent: undefined;
+  PetProfileSetup: { userIntent: string };
+  PreferencesSetup: { userIntent: string };
+  Welcome: undefined;
+};
+
+type UserIntentScreenProps = NativeStackScreenProps<OnboardingStackParamList, 'UserIntent'>;
 
 const SPRING_CONFIG = {
   damping: 20,
@@ -31,10 +47,10 @@ const ELITE_TIMING_CONFIG = {
   easing: Easing.bezier(0.4, 0, 0.2, 1),
 };
 
-const UserIntentScreen: React.FC<UserIntentScreenProps> = ({ navigation }) => {
+const UserIntentScreen = ({ navigation }: UserIntentScreenProps) => {
   const [selectedIntent, setSelectedIntent] = useState<string | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
-
+  
   // Enhanced animation values
   const scale1 = useSharedValue(0.8);
   const scale2 = useSharedValue(0.8);
@@ -48,23 +64,23 @@ const UserIntentScreen: React.FC<UserIntentScreenProps> = ({ navigation }) => {
 
   useEffect(() => {
     StatusBar.setBarStyle('dark-content');
-
+    
     // Staggered entrance animations
     InteractionManager.runAfterInteractions(() => {
       // Header animation
       headerOpacity.value = withTiming(1, ELITE_TIMING_CONFIG);
       headerTranslateY.value = withSpring(0, SPRING_CONFIG);
-
+      
       // Cards staggered animation
       card1Opacity.value = withDelay(200, withTiming(1, ELITE_TIMING_CONFIG));
       scale1.value = withDelay(200, withSpring(1, SPRING_CONFIG));
-
+      
       card2Opacity.value = withDelay(400, withTiming(1, ELITE_TIMING_CONFIG));
       scale2.value = withDelay(400, withSpring(1, SPRING_CONFIG));
-
+      
       // Footer animation
       footerOpacity.value = withDelay(600, withTiming(1, ELITE_TIMING_CONFIG));
-
+      
       // Container animation
       opacity.value = withTiming(1, { duration: 800 });
       translateY.value = withSpring(0, SPRING_CONFIG);
@@ -95,30 +111,30 @@ const UserIntentScreen: React.FC<UserIntentScreenProps> = ({ navigation }) => {
     opacity: footerOpacity.value,
   }));
 
-  const triggerHapticFeedback = (): void => {
+  const triggerHapticFeedback = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
-  const handleIntentSelect = (intent: string, currentScale: typeof scale1): void => {
+  const handleIntentSelect = (intent: string, scaleValue: any) => {
     if (isNavigating) return;
-
+    
     setSelectedIntent(intent);
     setIsNavigating(true);
-
+    
     // Enhanced haptic feedback
     runOnJS(triggerHapticFeedback)();
-
+    
     // Elite selection animation sequence
-    currentScale.value = withSequence(
+    scaleValue.value = withSequence(
       withTiming(0.92, { duration: 100 }),
       withSpring(1.05, { ...SPRING_CONFIG, damping: 15 }),
       withSpring(1, SPRING_CONFIG)
     );
 
     // Exit animation for non-selected card
-    const otherScale = currentScale === scale1 ? scale2 : scale1;
-    const otherOpacity = currentScale === scale1 ? card2Opacity : card1Opacity;
-
+    const otherScale = scaleValue === scale1 ? scale2 : scale1;
+    const otherOpacity = scaleValue === scale1 ? card2Opacity : card1Opacity;
+    
     otherScale.value = withTiming(0.9, ELITE_TIMING_CONFIG);
     otherOpacity.value = withTiming(0.3, ELITE_TIMING_CONFIG);
 
@@ -139,17 +155,17 @@ const UserIntentScreen: React.FC<UserIntentScreenProps> = ({ navigation }) => {
         colors={['#fef7ff', '#f3e8ff', '#e9d5ff']}
         style={styles.backgroundGradient}
       />
-
+      
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView
+        <ScrollView 
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
-          bounces
+          bounces={true}
         >
           <Animated.View style={[styles.content, animatedContainerStyle]}>
             {/* Elite Header with Glassmorphic Design */}
             <Animated.View style={[styles.header, animatedHeaderStyle]}>
-              <BlurView intensity={20} style={styles.logoContainer as any}>
+              <BlurView intensity={20} style={styles.logoContainer}>
                 <Text style={styles.logo}>🐾 PawfectMatch</Text>
               </BlurView>
               <Text style={styles.title}>Welcome to PawfectMatch!</Text>
@@ -173,7 +189,7 @@ const UserIntentScreen: React.FC<UserIntentScreenProps> = ({ navigation }) => {
                 >
                   <LinearGradient
                     colors={
-                      selectedIntent === 'adopt'
+                      selectedIntent === 'adopt' 
                         ? ['#fdf2f8', '#fce7f3', '#fbcfe8']
                         : ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.7)']
                     }
@@ -224,7 +240,7 @@ const UserIntentScreen: React.FC<UserIntentScreenProps> = ({ navigation }) => {
                 >
                   <LinearGradient
                     colors={
-                      selectedIntent === 'list'
+                      selectedIntent === 'list' 
                         ? ['#f0f9ff', '#e0f2fe', '#bae6fd']
                         : ['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.7)']
                     }
@@ -305,7 +321,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: '100%',
   },
-
+  
   // === ELITE HEADER ===
   header: {
     alignItems: 'center',
@@ -341,7 +357,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     fontWeight: '500',
   },
-
+  
   // === ELITE INTENT CARDS ===
   intentCards: {
     gap: 24,
@@ -373,7 +389,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
-
+  
   // === CARD CONTENT ===
   cardIcon: {
     alignItems: 'center',
@@ -411,7 +427,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     paddingHorizontal: 8,
   },
-
+  
   // === FEATURE LIST ===
   cardFeatures: {
     alignItems: 'stretch',
@@ -440,7 +456,7 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 20,
   },
-
+  
   // === ELITE FOOTER ===
   additionalOptions: {
     alignItems: 'center',

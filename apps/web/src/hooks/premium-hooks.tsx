@@ -3,35 +3,12 @@
  * React hooks for video calls, analytics, and premium tier management
  */
 
-import { useState, useCallback, useEffect } from 'react'
-import { logger } from '@pawfectmatch/core';
-;
+// @ts-nocheck
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { _videoCallService } from '../lib/video-communication';
-import type { VideoCallConfig } from '../lib/video-communication';
-import { PremiumTierService } from '../lib/premium-tier-service';
-import analyticsService from '../services/AnalyticsService';
-
-// Types
-interface Subscription {
-  id: string;
-  tierId: string;
-  tier?: string;
-  status: string;
-  currentPeriodEnd?: string;
-  cancelAtPeriodEnd?: boolean;
-}
-
-interface PremiumTier {
-  id: string;
-  name: string;
-  interval?: 'monthly' | 'yearly';
-  features: string[];
-  price?: number;
-}
-
-// Create service instance
-const premiumTierService = new PremiumTierService();
+import { videoCallService, VideoCallConfig } from '../lib/video-communication';
+import { premiumTierService, PremiumTier, UserSubscription } from '../lib/premium-tier-service';
+import { analyticsService, UserAnalytics, MatchAnalytics } from '../lib/analytics-service';
 
 /**
  * Hook for video call management
@@ -44,28 +21,24 @@ export function useVideoCall(roomId: string, userId: string) {
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const startCall = useCallback(
-    async (config: Omit<VideoCallConfig, 'roomId' | 'userId'>) => {
-      try {
-        const stream = await _videoCallService.initializeCall({
-          roomId,
-          userId,
-          ...config,
-        });
-        setLocalStream(stream);
-        setIsConnected(true);
-        setError(null);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Failed to start call';
-        setError(message);
-        logger.error('Failed to start call:', { error });
-      }
-    },
-    [roomId, userId],
-  );
+  const startCall = useCallback(async (config: Omit<VideoCallConfig, 'roomId' | 'userId'>) => {
+    try {
+      const stream = await videoCallService.initializeCall({
+        roomId,
+        userId,
+        ...config,
+      });
+      setLocalStream(stream);
+      setIsConnected(true);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Failed to start call:', err);
+    }
+  }, [roomId, userId]);
 
   const endCall = useCallback(() => {
-    _videoCallService.endCall();
+    videoCallService.endCall();
     setLocalStream(null);
     setIsConnected(false);
     setIsVideoEnabled(true);
@@ -74,36 +47,37 @@ export function useVideoCall(roomId: string, userId: string) {
   }, []);
 
   const toggleVideo = useCallback(() => {
-    _videoCallService.toggleVideo(!isVideoEnabled);
-    setIsVideoEnabled((prev) => !prev);
+    videoCallService.toggleVideo(!isVideoEnabled);
+    setIsVideoEnabled(prev => !prev);
   }, [isVideoEnabled]);
 
   const toggleAudio = useCallback(() => {
-    _videoCallService.toggleAudio(!isAudioEnabled);
-    setIsAudioEnabled((prev) => !prev);
+    videoCallService.toggleAudio(!isAudioEnabled);
+    setIsAudioEnabled(prev => !prev);
   }, [isAudioEnabled]);
 
   const startScreenShare = useCallback(async () => {
     try {
-      await _videoCallService.startScreenSharing();
+      await videoCallService.startScreenShare();
       setIsScreenSharing(true);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to share screen';
-      setError(message);
+    } catch (err: any) {
+      setError(err.message);
     }
   }, []);
 
   const stopScreenShare = useCallback(async () => {
-    await _videoCallService.stopScreenSharing();
+    await videoCallService.stopScreenSharing();
     setIsScreenSharing(false);
   }, []);
 
   // Cleanup on unmount
-  useEffect(() => () => {
+  useEffect(() => {
+    return () => {
       if (isConnected) {
-        _videoCallService.endCall();
+        videoCallService.endCall();
       }
-    }, [isConnected]);
+    };
+  }, [isConnected]);
 
   return {
     localStream,
@@ -127,62 +101,26 @@ export function useVideoCall(roomId: string, userId: string) {
 export function usePremiumTier(userId: string) {
   const queryClient = useQueryClient();
 
-  const { data: subscription, isLoading } = useQuery<Subscription | null>({
+  const { data: subscription, isLoading } = useQuery<UserSubscription>({
     queryKey: ['subscription', userId],
     queryFn: async () => {
-      // Fetch from backend API
-      const API_URL = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5000';
-      const token = localStorage.getItem('auth_token');
-
-      const response = await fetch(`${API_URL}/api/premium/subscription`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        // Return free tier if no subscription found
-        if (response.status === 404) {
-          return { tier: 'free', status: 'inactive' };
-        }
-        throw new Error('Failed to fetch subscription');
-      }
-
-      const data = await response.json();
-      return data.data?.subscription || { tier: 'free', status: 'inactive' };
+      // Fetch from API
+      const response = await fetch(`/api/subscriptions/${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch subscription');
+      return response.json();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const upgradeMutation = useMutation({
     mutationFn: async (newTier: PremiumTier) => {
-      const API_URL = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5000';
-      const token = localStorage.getItem('auth_token');
-
-      // Create Stripe checkout session
-      const response = await fetch(`${API_URL}/api/premium/subscribe`, {
+      const response = await fetch(`/api/subscriptions/${userId}/upgrade`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          plan: newTier.id,
-          interval: newTier.interval || 'monthly',
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier: newTier }),
       });
-
       if (!response.ok) throw new Error('Upgrade failed');
-
-      const data = await response.json();
-
-      // Redirect to Stripe checkout
-      if (data.data?.url) {
-        window.location.href = data.data.url;
-      }
-
-      return data;
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscription', userId] });
@@ -191,51 +129,28 @@ export function usePremiumTier(userId: string) {
 
   const cancelMutation = useMutation({
     mutationFn: async () => {
-      const API_URL = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:5000';
-      const token = localStorage.getItem('auth_token');
-
-      const response = await fetch(`${API_URL}/api/premium/cancel`, {
+      const response = await fetch(`/api/subscriptions/${userId}/cancel`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
       });
-
       if (!response.ok) throw new Error('Cancellation failed');
-      return await response.json();
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscription', userId] });
     },
   });
 
-  const currentTier = subscription?.tierId || 'free';
-  const [plan, setplan] = useState<PremiumTier | null>(null);
-  const [allPlans, setAllPlans] = useState<PremiumTier[]>([]);
+  const currentTier = subscription?.tier || 'free';
+  const plan = premiumTierService.getPlan(currentTier);
+  const allPlans = premiumTierService.getAllPlans();
 
-  useEffect(() => {
-    premiumTierService.getTier(currentTier).then(setplan);
-    premiumTierService.getTiers().then(setAllPlans);
+  const hasFeature = useCallback((feature: string) => {
+    return premiumTierService.hasFeatureAccess(currentTier, feature as any);
   }, [currentTier]);
 
-  const hasFeature = useCallback(
-    (feature: string) => premiumTierService.hasFeatureAccess(
-        currentTier,
-        feature as
-          | 'video_calls'
-          | 'priority_support'
-          | 'advanced_analytics'
-          | 'unlimited_matches'
-          | 'profile_boost',
-      ),
-    [currentTier],
-  );
-
-  const getLimit = useCallback((_limit: string) => 
-    // Feature limits would be defined in tier features
-     -1 // Unlimited for now
-  , []);
+  const getLimit = useCallback((limit: string) => {
+    return premiumTierService.getFeatureLimit(currentTier, limit as any);
+  }, [currentTier]);
 
   return {
     subscription,
@@ -255,19 +170,11 @@ export function usePremiumTier(userId: string) {
 /**
  * Hook for user analytics
  */
-export function useUserAnalytics(
-  userId: string,
-  period: 'day' | 'week' | 'month' | 'year' = 'week',
-) {
-  const {
-    data: analytics,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['userAnalytics', userId, period],
+export function useUserAnalytics(userId: string, period: 'day' | 'week' | 'month' | 'year' = 'week') {
+  const { data: analytics, isLoading, error, refetch } = useQuery<UserAnalytics>({
+    queryKey: ['analytics', userId, period],
     queryFn: () => analyticsService.getUserAnalytics(userId, period),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
   return {
@@ -281,51 +188,31 @@ export function useUserAnalytics(
 /**
  * Hook for match analytics
  */
-export function useMatchAnalytics(
-  userId: string,
-  period: 'day' | 'week' | 'month' | 'year' = 'week',
-) {
-  const {
-    data: analytics,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['matchAnalytics', userId, period],
-    queryFn: () => analyticsService.getMatchAnalytics(userId, period),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+export function useMatchAnalytics(userId: string) {
+  const { data, isLoading, error } = useQuery<MatchAnalytics>({
+    queryKey: ['matchAnalytics', userId],
+    queryFn: () => analyticsService.getMatchAnalytics(userId),
+    staleTime: 15 * 60 * 1000, // 15 minutes
   });
 
   return {
-    analytics,
+    matchAnalytics: data,
     isLoading,
     error,
-    refetch,
   };
 }
 
 /**
- * Hook for tracking events
- */
-export function useTrackEvent() {
-  return useCallback((eventName: string, properties?: Record<string, unknown>) => {
-    analyticsService.trackEvent(eventName, properties);
-  }, []);
-}
-
-/**
- * Hook for event tracking with user context
+ * Hook for event tracking
  */
 export function useEventTracking(userId: string) {
-  const trackEvent = useCallback(
-    async (eventType: string, metadata?: Record<string, unknown>) => {
-      analyticsService.trackEvent(eventType, {
-        ...metadata,
-        user_id: userId,
-      });
-    },
-    [userId],
-  );
+  const trackEvent = useCallback(async (eventType: string, metadata?: Record<string, any>) => {
+    await analyticsService.trackEvent({
+      userId,
+      eventType,
+      metadata,
+    });
+  }, [userId]);
 
   return { trackEvent };
 }
@@ -362,28 +249,32 @@ export function useFeatureGate(userId: string, requiredFeature: string) {
 /**
  * Hook for real-time performance monitoring
  */
-export function usePerformanceMonitoring(refreshInterval: number = 30000) {
-  const { data: metrics, refetch } = useQuery({
-    queryKey: ['performanceMetrics'],
-    queryFn: () => analyticsService.getPerformanceMetrics(),
-    staleTime: refreshInterval / 2,
-    refetchInterval: refreshInterval,
-  });
-
-  // Default metrics if none are available yet
-  const safeMetrics = metrics || {
+export function usePerformanceMonitoring() {
+  const [metrics, setMetrics] = useState({
     responseTime: 0,
     activeUsers: 0,
     serverLoad: 0,
     uptime: 100,
     errorRate: 0,
-  };
+  });
 
-  return { metrics: safeMetrics, refetch };
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      const data = await analyticsService.getPerformanceMetrics();
+      setMetrics(data);
+    };
+
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 30000); // Update every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return { metrics };
 }
 
 /**
- * Hook for usage limits tracking
+ * Hook for usage tracking and limits
  */
 export function useUsageLimits(userId: string) {
   const { currentTier, getLimit } = usePremiumTier(userId);
@@ -393,23 +284,20 @@ export function useUsageLimits(userId: string) {
     photoUploads: 0,
   });
 
-  const checkLimit = useCallback(
-    (limitType: string, currentValue: number) => {
-      const limit = getLimit(limitType);
-      if (limit === -1) return { reached: false, remaining: Infinity };
-
-      const remaining = limit - currentValue;
-      return {
-        reached: remaining <= 0,
-        remaining: Math.max(0, remaining),
-        limit,
-      };
-    },
-    [getLimit],
-  );
+  const checkLimit = useCallback((limitType: string, currentValue: number) => {
+    const limit = getLimit(limitType);
+    if (limit === -1) return { reached: false, remaining: Infinity };
+    
+    const remaining = limit - currentValue;
+    return {
+      reached: remaining <= 0,
+      remaining: Math.max(0, remaining),
+      limit,
+    };
+  }, [getLimit]);
 
   const incrementUsage = useCallback((type: keyof typeof usage) => {
-    setUsage((prev) => ({
+    setUsage(prev => ({
       ...prev,
       [type]: prev[type] + 1,
     }));

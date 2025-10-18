@@ -10,7 +10,9 @@
 const Story = require('../models/Story');
 const AnalyticsEvent = require('../models/AnalyticsEvent');
 const Notification = require('../models/Notification');
+const { createDMFromStoryReply } = require('../services/chatService');
 const { uploadToCloudinary } = require('../services/cloudinaryService');
+const UserAuditLog = require('../models/UserAuditLog');
 const logger = require('../utils/logger');
 
 // ——————————————————————————————————————————————————————————————————————————————
@@ -264,6 +266,22 @@ exports.createStory = async (req, res) => {
         }
 
         logger.info('Story created', { userId, storyId: story._id, mediaType: normalizedType });
+
+        // User-facing audit log
+        try {
+            await UserAuditLog.create({
+                userId,
+                action: 'story_create',
+                resourceType: 'story',
+                resourceId: story._id,
+                details: { mediaType: normalizedType, captionLength: safeCaption?.length || 0 },
+                ipAddress: req.ip,
+                userAgent: req.headers['user-agent'],
+                requestId: req.id,
+            });
+        } catch (auditErr) {
+            logger.warn?.('UserAuditLog create failed (story_create)', { error: auditErr?.message });
+        }
         return ok(res, 201, { story });
     } catch (error) {
         logger.error('Error creating story', { error: error?.message, stack: error?.stack });
@@ -413,26 +431,36 @@ exports.replyToStory = async (req, res) => {
             metadata: { ownerId: String(story.userId) }
         });
 
-        // DM/Chat integration fallback: create in-app notification for story owner
+        // Try DM integration first; fallback to Notification if it fails
+        let dmFailed = false;
         try {
-            await Notification.create({
-                userId: story.userId,
-                type: 'message',
-                title: 'New story reply',
-                body: message.trim(),
-                data: {
-                    storyId: String(story._id),
-                    replierId: String(userId),
-                    replierName: authUser.name,
-                },
-                priority: 'normal',
-                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
-            });
-        } catch (notifyErr) {
-            logger.warn?.('Failed to create notification for story reply', { error: notifyErr?.message });
+            await createDMFromStoryReply(userId, story.userId, message, story._id, req.io);
+        } catch (dmErr) {
+            dmFailed = true;
+            logger.warn?.('DM creation failed, falling back to notification', { error: dmErr?.message });
         }
 
-        // Emit socket event to story owner
+        if (dmFailed) {
+            try {
+                await Notification.create({
+                    userId: story.userId,
+                    type: 'message',
+                    title: 'New story reply',
+                    body: message.trim(),
+                    data: {
+                        storyId: String(story._id),
+                        replierId: String(userId),
+                        replierName: authUser.name,
+                    },
+                    priority: 'normal',
+                    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+                });
+            } catch (notifyErr) {
+                logger.warn?.('Failed to create notification for story reply', { error: notifyErr?.message });
+            }
+        }
+
+        // Emit socket event to story owner (stories channel)
         try {
             if (req.io) {
                 req.io.to(String(story.userId)).emit('story:reply', {
@@ -447,6 +475,22 @@ exports.replyToStory = async (req, res) => {
         }
 
         logger.info('Story reply created', { storyId, userId, replyCount: story.replyCount });
+
+        // User-facing audit log
+        try {
+            await UserAuditLog.create({
+                userId,
+                action: 'story_reply',
+                resourceType: 'story',
+                resourceId: story._id,
+                details: { messageLength: message.trim().length, ownerId: String(story.userId) },
+                ipAddress: req.ip,
+                userAgent: req.headers['user-agent'],
+                requestId: req.id,
+            });
+        } catch (auditErr) {
+            logger.warn?.('UserAuditLog create failed (story_reply)', { error: auditErr?.message });
+        }
         return ok(res, 200, { replyCount: story.replyCount });
     } catch (error) {
         logger.error('Error replying to story', { error: error?.message, stack: error?.stack });
@@ -489,6 +533,21 @@ exports.deleteStory = async (req, res) => {
         }
 
         logger.info('Story deleted', { storyId, userId });
+        // User-facing audit log
+        try {
+            await UserAuditLog.create({
+                userId,
+                action: 'story_delete',
+                resourceType: 'story',
+                resourceId: story._id,
+                details: {},
+                ipAddress: req.ip,
+                userAgent: req.headers['user-agent'],
+                requestId: req.id,
+            });
+        } catch (auditErr) {
+            logger.warn?.('UserAuditLog create failed (story_delete)', { error: auditErr?.message });
+        }
         return ok(res, 200, { message: 'Story deleted successfully' });
     } catch (error) {
         logger.error('Error deleting story', { error: error?.message, stack: error?.stack });

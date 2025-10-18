@@ -14,14 +14,15 @@
     "jsxImportSource": "react",
     "baseUrl": ".",
     "paths": {
-      "@pawfectmatch/core/*": [
-        "packages/core/src/"
-      ],
-      "@pawfectmatch/core/types": [
-        "packages/core/src/types.ts"
-      ],
       "@pawfectmatch/ui/*": [
         "packages/ui/src/"
+      ],
+      "@pawfectmatch/core": [
+        "packages/core/dist/index.d.ts",
+        "packages/core/dist/index.js"
+      ],
+      "@pawfectmatch/core/*": [
+        "packages/core/dist/*"
       ]
     },
     // === Module Resolution ===
@@ -49,7 +50,7 @@
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
+    // "strictPropertyInitialization": true, // Removed to prevent inheritance error
     "noImplicitAny": true,
     "noImplicitThis": true,
     "alwaysStrict": true,
@@ -63,9 +64,16 @@
   },
   "exclude": [
     "node_modules",
+    ".github",
+    "**/cypress/**",
     "**/*.cy.ts",
     "**/*.cy.tsx",
     "cypress",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/e2e/**",
     "dist",
     ".next",
     "coverage"

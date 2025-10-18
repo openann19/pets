@@ -8,8 +8,9 @@
 
 const request = require('supertest');
 const mongoose = require('mongoose');
+const { MongoMemoryServer } = require('mongodb-memory-server');
 const PhotoModeration = require('../models/PhotoModeration');
-const User = require('../models/User');
+const User = require('../src/models/User');
 
 // Mock app setup
 const express = require('express');
@@ -18,12 +19,12 @@ app.use(express.json());
 
 // Mock authentication middleware
 const mockAuthMiddleware = (req, res, next) => {
-  req.user = { _id: 'test-user-id', email: 'test@example.com' };
+  req.user = { _id: new mongoose.Types.ObjectId(), email: 'test@example.com' };
   next();
 };
 
 const mockAdminMiddleware = (req, res, next) => {
-  req.user = { _id: 'admin-user-id', email: 'admin@example.com', isAdmin: true };
+  req.user = { _id: new mongoose.Types.ObjectId(), email: 'admin@example.com', isAdmin: true };
   next();
 };
 
@@ -34,19 +35,23 @@ const moderationRoutes = require('../routes/moderationRoutes');
 app.use('/api/upload', mockAuthMiddleware, uploadRoutes);
 app.use('/api/moderation', mockAdminMiddleware, moderationRoutes);
 
-describe('Photo Moderation System', () => {
-  beforeAll(async () => {
-    // Connect to test database
-    const mongoUri = process.env.MONGO_TEST_URI || 'mongodb://localhost:27017/pawfectmatch-test';
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-  });
+// Global test DB lifecycle so both describe blocks share the same connection
+let __mongoServer;
+beforeAll(async () => {
+  jest.setTimeout(30000);
+  __mongoServer = await MongoMemoryServer.create();
+  const mongoUri = __mongoServer.getUri();
+  await mongoose.connect(mongoUri, { dbName: 'jest-moderation-tests' });
+});
 
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
+afterAll(async () => {
+  await mongoose.disconnect();
+  if (__mongoServer) {
+    await __mongoServer.stop();
+  }
+});
+
+describe('Photo Moderation System', () => {
 
   beforeEach(async () => {
     // Clear collections before each test
@@ -397,9 +402,11 @@ describe('Photo Moderation System', () => {
       const user = await User.create({
         _id: userId,
         email: 'trusted@example.com',
-        name: 'Trusted User',
-        password: 'hashedpassword',
-        emailVerified: true,
+        password: 'validPassword1',
+        firstName: 'Trusted',
+        lastName: 'User',
+        dateOfBirth: new Date(1990, 0, 1),
+        isEmailVerified: true,
         createdAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000) // 40 days ago
       });
 
@@ -420,9 +427,9 @@ describe('Photo Moderation System', () => {
       const accountAge = Math.floor((Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24));
 
       const isTrusted = approvedCount >= 10 &&
-                       rejectedCount === 0 &&
-                       accountAge >= 30 &&
-                       user.emailVerified;
+        rejectedCount === 0 &&
+        accountAge >= 30 &&
+        user.isEmailVerified;
 
       expect(isTrusted).toBe(true);
     });
@@ -502,7 +509,7 @@ describe('Photo Moderation System', () => {
 describe('Integration Tests', () => {
   test('full moderation workflow', async () => {
     const userId = new mongoose.Types.ObjectId();
-    
+
     // 1. Create moderation record (simulating upload)
     const moderation = await PhotoModeration.create({
       userId,

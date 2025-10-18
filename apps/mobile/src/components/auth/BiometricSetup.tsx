@@ -90,7 +90,7 @@ export default function BiometricSetup({
           [{ text: 'OK' }]
         );
       }
-    } catch (error) {
+    } catch {
       Alert.alert(
         'Error',
         'Something went wrong. Please try again.',

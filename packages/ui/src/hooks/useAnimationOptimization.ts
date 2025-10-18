@@ -97,7 +97,7 @@ export const useAnimationOptimization = (config: AnimationOptimizationConfig = {
   const frameRateRef = useRef<number>(60);
   const lastFrameTimeRef = useRef<number>(0);
   const frameCountRef = useRef<number>(0);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
 
   // Performance monitoring
   useEffect(() => {
@@ -131,11 +131,11 @@ export const useAnimationOptimization = (config: AnimationOptimizationConfig = {
     if (!respectReducedMotion) return;
 
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    
+
     const handleChange = (e: MediaQueryListEvent) => {
       stateRef.current.prefersReducedMotion = e.matches;
       stateRef.current.animationsDisabled = e.matches;
-      
+
       // Update CSS custom properties
       if (e.matches) {
         document.documentElement.style.setProperty('--animation-duration', '0.01s');
@@ -146,8 +146,16 @@ export const useAnimationOptimization = (config: AnimationOptimizationConfig = {
       }
     };
 
-    // Initial check
-    handleChange(mediaQuery);
+    // Initial check without faking an event
+    stateRef.current.prefersReducedMotion = mediaQuery.matches;
+    stateRef.current.animationsDisabled = mediaQuery.matches;
+    if (mediaQuery.matches) {
+      document.documentElement.style.setProperty('--animation-duration', '0.01s');
+      document.documentElement.style.setProperty('--animation-timing', 'linear');
+    } else {
+      document.documentElement.style.setProperty('--animation-duration', '0.3s');
+      document.documentElement.style.setProperty('--animation-timing', 'cubic-bezier(0.4, 0, 0.2, 1)');
+    }
 
     mediaQuery.addEventListener('change', handleChange);
     return () => { mediaQuery.removeEventListener('change', handleChange); };
@@ -175,7 +183,7 @@ export const useAnimationOptimization = (config: AnimationOptimizationConfig = {
   // Get optimized animation duration
   const getOptimizedDuration = useCallback((baseDuration: number): number => {
     if (stateRef.current.animationsDisabled) return 0;
-    
+
     // Adjust duration based on frame rate
     const frameRateFactor = Math.max(0.5, Math.min(1.5, frameRateRef.current / 60));
     return baseDuration * frameRateFactor;
@@ -184,7 +192,7 @@ export const useAnimationOptimization = (config: AnimationOptimizationConfig = {
   // Get optimized animation easing
   const getOptimizedEasing = useCallback((baseEasing: string): string => {
     if (stateRef.current.animationsDisabled) return 'linear';
-    
+
     // Use more performant easing functions
     const optimizedEasing = {
       'ease': 'cubic-bezier(0.4, 0, 0.2, 1)',
@@ -232,19 +240,22 @@ export const useAnimationOptimization = (config: AnimationOptimizationConfig = {
 
   // Get performance-optimized animation props
   const getAnimationProps = useCallback((baseProps: unknown) => {
+    const src = (baseProps && typeof baseProps === 'object') ? (baseProps as Record<string, unknown>) : {};
     if (!shouldAnimate()) {
       return {
-        ...baseProps,
+        ...src,
         duration: 0,
         ease: 'linear'
-      };
+      } as Record<string, unknown>;
     }
 
+    const baseDuration = typeof src['duration'] === 'number' ? (src['duration'] as number) : 300;
+    const baseEase = typeof src['ease'] === 'string' ? (src['ease'] as string) : 'ease';
     return {
-      ...baseProps,
-      duration: getOptimizedDuration(baseProps.duration || 300),
-      ease: getOptimizedEasing(baseProps.ease || 'ease')
-    };
+      ...src,
+      duration: getOptimizedDuration(baseDuration),
+      ease: getOptimizedEasing(baseEase)
+    } as Record<string, unknown>;
   }, [shouldAnimate, getOptimizedDuration, getOptimizedEasing]);
 
   return {

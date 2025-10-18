@@ -1,155 +1,53 @@
-/**
- * Profile Screen for Mobile
- * Premium, Gamification, Engagement, GDPR, UI/UX Upgrades
- */
-
 import { Ionicons } from '@expo/vector-icons';
-import { logger, useAuthStore } from '@pawfectmatch/core';
+import { useAuthStore } from '@pawfectmatch/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
 import {
   Alert,
-  Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Footer from '../components/Footer';
-import { useTheme } from '../contexts/ThemeContext';
-import type { TabScreenProps } from '../navigation/types';
-// Removed duplicate Animated import
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-const { width: _SCREEN_WIDTH } = Dimensions.get('window');
+import { AdvancedCard, CardConfigs } from '../components/Advanced/AdvancedCard';
+import { AdvancedHeader, HeaderConfigs } from '../components/Advanced/AdvancedHeader';
+// import { AdvancedButton } from '../components/Advanced/AdvancedInteractionSystem';
+import { matchesAPI } from '../services/api';
 
-interface Pet {
-  name: string;
-  species: string;
-  age: number;
-}
+type RootStackParamList = {
+  Profile: undefined;
+  MyPets: undefined;
+  Settings: undefined;
+  CreatePet: undefined;
+  Login: undefined;
+};
 
-type ProfileScreenProps = TabScreenProps<'Profile'>;
+type ProfileScreenProps = NativeStackScreenProps<RootStackParamList, 'Profile'>;
 
-interface AccountDeletionStatus {
-  status: 'pending' | 'processing' | 'canceled' | 'completed' | 'not-found';
-  requestedAt?: string;
-  scheduledDeletionDate?: string;
-  daysRemaining?: number;
-  canCancel?: boolean;
-  requestId?: string;
-}
-
-const ProfileScreen = ({ navigation }: ProfileScreenProps): React.JSX.Element => {
-  const { colors } = useTheme();
+const ProfileScreen = ({ navigation }: ProfileScreenProps) => {
   const { user, logout } = useAuthStore();
-  const [profileData, setProfileData] = useState<{ pets: Pet[]; matches: number; messages: number; joinedDate?: string } | null>(null);
-  const [deletionStatus, setDeletionStatus] = useState<AccountDeletionStatus | null>(null);
-  const [premiumError, setPremiumError] = useState<string | null>(null);
-  const [premiumSuccess, setPremiumSuccess] = useState<string | null>(null);
-  const [showSuccessAnim, setShowSuccessAnim] = useState(false);
+  const [notifications, setNotifications] = useState({
+    matches: true,
+    messages: true,
+    email: true,
+    push: true,
+  });
+  const [privacy, setPrivacy] = useState({
+    showLocation: true,
+    showAge: true,
+    showBreed: true,
+  });
 
-  // Success animation state
-  const successOpacity = useSharedValue(0);
-
-  useEffect(() => {
-    if (showSuccessAnim) {
-      successOpacity.value = withTiming(1, { duration: 350 });
-      const timer = setTimeout(() => {
-        successOpacity.value = withTiming(0, { duration: 350 });
-        setShowSuccessAnim(false);
-      }, 1200);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [showSuccessAnim]);
-
-  const successAnimStyle = useAnimatedStyle(() => ({
-    opacity: successOpacity.value,
-  }));
-
-  useEffect(() => {
-    void loadProfileData();
-    void checkAccountDeletionStatus();
-  }, []);
-
-  const checkAccountDeletionStatus = async (): Promise<void> => {
-    try {
-      let token: string | null = null;
-      try {
-        token = await AsyncStorage.getItem('authToken');
-      } catch (error) {
-        logger.warn('Failed to get auth token', error);
-      }
-      const api = process.env['API_URL'] ?? 'https://api.pawfectmatch.com';
-      const response = await fetch(`${api}/api/account/status`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token ?? ''}`
-        }
-      });
-      if (!response.ok) {
-        if (response.status === 404) {
-          setDeletionStatus({ status: 'not-found' });
-          return;
-        }
-        throw new Error(`API error: ${response.status}`);
-      }
-      const data = await response.json() as AccountDeletionStatus;
-      setDeletionStatus(data);
-    } catch (error) {
-      logger.error('Failed to check account status:', error);
-      setDeletionStatus({ status: 'not-found' });
-    }
-  };
-
-  const loadProfileData = async (): Promise<void> => {
-    try {
-      let token: string | null = null;
-      try {
-        token = await AsyncStorage.getItem('authToken');
-      } catch (error) {
-        logger.warn('Failed to get auth token', error);
-      }
-      const api = process.env['API_URL'] ?? 'https://api.pawfectmatch.com';
-      const response = await fetch(`${api}/api/users/profile-stats`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token ?? ''}`
-        }
-      });
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      const data = await response.json() as { pets?: Pet[]; matches?: number; messages?: number; joinedDate?: string };
-      setProfileData({
-        pets: data.pets ?? [],
-        matches: data.matches ?? 0,
-        messages: data.messages ?? 0,
-        ...(data.joinedDate && { joinedDate: data.joinedDate })
-      });
-    } catch (error) {
-      logger.error('Failed to load profile data:', error);
-      Alert.alert(
-        'Connection Error',
-        'Failed to load profile data. Please check your connection and try again.',
-        [{ text: 'Retry', onPress: loadProfileData }]
-      );
-      setProfileData({ pets: [], matches: 0, messages: 0 });
-    }
-  };
-
-  const handleAdminAccess = (): void => {
-    if (Haptics) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    navigation.navigate('Admin');
-  };
-
-  const handleLogout = (): void => {
+  const handleLogout = () => {
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
@@ -159,635 +57,433 @@ const ProfileScreen = ({ navigation }: ProfileScreenProps): React.JSX.Element =>
           text: 'Logout',
           style: 'destructive',
           onPress: () => {
-            if (Haptics) {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            }
-            logout();
-          }
-        },
-      ]
-    );
-  };
-
-  const handleEditProfile = (): void => {
-    if (Haptics) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation.navigate('EditProfile');
-  };
-
-  const handleManageSubscription = async (): Promise<void> => {
-    try {
-      await Haptics.selectionAsync();
-      navigation.navigate('ManageSubscription');
-      setPremiumSuccess('Navigated to subscription management.');
-      setPremiumError(null);
-      setShowSuccessAnim(true);
-      setTimeout(() => setShowSuccessAnim(false), 1200);
-    } catch (err) {
-      setPremiumError('Failed to open subscription management.');
-      setPremiumSuccess(null);
-    }
-  };
-
-  const handleDataExport = async (): Promise<void> => {
-    if (Haptics) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    Alert.alert(
-      'Export Your Data',
-      'We will prepare a complete export of all your personal data in compliance with GDPR Article 20. This may take up to 48 hours. You will receive an email when your data is ready to download.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Request Export',
-          style: 'default',
-          onPress: async () => {
-            try {
-              let token: string | null = null;
+            void (async () => {
               try {
-                token = await AsyncStorage.getItem('authToken');
+                logout?.();
+                await AsyncStorage.clear();
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Login' }],
+                });
               } catch (error) {
-                logger.warn('Failed to get auth token', error);
+                console.error('Logout error:', error);
               }
-              const api = process.env['API_URL'] ?? 'https://api.pawfectmatch.com';
-              const response = await fetch(`${api}/api/account/export-data`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token ?? ''}`
-                },
-                body: JSON.stringify({
-                  format: 'json',
-                  includeMessages: true,
-                  includeMatches: true,
-                  includeProfileData: true,
-                  includePreferences: true
-                })
-              });
-              if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
-              }
-              const data = await response.json() as { exportId: string; estimatedTime: string };
-              Alert.alert(
-                'Data Export Requested',
-                `Your data export has been requested. We'll send you an email when your data is ready to download. Estimated time: ${data.estimatedTime || '24-48 hours'}.`
-              );
-              setShowSuccessAnim(true);
-              setTimeout(() => setShowSuccessAnim(false), 1200);
-            } catch (error) {
-              logger.error('Failed to request data export:', error);
-              Alert.alert('Error', 'Failed to request data export. Please try again.', [{ text: 'OK' }]);
-            }
-          }
+            })();
+          },
         },
       ]
     );
   };
 
-  const handleCancelDeletion = async (): Promise<void> => {
-    if (Haptics) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    if (!deletionStatus?.requestId) return;
-    try {
-      let token: string | null = null;
-      try {
-        token = await AsyncStorage.getItem('authToken');
-      } catch (error) {
-        logger.warn('Failed to get auth token', error);
-      }
-      const api = process.env['API_URL'] ?? 'https://api.pawfectmatch.com';
-      const response = await fetch(`${api}/api/account/cancel-deletion`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token ?? ''}`
-        },
-        body: JSON.stringify({ requestId: deletionStatus.requestId })
-      });
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      const data = await response.json();
-      if (data.success) {
-        Alert.alert('Deletion Canceled', 'Your account deletion request has been canceled successfully.', [{ text: 'OK' }]);
-        void checkAccountDeletionStatus();
-      }
-    } catch (error) {
-      logger.error('Failed to cancel account deletion:', error);
-      Alert.alert('Error', 'Failed to cancel account deletion. Please try again.', [{ text: 'OK' }]);
-    }
+  const handleSettingToggle = (setting: string) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setNotifications(prev => ({
+      ...prev,
+      [setting]: !prev[setting as keyof typeof prev],
+    }));
   };
 
-  const handleDeleteAccount = async (): Promise<void> => {
-    if (Haptics) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    }
-    if (deletionStatus?.status === 'pending' || deletionStatus?.status === 'processing') {
-      Alert.alert(
-        'Deletion Already Requested',
-        `Your account is already scheduled for deletion on ${deletionStatus.scheduledDeletionDate?.split('T')[0]}. You have ${deletionStatus.daysRemaining} days to cancel this request.`,
-        deletionStatus.canCancel
-          ? [
-            { text: 'Close', style: 'cancel' },
-            { text: 'Cancel Deletion', onPress: handleCancelDeletion }
-          ]
-          : [{ text: 'OK' }]
-      );
-      return;
-    }
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be removed after a 30-day grace period.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Account',
-          style: 'destructive',
-          onPress: () => {
-            Alert.prompt(
-              'Confirm Account Deletion',
-              'Please type your email address to confirm account deletion',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Confirm Deletion',
-                  style: 'destructive',
-                  onPress: async (email) => {
-                    if (email === user?.email) {
-                      try {
-                        let token: string | null = null;
-                        try {
-                          token = await AsyncStorage.getItem('authToken');
-                        } catch (error) {
-                          logger.warn('Failed to get auth token', error);
-                        }
-                        const api = process.env['API_URL'] ?? 'https://api.pawfectmatch.com';
-                        const response = await fetch(`${api}/api/account/delete`, {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token ?? ''}`
-                          }
-                        });
-                        if (!response.ok) {
-                          throw new Error(`API error: ${response.status}`);
-                        }
-                        Alert.alert('Account Deletion Initiated', 'Your account will be deleted after a 30-day grace period. You will receive an email confirmation. You can cancel this request anytime during this period by logging in.');
-                        void checkAccountDeletionStatus();
-                      } catch (error) {
-                        logger.error('Failed to initiate account deletion:', error);
-                        Alert.alert('Error', 'Failed to initiate account deletion. Please try again.', [{ text: 'OK' }]);
-                      }
-                    } else {
-                      Alert.alert('Error', 'Email address does not match your account');
-                    }
-                  }
-                }
-              ],
-              'plain-text',
-              '',
-              'email-address'
-            );
-          }
-        }
-      ]
-    );
+  const handlePrivacyToggle = (setting: string) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPrivacy(prev => ({
+      ...prev,
+      [setting]: !prev[setting as keyof typeof prev],
+    }));
   };
+
+  const handleNotificationToggle = (key: string) => () => handleSettingToggle(key);
+  const handlePrivacySettingToggle = (key: string) => () => handlePrivacyToggle(key);
+
+  const menuItems = [
+    {
+      title: 'My Pets',
+      icon: 'paw',
+      color: '#ec4899',
+      onPress: () => navigation.navigate('MyPets'),
+    },
+    {
+      title: 'Settings',
+      icon: 'settings',
+      color: '#3b82f6',
+      onPress: () => navigation.navigate('Settings'),
+    },
+    {
+      title: 'Add New Pet',
+      icon: 'add-circle',
+      color: '#10b981',
+      onPress: () => navigation.navigate('CreatePet'),
+    },
+    {
+      title: 'Help & Support',
+      icon: 'help-circle',
+      color: '#8b5cf6',
+      onPress: () => Alert.alert('Help', 'Help center coming soon!'),
+    },
+    {
+      title: 'About',
+      icon: 'information',
+      color: '#f59e0b',
+      onPress: () => Alert.alert('About', 'PawfectMatch v1.0.0'),
+    },
+  ];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView style={styles.scrollView}>
-        {/* Deletion Warning Banner */}
-        {deletionStatus?.status === 'pending' && (
-          <TouchableOpacity
-            style={styles.deletionWarningBanner}
-            onPress={() => {
-              Alert.alert(
-                'Account Scheduled for Deletion',
-                `Your account is scheduled for deletion on ${deletionStatus.scheduledDeletionDate?.split('T')[0]}. You have ${deletionStatus.daysRemaining} days remaining to cancel this request.`,
-                deletionStatus.canCancel
-                  ? [
-                    { text: 'Close', style: 'cancel' },
-                    { text: 'Cancel Deletion', onPress: handleCancelDeletion }
-                  ]
-                  : [{ text: 'OK' }]
-              );
-            }}
-          >
-            <Ionicons name="alert-circle" size={24} color="white" />
-            <Text style={styles.deletionWarningText}>
-              Account scheduled for deletion in {deletionStatus.daysRemaining} days
-            </Text>
-            <Ionicons name="chevron-forward" size={20} color="white" />
-          </TouchableOpacity>
-        )}
+    <SafeAreaView style={styles.container}>
+      {/* Advanced Header */}
+      <AdvancedHeader
+        {...HeaderConfigs.glass({
+          title: 'Profile',
+          rightButtons: [
+            {
+              type: 'edit',
+              onPress: () => {
+                console.log('Edit profile');
+              },
+              variant: 'glass',
+              haptic: 'light',
+            },
+            {
+              type: 'settings',
+              onPress: () => navigation.navigate('Settings'),
+              variant: 'minimal',
+              haptic: 'light',
+            },
+          ],
+          apiActions: {
+            edit: async () => {
+              const userProfile = await matchesAPI.getUserProfile();
+              console.log('Loaded user profile for editing:', userProfile);
+            },
+          },
+        })}
+      />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.profileInfo}>
-            <View style={[styles.avatarContainer, { backgroundColor: colors.card }]}>
-              <Ionicons name="person" size={40} color={colors.text} />
-            </View>
-            <View style={styles.userInfo}>
-              <Text style={[styles.userName, { color: colors.text }]}>
-                {user?.firstName} {user?.lastName}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Profile Header Card */}
+        <AdvancedCard
+          {...CardConfigs.glass({
+            interactions: ['hover', 'press', 'glow'],
+            haptic: 'light',
+            apiAction: async () => {
+              const userProfile = await matchesAPI.getUserProfile();
+              console.log('Loaded user profile:', userProfile);
+            },
+          })}
+          style={styles.header}
+        >
+          <View style={styles.profileSection}>
+            <Image
+              source={{ uri: user?.avatar ?? 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150' }}
+              style={styles.profileImage}
+            />
+            <View style={styles.profileInfo}>
+              <Text style={styles.userName}>
+                {user?.firstName ?? 'User'} {user?.lastName ?? ''}
               </Text>
-              <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-                {user?.email}
+              <Text style={styles.userEmail}>{user?.email ?? 'user@example.com'}</Text>
+              <Text style={styles.memberSince}>
+                Member since {new Date().getFullYear()}
               </Text>
-              {user?.role === 'admin' && (
-                <View style={[styles.adminBadge, { backgroundColor: '#EF4444' }]}>
-                  <Text style={styles.adminBadgeText}>ADMIN</Text>
-                </View>
-              )}
             </View>
           </View>
-        </View>
+        </AdvancedCard>
 
         {/* Quick Stats */}
-        {profileData ? <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Your Stats
-          </Text>
-          <View style={styles.statsGrid}>
-            <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-              <Ionicons name="paw" size={24} color="#10B981" />
-              <Text style={[styles.statNumber, { color: colors.text }]}>
-                {profileData.pets.length}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Pets
-              </Text>
+        <AdvancedCard
+          {...CardConfigs.glass({
+            interactions: ['hover', 'press', 'glow'],
+            haptic: 'light',
+            apiAction: async () => {
+              const [matches] = await Promise.all([
+                matchesAPI.getMatches().catch(() => []),
+                matchesAPI.getUserProfile().catch(() => null),
+              ]);
+              console.log('Loaded stats:', { matches: matches.length });
+            },
+          })}
+          style={styles.statsSection}
+        >
+          <View style={styles.statsContent}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>12</Text>
+              <Text style={styles.statLabel}>Matches</Text>
             </View>
-
-            <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-              <Ionicons name="heart" size={24} color="#EC4899" />
-              <Text style={[styles.statNumber, { color: colors.text }]}>
-                {profileData.matches}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Matches
-              </Text>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>8</Text>
+              <Text style={styles.statLabel}>Messages</Text>
             </View>
-
-            <View style={[styles.statCard, { backgroundColor: colors.card }]}>
-              <Ionicons name="chatbubble" size={24} color="#8B5CF6" />
-              <Text style={[styles.statNumber, { color: colors.text }]}>
-                {profileData.messages}
-              </Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                Messages
-              </Text>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>3</Text>
+              <Text style={styles.statLabel}>Pets</Text>
             </View>
           </View>
-        </View> : null}
+        </AdvancedCard>
 
-        {/* Premium & Gamification Section */}
-        <View style={[styles.section, { marginBottom: 12 }]} accessible accessibilityLabel="Premium & Gamification Section">
-          <Text style={[styles.sectionTitle, { color: '#fbbf24' }]} accessibilityRole="header">Premium & Gamification</Text>
-          {/* Success/Error States */}
-          {premiumSuccess && (
-            <View style={{ backgroundColor: '#dcfce7', borderRadius: 8, padding: 8, marginBottom: 6 }}>
-              <Text style={{ color: '#166534', fontWeight: 'bold' }}>{premiumSuccess}</Text>
-            </View>
-          )}
-          {premiumError && (
-            <View style={{ backgroundColor: '#fee2e2', borderRadius: 8, padding: 8, marginBottom: 6 }}>
-              <Text style={{ color: '#991b1b', fontWeight: 'bold' }}>{premiumError}</Text>
-            </View>
-          )}
-          {showSuccessAnim && (
-            <Animated.View style={[{ backgroundColor: '#bbf7d0', borderRadius: 8, padding: 8, marginBottom: 6, alignItems: 'center' }, successAnimStyle]}>
-              <Ionicons name="checkmark-circle" size={28} color="#22c55e" />
-              <Text style={{ color: '#166534', fontWeight: 'bold', marginTop: 4 }}>Success!</Text>
-            </Animated.View>
-          )}
-          <View style={{ backgroundColor: '#FEF9C3', borderRadius: 12, padding: 14, marginBottom: 10 }}>
-            <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#92400e', marginBottom: 6 }} accessibilityRole="header">Premium Features</Text>
-            <Text style={{ color: '#92400e', fontSize: 13 }}>Unlimited Likes, See Who Liked You, Advanced Filters, Priority Placement, Incognito Mode, Rewind Swipes, Travel Mode, Super Likes, Profile Insights, Ad-Free, Verified Badge, Video Calls, Priority Support, Exclusive Events, Custom URL</Text>
-            <TouchableOpacity
-              style={{ marginTop: 10, alignSelf: 'flex-start', backgroundColor: '#fbbf24', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 16 }}
-              accessibilityRole="button"
-              accessibilityLabel="Manage Subscription"
-              onPress={async () => {
-                try {
-                  await Haptics.selectionAsync();
-                  navigation.navigate('ManageSubscription');
-                  setPremiumSuccess('Navigated to subscription management.');
-                  setPremiumError(null);
-                  setShowSuccessAnim(true);
-                  setTimeout(() => setShowSuccessAnim(false), 1200);
-                } catch (err) {
-                  setPremiumError('Failed to open subscription management.');
-                  setPremiumSuccess(null);
-                }
-              }}
+        {/* Menu Items */}
+        <View style={styles.menuSection}>
+          {menuItems.map((item) => (
+            <AdvancedCard
+              key={item.title}
+              {...CardConfigs.glass({
+                interactions: ['hover', 'press', 'glow', 'bounce'],
+                haptic: 'medium',
+                onPress: () => {
+                  try {
+                    item.onPress();
+                  } catch (error) {
+                    console.error('Menu item action failed:', error);
+                  }
+                },
+                apiAction: async () => {
+                  console.log(`Menu item ${item.title} API action`);
+                },
+              })}
+              style={styles.menuItem}
             >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Manage Subscription</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ backgroundColor: '#EDE9FE', borderRadius: 12, padding: 14 }}>
-            <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#6d28d9', marginBottom: 6 }} accessibilityRole="header">Achievements & Engagement</Text>
-            <Text style={{ color: '#6d28d9', fontSize: 13 }}>Badges, Leaderboard, Daily Streak, Quests, Points, Rewards Shop, Levels, Friends, Group Chats, Events, Photo Contests</Text>
-            <View style={{ flexDirection: 'row', marginTop: 8 }}>
-              <Text style={{ backgroundColor: '#DDD6FE', color: '#6d28d9', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, fontWeight: 'bold', marginRight: 8 }}>Level: Gold</Text>
-              <Text style={{ backgroundColor: '#FEF9C3', color: '#92400e', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, fontWeight: 'bold' }}>Points: 1,250</Text>
-            </View>
-            {/* Empty State Example */}
-            {!profileData?.pets?.length && (
-              <View style={{ marginTop: 10, backgroundColor: '#f3f4f6', borderRadius: 8, padding: 8 }}>
-                <Text style={{ color: '#6b7280', fontStyle: 'italic' }}>Add a pet to unlock more achievements!</Text>
+              <View style={styles.menuItemContent}>
+                <LinearGradient
+                  colors={[`${item.color}20`, `${item.color}10`]}
+                  style={styles.menuIcon}
+                >
+                  <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={24} color={item.color} />
+                </LinearGradient>
+                <Text style={styles.menuText}>{item.title}</Text>
+                <Ionicons name="chevron-forward" size={20} color="#ccc" />
               </View>
-            )}
-          </View>
-        </View>
-
-        {/* Quick Access Section */}
-        <View style={[styles.section, { marginBottom: 12 }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Access</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 }}>
-            <TouchableOpacity style={styles.quickAccessButton} onPress={() => navigation.navigate('PrivacySettings')}>
-              <Ionicons name="lock-closed-outline" size={22} color={colors.primary} />
-              <Text style={styles.quickAccessText}>Privacy</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAccessButton} onPress={() => navigation.navigate('BlockedUsers')}>
-              <Ionicons name="ban" size={22} color="#ef4444" />
-              <Text style={styles.quickAccessText}>Blocked Users</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAccessButton} onPress={() => navigation.navigate('SafetyCenter')}>
-              <Ionicons name="shield-checkmark" size={22} color="#10b981" />
-              <Text style={styles.quickAccessText}>Safety</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAccessButton} onPress={() => navigation.navigate('NotificationPreferences')}>
-              <Ionicons name="notifications" size={22} color="#6366f1" />
-              <Text style={styles.quickAccessText}>Notifications</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAccessButton} onPress={() => navigation.navigate('HelpSupport')}>
-              <Ionicons name="help-circle" size={22} color="#fbbf24" />
-              <Text style={styles.quickAccessText}>Help</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAccessButton} onPress={() => navigation.navigate('AboutTermsPrivacy')}>
-              <Ionicons name="information-circle" size={22} color={colors.text} />
-              <Text style={styles.quickAccessText}>About</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAccessButton} onPress={() => navigation.navigate('DeactivateAccount')}>
-              <Ionicons name="pause" size={22} color="#f59e42" />
-              <Text style={styles.quickAccessText}>Deactivate</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAccessButton} onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate('AdvancedFilters');
-            }}>
-              <Ionicons name="options" size={22} color="#0ea5e9" />
-              <Text style={styles.quickAccessText}>Filters</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickAccessButton} onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              navigation.navigate('ModerationTools');
-            }}>
-              <Ionicons name="alert" size={22} color="#ef4444" />
-              <Text style={styles.quickAccessText}>Moderation</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]} onPress={handleEditProfile}>
-            <Ionicons name="create-outline" size={24} color={colors.primary} />
-            <Text style={[styles.actionButtonText, { color: colors.text }]}>Edit Profile</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]} onPress={handleManageSubscription}>
-            <Ionicons name="card-outline" size={24} color={colors.primary} />
-            <Text style={[styles.actionButtonText, { color: colors.text }]}>Manage Subscription</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-          {user?.role === 'admin' && (
-            <TouchableOpacity style={[styles.actionButton, styles.adminButton, { backgroundColor: '#FEF2F2' }]} onPress={handleAdminAccess}>
-              <Ionicons name="shield-checkmark-outline" size={24} color="#EF4444" />
-              <Text style={[styles.actionButtonText, { color: '#EF4444' }]}>Admin Panel</Text>
-              <Ionicons name="chevron-forward" size={20} color="#EF4444" />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]} onPress={handleDataExport}>
-            <Ionicons name="download-outline" size={24} color={colors.primary} />
-            <Text style={[styles.actionButtonText, { color: colors.text }]}>Download My Data (GDPR)</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.dangerButton, { backgroundColor: '#FEF2F2', marginTop: 16 }]} onPress={handleDeleteAccount}>
-            <Ionicons name="trash-outline" size={24} color="#DC2626" />
-            <Text style={[styles.actionButtonText, { color: '#DC2626' }]}>Delete Account</Text>
-            <Ionicons name="chevron-forward" size={20} color="#DC2626" />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.logoutButton, { backgroundColor: '#FEF2F2', marginTop: 16 }]} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={24} color="#EF4444" />
-            <Text style={[styles.actionButtonText, { color: '#EF4444' }]}>Logout</Text>
-            <Ionicons name="chevron-forward" size={20} color="#EF4444" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Pets Section */}
-        {profileData ? <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Pets</Text>
-          {profileData.pets.map((pet: Pet, index: number) => (
-            <View key={index} style={[styles.petCard, { backgroundColor: colors.card }]}>
-              <View style={styles.petInfo}>
-                <Ionicons name="paw" size={24} color="#10B981" />
-                <View style={styles.petDetails}>
-                  <Text style={[styles.petName, { color: colors.text }]}>{pet.name}</Text>
-                  <Text style={[styles.petSpecies, { color: colors.textSecondary }]}>{pet.species} • {pet.age} years old</Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-            </View>
+            </AdvancedCard>
           ))}
-        </View> : null}
+        </View>
+
+        {/* Notifications */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Notifications</Text>
+          <BlurView intensity={20} style={styles.settingsCard}>
+            {Object.entries(notifications).map(([key, value]) => (
+              <View key={key} style={styles.settingItem}>
+                <View style={styles.settingInfo}>
+                  <Text style={styles.settingTitle}>
+                    {key.charAt(0).toUpperCase() + key.slice(1)} Notifications
+                  </Text>
+                  <Text style={styles.settingDescription}>
+                    Receive {key} notifications
+                  </Text>
+                </View>
+                <Switch
+                  value={value}
+                  onValueChange={handleNotificationToggle(key)}
+                  trackColor={{ false: '#e5e7eb', true: '#fce7f3' }}
+                  thumbColor={value ? '#ec4899' : '#9ca3af'}
+                />
+              </View>
+            ))}
+          </BlurView>
+        </View>
+
+        {/* Privacy */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Privacy</Text>
+          <BlurView intensity={20} style={styles.settingsCard}>
+            {Object.entries(privacy).map(([key, value]) => (
+              <View key={key} style={styles.settingItem}>
+                <View style={styles.settingInfo}>
+                  <Text style={styles.settingTitle}>
+                    Show {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                  </Text>
+                  <Text style={styles.settingDescription}>
+                    {value ? 'Visible to others' : 'Hidden from others'}
+                  </Text>
+                </View>
+                <Switch
+                  value={value}
+                  onValueChange={handlePrivacySettingToggle(key)}
+                  trackColor={{ false: '#e5e7eb', true: '#fce7f3' }}
+                  thumbColor={value ? '#ec4899' : '#9ca3af'}
+                />
+              </View>
+            ))}
+          </BlurView>
+        </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <LinearGradient
+            colors={['#ef4444', '#dc2626']}
+            style={styles.logoutGradient}
+          >
+            <Ionicons name="log-out" size={20} color="#fff" />
+            <Text style={styles.logoutText}>Logout</Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </ScrollView>
-      <Footer showCopyright showLegal showVersion={false} showSupport variant="minimal" />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  quickAccessButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginBottom: 8,
-    minWidth: 120,
-    elevation: 2,
-  },
-  quickAccessText: {
-    marginLeft: 8,
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#374151',
-  },
   container: {
     flex: 1,
+    backgroundColor: '#f8f9fa',
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 16,
-  },
-  deletionWarningBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DC2626',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  deletionWarningText: {
-    color: 'white',
-    fontWeight: '600',
-    flex: 1,
-    marginLeft: 8,
   },
   header: {
-    paddingVertical: 24,
+    padding: 20,
   },
-  profileInfo: {
+  headerBlur: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    padding: 20,
+  },
+  profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarContainer: {
+  profileImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginRight: 16,
   },
-  userInfo: {
+  profileInfo: {
     flex: 1,
   },
   userName: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#1f2937',
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 16,
-    marginBottom: 8,
+    color: '#6b7280',
+    marginBottom: 4,
   },
-  adminBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
+  memberSince: {
+    fontSize: 14,
+    color: '#9ca3af',
   },
-  adminBadgeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  statsGrid: {
+  statsSection: {
     flexDirection: 'row',
-    gap: 12,
+    justifyContent: 'space-around',
+    padding: 20,
+    marginBottom: 20,
   },
-  statCard: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 16,
+  statItem: {
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginTop: 8,
+    color: '#ec4899',
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#6b7280',
   },
-  actionButton: {
+  menuSection: {
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  },
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    backgroundColor: '#fff',
     borderRadius: 12,
+    padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  adminButton: {
-    borderWidth: 1,
-    borderColor: '#FECACA',
+  menuIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  logoutButton: {
-    borderWidth: 1,
-    borderColor: '#FECACA',
-  },
-  dangerButton: {
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-  },
-  actionButtonText: {
-    marginLeft: 12,
+  menuText: {
+    flex: 1,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
+    color: '#1f2937',
   },
-  petCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 12,
+    paddingLeft: 4,
+  },
+  settingsCard: {
     borderRadius: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    overflow: 'hidden',
+    padding: 16,
   },
-  petInfo: {
+  settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  settingInfo: {
     flex: 1,
   },
-  petDetails: {
-    marginLeft: 12,
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 4,
   },
-  petName: {
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
-  petSpecies: {
+  settingDescription: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#6b7280',
+  },
+  logoutButton: {
+    marginHorizontal: 20,
+    marginBottom: 40,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  logoutGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  logoutText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  statsContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  menuItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

@@ -33,7 +33,7 @@ export default function Loading() {
             transition={{
               duration: 8 + i * 2,
               repeat: Infinity,
-              ease: 'easeInOut',
+              ease: "easeInOut",
             }}
           />
         ))}
@@ -53,21 +53,17 @@ export default function Loading() {
           transition={{ duration: 2, repeat: Infinity }}
         >
           <div className="flex items-center justify-center gap-4 mb-4">
-            <HoloLogo
-              size={64}
-              withText
-              monochrome
-            />
+            <HoloLogo size={64} withText monochrome />
           </div>
-
+          
           <motion.div
             className="px-6 py-2 glass-light rounded-full"
-            animate={{
+            animate={{ 
               boxShadow: [
-                '0 0 20px rgba(255, 255, 255, 0.3)',
-                '0 0 40px rgba(255, 255, 255, 0.5)',
-                '0 0 20px rgba(255, 255, 255, 0.3)',
-              ],
+                "0 0 20px rgba(255, 255, 255, 0.3)",
+                "0 0 40px rgba(255, 255, 255, 0.5)",
+                "0 0 20px rgba(255, 255, 255, 0.3)"
+              ]
             }}
             transition={{ duration: 2, repeat: Infinity }}
           >
@@ -96,29 +92,25 @@ export default function Loading() {
                 transition={{
                   duration: 2 - ring * 0.3,
                   repeat: Infinity,
-                  ease: 'linear',
+                  ease: "linear",
                 }}
               />
             ))}
-
+            
             {/* Center Paw */}
             <motion.div
               className="absolute inset-0 flex items-center justify-center"
-              animate={{
+              animate={{ 
                 scale: [1, 1.2, 1],
-                rotate: [0, 180, 360],
+                rotate: [0, 180, 360] 
               }}
-              transition={{
-                duration: 4,
+              transition={{ 
+                duration: 4, 
                 repeat: Infinity,
-                ease: 'easeInOut',
+                ease: "easeInOut" 
               }}
             >
-              <HoloLogo
-                size={32}
-                withText={false}
-                monochrome
-              />
+              <HoloLogo size={32} withText={false} monochrome />
             </motion.div>
           </div>
         </motion.div>
@@ -130,9 +122,11 @@ export default function Loading() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
         >
-          <h2 className="text-2xl font-bold text-white mb-2">Finding Your Perfect Match...</h2>
-
-          <motion.p
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Finding Your Perfect Match...
+          </h2>
+          
+          <motion.p 
             className="text-white/80"
             animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 2, repeat: Infinity }}
@@ -151,12 +145,12 @@ export default function Loading() {
           <div className="glass-light rounded-full h-2 overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-purple-400 to-pink-400"
-              initial={{ width: '0%' }}
-              animate={{ width: '100%' }}
-              transition={{
-                duration: 3,
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ 
+                duration: 3, 
                 repeat: Infinity,
-                ease: 'easeInOut',
+                ease: "easeInOut"
               }}
             />
           </div>
@@ -165,13 +159,13 @@ export default function Loading() {
         {/* Floating Elements */}
         <motion.div
           className="absolute -top-4 -right-4"
-          animate={{
+          animate={{ 
             rotate: 360,
-            scale: [1, 1.2, 1],
+            scale: [1, 1.2, 1] 
           }}
-          transition={{
-            rotate: { duration: 10, repeat: Infinity, ease: 'linear' },
-            scale: { duration: 3, repeat: Infinity },
+          transition={{ 
+            rotate: { duration: 10, repeat: Infinity, ease: "linear" },
+            scale: { duration: 3, repeat: Infinity }
           }}
         >
           <div className="w-12 h-12 glass-light rounded-full flex items-center justify-center">
@@ -181,13 +175,13 @@ export default function Loading() {
 
         <motion.div
           className="absolute -bottom-4 -left-4"
-          animate={{
+          animate={{ 
             rotate: -360,
-            y: [0, -10, 0],
+            y: [0, -10, 0] 
           }}
-          transition={{
-            rotate: { duration: 15, repeat: Infinity, ease: 'linear' },
-            y: { duration: 4, repeat: Infinity, ease: 'easeInOut' },
+          transition={{ 
+            rotate: { duration: 15, repeat: Infinity, ease: "linear" },
+            y: { duration: 4, repeat: Infinity, ease: "easeInOut" }
           }}
         >
           <div className="w-10 h-10 glass-light rounded-full flex items-center justify-center">

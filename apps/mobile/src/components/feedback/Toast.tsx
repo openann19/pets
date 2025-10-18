@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Dimensions, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -15,8 +15,6 @@ interface ToastProps {
   onHide: () => void;
   duration?: number;
 }
-
-const { width: _width } = Dimensions.get('window');
 
 export const Toast: React.FC<ToastProps> = ({
   message,

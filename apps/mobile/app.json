@@ -17,6 +17,18 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "packagerOpts": {
+      "config": "metro.config.js",
+      "sourceExts": ["js", "jsx", "ts", "tsx", "json"],
+      "transformer": {
+        "getTransformOptions": {
+          "transform": {
+            "experimentalImportSupport": false,
+            "inlineRequires": true
+          }
+        }
+      }
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.pawfectmatch.premium",

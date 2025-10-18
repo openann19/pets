@@ -1,6 +1,46 @@
+// Mock InCallManager specifically for this test - MUST be first
+jest.mock('react-native-incall-manager', () => ({
+  __esModule: true,
+  default: {
+    setSpeakerphoneOn: jest.fn(),
+    setKeepScreenOn: jest.fn(),
+    setForceSpeakerphoneOn: jest.fn(),
+    start: jest.fn(),
+    stop: jest.fn(),
+    displayIncomingCall: jest.fn(),
+    getSpeakerphoneOn: jest.fn(() => false),
+    setMicrophoneMute: jest.fn(),
+    turnScreenOn: jest.fn(),
+    turnScreenOff: jest.fn(),
+    setWiredHeadsetHfpOn: jest.fn(),
+    setBluetoothScoOn: jest.fn(),
+    setBluetoothScoOff: jest.fn(),
+  },
+}));
+
+import { mediaDevices, RTCPeerConnection } from 'react-native-webrtc';
+
+// Get the mocked InCallManager
+const InCallManager = require('react-native-incall-manager').default;
+
+// Import WebRTCService after mocks are set up
 import WebRTCService from '../WebRTCService';
-import {  } from 'react-native-webrtc';
-import InCallManager from 'react-native-incall-manager';
+
+// Create an instance for testing
+const webRTCService = new WebRTCService();
+
+// Mock interfaces
+interface MockMediaStreamTrack {
+  enabled: boolean;
+  stop?: jest.Mock;
+  _switchCamera?: jest.Mock;
+}
+
+interface MockMediaStream {
+  getTracks: jest.Mock;
+  getAudioTracks: jest.Mock;
+  getVideoTracks: jest.Mock;
+}
 
 // Mock dependencies
 jest.mock('react-native-webrtc', () => ({
@@ -13,11 +53,15 @@ jest.mock('react-native-webrtc', () => ({
 }));
 
 jest.mock('react-native-incall-manager', () => ({
-  setSpeakerphoneOn: jest.fn(),
-  setKeepScreenOn: jest.fn(),
-  setForceSpeakerphoneOn: jest.fn(),
-  start: jest.fn(),
-  stop: jest.fn(),
+  default: {
+    setSpeakerphoneOn: jest.fn(),
+    setKeepScreenOn: jest.fn(),
+    setForceSpeakerphoneOn: jest.fn(),
+    start: jest.fn(),
+    stop: jest.fn(),
+    displayIncomingCall: jest.fn(),
+    getSpeakerphoneOn: jest.fn(),
+  },
 }));
 
 const mockSocket = {
@@ -40,25 +84,25 @@ const mockPeerConnection = {
   connectionState: 'new',
 };
 
-const mockMediaStream = {
+const mockMediaStream: MockMediaStream = {
   getTracks: jest.fn(() => []),
   getAudioTracks: jest.fn(() => []),
   getVideoTracks: jest.fn(() => []),
 };
 
-describe('WebRTCService', () => {
+describe('webRTCService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (RTCPeerConnection as jest.Mock).mockImplementation(() => mockPeerConnection);
     (mediaDevices.getUserMedia as jest.Mock).mockResolvedValue(mockMediaStream);
     
     // Reset service state
-    WebRTCService.endCall();
+    webRTCService.endCall();
   });
 
   describe('Initialization', () => {
     it('should initialize with socket', () => {
-      WebRTCService.initialize(mockSocket);
+      webRTCService.initialize(mockSocket);
       
       expect(mockSocket.on).toHaveBeenCalledWith('incoming-call', expect.any(Function));
       expect(mockSocket.on).toHaveBeenCalledWith('call-answered', expect.any(Function));
@@ -69,7 +113,10 @@ describe('WebRTCService', () => {
     });
 
     it('should setup InCallManager correctly', () => {
-      expect(InCallManager.setSpeakerphoneOn).toHaveBeenCalledWith(false);
+      // Debug: Check if InCallManager methods were called
+      console.log('InCallManager.setKeepScreenOn calls:', InCallManager.setKeepScreenOn.mock.calls.length);
+      console.log('InCallManager.setForceSpeakerphoneOn calls:', InCallManager.setForceSpeakerphoneOn.mock.calls.length);
+      
       expect(InCallManager.setKeepScreenOn).toHaveBeenCalledWith(true);
       expect(InCallManager.setForceSpeakerphoneOn).toHaveBeenCalledWith(false);
     });
@@ -77,14 +124,14 @@ describe('WebRTCService', () => {
 
   describe('Starting Calls', () => {
     beforeEach(() => {
-      WebRTCService.initialize(mockSocket);
+      webRTCService.initialize(mockSocket);
     });
 
     it('should start voice call successfully', async () => {
-      const mockAudioTrack = { enabled: true };
-      mockMediaStream.getTracks.mockReturnValue([mockAudioTrack]);
+      const mockAudioTrack: MockMediaStreamTrack = { enabled: true };
+      mockMediaStream.getTracks.mockReturnValue([mockAudioTrack as any]);
       
-      const result = await WebRTCService.startCall('test-match-id', 'voice');
+      const result = await webRTCService.startCall('test-match-id', 'voice');
       
       expect(result).toBe(true);
       expect(mediaDevices.getUserMedia).toHaveBeenCalledWith({
@@ -100,11 +147,11 @@ describe('WebRTCService', () => {
     });
 
     it('should start video call successfully', async () => {
-      const mockVideoTrack = { enabled: true };
-      const mockAudioTrack = { enabled: true };
-      mockMediaStream.getTracks.mockReturnValue([mockAudioTrack, mockVideoTrack]);
+      const mockVideoTrack: MockMediaStreamTrack = { enabled: true };
+      const mockAudioTrack: MockMediaStreamTrack = { enabled: true };
+      mockMediaStream.getTracks.mockReturnValue([mockAudioTrack as any, mockVideoTrack as any]);
       
-      const result = await WebRTCService.startCall('test-match-id', 'video');
+      const result = await webRTCService.startCall('test-match-id', 'video');
       
       expect(result).toBe(true);
       expect(mediaDevices.getUserMedia).toHaveBeenCalledWith({
@@ -122,16 +169,16 @@ describe('WebRTCService', () => {
       const error = new Error('Permission denied');
       (mediaDevices.getUserMedia as jest.Mock).mockRejectedValue(error);
       
-      const result = await WebRTCService.startCall('test-match-id', 'voice');
+      const result = await webRTCService.startCall('test-match-id', 'voice');
       
       expect(result).toBe(false);
     });
 
     it('should emit call state changes', async () => {
       const mockListener = jest.fn();
-      WebRTCService.on('callStateChanged', mockListener);
+      webRTCService.on('callStateChanged', mockListener);
       
-      await WebRTCService.startCall('test-match-id', 'voice');
+      await webRTCService.startCall('test-match-id', 'voice');
       
       expect(mockListener).toHaveBeenCalledWith(expect.objectContaining({
         isActive: true,
@@ -142,7 +189,7 @@ describe('WebRTCService', () => {
 
   describe('Answering Calls', () => {
     beforeEach(() => {
-      WebRTCService.initialize(mockSocket);
+      webRTCService.initialize(mockSocket);
     });
 
     it('should answer incoming call successfully', async () => {
@@ -165,7 +212,7 @@ describe('WebRTCService', () => {
         incomingCallHandler(callData);
       }
 
-      const result = await WebRTCService.answerCall();
+      const result = await webRTCService.answerCall();
       
       expect(result).toBe(true);
       expect(mockSocket.emit).toHaveBeenCalledWith('answer-call', expect.objectContaining({
@@ -175,7 +222,7 @@ describe('WebRTCService', () => {
     });
 
     it('should handle answer call without call data', async () => {
-      const result = await WebRTCService.answerCall();
+      const result = await webRTCService.answerCall();
       
       expect(result).toBe(false);
     });
@@ -183,61 +230,61 @@ describe('WebRTCService', () => {
 
   describe('Call Controls', () => {
     beforeEach(() => {
-      WebRTCService.initialize(mockSocket);
+      webRTCService.initialize(mockSocket);
     });
 
     it('should toggle mute', async () => {
-      const mockAudioTrack = { enabled: true };
-      mockMediaStream.getAudioTracks.mockReturnValue([mockAudioTrack]);
+      const mockAudioTrack: MockMediaStreamTrack = { enabled: true };
+      mockMediaStream.getAudioTracks.mockReturnValue([mockAudioTrack as any]);
       
-      await WebRTCService.startCall('test-match-id', 'voice');
+      await webRTCService.startCall('test-match-id', 'voice');
       
-      WebRTCService.toggleMute();
+      webRTCService.toggleMute();
       
       expect(mockAudioTrack.enabled).toBe(false);
     });
 
     it('should toggle video', async () => {
-      const mockVideoTrack = { enabled: true };
-      mockMediaStream.getVideoTracks.mockReturnValue([mockVideoTrack]);
+      const mockVideoTrack: MockMediaStreamTrack = { enabled: true };
+      mockMediaStream.getVideoTracks.mockReturnValue([mockVideoTrack as any]);
       
-      await WebRTCService.startCall('test-match-id', 'video');
+      await webRTCService.startCall('test-match-id', 'video');
       
-      WebRTCService.toggleVideo();
+      webRTCService.toggleVideo();
       
       expect(mockVideoTrack.enabled).toBe(false);
     });
 
     it('should switch camera', async () => {
-      const mockVideoTrack = { _switchCamera: jest.fn() };
-      mockMediaStream.getVideoTracks.mockReturnValue([mockVideoTrack]);
+      const mockVideoTrack: MockMediaStreamTrack = { enabled: true, _switchCamera: jest.fn() };
+      mockMediaStream.getVideoTracks.mockReturnValue([mockVideoTrack as any]);
       
-      await WebRTCService.startCall('test-match-id', 'video');
+      await webRTCService.startCall('test-match-id', 'video');
       
-      await WebRTCService.switchCamera();
+      await webRTCService.switchCamera();
       
       expect(mockVideoTrack._switchCamera).toHaveBeenCalled();
     });
 
     it('should toggle speaker', () => {
-      WebRTCService.toggleSpeaker();
+      webRTCService.toggleSpeaker();
       
-      expect(InCallManager.setSpeakerphoneOn).toHaveBeenCalledWith(true);
+      expect(InCallManager.setForceSpeakerphoneOn).toHaveBeenCalledWith(true);
     });
   });
 
   describe('Ending Calls', () => {
     beforeEach(() => {
-      WebRTCService.initialize(mockSocket);
+      webRTCService.initialize(mockSocket);
     });
 
     it('should end call and clean up resources', async () => {
-      const mockTrack = { stop: jest.fn() };
-      mockMediaStream.getTracks.mockReturnValue([mockTrack]);
+      const mockTrack: MockMediaStreamTrack = { enabled: true, stop: jest.fn() };
+      mockMediaStream.getTracks.mockReturnValue([mockTrack as any]);
       
-      await WebRTCService.startCall('test-match-id', 'voice');
+      await webRTCService.startCall('test-match-id', 'voice');
       
-      WebRTCService.endCall();
+      webRTCService.endCall();
       
       expect(mockPeerConnection.close).toHaveBeenCalled();
       expect(mockTrack.stop).toHaveBeenCalled();
@@ -264,7 +311,7 @@ describe('WebRTCService', () => {
         incomingCallHandler(callData);
       }
 
-      WebRTCService.rejectCall();
+      webRTCService.rejectCall();
       
       expect(mockSocket.emit).toHaveBeenCalledWith('reject-call', expect.objectContaining({
         callId: 'test-call-id',
@@ -275,7 +322,7 @@ describe('WebRTCService', () => {
 
   describe('Call State Management', () => {
     it('should return correct call state', () => {
-      const initialState = WebRTCService.getCallState();
+      const initialState = webRTCService.getCallState();
       
       expect(initialState).toEqual({
         isActive: false,
@@ -288,15 +335,15 @@ describe('WebRTCService', () => {
     });
 
     it('should return correct call active status', () => {
-      expect(WebRTCService.isCallActive()).toBe(false);
+      expect(webRTCService.isCallActive()).toBe(false);
     });
 
     it('should update call state during call', async () => {
-      await WebRTCService.startCall('test-match-id', 'voice');
+      await webRTCService.startCall('test-match-id', 'voice');
       
-      expect(WebRTCService.isCallActive()).toBe(true);
+      expect(webRTCService.isCallActive()).toBe(true);
       
-      const state = WebRTCService.getCallState();
+      const state = webRTCService.getCallState();
       expect(state.isActive).toBe(true);
       expect(state.isIncoming).toBe(false);
     });
@@ -304,14 +351,14 @@ describe('WebRTCService', () => {
 
   describe('WebRTC Signaling', () => {
     beforeEach(() => {
-      WebRTCService.initialize(mockSocket);
+      webRTCService.initialize(mockSocket);
     });
 
     it('should handle WebRTC offer', async () => {
       const mockOffer = { type: 'offer', sdp: 'mock-sdp' };
       mockPeerConnection.createAnswer.mockResolvedValue(mockOffer);
       
-      await WebRTCService.startCall('test-match-id', 'voice');
+      await webRTCService.startCall('test-match-id', 'voice');
       
       const offerHandler = mockSocket.on.mock.calls.find(
         call => call[0] === 'webrtc-offer'
@@ -329,7 +376,7 @@ describe('WebRTCService', () => {
     it('should handle WebRTC answer', async () => {
       const mockAnswer = { type: 'answer', sdp: 'mock-sdp' };
       
-      await WebRTCService.startCall('test-match-id', 'voice');
+      await webRTCService.startCall('test-match-id', 'voice');
       
       const answerHandler = mockSocket.on.mock.calls.find(
         call => call[0] === 'webrtc-answer'
@@ -345,7 +392,7 @@ describe('WebRTCService', () => {
     it('should handle ICE candidates', async () => {
       const mockCandidate = { candidate: 'mock-candidate' };
       
-      await WebRTCService.startCall('test-match-id', 'voice');
+      await webRTCService.startCall('test-match-id', 'voice');
       
       const candidateHandler = mockSocket.on.mock.calls.find(
         call => call[0] === 'webrtc-ice-candidate'

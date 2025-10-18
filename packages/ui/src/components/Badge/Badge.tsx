@@ -56,7 +56,10 @@ export const Badge: React.FC<BadgeProps> = ({
   size = 'medium',
   className = '',
   dot = false,
-  outline = false
+  outline = false,
+  'aria-label': ariaLabel,
+  role,
+  tabIndex
 }) => {
   const baseClasses = 'inline-flex items-center font-medium rounded-full';
 
@@ -99,9 +102,9 @@ export const Badge: React.FC<BadgeProps> = ({
         ${sizeClasses[size]}
         ${className}
       `}
-      aria-label={props['aria-label']}
-      role={props.role || 'status'}
-      tabIndex={props.tabIndex}
+      aria-label={ariaLabel}
+      role={role || 'status'}
+      tabIndex={tabIndex}
     >
       {!dot && children}
     </span>

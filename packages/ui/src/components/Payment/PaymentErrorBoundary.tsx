@@ -3,17 +3,17 @@
  * Specialized error handling for payment flows with user-friendly messages and recovery options
  */
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  CreditCardIcon,
-  ExclamationTriangleIcon,
+import {
   ArrowPathIcon,
-  ShieldCheckIcon,
-  PhoneIcon
+  CreditCardIcon,
+  PhoneIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline';
-import { errorHandler } from '../../../core/src/services/ErrorHandler';
-import { logger } from '../../../core/src/services/Logger';
+import { errorHandler, logger } from '@pawfectmatch/core/services';
+import { AnimatePresence } from 'framer-motion';
+import type { ErrorInfo, ReactNode } from 'react';
+import { Component } from 'react';
+import { MotionDetails, MotionDiv, MotionH2, MotionP } from '../../utils/Motion';
 
 export interface PaymentErrorBoundaryProps {
   children: ReactNode;
@@ -35,7 +35,7 @@ export interface PaymentErrorBoundaryState {
 }
 
 export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, PaymentErrorBoundaryState> {
-  private retryTimeoutId: NodeJS.Timeout | null = null;
+  private retryTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor(props: PaymentErrorBoundaryProps) {
     super(props);
@@ -57,11 +57,11 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     const { onError, paymentMethod, amount, currency } = this.props;
-    
+
     // Log payment error with enhanced context
-    logger.error('Payment Error Boundary caught an error', {
+    logger.error('Payment Error Boundary caught an error', error, {
       component: 'PaymentErrorBoundary',
       action: 'payment_error',
       metadata: {
@@ -97,7 +97,7 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
     }
   }
 
-  componentWillUnmount(): void {
+  override componentWillUnmount(): void {
     if (this.retryTimeoutId) {
       clearTimeout(this.retryTimeoutId);
     }
@@ -112,8 +112,10 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
       logger.warn('Maximum payment retry attempts reached', {
         component: 'PaymentErrorBoundary',
         action: 'max_payment_retries_reached',
-        retryCount,
-        maxRetries,
+        metadata: {
+          retryCount,
+          maxRetries,
+        },
       });
       return;
     }
@@ -122,7 +124,7 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
 
     // Shorter delay for payment retries
     const delay = Math.min(2000 * Math.pow(1.5, retryCount), 5000);
-    
+
     this.retryTimeoutId = setTimeout(() => {
       this.setState({
         hasError: false,
@@ -140,19 +142,21 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
       logger.info('Payment error boundary retry attempted', {
         component: 'PaymentErrorBoundary',
         action: 'payment_retry_attempt',
-        retryCount: retryCount + 1,
-        delay,
+        metadata: {
+          retryCount: retryCount + 1,
+          delay,
+        },
       });
     }, delay);
   };
 
   handleCancel = (): void => {
     const { onCancel } = this.props;
-    
+
     logger.info('Payment cancelled by user', {
       component: 'PaymentErrorBoundary',
       action: 'payment_cancelled',
-      errorId: this.state.errorId,
+      metadata: { errorId: this.state.errorId },
     });
 
     if (onCancel) {
@@ -163,17 +167,17 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
   handleContactSupport = (): void => {
     // In a real implementation, this would open a support chat or redirect to support
     window.open('mailto:support@pawfectmatch.com?subject=Payment Issue', '_blank');
-    
+
     logger.info('User requested support for payment issue', {
       component: 'PaymentErrorBoundary',
       action: 'contact_support',
-      errorId: this.state.errorId,
+      metadata: { errorId: this.state.errorId },
     });
   };
 
   getPaymentErrorMessage(error: Error): { title: string; message: string; suggestions: string[] } {
     const errorMessage = error.message.toLowerCase();
-    
+
     if (errorMessage.includes('card') || errorMessage.includes('declined')) {
       return {
         title: 'Payment Declined',
@@ -186,7 +190,7 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
         ]
       };
     }
-    
+
     if (errorMessage.includes('network') || errorMessage.includes('connection')) {
       return {
         title: 'Connection Issue',
@@ -198,7 +202,7 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
         ]
       };
     }
-    
+
     if (errorMessage.includes('security') || errorMessage.includes('fraud')) {
       return {
         title: 'Security Check Required',
@@ -210,7 +214,7 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
         ]
       };
     }
-    
+
     if (errorMessage.includes('limit') || errorMessage.includes('exceeded')) {
       return {
         title: 'Payment Limit Exceeded',
@@ -222,7 +226,7 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
         ]
       };
     }
-    
+
     // Default payment error
     return {
       title: 'Payment Processing Error',
@@ -235,21 +239,21 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
     };
   }
 
-  render(): ReactNode {
-    const { 
-      hasError, 
-      error, 
-      errorInfo, 
-      errorId, 
-      retryCount, 
-      isRetrying 
+  override render(): ReactNode {
+    const {
+      hasError,
+      error,
+      errorInfo,
+      errorId,
+      retryCount,
+      isRetrying
     } = this.state;
-    
-    const { 
-      children, 
-      paymentMethod, 
-      amount, 
-      currency 
+
+    const {
+      children,
+      paymentMethod,
+      amount,
+      currency
     } = this.props;
 
     if (hasError && error) {
@@ -257,7 +261,7 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
 
       return (
         <AnimatePresence>
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -265,40 +269,40 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
             className="min-h-[500px] flex items-center justify-center p-4"
           >
             <div className="max-w-lg w-full bg-white border border-red-200 rounded-2xl shadow-xl p-8 text-center">
-              
+
               {/* Payment Error Icon */}
-              <motion.div
+              <MotionDiv
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
                 className="text-red-500 mb-6"
               >
                 <CreditCardIcon className="h-16 w-16 mx-auto" />
-              </motion.div>
+              </MotionDiv>
 
               {/* Error Title */}
-              <motion.h2
+              <MotionH2
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
                 className="text-2xl font-bold text-red-900 mb-4"
               >
                 {errorDetails.title}
-              </motion.h2>
+              </MotionH2>
 
               {/* Error Message */}
-              <motion.p
+              <MotionP
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
                 className="text-lg text-red-700 mb-6"
               >
                 {errorDetails.message}
-              </motion.p>
+              </MotionP>
 
               {/* Payment Details */}
               {(amount || paymentMethod) && (
-                <motion.div
+                <MotionDiv
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4 }}
@@ -312,11 +316,11 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
                       <span className="block">Method: {paymentMethod}</span>
                     )}
                   </p>
-                </motion.div>
+                </MotionDiv>
               )}
 
               {/* Suggestions */}
-              <motion.div
+              <MotionDiv
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
@@ -331,10 +335,10 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </MotionDiv>
 
               {/* Action Buttons */}
-              <motion.div
+              <MotionDiv
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
@@ -368,10 +372,10 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
                   <PhoneIcon className="h-5 w-5 mr-2" />
                   Contact Support
                 </button>
-              </motion.div>
+              </MotionDiv>
 
               {/* Security Notice */}
-              <motion.div
+              <MotionDiv
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7 }}
@@ -381,23 +385,23 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
                   <ShieldCheckIcon className="h-5 w-5 mr-2" />
                   <span className="text-sm font-medium">Your payment information is secure and encrypted</span>
                 </div>
-              </motion.div>
+              </MotionDiv>
 
               {/* Error ID for support */}
               {errorId && (
-                <motion.div
+                <MotionDiv
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.8 }}
                   className="mt-4 p-2 bg-gray-100 rounded text-xs text-gray-600"
                 >
                   Error ID: <code className="font-mono">{errorId}</code>
-                </motion.div>
+                </MotionDiv>
               )}
 
               {/* Development Error Details */}
-              {process.env.NODE_ENV === 'development' && errorInfo && (
-                <motion.details
+              {((globalThis as any)?.process?.env?.NODE_ENV === 'development') && errorInfo && (
+                <MotionDetails
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.9 }}
@@ -419,10 +423,10 @@ export class PaymentErrorBoundary extends Component<PaymentErrorBoundaryProps, P
                       <pre className="whitespace-pre-wrap mt-1">{errorInfo.componentStack}</pre>
                     </div>
                   </div>
-                </motion.details>
+                </MotionDetails>
               )}
             </div>
-          </motion.div>
+          </MotionDiv>
         </AnimatePresence>
       );
     }

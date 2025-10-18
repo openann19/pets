@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 // KeyCode type removed as it was unused
 
@@ -21,20 +21,25 @@ export function useKeyboardShortcut(
     handlerRef.current = handler;
   }, [handler]);
 
+  // Keep the formatted combo in sync when keyCombo changes without re-subscribing listeners
   useEffect(() => {
-    const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    formattedCombo.current = formatKeyCombo(keyCombo);
+  }, [keyCombo]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       const pressedCombo = formatPressedKeys(event);
       if (pressedCombo === formattedCombo.current) {
         event.preventDefault();
         handlerRef.current();
       }
-    }, []);
+    };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [keyCombo]);
+  }, [keyCombo, handler]);
 
   return formattedCombo.current;
 }
@@ -45,7 +50,7 @@ function formatKeyCombo(combo: KeyCombo): string {
   if (combo.shift) modifiers.push('Shift');
   if (combo.alt) modifiers.push('Alt');
   if (combo.meta) modifiers.push('Meta');
-  
+
   return [...modifiers, combo.key].join('+');
 }
 
@@ -55,6 +60,6 @@ function formatPressedKeys(event: KeyboardEvent): string {
   if (event.shiftKey) modifiers.push('Shift');
   if (event.altKey) modifiers.push('Alt');
   if (event.metaKey) modifiers.push('Meta');
-  
+
   return [...modifiers, event.key].join('+');
 }

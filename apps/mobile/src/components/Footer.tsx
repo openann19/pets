@@ -46,6 +46,7 @@ export const Footer: React.FC<FooterProps> = ({
   useEffect(() => {
     opacity.value = withDelay(300, withTiming(1, { duration: 600 }));
     translateY.value = withDelay(300, withSpring(0, { damping: 15, stiffness: 100 }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({

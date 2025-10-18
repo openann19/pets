@@ -6,7 +6,9 @@
 const User = require('../models/User');
 const Pet = require('../models/Pet');
 const Match = require('../models/Match');
-const Message = require('../models/Message');
+let Message = null;
+try { Message = require('../models/Message'); } catch (e) { Message = null; }
+const Conversation = require('../models/Conversation');
 const LeaderboardScore = require('../models/LeaderboardScore');
 const logger = require('../utils/logger');
 
@@ -40,10 +42,10 @@ const getLeaderboard = async (req, res) => {
 
     // Calculate date range
     const dateRange = getDateRange(timeframe);
-    
+
     // Get leaderboard entries based on category
     let entries = [];
-    
+
     switch (category) {
       case 'overall':
         entries = await getOverallLeaderboard(dateRange, limit, offset);
@@ -99,7 +101,7 @@ const getUserRank = async (req, res) => {
     // Validate category and timeframe
     const validCategories = ['overall', 'streak', 'matches', 'engagement'];
     const validTimeframes = ['daily', 'weekly', 'monthly', 'allTime'];
-    
+
     if (!validCategories.includes(category) || !validTimeframes.includes(timeframe)) {
       return res.status(400).json({
         success: false,
@@ -108,11 +110,11 @@ const getUserRank = async (req, res) => {
     }
 
     const dateRange = getDateRange(timeframe);
-    
+
     // Get user's score and rank
     const userScore = await calculateUserScore(userId, category, dateRange);
     const rank = await calculateUserRank(userId, category, dateRange);
-    
+
     // Calculate percentile
     const totalUsers = await User.countDocuments({ isActive: true });
     const percentile = totalUsers > 0 ? Math.round(((totalUsers - rank + 1) / totalUsers) * 100) : 0;
@@ -167,7 +169,7 @@ const updateScore = async (req, res) => {
     // Update or create leaderboard score
     await LeaderboardScore.findOneAndUpdate(
       { userId, category },
-      { 
+      {
         $inc: { score: points },
         $set: { updatedAt: new Date() }
       },
@@ -382,61 +384,42 @@ const getMatchesLeaderboard = async (dateRange, limit, offset) => {
  * Get engagement leaderboard (messages and interactions)
  */
 const getEngagementLeaderboard = async (dateRange, limit, offset) => {
-  const engagement = await Message.aggregate([
-    {
-      $match: {
-        createdAt: { $gte: dateRange.start, $lte: dateRange.end }
-      }
-    },
-    {
-      $group: {
-        _id: '$senderId',
-        messageCount: { $sum: 1 }
-      }
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: '_id',
-        foreignField: '_id',
-        as: 'user'
-      }
-    },
-    {
-      $unwind: '$user'
-    },
-    {
-      $match: {
-        'user.isActive': true,
-        'user.isBlocked': false
-      }
-    },
-    {
-      $project: {
-        userId: '$user._id',
-        username: '$user.username',
-        avatar: '$user.avatar',
-        score: '$messageCount',
-        rank: { $rank: { orderBy: { messageCount: -1 } } }
-      }
-    },
-    {
-      $sort: { score: -1 }
-    },
-    {
-      $skip: parseInt(offset)
-    },
-    {
-      $limit: parseInt(limit)
-    }
-  ]);
+  let engagement;
+  if (Message) {
+    engagement = await Message.aggregate([
+      { $match: { createdAt: { $gte: dateRange.start, $lte: dateRange.end } } },
+      { $group: { _id: '$senderId', messageCount: { $sum: 1 } } },
+      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
+      { $unwind: '$user' },
+      { $match: { 'user.isActive': true, 'user.isBlocked': false } },
+      { $project: { userId: '$user._id', username: '$user.username', avatar: '$user.avatar', score: '$messageCount' } },
+      { $sort: { score: -1 } },
+      { $skip: parseInt(offset) },
+      { $limit: parseInt(limit) }
+    ]);
+  } else {
+    // Fallback: derive engagement from Conversation embedded messages
+    engagement = await Conversation.aggregate([
+      { $unwind: '$messages' },
+      { $match: { 'messages.sentAt': { $gte: dateRange.start, $lte: dateRange.end } } },
+      { $group: { _id: '$messages.sender', messageCount: { $sum: 1 } } },
+      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
+      { $unwind: '$user' },
+      { $match: { 'user.isActive': true, 'user.isBlocked': false } },
+      { $project: { userId: '$user._id', username: '$user.username', avatar: '$user.avatar', score: '$messageCount' } },
+      { $sort: { score: -1 } },
+      { $skip: parseInt(offset) },
+      { $limit: parseInt(limit) }
+    ]);
+  }
 
-  return engagement.map(entry => ({
-    userId: entry.userId.toString(),
+  // Assign rank based on sorted order
+  return engagement.map((entry, idx) => ({
+    userId: entry.userId?.toString?.() || entry.userId,
     username: entry.username,
     avatar: entry.avatar,
-    score: entry.score,
-    rank: entry.rank
+    score: entry.score || entry.messageCount || 0,
+    rank: idx + 1
   }));
 };
 
@@ -448,11 +431,11 @@ const calculateUserScore = async (userId, category, dateRange) => {
     case 'overall':
       const overallScore = await LeaderboardScore.findOne({ userId, category });
       return overallScore ? overallScore.score : 0;
-    
+
     case 'streak':
       const user = await User.findById(userId);
       return user?.analytics?.currentStreak || 0;
-    
+
     case 'matches':
       const matchCount = await Match.countDocuments({
         $or: [{ pet1Owner: userId }, { pet2Owner: userId }],
@@ -460,14 +443,23 @@ const calculateUserScore = async (userId, category, dateRange) => {
         createdAt: { $gte: dateRange.start, $lte: dateRange.end }
       });
       return matchCount;
-    
+
     case 'engagement':
-      const messageCount = await Message.countDocuments({
-        senderId: userId,
-        createdAt: { $gte: dateRange.start, $lte: dateRange.end }
-      });
-      return messageCount;
-    
+      if (Message) {
+        const messageCount = await Message.countDocuments({
+          senderId: userId,
+          createdAt: { $gte: dateRange.start, $lte: dateRange.end }
+        });
+        return messageCount;
+      } else {
+        const convAgg = await Conversation.aggregate([
+          { $unwind: '$messages' },
+          { $match: { 'messages.sender': new (require('mongoose').Types.ObjectId)(String(userId)), 'messages.sentAt': { $gte: dateRange.start, $lte: dateRange.end } } },
+          { $count: 'count' }
+        ]);
+        return convAgg[0]?.count || 0;
+      }
+
     default:
       return 0;
   }
@@ -478,7 +470,7 @@ const calculateUserScore = async (userId, category, dateRange) => {
  */
 const calculateUserRank = async (userId, category, dateRange) => {
   const userScore = await calculateUserScore(userId, category, dateRange);
-  
+
   let count = 0;
   switch (category) {
     case 'overall':
@@ -488,7 +480,7 @@ const calculateUserRank = async (userId, category, dateRange) => {
         updatedAt: { $gte: dateRange.start, $lte: dateRange.end }
       });
       break;
-    
+
     case 'streak':
       count = await User.countDocuments({
         'analytics.currentStreak': { $gt: userScore },
@@ -496,18 +488,18 @@ const calculateUserRank = async (userId, category, dateRange) => {
         isBlocked: false
       });
       break;
-    
+
     case 'matches':
       // This would require a more complex query to count users with more matches
       count = 0; // Simplified for now
       break;
-    
+
     case 'engagement':
       // This would require a more complex query to count users with more messages
       count = 0; // Simplified for now
       break;
   }
-  
+
   return count + 1;
 };
 

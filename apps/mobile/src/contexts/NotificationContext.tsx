@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '@pawfectmatch/core';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 interface NotificationCounts {
   matches: number;
@@ -44,7 +44,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Save counts to storage whenever they change
   useEffect(() => {
     saveCounts();
-  }, [counts]);
+  }, [counts, saveCounts]);
 
   const loadCounts = async () => {
     try {
@@ -58,13 +58,18 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
 
-  const saveCounts = async () => {
+  const saveCounts = useCallback(async () => {
     try {
       await AsyncStorage.setItem('notification_counts', JSON.stringify(counts));
     } catch (error) {
       logger.error('Error saving notification counts:', { error });
     }
-  };
+  }, [counts]);
+
+  // Save counts to storage whenever they change
+  useEffect(() => {
+    saveCounts();
+  }, [counts, saveCounts]);
 
   const updateCount = (type: keyof NotificationCounts, count: number): void => {
     setCounts(prev => ({

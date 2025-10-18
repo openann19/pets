@@ -3,7 +3,15 @@ const { body } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const { validate } = require('../middleware/validation');
 const { authenticateToken, refreshAccessToken } = require('../middleware/auth');
+const { changePassword, logoutAll } = require('../controllers/sessionController');
 const {
+  setup2FASmsEmail,
+  verify2FASmsEmail,
+  send2FACode,
+  biometricLogin,
+  setupBiometric,
+  disableBiometric,
+  refreshBiometricToken,
   register,
   login,
   logout,
@@ -65,17 +73,32 @@ const twoFactorValidation = [
 // Routes with rate limiting
 router.post('/register', authLimiter, registerValidation, validate, register);
 router.post('/login', authLimiter, loginValidation, validate, login);
+router.post('/biometric-login', authLimiter, biometricLogin);
 router.post('/logout', authenticateToken, logout);
+router.post('/logout-all', authenticateToken, logoutAll);
 router.get('/me', authenticateToken, getMe);
 router.post('/refresh-token', authLimiter, refreshAccessToken);
 router.post('/verify-email/:token', verifyEmail);
 router.post('/forgot-password', passwordResetLimiter, emailValidation, validate, forgotPassword);
+// Support both legacy param-based and body-based reset password
 router.post('/reset-password/:token', passwordResetLimiter, passwordValidation, validate, resetPassword);
+router.post('/reset-password', passwordResetLimiter, passwordValidation, validate, resetPassword);
+router.post('/change-password', authenticateToken, changePassword);
+
+// SMS/Email 2FA Routes
+router.post('/2fa/setup-sms-email', authenticateToken, setup2FASmsEmail);
+router.post('/2fa/verify-sms-email', authenticateToken, verify2FASmsEmail);
+router.post('/2fa/send-code', authenticateToken, send2FACode);
 
 // 2FA Routes
 router.post('/2fa/setup', authenticateToken, setup2FA);
 router.post('/2fa/verify', authenticateToken, twoFactorValidation, validate, verify2FA);
 router.post('/2fa/validate', twoFactorValidation, validate, validate2FA);
 router.post('/2fa/disable', authenticateToken, twoFactorValidation, validate, disable2FA);
+
+// Biometric Routes
+router.post('/biometric/setup', authenticateToken, setupBiometric);
+router.post('/biometric/disable', authenticateToken, disableBiometric);
+router.post('/biometric/refresh', authenticateToken, refreshBiometricToken);
 
 module.exports = router;

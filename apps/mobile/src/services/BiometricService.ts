@@ -1,631 +1,235 @@
 /**
- * Biometric Authentication Service
- * Comprehensive biometric authentication using React Native Biometrics
+ * Biometric Authentication Service for PawfectMatch Mobile App
+ * Handles biometric authentication (FaceID, TouchID, Fingerprint)
  */
-
+import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
-import { Alert, Platform } from 'react-native';
-// Note: These imports will be available once the packages are properly set up
-// import ReactNativeBiometrics, { BiometryTypes } from 'react-native-biometrics';
 import { logger } from '@pawfectmatch/core';
 
-// Temporary type definitions until packages are available
-type BiometryTypes = 'TouchID' | 'FaceID' | 'Biometrics';
-
-// Temporary mock for development
-const ReactNativeBiometrics = {
-  isSensorAvailable: () => Promise.resolve({ available: false, biometryType: null }),
-  createKeys: () => Promise.resolve({ publicKey: 'mock-key' }),
-  deleteKeys: () => Promise.resolve(),
-  biometricKeysExist: () => Promise.resolve({ keysExist: false }),
-  simplePrompt: () => Promise.resolve({ success: false }),
-  createSignature: () => Promise.resolve({ success: false, signature: 'mock-signature' })
-};
-
-export interface BiometricConfig {
-  allowDeviceCredentials: boolean;
-  promptMessage: string;
-  cancelButtonText: string;
-  fallbackPromptMessage?: string;
-}
-
-export interface BiometricResult {
+export interface BiometricAuthResult {
   success: boolean;
-  error?: string | undefined;
-  biometryType?: BiometryTypes | undefined;
+  error?: string;
+  biometricType?: 'fingerprint' | 'facial' | 'iris' | 'unknown';
 }
 
-export interface BiometricKeys {
-  publicKey: string;
-  privateKey: string;
+export interface BiometricCapabilities {
+  hasHardware: boolean;
+  isEnrolled: boolean;
+  supportedTypes: LocalAuthentication.AuthenticationType[];
+  securityLevel: LocalAuthentication.SecurityLevel;
 }
 
 class BiometricService {
-  private rnBiometrics: any;
-  private isInitialized = false;
-  private biometryType: BiometryTypes | null = null;
+  private static readonly BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
+  private static readonly BIOMETRIC_TYPE_KEY = 'biometric_type';
 
-  constructor() {
-    this.rnBiometrics = new (ReactNativeBiometrics as any)({
-      allowDeviceCredentials: true,
-    });
+  /**
+   * Check if device supports biometric authentication
+   */
+  async checkBiometricSupport(): Promise<BiometricCapabilities> {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      const securityLevel = await LocalAuthentication.getEnrolledLevelAsync();
+
+      const capabilities: BiometricCapabilities = {
+        hasHardware,
+        isEnrolled,
+        supportedTypes,
+        securityLevel,
+      };
+
+      logger.info('Biometric capabilities checked', {
+        hasHardware,
+        isEnrolled,
+        supportedTypes: supportedTypes.length,
+        securityLevel,
+      });
+
+      return capabilities;
+    } catch (error) {
+      logger.error('Failed to check biometric support', { error });
+      return {
+        hasHardware: false,
+        isEnrolled: false,
+        supportedTypes: [],
+        securityLevel: LocalAuthentication.SecurityLevel.NONE,
+      };
+    }
   }
 
   /**
-   * Initialize biometric service and check availability
+   * Authenticate using biometrics
    */
-  async initialize(): Promise<boolean> {
+  async authenticate(reason?: string): Promise<BiometricAuthResult> {
     try {
-      const { available, biometryType } = await this.rnBiometrics.isSensorAvailable();
+      const capabilities = await this.checkBiometricSupport();
 
-      if (available) {
-        this.biometryType = biometryType;
-        this.isInitialized = true;
-        // Log initialization
-        logger.info('Biometric service initialized', {
-          component: 'BiometricService',
-          action: 'initialize',
-          metadata: {
-            biometryType,
-          },
-        });
-        return true;
+      if (!capabilities.hasHardware) {
+        return {
+          success: false,
+          error: 'Biometric authentication not supported on this device',
+        };
+      }
+
+      if (!capabilities.isEnrolled) {
+        return {
+          success: false,
+          error: 'No biometric authentication methods enrolled',
+        };
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: reason || 'Authenticate to access PawfectMatch',
+        fallbackLabel: 'Use PIN',
+        cancelLabel: 'Cancel',
+        disableDeviceFallback: false,
+      });
+
+      const biometricType = this.getBiometricType(capabilities.supportedTypes);
+
+      if (result.success) {
+        logger.info('Biometric authentication successful', { biometricType });
+        return {
+          success: true,
+          biometricType,
+        };
       } else {
-        logger.info('Biometric authentication not available', {
-          component: 'BiometricService',
-          action: 'initialize',
-        });
-        return false;
-      }
-    } catch (error) {
-      logger.error('Failed to initialize biometric service', { error });
-
-      return false;
-    }
-  }
-
-  /**
-   * Check if biometric authentication is available
-   */
-  async isAvailable(): Promise<boolean> {
-    try {
-      const { available } = await this.rnBiometrics.isSensorAvailable();
-      return available;
-    } catch (error) {
-      logger.error('Failed to check biometric availability', { error });
-
-      return false;
-    }
-  }
-
-  /**
-   * Get available biometric type
-   */
-  getBiometryType(): BiometryTypes | null {
-    return this.biometryType;
-  }
-
-  /**
-   * Get user-friendly biometric type name
-   */
-  getBiometryTypeName(): string {
-    const t = this.biometryType;
-    if (t === 'TouchID') return 'Touch ID';
-    if (t === 'FaceID') return 'Face ID';
-    if (t === 'Biometrics') return Platform.OS === 'ios' ? 'Touch ID' : 'Fingerprint';
-    return 'Biometric';
-  }
-
-  /**
-   * Create biometric keys for secure storage
-   */
-  async createKeys(): Promise<BiometricKeys | null> {
-    try {
-      if (!this.isInitialized) {
-        throw new Error('Biometric service not initialized');
-      }
-
-      const { publicKey } = await this.rnBiometrics.createKeys();
-
-      // Store the public key securely
-      await SecureStore.setItemAsync('biometric_public_key', publicKey);
-
-      logger.info('Biometric keys created successfully', {
-        component: 'BiometricService',
-        action: 'create_keys',
-      });
-
-      return {
-        publicKey,
-        privateKey: 'stored_in_secure_enclave', // Private key is stored in secure enclave
-      };
-    } catch (error) {
-      logger.error('Failed to create biometric keys', { error });
-
-      return null;
-    }
-  }
-
-  /**
-   * Delete biometric keys
-   */
-  async deleteKeys(): Promise<boolean> {
-    try {
-      await this.rnBiometrics.deleteKeys();
-      await SecureStore.deleteItemAsync('biometric_public_key');
-
-      logger.info('Biometric keys deleted successfully', {
-        component: 'BiometricService',
-        action: 'delete_keys',
-      });
-
-      return true;
-    } catch (error) {
-      logger.error('Failed to delete biometric keys', { error });
-
-      return false;
-    }
-  }
-
-  /**
-   * Check if biometric keys exist
-   */
-  async keysExist(): Promise<boolean> {
-    try {
-      const { keysExist } = await this.rnBiometrics.biometricKeysExist();
-      return keysExist;
-    } catch (error) {
-      logger.error('Failed to check if biometric keys exist', { error });
-
-      return false;
-    }
-  }
-
-  /**
-   * Authenticate with biometrics
-   */
-  async authenticate(config?: Partial<BiometricConfig>): Promise<BiometricResult> {
-    try {
-      if (!this.isInitialized) {
+        const error = result.error || 'Authentication failed';
+        logger.warn('Biometric authentication failed', { error, biometricType });
         return {
           success: false,
-          error: 'Biometric service not initialized',
+          error,
+          biometricType,
         };
       }
-
-      const defaultConfig: BiometricConfig = {
-        allowDeviceCredentials: true,
-        promptMessage: `Authenticate with ${this.getBiometryTypeName()}`,
-        cancelButtonText: 'Cancel',
-        fallbackPromptMessage: 'Use device passcode',
-      };
-
-      const finalConfig = { ...defaultConfig, ...config };
-
-      const { success } = await this.rnBiometrics.simplePrompt({
-        promptMessage: finalConfig.promptMessage,
-        cancelButtonText: finalConfig.cancelButtonText,
-        fallbackPromptMessage: finalConfig.fallbackPromptMessage,
-      });
-
-      if (success) {
-        logger.info('Biometric authentication successful', {
-          component: 'BiometricService',
-          action: 'authenticate',
-          metadata: {
-            biometryType: this.biometryType,
-          },
-        });
-      }
-
-      return {
-        success,
-        biometryType: this.biometryType || undefined,
-      };
     } catch (error) {
-      logger.error('Biometric authentication failed', { error });
-
+      logger.error('Biometric authentication error', { error });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Authentication failed',
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
-    }
-  }
-
-  /**
-   * Sign data with biometric authentication
-   */
-  async signData(data: string, config?: Partial<BiometricConfig>): Promise<{ success: boolean; signature?: string; error?: string }> {
-    try {
-      if (!this.isInitialized) {
-        return {
-          success: false,
-          error: 'Biometric service not initialized',
-        };
-      }
-
-      const defaultConfig: BiometricConfig = {
-        allowDeviceCredentials: true,
-        promptMessage: `Sign with ${this.getBiometryTypeName()}`,
-        cancelButtonText: 'Cancel',
-      };
-
-      const finalConfig = { ...defaultConfig, ...config };
-
-      const { success, signature } = await this.rnBiometrics.createSignature({
-        promptMessage: finalConfig.promptMessage,
-        payload: data,
-        cancelButtonText: finalConfig.cancelButtonText,
-      });
-
-      if (success) {
-        logger.info('Data signed successfully with biometrics', {
-          component: 'BiometricService',
-          action: 'sign_data',
-          metadata: {
-            biometryType: this.biometryType,
-          },
-        });
-      }
-
-      return {
-        success,
-        signature,
-      };
-    } catch (error) {
-      logger.error('Failed to sign data', { error });
-
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Signing failed',
-      };
-    }
-  }
-
-  /**
-   * Verify signature
-   */
-  async verifySignature(data: string, _signature: string): Promise<boolean> {
-    try {
-      if (!this.isInitialized) {
-        return false;
-      }
-
-      const { success } = await this.rnBiometrics.createSignature({
-        promptMessage: 'Verify signature',
-        payload: data,
-        cancelButtonText: 'Cancel',
-      });
-
-      if (success) {
-        logger.info('Signature verified successfully', {
-          component: 'BiometricService',
-          action: 'verify_signature',
-          metadata: {
-            biometryType: this.biometryType,
-          },
-        });
-      }
-
-      return success;
-    } catch (error) {
-      logger.error('Failed to verify signature', { error });
-
-      return false;
-    }
-  }
-
-  /**
-   * Store sensitive data with biometric protection
-   */
-  async storeSecureData(key: string, data: string): Promise<boolean> {
-    try {
-      // First authenticate with biometrics
-      const authResult = await this.authenticate({
-        promptMessage: `Store data with ${this.getBiometryTypeName()}`,
-      });
-
-      if (!authResult.success) {
-        return false;
-      }
-
-      // Encrypt and store the data
-      const encryptedData = await this.encryptData(data);
-      await SecureStore.setItemAsync(`biometric_${key}`, encryptedData);
-
-      logger.info('Secure data stored successfully', {
-        component: 'BiometricService',
-        action: 'store_secure_data',
-        metadata: {
-          key,
-          biometryType: this.biometryType,
-        },
-      });
-
-      return true;
-    } catch (error) {
-      logger.error('Failed to store secure data', { error });
-
-      return false;
-    }
-  }
-
-  /**
-   * Retrieve sensitive data with biometric protection
-   */
-  async getSecureData(key: string): Promise<string | null> {
-    try {
-      // First authenticate with biometrics
-      const authResult = await this.authenticate({
-        promptMessage: `Access data with ${this.getBiometryTypeName()}`,
-      });
-
-      if (!authResult.success) {
-        return null;
-      }
-
-      // Retrieve and decrypt the data
-      const encryptedData = await SecureStore.getItemAsync(`biometric_${key}`);
-      if (!encryptedData) {
-        return null;
-      }
-
-      const decryptedData = await this.decryptData(encryptedData);
-
-      logger.info('Secure data retrieved successfully', {
-        component: 'BiometricService',
-        action: 'get_secure_data',
-        metadata: {
-          key,
-          biometryType: this.biometryType,
-        },
-      });
-
-      return decryptedData;
-    } catch (error) {
-      logger.error('Failed to retrieve secure data', { error });
-
-      return null;
-    }
-  }
-
-  /**
-   * Remove secure data
-   */
-  async removeSecureData(key: string): Promise<boolean> {
-    try {
-      await SecureStore.deleteItemAsync(`biometric_${key}`);
-
-      logger.info('Secure data removed successfully', {
-        component: 'BiometricService',
-        action: 'remove_secure_data',
-        metadata: {
-          key,
-        },
-      });
-
-      return true;
-    } catch (error) {
-      logger.error('Failed to remove secure data', { error });
-
-      return false;
     }
   }
 
   /**
    * Enable biometric authentication for the app
    */
-  async enableBiometricAuth(): Promise<boolean> {
+  async enableBiometric(): Promise<boolean> {
     try {
-      // Check if biometrics are available
-      const isAvailable = await this.isAvailable();
-      if (!isAvailable) {
-        Alert.alert(
-          'Biometric Not Available',
-          'Biometric authentication is not available on this device.',
-          [{ text: 'OK' }]
-        );
+      // First authenticate to verify biometrics work
+      const authResult = await this.authenticate('Enable biometric authentication');
+
+      if (!authResult.success) {
         return false;
       }
 
-      // Create keys if they don't exist
-      const keysExist = await this.keysExist();
-      if (!keysExist) {
-        const keys = await this.createKeys();
-        if (!keys) {
-          return false;
-        }
-      }
+      // Store that biometric is enabled
+      await SecureStore.setItemAsync(BiometricService.BIOMETRIC_ENABLED_KEY, 'true');
+      await SecureStore.setItemAsync(
+        BiometricService.BIOMETRIC_TYPE_KEY,
+        authResult.biometricType || 'unknown'
+      );
 
-      // Store biometric preference
-      await SecureStore.setItemAsync('biometric_enabled', 'true');
-
-      logger.info('Biometric authentication enabled', {
-        component: 'BiometricService',
-        action: 'enable_biometric_auth',
-        metadata: {
-          biometryType: this.biometryType,
-        },
-      });
-
+      logger.info('Biometric authentication enabled', { type: authResult.biometricType });
       return true;
     } catch (error) {
-      logger.error('Failed to enable biometric auth', { error });
-
+      logger.error('Failed to enable biometric authentication', { error });
       return false;
     }
   }
 
   /**
-   * Disable biometric authentication
+   * Disable biometric authentication for the app
    */
-  async disableBiometricAuth(): Promise<boolean> {
+  async disableBiometric(): Promise<void> {
     try {
-      // Remove stored preference
-      await SecureStore.deleteItemAsync('biometric_enabled');
-
-      // Optionally delete keys (user might want to keep them for other apps)
-      // await this.deleteKeys();
-
-      logger.info('Biometric authentication disabled', {
-        component: 'BiometricService',
-        action: 'disable_biometric_auth',
-        metadata: {
-          biometryType: this.biometryType,
-        },
-      });
-
-      return true;
+      await SecureStore.deleteItemAsync(BiometricService.BIOMETRIC_ENABLED_KEY);
+      await SecureStore.deleteItemAsync(BiometricService.BIOMETRIC_TYPE_KEY);
+      logger.info('Biometric authentication disabled');
     } catch (error) {
-      logger.error('Failed to disable biometric auth', { error });
-
-      return false;
+      logger.error('Failed to disable biometric authentication', { error });
     }
   }
 
   /**
-   * Check if biometric authentication is enabled
+   * Check if biometric authentication is enabled for the app
    */
-  async isBiometricAuthEnabled(): Promise<boolean> {
+  async isBiometricEnabled(): Promise<boolean> {
     try {
-      const enabled = await SecureStore.getItemAsync('biometric_enabled');
+      const enabled = await SecureStore.getItemAsync(BiometricService.BIOMETRIC_ENABLED_KEY);
       return enabled === 'true';
     } catch (error) {
-      logger.error('Failed to check biometric auth status', { error });
-
+      logger.error('Failed to check biometric status', { error });
       return false;
     }
   }
 
   /**
-   * Quick biometric authentication for app unlock
+   * Get the type of biometric authentication available
    */
-  async quickAuth(): Promise<BiometricResult> {
-    return await this.authenticate({
-      promptMessage: `Unlock ${this.getBiometryTypeName()}`,
-      cancelButtonText: 'Use Password',
-    });
+  private getBiometricType(supportedTypes: LocalAuthentication.AuthenticationType[]): 'fingerprint' | 'facial' | 'iris' | 'unknown' {
+    if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+      return 'facial';
+    }
+    if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+      return 'fingerprint';
+    }
+    if (supportedTypes.includes(LocalAuthentication.AuthenticationType.IRIS)) {
+      return 'iris';
+    }
+    return 'unknown';
   }
 
   /**
-   * Show biometric setup prompt
+   * Get user-friendly biometric type name
    */
-  async showSetupPrompt(): Promise<boolean> {
-    try {
-      const isAvailable = await this.isAvailable();
-      if (!isAvailable) {
-        return false;
-      }
-
-      const isEnabled = await this.isBiometricAuthEnabled();
-      if (isEnabled) {
-        return true;
-      }
-
-      Alert.alert(
-        `Enable ${this.getBiometryTypeName()}`,
-        `Would you like to enable ${this.getBiometryTypeName()} for faster and more secure authentication?`,
-        [
-          {
-            text: 'Not Now',
-            style: 'cancel',
-          },
-          {
-            text: 'Enable',
-            onPress: async () => {
-              await this.enableBiometricAuth();
-            },
-          },
-        ]
-      );
-
-      return true;
-    } catch (error) {
-      logger.error('Failed to show setup prompt', { error });
-
-      return false;
+  getBiometricTypeName(type?: string): string {
+    switch (type) {
+      case 'facial':
+        return 'Face ID';
+      case 'fingerprint':
+        return 'Touch ID';
+      case 'iris':
+        return 'Iris Scan';
+      default:
+        return 'Biometric Authentication';
     }
   }
 
   /**
-   * Secure data encryption using AES-256-GCM
+   * Encrypt sensitive data with biometric protection
+   * Note: This is a placeholder - actual implementation would require
+   * platform-specific keychain/keystore integration
    */
-  private async encryptData(data: string): Promise<string> {
-    try {
-      // Generate a random key and IV for each encryption
-      const key = await crypto.subtle.generateKey(
-        { name: 'AES-GCM', length: 256 },
-        true,
-        ['encrypt', 'decrypt']
-      );
-
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-
-      const encrypted = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv },
-        key,
-        new TextEncoder().encode(data)
-      );
-
-      // Export the key for storage
-      const exportedKey = await crypto.subtle.exportKey('raw', key);
-
-      // Combine key, IV, and encrypted data
-      const combined = new Uint8Array(exportedKey.byteLength + iv.length + encrypted.byteLength);
-      combined.set(new Uint8Array(exportedKey), 0);
-      combined.set(iv, exportedKey.byteLength);
-      combined.set(new Uint8Array(encrypted), exportedKey.byteLength + iv.length);
-
-      // Convert to base64 for storage
-      return btoa(String.fromCharCode(...combined));
-    } catch (error) {
-      logger.error('Encryption failed', { error });
-      throw new Error('Data encryption failed');
-    }
+  async encryptWithBiometric(data: string): Promise<string> {
+    // This would require native module implementation
+    // For now, return the data as-is with a warning
+    logger.warn('Biometric encryption not implemented - using fallback');
+    return btoa(data); // Simple base64 encoding as fallback
   }
 
   /**
-   * Secure data decryption using AES-256-GCM
+   * Decrypt data protected by biometrics
    */
-  private async decryptData(encryptedData: string): Promise<string> {
+  async decryptWithBiometric(encryptedData: string): Promise<string> {
     try {
-      // Convert from base64
-      const combined = new Uint8Array(
-        atob(encryptedData)
-          .split('')
-          .map(char => char.charCodeAt(0))
-      );
+      // First authenticate
+      const authResult = await this.authenticate('Decrypt sensitive data');
+      if (!authResult.success) {
+        throw new Error('Biometric authentication required');
+      }
 
-      // Extract key, IV, and encrypted data
-      const keyLength = 32; // 256 bits = 32 bytes
-      const ivLength = 12;
-
-      const keyData = combined.slice(0, keyLength);
-      const iv = combined.slice(keyLength, keyLength + ivLength);
-      const encrypted = combined.slice(keyLength + ivLength);
-
-      // Import the key
-      const key = await crypto.subtle.importKey(
-        'raw',
-        keyData,
-        { name: 'AES-GCM' },
-        false,
-        ['decrypt']
-      );
-
-      // Decrypt the data
-      const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv },
-        key,
-        encrypted
-      );
-
-      return new TextDecoder().decode(decrypted);
+      // Decrypt (placeholder implementation)
+      return atob(encryptedData);
     } catch (error) {
-      logger.error('Decryption failed', { error });
-      throw new Error('Data decryption failed');
+      logger.error('Failed to decrypt biometric data', { error });
+      throw error;
     }
   }
 }
 
-export default new BiometricService();
+// Export singleton instance
+export const biometricService = new BiometricService();
+export default biometricService;

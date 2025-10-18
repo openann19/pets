@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { memo } from 'react';
-import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -11,6 +11,7 @@ import Animated, {
 
 import type { Match } from '@pawfectmatch/core';
 import * as Haptics from 'expo-haptics';
+import OptimizedImage from '../OptimizedImage';
 
 interface MatchCardProps {
     match: Match;
@@ -97,11 +98,12 @@ const MatchCardBase: React.FC<MatchCardProps> = ({ match, onPress, onUnmatch, on
                 accessibilityLabel={`View match with ${displayPet.name}`}
             >
                 <LinearGradient colors={["#fceabb", "#f8b500", "#ec4899", "#a21caf"]} style={styles.gradient}>
-                    <Image
+                    <OptimizedImage
                         source={{ uri: petPhoto }}
                         style={styles.photo}
                         resizeMode="cover"
                         accessibilityLabel={`${displayPet.name} photo`}
+                        priority="high"
                     />
                     <View style={styles.info}>
                         <Text style={styles.name}>{displayPet.name}</Text>

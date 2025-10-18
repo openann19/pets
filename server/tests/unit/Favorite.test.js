@@ -4,11 +4,11 @@
  * Tests Mongoose model methods, validation, indexes, and instance methods.
  */
 
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import mongoose from 'mongoose';
-import Favorite from '../../models/Favorite.js';
-import Pet from '../../models/Pet.js';
-import User from '../../models/User.js';
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+const Favorite = require('../../src/models/Favorite');
+const Pet = require('../../src/models/Pet');
+const User = require('../../src/models/User');
 
 let mongoServer;
 
@@ -37,22 +37,27 @@ describe('Favorite Model', () => {
         // Create test user
         testUser = await User.create({
             email: 'test@example.com',
-            username: 'testuser',
             password: 'hashedpassword123',
+            firstName: 'Test',
+            lastName: 'User',
+            dateOfBirth: new Date('1990-01-01'),
             role: 'user',
         });
 
-        // Create test pet
+        // Create test pet (align with current schema requirements)
         testPet = await Pet.create({
+            owner: testUser._id,
             name: 'Buddy',
             species: 'dog',
             breed: 'Golden Retriever',
             age: 3,
             gender: 'male',
+            size: 'medium',
             description: 'Friendly dog',
-            photos: ['https://example.com/photo1.jpg'],
-            shelterId: new mongoose.Types.ObjectId(),
-            status: 'available',
+            photos: [{ url: 'https://example.com/photo1.jpg', isPrimary: true }],
+            intent: 'adoption',
+            location: { type: 'Point', coordinates: [0, 0] },
+            status: 'active',
         });
     });
 
@@ -105,15 +110,18 @@ describe('Favorite Model', () => {
 
         it('should allow same user to favorite different pets', async () => {
             const pet2 = await Pet.create({
+                owner: testUser._id,
                 name: 'Max',
                 species: 'cat',
                 breed: 'Siamese',
                 age: 2,
                 gender: 'male',
+                size: 'small',
                 description: 'Playful cat',
-                photos: ['https://example.com/photo2.jpg'],
-                shelterId: new mongoose.Types.ObjectId(),
-                status: 'available',
+                photos: [{ url: 'https://example.com/photo2.jpg', isPrimary: true }],
+                intent: 'adoption',
+                location: { type: 'Point', coordinates: [0, 0] },
+                status: 'active',
             });
 
             const favorite1 = await Favorite.create({
@@ -134,8 +142,10 @@ describe('Favorite Model', () => {
         it('should allow different users to favorite same pet', async () => {
             const user2 = await User.create({
                 email: 'user2@example.com',
-                username: 'testuser2',
                 password: 'hashedpassword456',
+                firstName: 'User',
+                lastName: 'Two',
+                dateOfBirth: new Date('1992-02-02'),
                 role: 'user',
             });
 
@@ -159,26 +169,32 @@ describe('Favorite Model', () => {
             // Create multiple favorites
             const pets = await Pet.insertMany([
                 {
+                    owner: testUser._id,
                     name: 'Dog1',
                     species: 'dog',
                     breed: 'Labrador',
                     age: 2,
                     gender: 'male',
+                    size: 'medium',
                     description: 'Test dog 1',
-                    photos: ['photo1.jpg'],
-                    shelterId: new mongoose.Types.ObjectId(),
-                    status: 'available',
+                    photos: [{ url: 'https://example.com/photo1.jpg', isPrimary: true }],
+                    intent: 'adoption',
+                    location: { type: 'Point', coordinates: [0, 0] },
+                    status: 'active',
                 },
                 {
+                    owner: testUser._id,
                     name: 'Dog2',
                     species: 'dog',
                     breed: 'Beagle',
                     age: 3,
                     gender: 'female',
+                    size: 'small',
                     description: 'Test dog 2',
-                    photos: ['photo2.jpg'],
-                    shelterId: new mongoose.Types.ObjectId(),
-                    status: 'available',
+                    photos: [{ url: 'https://example.com/photo2.jpg', isPrimary: true }],
+                    intent: 'adoption',
+                    location: { type: 'Point', coordinates: [0, 0] },
+                    status: 'active',
                 },
             ]);
 
@@ -202,15 +218,18 @@ describe('Favorite Model', () => {
             const pets = [];
             for (let i = 0; i < 15; i++) {
                 const pet = await Pet.create({
+                    owner: testUser._id,
                     name: `Pet${i}`,
                     species: 'dog',
                     breed: 'Mixed',
                     age: 2,
                     gender: 'male',
+                    size: 'medium',
                     description: `Test pet ${i}`,
-                    photos: ['photo.jpg'],
-                    shelterId: new mongoose.Types.ObjectId(),
-                    status: 'available',
+                    photos: [{ url: 'https://example.com/photo.jpg', isPrimary: true }],
+                    intent: 'adoption',
+                    location: { type: 'Point', coordinates: [0, 0] },
+                    status: 'active',
                 });
                 pets.push(pet);
                 await Favorite.create({ userId: testUser._id, petId: pet._id });
@@ -249,20 +268,26 @@ describe('Favorite Model', () => {
             const users = await User.insertMany([
                 {
                     email: 'user1@example.com',
-                    username: 'user1',
-                    password: 'pass',
+                    password: 'password1',
+                    firstName: 'User',
+                    lastName: 'One',
+                    dateOfBirth: new Date('1991-01-01'),
                     role: 'user',
                 },
                 {
                     email: 'user2@example.com',
-                    username: 'user2',
-                    password: 'pass',
+                    password: 'password2',
+                    firstName: 'User',
+                    lastName: 'Two',
+                    dateOfBirth: new Date('1992-02-02'),
                     role: 'user',
                 },
                 {
                     email: 'user3@example.com',
-                    username: 'user3',
-                    password: 'pass',
+                    password: 'password3',
+                    firstName: 'User',
+                    lastName: 'Three',
+                    dateOfBirth: new Date('1993-03-03'),
                     role: 'user',
                 },
             ]);
@@ -281,26 +306,32 @@ describe('Favorite Model', () => {
         it('getUserFavoriteCount should return correct count', async () => {
             const pets = await Pet.insertMany([
                 {
+                    owner: testUser._id,
                     name: 'Pet1',
                     species: 'dog',
                     breed: 'Mixed',
                     age: 2,
                     gender: 'male',
+                    size: 'medium',
                     description: 'Pet 1',
-                    photos: ['photo1.jpg'],
-                    shelterId: new mongoose.Types.ObjectId(),
-                    status: 'available',
+                    photos: [{ url: 'https://example.com/photo1.jpg', isPrimary: true }],
+                    intent: 'adoption',
+                    location: { type: 'Point', coordinates: [0, 0] },
+                    status: 'active',
                 },
                 {
+                    owner: testUser._id,
                     name: 'Pet2',
                     species: 'cat',
                     breed: 'Mixed',
                     age: 3,
                     gender: 'female',
+                    size: 'small',
                     description: 'Pet 2',
-                    photos: ['photo2.jpg'],
-                    shelterId: new mongoose.Types.ObjectId(),
-                    status: 'available',
+                    photos: [{ url: 'https://example.com/photo2.jpg', isPrimary: true }],
+                    intent: 'adoption',
+                    location: { type: 'Point', coordinates: [0, 0] },
+                    status: 'active',
                 },
             ]);
 
@@ -336,7 +367,6 @@ describe('Favorite Model', () => {
 
             const populated = await Favorite.findById(favorite._id).populate('userId');
 
-            expect(populated.userId.username).toBe('testuser');
             expect(populated.userId.email).toBe('test@example.com');
         });
     });
@@ -362,26 +392,32 @@ describe('Favorite Model', () => {
         it('should delete all user favorites', async () => {
             const pets = await Pet.insertMany([
                 {
+                    owner: testUser._id,
                     name: 'Pet1',
                     species: 'dog',
                     breed: 'Mixed',
                     age: 2,
                     gender: 'male',
+                    size: 'medium',
                     description: 'Pet 1',
-                    photos: ['photo1.jpg'],
-                    shelterId: new mongoose.Types.ObjectId(),
-                    status: 'available',
+                    photos: [{ url: 'https://example.com/photo1.jpg', isPrimary: true }],
+                    intent: 'adoption',
+                    location: { type: 'Point', coordinates: [0, 0] },
+                    status: 'active',
                 },
                 {
+                    owner: testUser._id,
                     name: 'Pet2',
                     species: 'cat',
                     breed: 'Mixed',
                     age: 3,
                     gender: 'female',
+                    size: 'small',
                     description: 'Pet 2',
-                    photos: ['photo2.jpg'],
-                    shelterId: new mongoose.Types.ObjectId(),
-                    status: 'available',
+                    photos: [{ url: 'https://example.com/photo2.jpg', isPrimary: true }],
+                    intent: 'adoption',
+                    location: { type: 'Point', coordinates: [0, 0] },
+                    status: 'active',
                 },
             ]);
 

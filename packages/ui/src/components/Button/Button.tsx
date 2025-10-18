@@ -1,21 +1,21 @@
-import React from 'react';
 import { useButton } from '@react-aria/button';
-import { AriaButtonProps } from '@react-types/button';
 import { useFocusRing } from '@react-aria/focus';
 import { useHover } from '@react-aria/interactions';
 import { mergeProps } from '@react-aria/utils';
+import type { AriaButtonProps } from '@react-types/button';
+import React from 'react';
 
 export interface ButtonProps extends AriaButtonProps {
   /**
    * The visual style of the button
    */
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  
+
   /**
    * Additional CSS class names
    */
   className?: string;
-  
+
   /**
    * The size of the button
    */
@@ -37,14 +37,14 @@ export interface ButtonProps extends AriaButtonProps {
  */
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (props, forwardedRef) => {
-    const { 
-      variant = 'primary', 
-      size = 'medium', 
-      className = '', 
+    const {
+      variant = 'primary',
+      size = 'medium',
+      className = '',
       children,
-      ...otherProps 
+      ...otherProps
     } = props;
-    
+
     const ref = React.useRef<HTMLButtonElement>(null);
     const { buttonProps, isPressed } = useButton(otherProps, ref);
     const { focusProps, isFocused } = useFocusRing();

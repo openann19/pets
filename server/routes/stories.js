@@ -7,11 +7,20 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const Joi = require('joi');
-const { authenticateToken } = require('../middleware/auth');
+// Zod validation
+const { zodValidate } = require('../src/middleware/zodValidator');
+// Prefer shared core schemas; fall back to local server schemas if interop fails
+let createStorySchema, replySchema;
+try {
+    ({ storyCreateSchema: createStorySchema, storyReplySchema: replySchema } = require('@pawfectmatch/core/schemas'));
+} catch (e) {
+    ({ createStorySchema, replySchema } = require('../src/schemas/storySchemas'));
+}
+const { authenticateToken } = require('../src/middleware/auth');
 const { validateRequest } = require('../src/middleware/inputValidator');
 const { uploadRateLimiter, strictRateLimiter } = require('../src/middleware/globalRateLimit');
-const storiesController = require('../controllers/storiesController');
+const { storyDailyLimiter } = require('../src/middleware/storyDailyLimiter');
+const storiesController = require('../src/controllers/storiesController');
 
 // Use memory storage for Cloudinary streaming
 const upload = multer({
@@ -51,18 +60,11 @@ router.use(authenticateToken);
  * @desc    Create a new story
  * @access  Private
  */
-// Validation schema for creating a story
-const createStorySchema = Joi.object({
-    caption: Joi.string().max(2200).allow('', null),
-    duration: Joi.number().integer().min(1).max(60).optional(),
-    mediaType: Joi.string().valid('photo', 'video').optional(),
-});
-
 router.post('/',
     uploadRateLimiter,
     storyDailyLimiter,
     upload.single('media'),
-    validateRequest(createStorySchema),
+    zodValidate({ body: createStorySchema }),
     storiesController.createStory
 );
 
@@ -115,15 +117,10 @@ router.post(
  * @desc    Reply to a story (creates DM)
  * @access  Private
  */
-// Validation schema for replies
-const replySchema = Joi.object({
-    message: Joi.string().min(1).max(500).required(),
-});
-
 router.post(
     '/:storyId/reply',
     strictRateLimiter,
-    validateRequest(replySchema),
+    zodValidate({ body: replySchema }),
     storiesController.replyToStory
 );
 

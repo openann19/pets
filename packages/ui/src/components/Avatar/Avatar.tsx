@@ -101,7 +101,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         </div>
       )}
 
-      {status !== undefined &&  (
+      {status !== undefined && status !== null && (
         <div
           className={`
             absolute bottom-0 right-0 ${statusClasses[status]} ${statusSizeClasses[size]}

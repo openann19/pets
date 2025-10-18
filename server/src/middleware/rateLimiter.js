@@ -4,6 +4,7 @@
  */
 
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 const { logAdminActivity } = require('./adminLogger');
 
 /**
@@ -21,12 +22,10 @@ const adminRateLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  
+
   // Custom key generator - use user ID instead of IP
-  keyGenerator: (req) => {
-    return req.user?._id?.toString() || req.ip;
-  },
-  
+  keyGenerator: (req) => req.user?._id?.toString() || ipKeyGenerator(req),
+
   // Custom handler for rate limit exceeded
   handler: async (req, res) => {
     // Log rate limit exceeded event
@@ -42,7 +41,7 @@ const adminRateLimiter = rateLimit({
         'Rate limit exceeded'
       );
     }
-    
+
     res.status(429).json({
       success: false,
       error: 'Too many requests',
@@ -50,7 +49,7 @@ const adminRateLimiter = rateLimit({
       retryAfter: '15 minutes'
     });
   },
-  
+
   // Skip rate limiting for successful requests (only count failed/suspicious ones)
   skip: (req) => {
     // Skip if not authenticated (will be caught by auth middleware)
@@ -73,11 +72,9 @@ const strictRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  
-  keyGenerator: (req) => {
-    return req.user?._id?.toString() || req.ip;
-  },
-  
+
+  keyGenerator: (req) => req.user?._id?.toString() || ipKeyGenerator(req),
+
   handler: async (req, res) => {
     if (req.user) {
       await logAdminActivity(
@@ -91,7 +88,7 @@ const strictRateLimiter = rateLimit({
         'Strict rate limit exceeded for sensitive operation'
       );
     }
-    
+
     res.status(429).json({
       success: false,
       error: 'Too many requests',
@@ -116,12 +113,9 @@ const loginRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  
-  keyGenerator: (req) => {
-    // Use email + IP for login attempts
-    return `${req.body.email || 'unknown'}_${req.ip}`;
-  },
-  
+
+  keyGenerator: (req) => `${req.body.email || 'unknown'}_${ipKeyGenerator(req)}`,
+
   skipSuccessfulRequests: true // Only count failed login attempts
 });
 

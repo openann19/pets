@@ -100,13 +100,13 @@ export interface AccessibilityActions {
  */
 export const useAccessibility = (config: AccessibilityConfig = {}): AccessibilityState & AccessibilityActions => {
   const {
-    announcePageChanges = true,
+    announcePageChanges: _announcePageChanges = true,
     manageFocus = true,
     handleKeyboardNavigation = true,
     screenReaderSupport = true,
     handleColorContrast = true,
-    highContrastMode = false,
-    handleReducedMotion = true
+    highContrastMode: _highContrastMode = false,
+    handleReducedMotion: _handleReducedMotion = true
   } = config;
 
   const stateRef = useRef<AccessibilityState>({
@@ -132,7 +132,7 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
         window.speechSynthesis ||
         window.navigator.userAgent.includes('Chrome') && window.navigator.userAgent.includes('Accessibility')
       );
-      
+
       stateRef.current.isScreenReader = isScreenReader;
     };
 
@@ -140,7 +140,7 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
     const checkReducedMotion = () => {
       const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
       stateRef.current.prefersReducedMotion = mediaQuery.matches;
-      
+
       const handleChange = (e: MediaQueryListEvent) => {
         stateRef.current.prefersReducedMotion = e.matches;
         if (e.matches) {
@@ -152,15 +152,20 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
         }
       };
 
-      mediaQuery.addEventListener('change', handleChange);
-      return () => { mediaQuery.removeEventListener('change', handleChange); };
+      // Fallback for older browsers where addEventListener is not available
+      if (typeof mediaQuery.addEventListener === 'function') {
+        mediaQuery.addEventListener('change', handleChange);
+        return () => { mediaQuery.removeEventListener('change', handleChange); };
+      }
+      mediaQuery.addListener(handleChange as any);
+      return () => { mediaQuery.removeListener(handleChange as any); };
     };
 
     // Check for high contrast mode
     const checkHighContrast = () => {
       const mediaQuery = window.matchMedia('(prefers-contrast: high)');
       stateRef.current.isHighContrast = mediaQuery.matches;
-      
+
       const handleChange = (e: MediaQueryListEvent) => {
         stateRef.current.isHighContrast = e.matches;
         if (e.matches) {
@@ -170,8 +175,12 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
         }
       };
 
-      mediaQuery.addEventListener('change', handleChange);
-      return () => { mediaQuery.removeEventListener('change', handleChange); };
+      if (typeof mediaQuery.addEventListener === 'function') {
+        mediaQuery.addEventListener('change', handleChange);
+        return () => { mediaQuery.removeEventListener('change', handleChange); };
+      }
+      mediaQuery.addListener(handleChange as any);
+      return () => { mediaQuery.removeListener(handleChange as any); };
     };
 
     // Track keyboard navigation
@@ -231,9 +240,10 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
   const setFocus = useCallback((element: HTMLElement | string) => {
     if (!manageFocus) return;
 
-    const targetElement = typeof element === 'string' 
-      ? document.querySelector(element)!
+    const targetCandidate = typeof element === 'string'
+      ? document.querySelector(element)
       : element;
+    const targetElement = (targetCandidate instanceof HTMLElement) ? targetCandidate : null;
 
     if (targetElement) {
       // Store previous focus
@@ -246,10 +256,10 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
 
       // Announce focus change
       if (screenReaderSupport) {
-        const label = targetElement.getAttribute('aria-label') || 
-                     targetElement.textContent || 
-                     targetElement.getAttribute('title') || 
-                     'Element';
+        const label = targetElement.getAttribute('aria-label') ||
+          targetElement.textContent ||
+          targetElement.getAttribute('title') ||
+          'Element';
         announce(`Focused on ${label}`);
       }
     }
@@ -298,7 +308,7 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
     if (!manageFocus) return;
 
     focusTrapRef.current = null;
-    
+
     // Restore previous focus
     const previousFocus = focusHistoryRef.current.pop();
     if (previousFocus) {
@@ -311,7 +321,7 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
     if (!handleKeyboardNavigation) return;
 
     switch (event.key) {
-      case 'Escape':
+      case 'Escape': {
         // Close modals, dropdowns, etc.
         const activeModal = document.querySelector('[role="dialog"]:not([aria-hidden="true"])');
         if (activeModal) {
@@ -321,9 +331,10 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
           }
         }
         break;
+      }
 
       case 'Enter':
-      case ' ':
+      case ' ': {
         // Handle button and link activation
         if (event.target instanceof HTMLElement) {
           const role = event.target.getAttribute('role');
@@ -333,9 +344,10 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
           }
         }
         break;
+      }
 
       case 'ArrowUp':
-      case 'ArrowDown':
+      case 'ArrowDown': {
         // Handle list navigation
         if (event.target instanceof HTMLElement) {
           const listContainer = event.target.closest('[role="listbox"], [role="menu"], [role="tree"]');
@@ -343,23 +355,24 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
             event.preventDefault();
             const items = Array.from(listContainer.querySelectorAll('[role="option"], [role="menuitem"], [role="treeitem"]'));
             const currentIndex = items.indexOf(event.target);
-            const nextIndex = event.key === 'ArrowDown' 
+            const nextIndex = event.key === 'ArrowDown'
               ? Math.min(currentIndex + 1, items.length - 1)
               : Math.max(currentIndex - 1, 0);
-            
+
             if (items[nextIndex] instanceof HTMLElement) {
               (items[nextIndex]).focus();
             }
           }
         }
         break;
+      }
     }
   }, [handleKeyboardNavigation]);
 
   // Toggle high contrast mode
   const toggleHighContrast = useCallback(() => {
     stateRef.current.isHighContrast = !stateRef.current.isHighContrast;
-    
+
     if (stateRef.current.isHighContrast) {
       document.documentElement.classList.add('high-contrast');
       localStorage.setItem('high-contrast', 'true');
@@ -377,11 +390,14 @@ export const useAccessibility = (config: AccessibilityConfig = {}): Accessibilit
       const rgb = color.match(/\d+/g);
       if (!rgb || rgb.length < 3) return 0;
 
-      const [r, g, b] = rgb.map(c => {
+      const [rRaw, gRaw, bRaw] = rgb.map(c => {
         const val = parseInt(c) / 255;
         return val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
       });
 
+      const r = typeof rRaw === 'number' ? rRaw : 0;
+      const g = typeof gRaw === 'number' ? gRaw : 0;
+      const b = typeof bRaw === 'number' ? bRaw : 0;
       return 0.2126 * r + 0.7152 * g + 0.0722 * b;
     };
 

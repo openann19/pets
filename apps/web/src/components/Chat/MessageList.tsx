@@ -1,9 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {} from '../../types';
+import { AnimatePresence } from 'framer-motion';
+import { Message, User } from '../../types';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
-import {} from '../providers/AppErrorBoundary';
 
 interface MessageListProps {
   messages: Message[];
@@ -15,7 +14,7 @@ interface MessageListProps {
   onScroll?: () => void;
 }
 
-const MessageList = ({
+const MessageList: React.FC<MessageListProps> = ({
   messages,
   currentUser,
   isLoading,
@@ -23,7 +22,7 @@ const MessageList = ({
   typingUsers,
   onLoadMore,
   onScroll,
-}: MessageListProps) => {
+}) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -33,7 +32,7 @@ const MessageList = ({
   }, [messages]);
 
   // Handle scroll to load more messages
-  const handleScroll = (): void => {
+  const handleScroll = () => {
     const container = messagesContainerRef.current;
     if (container && container.scrollTop === 0 && hasMoreMessages && !isLoading) {
       onLoadMore();
@@ -42,13 +41,13 @@ const MessageList = ({
   };
 
   return (
-    <div
+    <div 
       ref={messagesContainerRef}
       onScroll={handleScroll}
       className="flex-1 overflow-y-auto bg-gray-50 px-4 py-4"
     >
       {/* Load more indicator */}
-      {hasMoreMessages !== undefined && (
+      {hasMoreMessages && (
         <div className="text-center py-4">
           <button
             onClick={onLoadMore}
@@ -63,23 +62,21 @@ const MessageList = ({
       {/* Messages */}
       <AnimatePresence initial={false}>
         {messages.map((message, index) => {
-          const isOwnMessage =
-            typeof message.sender === 'object'
-              ? message.sender._id === currentUser?._id
-              : message.sender === currentUser?._id;
-
-          const showAvatar =
-            index === 0 ||
-            (typeof messages[index - 1]?.sender === 'object' && typeof message.sender === 'object'
-              ? (messages[index - 1].sender as User)._id !== message.sender._id
-              : typeof messages[index - 1]?.sender === 'string' &&
-                  typeof message.sender === 'string'
-                ? messages[index - 1].sender !== message.sender
-                : true);
+          const msg = message as any;
+          const isOwnMessage = typeof msg.sender === 'object' 
+            ? msg.sender._id === (currentUser as any)?._id 
+            : msg.sender === (currentUser as any)?._id;
+          
+          const showAvatar = index === 0 || 
+            (typeof (messages[index - 1] as any)?.sender === 'object' && typeof msg.sender === 'object'
+              ? ((messages[index - 1] as any).sender as any)._id !== msg.sender._id
+              : (typeof (messages[index - 1] as any)?.sender === 'string' && typeof msg.sender === 'string')
+              ? (messages[index - 1] as any).sender !== msg.sender
+              : true);
 
           return (
             <MessageBubble
-              key={message._id || index}
+              key={msg._id || msg.id || index}
               message={message}
               isOwnMessage={isOwnMessage}
               currentUser={currentUser}
@@ -101,4 +98,4 @@ const MessageList = ({
   );
 };
 
-export default withErrorBoundary(MessageList);
+export default MessageList;

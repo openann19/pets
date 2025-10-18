@@ -1,10 +1,18 @@
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
-import { Alert, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+    Alert,
+    Dimensions,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
@@ -44,7 +52,7 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
 
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
+    if (status !== ImagePicker.PermissionStatus.GRANTED) {
       Alert.alert(
         'Permission Required',
         'Please grant camera roll permissions to upload photos.',
@@ -100,7 +108,7 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
     }
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
+    if (status !== ImagePicker.PermissionStatus.GRANTED) {
       Alert.alert(
         'Permission Required',
         'Please grant camera permissions to take photos.',
@@ -134,19 +142,19 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
     }
   };
 
-  const showImageOptions = (): void => {
+  const showImageOptions = () => {
     Alert.alert(
       'Add Photo',
       'Choose how you want to add a photo',
       [
-        { text: 'Camera', onPress: takePhoto },
-        { text: 'Photo Library', onPress: pickImage },
+        { text: 'Camera', onPress: () => void takePhoto() },
+        { text: 'Photo Library', onPress: () => void pickImage() },
         { text: 'Cancel', style: 'cancel' },
       ]
     );
   };
 
-  const removePhoto = (photoId: string): void => {
+  const removePhoto = (photoId: string) => {
     Alert.alert(
       'Remove Photo',
       'Are you sure you want to remove this photo?',
@@ -159,7 +167,7 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
             const updatedPhotos = photos.filter(p => p.id !== photoId);
             // If we removed the primary photo, make the first remaining photo primary
             if (updatedPhotos.length > 0 && !updatedPhotos.some(p => p.isPrimary)) {
-              updatedPhotos[0]!.isPrimary = true;
+              updatedPhotos[0].isPrimary = true;
             }
             onPhotosChange(updatedPhotos);
           },
@@ -168,7 +176,7 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
     );
   };
 
-  const setPrimaryPhoto = (photoId: string): void => {
+  const setPrimaryPhoto = (photoId: string) => {
     const updatedPhotos = photos.map(photo => ({
       ...photo,
       isPrimary: photo.id === photoId,
@@ -178,14 +186,16 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
 
   const renderPhotoGrid = () => (
     <View style={styles.photoGrid}>
-      {photos.map((photo) => (
+      {photos.map((photo, index) => (
         <View key={photo.id} style={styles.photoContainer}>
           <Image source={{ uri: photo.uri }} style={styles.photo} />
-
+          
           {/* Primary Badge */}
-          {photo.isPrimary ? <View style={styles.primaryBadge}>
-            <Text style={styles.primaryBadgeText}>Primary</Text>
-          </View> : null}
+          {photo.isPrimary && (
+            <View style={styles.primaryBadge}>
+              <Text style={styles.primaryBadgeText}>Primary</Text>
+            </View>
+          )}
 
           {/* Photo Actions */}
           <View style={styles.photoActions}>
@@ -243,7 +253,7 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
           <Text style={styles.emptyStateIcon}>📸</Text>
           <Text style={styles.emptyStateTitle}>No photos yet</Text>
           <Text style={styles.emptyStateText}>
-            Add photos to make your pet's profile more attractive to potential matches
+            Add photos to make your pet&apos;s profile more attractive to potential matches
           </Text>
           <TouchableOpacity style={styles.emptyStateButton} onPress={showImageOptions}>
             <Text style={styles.emptyStateButtonText}>Add First Photo</Text>
@@ -255,7 +265,7 @@ const PhotoUploadComponent: React.FC<PhotoUploadComponentProps> = ({
         <View style={styles.tips}>
           <Text style={styles.tipsTitle}>📝 Photo Tips:</Text>
           <Text style={styles.tip}>• Use clear, well-lit photos</Text>
-          <Text style={styles.tip}>• Show your pet's personality</Text>
+          <Text style={styles.tip}>• Show your pet&apos;s personality</Text>
           <Text style={styles.tip}>• Include different angles and activities</Text>
           <Text style={styles.tip}>• Avoid blurry or dark images</Text>
         </View>

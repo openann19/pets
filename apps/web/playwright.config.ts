@@ -1,127 +1,100 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright Configuration - 2025 Standards
- * E2E Testing with Visual Regression and Accessibility
+ * Enterprise-grade Playwright configuration for PawfectMatch
+ * Provides comprehensive cross-browser testing with advanced features
  */
 export default defineConfig({
-  // === Test Directory ===
-  testDir: './e2e',
-
-  // === Timeout ===
-  timeout: 30000,
-  expect: {
-    timeout: 5000,
-    // === Visual Regression Testing ===
-    toHaveScreenshot: {
-      // Maximum allowed pixel difference
-      maxDiffPixels: 100,
-
-      // Threshold for pixel difference (0-1)
-      threshold: 0.2,
-
-      // Animations
-      animations: 'disabled',
-
-      // Scale
-      scale: 'css',
-    },
-  },
-
-  // === Fullyparallel ===
+  testDir: './tests/playwright',
   fullyParallel: true,
-
-  // === Fail Fast ===
-  forbidOnly: !!process.env['CI'],
-
-  // === Retries ===
-  retries: process.env['CI'] ? 2 : 0,
-
-  // === Workers ===
-  workers: process.env['CI'] ? 2 : undefined,
-
-  // === Reporter ===
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
   reporter: [
     ['html'],
     ['json', { outputFile: 'test-results/results.json' }],
-    ['junit', { outputFile: 'test-results/junit.xml' }],
-    process.env['CI'] ? ['github'] : ['list'],
+    ['junit', { outputFile: 'test-results/results.xml' }],
+    ['github'],
   ],
-
-  // === Use Options ===
   use: {
-    // Base URL
-    baseURL: process.env['BASE_URL'] || 'http://localhost:3000',
-
-    // Trace
+    baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
-
-    // Screenshot
     screenshot: 'only-on-failure',
-
-    // Video
     video: 'retain-on-failure',
-
-    // Action Timeout
     actionTimeout: 10000,
-
-    // Navigation Timeout
     navigationTimeout: 30000,
   },
-
-  // === Projects (Multiple Browsers & Devices) ===
   projects: [
-    // === Desktop Browsers ===
     {
       name: 'chromium',
-      use: {
+      use: { 
         ...devices['Desktop Chrome'],
-        viewport: { width: 1920, height: 1080 },
+        viewport: { width: 3840, height: 2160 }, // 4K UHD
+        deviceScaleFactor: 2, // High DPI
       },
     },
     {
       name: 'firefox',
-      use: {
+      use: { 
         ...devices['Desktop Firefox'],
-        viewport: { width: 1920, height: 1080 },
+        viewport: { width: 3840, height: 2160 }, // 4K UHD
+        deviceScaleFactor: 2,
       },
     },
     {
       name: 'webkit',
-      use: {
+      use: { 
         ...devices['Desktop Safari'],
-        viewport: { width: 1920, height: 1080 },
+        viewport: { width: 3840, height: 2160 }, // 4K UHD
+        deviceScaleFactor: 2,
       },
     },
-
-    // === Mobile Devices ===
     {
-      name: 'mobile-chrome',
-      use: {
+      name: 'Mobile Chrome',
+      use: { 
         ...devices['Pixel 5'],
+        viewport: { width: 1080, height: 2400 }, // High-res mobile
+        deviceScaleFactor: 3, // High DPI mobile
       },
     },
     {
-      name: 'mobile-safari',
-      use: {
-        ...devices['iPhone 13'],
+      name: 'Mobile Safari',
+      use: { 
+        ...devices['iPhone 12'],
+        viewport: { width: 1170, height: 2532 }, // iPhone 12 Pro Max
+        deviceScaleFactor: 3,
       },
     },
-
-    // === Tablet ===
     {
-      name: 'tablet',
+      name: 'Desktop Edge',
+      use: { 
+        ...devices['Desktop Edge'], 
+        channel: 'msedge',
+        viewport: { width: 3840, height: 2160 }, // 4K UHD
+        deviceScaleFactor: 2,
+      },
+    },
+    {
+      name: 'UHD Testing',
       use: {
-        ...devices['iPad Pro'],
+        viewport: { width: 3840, height: 2160 }, // 4K UHD
+        deviceScaleFactor: 2,
+        isMobile: false,
+        hasTouch: false,
       },
     },
   ],
-
-  // === Web Server ===
   webServer: {
     command: 'pnpm dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env['CI'],
+    reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },
+  expect: {
+    timeout: 10000,
+    toHaveScreenshot: { threshold: 0.2 },
+    toMatchSnapshot: { threshold: 0.2 },
+  },
+  globalSetup: require.resolve('./tests/playwright/global-setup.ts'),
+  globalTeardown: require.resolve('./tests/playwright/global-teardown.ts'),
 });

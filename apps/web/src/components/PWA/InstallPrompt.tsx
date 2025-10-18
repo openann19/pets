@@ -1,99 +1,294 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { XMarkIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
-import { showInstallPrompt, canInstall } from '../../utils/pwa';
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  XMarkIcon, 
+  ArrowDownTrayIcon, 
+  DevicePhoneMobileIcon,
+  ComputerDesktopIcon,
+  SparklesIcon
+} from '@heroicons/react/24/outline'
+import { InteractiveButton } from '../ui/Interactive'
 
-export const InstallPrompt = () => {
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[]
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed'
+    platform: string
+  }>
+  prompt(): Promise<void>
+}
+
+interface InstallPromptProps {
+  className?: string
+}
+
+export function InstallPrompt({ className = '' }: InstallPromptProps) {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [showPrompt, setShowPrompt] = useState(false)
+  const [isInstalling, setIsInstalling] = useState(false)
+  const [isInstalled, setIsInstalled] = useState(false)
+  const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop' | 'unknown'>('unknown')
 
   useEffect(() => {
-    // Check if already dismissed
-    const dismissed = localStorage.getItem('pwa-install-dismissed');
-    if (dismissed) {
-      setIsDismissed(true);
-      return;
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true)
+      return
     }
 
-    // Listen for installable event
-    const handleInstallable = () => {
-      if (canInstall()) {
-        setShowPrompt(true);
-      }
-    };
+    // Detect platform
+    const userAgent = navigator.userAgent.toLowerCase()
+    if (/iphone|ipad|ipod/.test(userAgent)) {
+      setPlatform('ios')
+    } else if (/android/.test(userAgent)) {
+      setPlatform('android')
+    } else {
+      setPlatform('desktop')
+    }
 
-    window.addEventListener('pwa-installable', handleInstallable);
+    // Listen for beforeinstallprompt event
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e as BeforeInstallPromptEvent)
+      
+      // Show prompt after a delay (better UX)
+      setTimeout(() => {
+        setShowPrompt(true)
+      }, 3000)
+    }
+
+    // Listen for app installed event
+    const handleAppInstalled = () => {
+      setIsInstalled(true)
+      setShowPrompt(false)
+      setDeferredPrompt(null)
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleAppInstalled)
 
     return () => {
-      window.removeEventListener('pwa-installable', handleInstallable);
-    };
-  }, []);
-
-  const handleInstall = async () => {
-    const accepted = await showInstallPrompt();
-    if (accepted) {
-      setShowPrompt(false);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', handleAppInstalled)
     }
-  };
+  }, [])
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return
+
+    setIsInstalling(true)
+    
+    try {
+      await deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      
+      if (outcome === 'accepted') {
+        console.log('User accepted the install prompt')
+      } else {
+        console.log('User dismissed the install prompt')
+      }
+    } catch (error) {
+      console.error('Error during installation:', error)
+    } finally {
+      setIsInstalling(false)
+      setShowPrompt(false)
+      setDeferredPrompt(null)
+    }
+  }
 
   const handleDismiss = () => {
-    setShowPrompt(false);
-    setIsDismissed(true);
-    localStorage.setItem('pwa-install-dismissed', 'true');
-  };
+    setShowPrompt(false)
+    // Don't show again for this session
+    sessionStorage.setItem('pwa-install-dismissed', 'true')
+  }
 
-  if (!showPrompt || isDismissed) {
-    return null;
+  // Don't show if already installed or dismissed
+  if (isInstalled || !showPrompt || !deferredPrompt) {
+    return null
+  }
+
+  // Check if user dismissed in this session
+  if (sessionStorage.getItem('pwa-install-dismissed')) {
+    return null
   }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-slide-up">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">🐾</span>
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: 100 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 100 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        className={`fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto ${className}`}
+      >
+        <div className="glass-morphism rounded-2xl p-6 shadow-2xl border border-white/20">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-xl">
+                <SparklesIcon className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-neutral-900 dark:text-neutral-100">
+                  Install PawfectMatch
+                </h3>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Get the full app experience
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-gray-900 dark:text-white">Install PawfectMatch</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Get the app experience</p>
+            <button
+              onClick={handleDismiss}
+              className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+              aria-label="Dismiss install prompt"
+            >
+              <XMarkIcon className="h-5 w-5 text-neutral-500" />
+            </button>
+          </div>
+
+          {/* Features */}
+          <div className="space-y-2 mb-6">
+            <div className="flex items-center gap-3 text-sm">
+              <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
+              <span className="text-neutral-700 dark:text-neutral-300">
+                Faster loading & offline access
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <div className="w-2 h-2 bg-secondary-500 rounded-full"></div>
+              <span className="text-neutral-700 dark:text-neutral-300">
+                Push notifications for matches
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <div className="w-2 h-2 bg-success-500 rounded-full"></div>
+              <span className="text-neutral-700 dark:text-neutral-300">
+                Native app-like experience
+              </span>
             </div>
           </div>
-          <button
-            onClick={handleDismiss}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            aria-label="Dismiss"
+
+          {/* Install Button */}
+          <InteractiveButton
+            onClick={handleInstallClick}
+            disabled={isInstalling}
+            variant="primary"
+            size="lg"
+            className="w-full"
           >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
+            {isInstalling ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                Installing...
+              </>
+            ) : (
+              <>
+                <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                Install App
+              </>
+            )}
+          </InteractiveButton>
+
+          {/* Platform-specific instructions */}
+          {platform === 'ios' && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <DevicePhoneMobileIcon className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  iOS Instructions
+                </span>
+              </div>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                Tap the Share button and select "Add to Home Screen"
+              </p>
+            </div>
+          )}
+
+          {platform === 'android' && (
+            <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <DevicePhoneMobileIcon className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                  Android Instructions
+                </span>
+              </div>
+              <p className="text-xs text-green-700 dark:text-green-300">
+                Tap "Install" to add to your home screen
+              </p>
+            </div>
+          )}
+
+          {platform === 'desktop' && (
+            <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <ComputerDesktopIcon className="h-4 w-4 text-purple-600" />
+                <span className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                  Desktop Instructions
+                </span>
+              </div>
+              <p className="text-xs text-purple-700 dark:text-purple-300">
+                Install as a desktop app for better performance
+              </p>
+            </div>
+          )}
         </div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
 
-        <ul className="space-y-2 mb-4 text-sm text-gray-600 dark:text-gray-400">
-          <li className="flex items-center">
-            <span className="mr-2">✓</span>
-            Works offline
-          </li>
-          <li className="flex items-center">
-            <span className="mr-2">✓</span>
-            Faster loading
-          </li>
-          <li className="flex items-center">
-            <span className="mr-2">✓</span>
-            Push notifications
-          </li>
-        </ul>
+// Hook for programmatic control
+export function usePWAInstall() {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [isInstallable, setIsInstallable] = useState(false)
+  const [isInstalled, setIsInstalled] = useState(false)
 
-        <button
-          onClick={handleInstall}
-          className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center space-x-2"
-        >
-          <ArrowDownTrayIcon className="w-5 h-5" />
-          <span>Install App</span>
-        </button>
-      </div>
-    </div>
-  );
-};
+  useEffect(() => {
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true)
+      return
+    }
 
-export default InstallPrompt;
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e as BeforeInstallPromptEvent)
+      setIsInstallable(true)
+    }
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true)
+      setIsInstallable(false)
+      setDeferredPrompt(null)
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleAppInstalled)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', handleAppInstalled)
+    }
+  }, [])
+
+  const install = async () => {
+    if (!deferredPrompt) return false
+
+    try {
+      await deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      return outcome === 'accepted'
+    } catch (error) {
+      console.error('Installation failed:', error)
+      return false
+    }
+  }
+
+  return {
+    isInstallable,
+    isInstalled,
+    install,
+  }
+}

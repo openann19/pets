@@ -36,31 +36,26 @@ Content-Type: application/json
   "phone": "+1234567890"
 }
 ```
-
 **Response:**
 ```json
 {
   "success": true,
-  "data": {
     "user": {
       "_id": "user_id",
       "firstName": "John",
       "lastName": "Doe",
       "email": "john@example.com",
       "isEmailVerified": false,
-      "isActive": true
     },
     "accessToken": "jwt_access_token",
     "refreshToken": "jwt_refresh_token"
   }
 }
 ```
-
 #### Login User
 ```http
 POST /api/auth/login
 Content-Type: application/json
-
 {
   "email": "john@example.com",
   "password": "password123"

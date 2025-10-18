@@ -5,9 +5,10 @@
 
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
-import React, { useRef, useState } from 'react';
-import { COLORS, GRADIENTS, transitions } from '../../theme/design-system';
+import { AnimatePresence } from 'framer-motion';
+import React, { useRef, useState, type JSX } from 'react';
+import { BACKDROP, COLORS, GRADIENTS, RADIUS, SHADOWS, MOTION_CONFIG as transitions } from '../../theme/design-system';
+import { MotionDiv, MotionLabel } from '../../utils/Motion';
 
 interface PremiumInputProps {
   label: string;
@@ -52,7 +53,7 @@ export const PremiumInput = ({
   const [isHovered, setIsHovered] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const isFloating = isFocused ?? value.length > 0;
+  const isFloating = isFocused || value.length > 0;
   const hasError = !!error;
 
   // Focus management
@@ -72,15 +73,13 @@ export const PremiumInput = ({
     const variants = {
       default: {
         background: COLORS.neutral[0],
-        border: hasError 
+        border: hasError
           ? `2px solid ${COLORS.error[500]}`
-          : isFocused 
+          : isFocused
             ? `2px solid ${COLORS.primary[500]}`
             : `1px solid ${COLORS.neutral[300]}`,
-        boxShadow: isFocused 
-          ? hasError 
-            ? SHADOWS.errorGlow
-            : SHADOWS.primaryGlow
+        boxShadow: isFocused
+          ? (hasError ? SHADOWS.errorGlow : SHADOWS.primaryGlow)
           : SHADOWS.sm,
       },
       glass: {
@@ -106,13 +105,13 @@ export const PremiumInput = ({
           : isFocused
             ? `2px solid ${COLORS.primary[400]}`
             : `1px solid ${COLORS.neutral[600]}`,
-        boxShadow: isFocused 
+        boxShadow: isFocused
           ? `0 0 20px ${hasError ? COLORS.error[400] : COLORS.primary[400]}40`
           : 'none',
         color: COLORS.neutral[0],
       },
     };
-    
+
     return variants[variant];
   };
 
@@ -135,7 +134,7 @@ export const PremiumInput = ({
         padding: '16px 20px',
       },
     };
-    
+
     return sizes[size];
   };
 
@@ -143,7 +142,7 @@ export const PremiumInput = ({
   const sizeStyles = getSizeStyles();
 
   return (
-    <motion.div
+    <MotionDiv
       className={`relative ${className}`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -152,7 +151,7 @@ export const PremiumInput = ({
       onMouseLeave={() => { setIsHovered(false); }}
     >
       {/* Input Container */}
-      <motion.div
+      <MotionDiv
         className="relative"
         style={{
           ...variantStyles,
@@ -166,32 +165,32 @@ export const PremiumInput = ({
         transition={transitions.micro}
       >
         {/* Left Icon */}
-        {icon !== undefined &&  (
-          <motion.div
+        {icon !== undefined && (
+          <MotionDiv
             className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
             animate={{
               scale: isFocused ? 1.1 : 1,
-              color: isFocused 
+              color: isFocused
                 ? hasError ? COLORS.error[500] : COLORS.primary[500]
                 : COLORS.neutral[400],
             }}
             transition={transitions.micro}
           >
             {icon}
-          </motion.div>
+          </MotionDiv>
         )}
 
         {/* Floating Label */}
-        <motion.label
+        <MotionLabel
           className="absolute pointer-events-none select-none"
           style={{
             left: icon ? '48px' : '16px',
-            color: hasError 
+            color: hasError
               ? COLORS.error[500]
-              : isFocused 
-                ? COLORS.primary[500] 
+              : isFocused
+                ? COLORS.primary[500]
                 : COLORS.neutral[500],
-            fontSize: isFloating ? '12px' : sizeStyles.fontSize,
+            fontSize: isFloating ? '12px' : sizeStyles['fontSize'],
             fontWeight: isFloating ? '500' : '400',
           }}
           animate={{
@@ -203,8 +202,8 @@ export const PremiumInput = ({
           onClick={handleFocus}
         >
           {label}
-          {required !== undefined &&  <span className="text-red-500 ml-1">*</span>}
-        </motion.label>
+          {required !== undefined && <span className="text-red-500 ml-1">*</span>}
+        </MotionLabel>
 
         {/* Input Field */}
         <input
@@ -224,32 +223,32 @@ export const PremiumInput = ({
             paddingBottom: isFloating ? '4px' : '0',
             paddingLeft: icon ? '48px' : '16px',
             paddingRight: rightIcon ? '48px' : '16px',
-            fontSize: sizeStyles.fontSize,
-            color: variant === 'gradient' || variant === 'neon' 
-              ? COLORS.neutral[0] 
+            fontSize: sizeStyles['fontSize'],
+            color: variant === 'gradient' || variant === 'neon'
+              ? COLORS.neutral[0]
               : COLORS.neutral[800],
           }}
         />
 
         {/* Right Icon */}
-        {rightIcon !== undefined &&  (
-          <motion.div
+        {rightIcon !== undefined && (
+          <MotionDiv
             className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
             animate={{
               scale: isFocused ? 1.1 : 1,
-              color: isFocused 
+              color: isFocused
                 ? hasError ? COLORS.error[500] : COLORS.primary[500]
                 : COLORS.neutral[400],
             }}
             transition={transitions.micro}
           >
             {rightIcon}
-          </motion.div>
+          </MotionDiv>
         )}
 
         {/* Character Count */}
-        {maxLength !== undefined &&  value.length > 0 && (
-          <motion.div
+        {maxLength !== undefined && value.length > 0 && (
+          <MotionDiv
             className="absolute bottom-1 right-3 text-xs"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -260,18 +259,18 @@ export const PremiumInput = ({
             }}
           >
             {value.length}/{maxLength}
-          </motion.div>
+          </MotionDiv>
         )}
 
         {/* Focus ring */}
-        {isFocused !== undefined &&  !hasError && (
-          <motion.div
+        {isFocused !== undefined && !hasError && (
+          <MotionDiv
             className="absolute inset-0 rounded-inherit pointer-events-none"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             style={{
-              boxShadow: variant === 'glass' 
+              boxShadow: variant === 'glass'
                 ? `0 0 0 3px ${COLORS.primary[200]}40`
                 : `0 0 0 3px ${COLORS.primary[200]}`,
             }}
@@ -280,8 +279,8 @@ export const PremiumInput = ({
         )}
 
         {/* Error ring */}
-        {hasError !== undefined &&  (
-          <motion.div
+        {hasError !== undefined && (
+          <MotionDiv
             className="absolute inset-0 rounded-inherit pointer-events-none"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -293,41 +292,41 @@ export const PremiumInput = ({
         )}
 
         {/* Glow effect */}
-        {glow !== undefined &&  isFocused && !hasError ? <motion.div
-            className="absolute inset-0 rounded-inherit pointer-events-none"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              background: GRADIENTS.primary,
-              filter: 'blur(20px)',
-              zIndex: -1,
-              transform: 'scale(1.05)',
-            }}
-            transition={transitions.micro}
-          /> : null}
-      </motion.div>
+        {glow !== undefined && isFocused && !hasError ? <MotionDiv
+          className="absolute inset-0 rounded-inherit pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{
+            background: GRADIENTS.primary,
+            filter: 'blur(20px)',
+            zIndex: -1,
+            transform: 'scale(1.05)',
+          }}
+          transition={transitions.micro}
+        /> : null}
+      </MotionDiv>
 
       {/* Helper Text */}
       <AnimatePresence>
-        {(helperText || error) ? <motion.div
-            className="mt-2 px-1"
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            transition={transitions.micro}
+        {(helperText || error) ? <MotionDiv
+          className="mt-2 px-1"
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -5 }}
+          transition={transitions.micro}
+        >
+          <p
+            className="text-sm"
+            style={{
+              color: hasError ? COLORS.error[500] : COLORS.neutral[600],
+            }}
           >
-            <p
-              className="text-sm"
-              style={{
-                color: hasError ? COLORS.error[500] : COLORS.neutral[600],
-              }}
-            >
-              {error || helperText}
-            </p>
-          </motion.div> : null}
+            {error || helperText}
+          </p>
+        </MotionDiv> : null}
       </AnimatePresence>
 
-    </motion.div>
+    </MotionDiv>
   );
 }
