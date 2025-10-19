@@ -4,6 +4,7 @@ exports.useEnhancedWeather = useEnhancedWeather;
 exports.useWeather = useWeather;
 const react_query_1 = require("@tanstack/react-query");
 const zod_1 = require("zod");
+const environment_1 = require("../utils/environment");
 /**
  * Enhanced weather service with time-of-day awareness and seasonal variations
  * Implements Phase 3 requirements for dynamic weather effects
@@ -18,12 +19,12 @@ const WeatherSchema = zod_1.z.object({
     visibility: zod_1.z.number(),
     dt: zod_1.z.number()
 });
-const API_KEY = process.env['REACT_APP_OPENWEATHER_KEY'] || process.env['OPENWEATHER_KEY'];
+const API_KEY = process.env['REACT_APP_OPENWEATHER_KEY'] ?? process.env['OPENWEATHER_KEY'];
 const ENDPOINT = 'https://api.openweathermap.org/data/2.5/weather';
 async function fetchWeather(lat, lon) {
-    if (!API_KEY)
+    if (API_KEY == null || API_KEY === '')
         throw new Error('OpenWeather API key not configured');
-    const url = `${ENDPOINT}?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
+    const url = `${ENDPOINT}?lat=${String(lat)}&lon=${String(lon)}&units=metric&appid=${API_KEY}`;
     const res = await fetch(url);
     if (!res.ok)
         throw new Error('Failed to fetch weather');
@@ -34,7 +35,7 @@ async function fetchWeather(lat, lon) {
  * Get current time of day based on sunrise/sunset
  */
 function getTimeOfDay(sunrise, sunset, currentTime) {
-    const now = currentTime || Date.now() / 1000;
+    const now = currentTime;
     const dawnStart = sunrise - 3600; // 1 hour before sunrise
     const duskEnd = sunset + 3600; // 1 hour after sunset
     if (now >= dawnStart && now < sunrise)
@@ -73,13 +74,13 @@ function generatePetTips(weather, timeOfDay, season) {
         tips.push('Ensure your pet stays hydrated and avoid long walks during peak heat');
     }
     // Weather condition tips
-    if (condition?.includes('rain')) {
+    if (condition != null && condition.includes('rain')) {
         tips.push('Pack a towel for after-walk cleanup and consider waterproof gear');
     }
-    else if (condition?.includes('snow')) {
+    else if (condition != null && condition.includes('snow')) {
         tips.push('Protect paws with booties and limit outdoor time in extreme cold');
     }
-    else if (condition?.includes('thunderstorm')) {
+    else if (condition != null && condition.includes('thunderstorm')) {
         tips.push('Keep pets indoors during storms - many are afraid of thunder');
     }
     // Time-based tips
@@ -107,7 +108,7 @@ function generateActivitySuggestions(weather, timeOfDay, season) {
     const condition = weather.weather[0]?.main.toLowerCase();
     const windSpeed = weather.wind.speed;
     // Outdoor activities
-    if (temp >= 10 && temp <= 25 && !condition?.includes('rain') && !condition?.includes('snow')) {
+    if (temp >= 10 && temp <= 25 && (condition == null || !condition.includes('rain')) && (condition == null || !condition.includes('snow'))) {
         suggestions.push('Perfect weather for a long park walk');
         suggestions.push('Great conditions for fetch or agility training');
         if (windSpeed < 5) {
@@ -115,7 +116,7 @@ function generateActivitySuggestions(weather, timeOfDay, season) {
         }
     }
     // Indoor activities
-    if (temp < 10 || temp > 30 || condition?.includes('rain')) {
+    if (temp < 10 || temp > 30 || (condition != null && condition.includes('rain'))) {
         suggestions.push('Try indoor puzzle toys or training games');
         suggestions.push('Perfect time for bonding with cuddle sessions');
     }
@@ -182,11 +183,13 @@ function useWeather() {
 }
 function getPosition() {
     return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
+        const geolocation = (0, environment_1.getGeolocation)();
+        if (geolocation == null) {
             reject(new Error('Geolocation not available'));
             return;
         }
-        navigator.geolocation.getCurrentPosition(resolve, reject);
+        geolocation.getCurrentPosition(resolve, reject);
     });
 }
 exports.default = { fetchWeather, useWeather, useEnhancedWeather };
+//# sourceMappingURL=WeatherService.js.map

@@ -3,10 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.filterContent = filterContent;
 const DEFAULT_BLOCKED = ['scam', 'spam', 'abuse'];
 function filterContent(input, config) {
-    const blocked = (config?.blockedKeywords && config.blockedKeywords.length > 0)
+    const blocked = (config?.blockedKeywords != null && config.blockedKeywords.length > 0)
         ? config.blockedKeywords
         : DEFAULT_BLOCKED;
-    const flags = config?.caseSensitive ? 'g' : 'gi';
+    const flags = config?.caseSensitive === true ? 'g' : 'gi';
     const replacement = config?.replacement ?? '***';
     let output = input;
     const matched = [];
@@ -19,3 +19,4 @@ function filterContent(input, config) {
     }
     return { output, matched };
 }
+//# sourceMappingURL=contentFilter.js.map

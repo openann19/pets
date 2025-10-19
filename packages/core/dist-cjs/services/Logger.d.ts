@@ -2,6 +2,12 @@
  * Centralized Logging Service
  * Production-grade logging with structured output, levels, and multiple transports
  */
+interface MemoryUsage {
+    rss: number;
+    heapTotal: number;
+    heapUsed: number;
+    external: number;
+}
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'critical';
 export interface LogEntry {
     level: LogLevel;
@@ -23,7 +29,7 @@ export interface LogEntry {
     };
     performance?: {
         duration: number;
-        memoryUsage?: NodeJS.MemoryUsage;
+        memoryUsage?: MemoryUsage;
     };
 }
 export interface LogTransport {

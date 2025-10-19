@@ -30,9 +30,13 @@ const formatMessage = (level, message, context, useTimestamp) => {
     const timestamp = useTimestamp ? `[${new Date().toISOString()}]` : '';
     return `${timestamp}[${level}][${context}] ${message}`;
 };
+// Helper function to get context with fallback
+const getContext = (context) => {
+    return context != null && context.length > 0 ? context : 'App';
+};
 // Error reporting service (can be extended to send to Sentry, etc.)
 const reportErrorToServer = async (error, context, endpoint) => {
-    if (!endpoint)
+    if (endpoint == null || endpoint === '')
         return;
     try {
         const errorObj = error instanceof Error
@@ -63,30 +67,31 @@ class LoggerService {
     }
     debug(message, ...args) {
         if (this.config.minLevel <= LogLevel.DEBUG) {
-            const formattedMsg = formatMessage('DEBUG', message, this.config.context || 'App', this.config.useTimestamps);
-            console.debug(formattedMsg, ...args);
+            const formattedMsg = formatMessage('DEBUG', message, getContext(this.config.context), this.config.useTimestamps);
+            console.warn(formattedMsg, ...args); // Use console.warn for debug level
         }
     }
     info(message, ...args) {
         if (this.config.minLevel <= LogLevel.INFO) {
-            const formattedMsg = formatMessage('INFO', message, this.config.context || 'App', this.config.useTimestamps);
-            console.info(formattedMsg, ...args);
+            const formattedMsg = formatMessage('INFO', message, getContext(this.config.context), this.config.useTimestamps);
+            console.warn(formattedMsg, ...args); // Use console.warn for info level
         }
     }
     warn(message, ...args) {
         if (this.config.minLevel <= LogLevel.WARN) {
-            const formattedMsg = formatMessage('WARN', message, this.config.context || 'App', this.config.useTimestamps);
+            const formattedMsg = formatMessage('WARN', message, getContext(this.config.context), this.config.useTimestamps);
             console.warn(formattedMsg, ...args);
         }
     }
     error(message, ...args) {
         if (this.config.minLevel <= LogLevel.ERROR) {
             const errorMsg = message instanceof Error ? message.message : message;
-            const formattedMsg = formatMessage('ERROR', errorMsg, this.config.context || 'App', this.config.useTimestamps);
+            const formattedMsg = formatMessage('ERROR', errorMsg, getContext(this.config.context), this.config.useTimestamps);
             console.error(formattedMsg, ...(message instanceof Error ? [message, ...args] : args));
             // Report error to server if enabled
-            if (this.config.serverReporting && this.config.serverEndpoint) {
-                reportErrorToServer(message, this.config.context || 'App', this.config.serverEndpoint);
+            if (this.config.serverReporting) {
+                const endpoint = this.config.serverEndpoint;
+                void reportErrorToServer(message, getContext(this.config.context), endpoint);
             }
         }
     }
@@ -104,7 +109,7 @@ class LoggerService {
         };
     }
     createChildLogger(childContext) {
-        const parentContext = this.config.context || 'App';
+        const parentContext = getContext(this.config.context);
         return new LoggerService({
             ...this.config,
             context: `${parentContext}:${childContext}`
@@ -124,3 +129,4 @@ exports.notificationLogger = exports.logger.createChildLogger('Notifications');
 exports.mediaLogger = exports.logger.createChildLogger('Media');
 // Export default logger
 exports.default = exports.logger;
+//# sourceMappingURL=logger.js.map

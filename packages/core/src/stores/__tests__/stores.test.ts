@@ -103,7 +103,7 @@ describe('Zustand Stores', () => {
       });
 
   expect(result.current.toasts).toHaveLength(1);
-  const toast = result.current.toasts[0]!; // non-null in tests is acceptable
+  const toast = result.current.toasts[0];
   expect(toast.message).toBe('Test toast');
 
   const toastId = toast.id;

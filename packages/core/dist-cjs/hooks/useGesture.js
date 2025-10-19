@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useGesture = useGesture;
 const react_1 = require("react");
+const environment_1 = require("../utils/environment");
 function useGesture(onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown) {
     const startPos = (0, react_1.useRef)({ x: 0, y: 0, time: 0 });
     const currentPos = (0, react_1.useRef)({ x: 0, y: 0, time: 0 });
@@ -9,7 +10,7 @@ function useGesture(onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown) {
     const handleTouchStart = (0, react_1.useCallback)((e) => {
         if (e.touches.length > 0) {
             const touch = e.touches[0];
-            if (touch) {
+            if (touch != null) {
                 startPos.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
                 currentPos.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
                 lastPos.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
@@ -19,7 +20,7 @@ function useGesture(onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown) {
     const handleTouchMove = (0, react_1.useCallback)((e) => {
         if (e.touches.length > 0) {
             const touch = e.touches[0];
-            if (touch) {
+            if (touch != null) {
                 lastPos.current = currentPos.current;
                 currentPos.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
             }
@@ -40,32 +41,35 @@ function useGesture(onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown) {
         // Determine primary direction
         if (Math.abs(deltaX) > Math.abs(deltaY)) {
             // Horizontal swipe
-            if (deltaX > 0 && onSwipeRight) {
+            if (deltaX > 0 && onSwipeRight != null) {
                 onSwipeRight();
             }
-            else if (deltaX < 0 && onSwipeLeft) {
+            else if (deltaX < 0 && onSwipeLeft != null) {
                 onSwipeLeft();
             }
         }
         else {
             // Vertical swipe
-            if (deltaY > 0 && onSwipeDown) {
+            if (deltaY > 0 && onSwipeDown != null) {
                 onSwipeDown();
             }
-            else if (deltaY < 0 && onSwipeUp) {
+            else if (deltaY < 0 && onSwipeUp != null) {
                 onSwipeUp();
             }
         }
     }, [onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown]);
     (0, react_1.useEffect)(() => {
-        const element = document.documentElement;
-        element.addEventListener('touchstart', handleTouchStart);
-        element.addEventListener('touchmove', handleTouchMove);
-        element.addEventListener('touchend', handleTouchEnd);
+        const element = (0, environment_1.getDocumentElement)();
+        if (element == null) {
+            return undefined;
+        }
+        (0, environment_1.addEventListenerSafely)(element, 'touchstart', handleTouchStart);
+        (0, environment_1.addEventListenerSafely)(element, 'touchmove', handleTouchMove);
+        (0, environment_1.addEventListenerSafely)(element, 'touchend', handleTouchEnd);
         return () => {
-            element.removeEventListener('touchstart', handleTouchStart);
-            element.removeEventListener('touchmove', handleTouchMove);
-            element.removeEventListener('touchend', handleTouchEnd);
+            (0, environment_1.removeEventListenerSafely)(element, 'touchstart', handleTouchStart);
+            (0, environment_1.removeEventListenerSafely)(element, 'touchmove', handleTouchMove);
+            (0, environment_1.removeEventListenerSafely)(element, 'touchend', handleTouchEnd);
         };
     }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
     return {
@@ -74,3 +78,4 @@ function useGesture(onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown) {
         handleTouchEnd
     };
 }
+//# sourceMappingURL=useGesture.js.map

@@ -17,3 +17,4 @@ exports.DEFAULT_ANIMATION_CONFIG = {
     friction: 8,
     useNativeDriver: true,
 };
+//# sourceMappingURL=swipe.js.map

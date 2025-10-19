@@ -2,12 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toCoreUser = toCoreUser;
 function splitName(name) {
-    const trimmed = (name || '').trim();
-    if (!trimmed)
+    const trimmed = name.trim();
+    if (trimmed.length === 0)
         return { firstName: '', lastName: '' };
     const parts = trimmed.split(/\s+/);
-    const firstName = parts[0] ?? '';
-    const lastName = parts.slice(1).join(' ') ?? '';
+    const firstName = parts[0] != null ? parts[0] : '';
+    const lastName = parts.slice(1).join(' ').length > 0 ? parts.slice(1).join(' ') : '';
     return { firstName, lastName };
 }
 function toCoreUser(legacy) {
@@ -21,7 +21,7 @@ function toCoreUser(legacy) {
         lastName,
         dateOfBirth: '', // unknown from legacy; keep empty string
         age: 0, // unknown from legacy
-        ...(legacy.avatar ? { avatar: legacy.avatar } : {}),
+        ...(legacy.avatar != null && legacy.avatar.length > 0 ? { avatar: legacy.avatar } : {}),
         bio: '',
         phone: '',
         location: {
@@ -41,7 +41,7 @@ function toCoreUser(legacy) {
             },
         },
         premium: {
-            isActive: !!legacy.isPremium,
+            isActive: legacy.isPremium ?? false,
             plan: 'basic',
             features: {
                 unlimitedLikes: false,
@@ -64,3 +64,4 @@ function toCoreUser(legacy) {
         updatedAt: now,
     };
 }
+//# sourceMappingURL=user.js.map

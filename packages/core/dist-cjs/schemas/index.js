@@ -26,7 +26,7 @@ exports.registerSchema = zod_1.z.object({
         .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
     confirmPassword: zod_1.z.string(),
     phone: zod_1.z.string().optional(),
-    agreeToTerms: zod_1.z.boolean().refine(val => val === true, 'You must agree to the terms and conditions')
+    agreeToTerms: zod_1.z.boolean().refine(val => val, 'You must agree to the terms and conditions')
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
@@ -106,3 +106,4 @@ exports.searchSchema = zod_1.z.object({
 var story_1 = require("./story");
 Object.defineProperty(exports, "storyCreateSchema", { enumerable: true, get: function () { return story_1.createStorySchema; } });
 Object.defineProperty(exports, "storyReplySchema", { enumerable: true, get: function () { return story_1.replyStorySchema; } });
+//# sourceMappingURL=index.js.map

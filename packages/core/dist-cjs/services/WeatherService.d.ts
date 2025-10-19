@@ -1,4 +1,4 @@
-import { UseQueryResult } from '@tanstack/react-query';
+import { type UseQueryResult } from '@tanstack/react-query';
 import { z } from 'zod';
 /**
  * Enhanced weather service with time-of-day awareness and seasonal variations
@@ -126,11 +126,11 @@ declare function fetchWeather(lat: number, lon: number): Promise<WeatherResponse
 /**
  * Enhanced weather hook with time-of-day and seasonal context
  */
-export declare function useEnhancedWeather(): UseQueryResult<EnhancedWeatherData, Error>;
+export declare function useEnhancedWeather(): UseQueryResult<EnhancedWeatherData>;
 /**
  * React Query + Geolocation hook for basic weather
  */
-export declare function useWeather(): UseQueryResult<WeatherResponse, Error>;
+export declare function useWeather(): UseQueryResult<WeatherResponse>;
 declare const _default: {
     fetchWeather: typeof fetchWeather;
     useWeather: typeof useWeather;

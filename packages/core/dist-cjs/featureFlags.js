@@ -24,40 +24,40 @@ class FeatureFlagService {
     }
     loadFlagsFromEnvironment() {
         const flags = {};
-        if (process.env['FEATURE_ANIMATIONS']) {
+        if (process.env['FEATURE_ANIMATIONS'] != null) {
             flags.animations = process.env['FEATURE_ANIMATIONS'] === 'true';
         }
-        if (process.env['FEATURE_ENHANCED_MATCHING']) {
+        if (process.env['FEATURE_ENHANCED_MATCHING'] != null) {
             flags.enhancedMatching = process.env['FEATURE_ENHANCED_MATCHING'] === 'true';
         }
-        if (process.env['FEATURE_SMART_RETRIES']) {
+        if (process.env['FEATURE_SMART_RETRIES'] != null) {
             flags.smartRetries = process.env['FEATURE_SMART_RETRIES'] === 'true';
         }
-        if (process.env['FEATURE_PRIORITY_SUPPORT']) {
+        if (process.env['FEATURE_PRIORITY_SUPPORT'] != null) {
             flags.prioritySupport = process.env['FEATURE_PRIORITY_SUPPORT'] === 'true';
         }
-        if (process.env['FEATURE_ADVANCED_ANALYTICS']) {
+        if (process.env['FEATURE_ADVANCED_ANALYTICS'] != null) {
             flags.advancedAnalytics = process.env['FEATURE_ADVANCED_ANALYTICS'] === 'true';
         }
-        if (process.env['FEATURE_PREMIUM_ANIMATIONS']) {
-            flags.premiumAnimations = process.env['FEATURE_PREMIUM_ANIMATIONS'] === 'true';
+        if (process.env['FEATURE_PREMIUM_ANIMATIONS'] != null) {
+            flags.premiumAnimations = process.env['FEATURE_PREMIUM_ANALYTICS'] === 'true';
         }
-        if (process.env['FEATURE_ANIMATION_FRAME_OPTIMIZATION']) {
+        if (process.env['FEATURE_ANIMATION_FRAME_OPTIMIZATION'] != null) {
             flags.animationFrameOptimization = process.env['FEATURE_ANIMATION_FRAME_OPTIMIZATION'] === 'true';
         }
-        if (process.env['FEATURE_ACCESSIBILITY_ENHANCEMENTS']) {
+        if (process.env['FEATURE_ACCESSIBILITY_ENHANCEMENTS'] != null) {
             flags.accessibilityEnhancements = process.env['FEATURE_ACCESSIBILITY_ENHANCEMENTS'] === 'true';
         }
-        if (process.env['FEATURE_USAGE_TRACKING']) {
+        if (process.env['FEATURE_USAGE_TRACKING'] != null) {
             flags.usageTracking = process.env['FEATURE_USAGE_TRACKING'] === 'true';
         }
-        if (process.env['FEATURE_SUBSCRIPTION_ANALYTICS']) {
+        if (process.env['FEATURE_SUBSCRIPTION_ANALYTICS'] != null) {
             flags.subscriptionAnalytics = process.env['FEATURE_SUBSCRIPTION_ANALYTICS'] === 'true';
         }
         return flags;
     }
     isEnabled(flag) {
-        return this.flags[flag] || false;
+        return this.flags[flag];
     }
     enable(flag) {
         this.flags[flag] = true;
@@ -72,3 +72,4 @@ class FeatureFlagService {
 exports.FeatureFlagService = FeatureFlagService;
 exports.featureFlags = new FeatureFlagService();
 exports.default = exports.featureFlags;
+//# sourceMappingURL=featureFlags.js.map

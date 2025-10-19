@@ -5,3 +5,4 @@
  * Shared types for ephemeral stories feature
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+//# sourceMappingURL=story.js.map

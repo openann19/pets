@@ -1,11 +1,20 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json", // <-- Inherits all strict rules
   "compilerOptions": {
+    // --- Package-specific overrides ---
     "outDir": "./dist",
-    "verbatimModuleSyntax": false,
+    "rootDir": "./src",
     "lib": ["ES2023", "DOM"],
-    "moduleResolution": "bundler"
+    "types": ["node", "jest"],
+    "verbatimModuleSyntax": false // Allow mixed import/export for compatibility
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules", 
+    "dist", 
+    "**/*.test.ts", 
+    "**/*.spec.ts",
+    "**/*.test.tsx",
+    "**/*.spec.tsx"
+  ]
 }

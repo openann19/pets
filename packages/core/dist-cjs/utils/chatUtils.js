@@ -51,7 +51,7 @@ exports._getCurrentUserPet = _getCurrentUserPet;
  */
 const _getTypingUsers = (isTyping, currentUserId, otherUser) => {
     return Object.keys(isTyping)
-        .filter(userId => isTyping[userId] && userId !== currentUserId)
+        .filter(userId => isTyping[userId] === true && userId !== currentUserId)
         .map(userId => {
         if (userId === otherUser._id) {
             return otherUser.firstName;
@@ -60,3 +60,4 @@ const _getTypingUsers = (isTyping, currentUserId, otherUser) => {
     });
 };
 exports._getTypingUsers = _getTypingUsers;
+//# sourceMappingURL=chatUtils.js.map

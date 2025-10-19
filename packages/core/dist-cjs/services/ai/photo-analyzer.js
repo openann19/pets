@@ -37,8 +37,17 @@ class PhotoAnalyzerService {
      * Get best photo for profile
      */
     async getBestProfilePhoto(photoUrls, petType) {
-        const analyses = await this.analyzeMultiplePhotos(photoUrls, petType);
-        return analyses[0]?.url || photoUrls[0] || '';
+        const petTypeParam = petType?.trim();
+        const analyses = await this.analyzeMultiplePhotos(photoUrls, petTypeParam);
+        const bestResult = analyses[0];
+        if (bestResult?.url != null && bestResult.url !== '') {
+            return bestResult.url;
+        }
+        const fallbackUrl = photoUrls[0];
+        if (typeof fallbackUrl === 'string' && fallbackUrl !== '') {
+            return fallbackUrl;
+        }
+        return '';
     }
     /**
      * Build analysis prompt
@@ -54,7 +63,7 @@ class PhotoAnalyzerService {
         prompt += '3. Detected emotions or expressions\n';
         prompt += '4. Suggestions for improvement\n';
         prompt += '5. Best use case (profile/gallery/background)\n\n';
-        if (petType) {
+        if (petType != null && petType.length > 0) {
             prompt += `The pet is a ${petType}.\n\n`;
         }
         prompt += 'Format response as JSON with this structure:\n';
@@ -78,20 +87,20 @@ class PhotoAnalyzerService {
         try {
             // Try to extract JSON from response
             const jsonMatch = response.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
+            if (jsonMatch !== null) {
                 const parsed = JSON.parse(jsonMatch[0]);
                 return {
-                    quality: parsed.quality || 'good',
-                    score: parsed.score || 70,
-                    suggestions: parsed.suggestions || [],
+                    quality: (typeof parsed['quality'] === 'string' && parsed['quality'].length > 0) ? parsed['quality'] : 'good',
+                    score: (typeof parsed['score'] === 'number' && !isNaN(parsed['score'])) ? parsed['score'] : 70,
+                    suggestions: Array.isArray(parsed['suggestions']) ? parsed['suggestions'] : [],
                     detectedFeatures: {
-                        lighting: parsed.lighting || 'good',
-                        framing: parsed.framing || 'good',
-                        clarity: parsed.clarity || 'good',
-                        background: parsed.background || 'clean',
+                        lighting: (typeof parsed['lighting'] === 'string' && parsed['lighting'].length > 0) ? parsed['lighting'] : 'good',
+                        framing: (typeof parsed['framing'] === 'string' && parsed['framing'].length > 0) ? parsed['framing'] : 'good',
+                        clarity: (typeof parsed['clarity'] === 'string' && parsed['clarity'].length > 0) ? parsed['clarity'] : 'good',
+                        background: (typeof parsed['background'] === 'string' && parsed['background'].length > 0) ? parsed['background'] : 'clean',
                     },
-                    emotions: parsed.emotions || [],
-                    bestFor: parsed.bestFor || 'gallery',
+                    emotions: Array.isArray(parsed['emotions']) ? parsed['emotions'] : [],
+                    bestFor: (typeof parsed['bestFor'] === 'string' && parsed['bestFor'].length > 0) ? parsed['bestFor'] : 'gallery',
                 };
             }
         }
@@ -123,3 +132,4 @@ class PhotoAnalyzerService {
 exports.PhotoAnalyzerService = PhotoAnalyzerService;
 // Export singleton
 exports._photoAnalyzerService = new PhotoAnalyzerService();
+//# sourceMappingURL=photo-analyzer.js.map

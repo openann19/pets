@@ -45,41 +45,52 @@ const defaultPreferences = {
 exports._usePreferencesStore = (0, zustand_1.create)()((0, middleware_1.persist)((0, immer_1.immer)((set) => ({
     ...defaultPreferences,
     // Update discovery preferences
-    updateDiscoveryPreferences: (preferences) => set((state) => {
-        state.discovery = {
-            ...state.discovery,
-            ...preferences,
-        };
-        return state;
-    }),
+    updateDiscoveryPreferences: (preferences) => {
+        set((state) => {
+            state.discovery = {
+                ...state.discovery,
+                ...preferences,
+            };
+            return state;
+        });
+    },
     // Update notification settings
-    updateNotificationSettings: (settings) => set((state) => {
-        state.notifications = {
-            ...state.notifications,
-            ...settings,
-        };
-        return state;
-    }),
+    updateNotificationSettings: (settings) => {
+        set((state) => {
+            state.notifications = {
+                ...state.notifications,
+                ...settings,
+            };
+            return state;
+        });
+    },
     // Update appearance settings
-    updateAppearanceSettings: (settings) => set((state) => {
-        state.appearance = {
-            ...state.appearance,
-            ...settings,
-        };
-        return state;
-    }),
+    updateAppearanceSettings: (settings) => {
+        set((state) => {
+            state.appearance = {
+                ...state.appearance,
+                ...settings,
+            };
+            return state;
+        });
+    },
     // Update privacy settings
-    updatePrivacySettings: (settings) => set((state) => {
-        state.privacy = {
-            ...state.privacy,
-            ...settings,
-        };
-        return state;
-    }),
+    updatePrivacySettings: (settings) => {
+        set((state) => {
+            state.privacy = {
+                ...state.privacy,
+                ...settings,
+            };
+            return state;
+        });
+    },
     // Reset all preferences to defaults
-    resetPreferences: () => set(() => ({
-        ...defaultPreferences,
-    })),
+    resetPreferences: () => {
+        set(() => ({
+            ...defaultPreferences,
+        }));
+    },
 })), {
     name: 'pawfectmatch-preferences',
 }));
+//# sourceMappingURL=usePreferencesStore.js.map

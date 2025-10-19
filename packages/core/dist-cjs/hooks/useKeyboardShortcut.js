@@ -2,40 +2,44 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.useKeyboardShortcut = useKeyboardShortcut;
 const react_1 = require("react");
+const environment_1 = require("../utils/environment");
 function useKeyboardShortcut(keyCombo, handler) {
-    const formattedCombo = (0, react_1.useRef)(formatKeyCombo(keyCombo));
     const handlerRef = (0, react_1.useRef)(handler);
     (0, react_1.useEffect)(() => {
         handlerRef.current = handler;
     }, [handler]);
-    // Keep the formatted combo in sync when keyCombo changes without re-subscribing listeners
-    (0, react_1.useEffect)(() => {
-        formattedCombo.current = formatKeyCombo(keyCombo);
-    }, [keyCombo]);
     (0, react_1.useEffect)(() => {
         const handleKeyDown = (event) => {
+            if (!isKeyboardEvent(event)) {
+                return;
+            }
             const pressedCombo = formatPressedKeys(event);
-            if (pressedCombo === formattedCombo.current) {
+            const formattedCombo = formatKeyCombo(keyCombo);
+            if (pressedCombo === formattedCombo) {
                 event.preventDefault();
                 handlerRef.current();
             }
         };
-        document.addEventListener('keydown', handleKeyDown);
+        const documentObject = (0, environment_1.getDocumentObject)();
+        if (documentObject == null) {
+            return undefined;
+        }
+        (0, environment_1.addEventListenerSafely)(documentObject, 'keydown', handleKeyDown);
         return () => {
-            document.removeEventListener('keydown', handleKeyDown);
+            (0, environment_1.removeEventListenerSafely)(documentObject, 'keydown', handleKeyDown);
         };
     }, [keyCombo, handler]);
-    return formattedCombo.current;
+    return formatKeyCombo(keyCombo);
 }
 function formatKeyCombo(combo) {
     const modifiers = [];
-    if (combo.ctrl)
+    if (combo.ctrl === true)
         modifiers.push('Ctrl');
-    if (combo.shift)
+    if (combo.shift === true)
         modifiers.push('Shift');
-    if (combo.alt)
+    if (combo.alt === true)
         modifiers.push('Alt');
-    if (combo.meta)
+    if (combo.meta === true)
         modifiers.push('Meta');
     return [...modifiers, combo.key].join('+');
 }
@@ -51,3 +55,7 @@ function formatPressedKeys(event) {
         modifiers.push('Meta');
     return [...modifiers, event.key].join('+');
 }
+const isKeyboardEvent = (event) => {
+    return 'key' in event;
+};
+//# sourceMappingURL=useKeyboardShortcut.js.map

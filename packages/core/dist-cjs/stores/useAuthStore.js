@@ -17,48 +17,62 @@ exports.useAuthStore = (0, zustand_1.create)()((0, middleware_1.persist)((0, imm
     isAuthenticated: false,
     isOnboarded: false,
     // Update user data
-    setUser: (user) => set((state) => {
-        state.user = user;
-        state.isAuthenticated = !!user;
-        return state;
-    }),
+    setUser: (user) => {
+        set((state) => {
+            state.user = user;
+            state.isAuthenticated = user !== null;
+            return state;
+        });
+    },
     // Set tokens after successful login/registration
-    setTokens: (accessToken, refreshToken) => set((state) => {
-        state.accessToken = accessToken;
-        state.refreshToken = refreshToken;
-        state.isAuthenticated = true;
-        return state;
-    }),
+    setTokens: (accessToken, refreshToken) => {
+        set((state) => {
+            state.accessToken = accessToken;
+            state.refreshToken = refreshToken;
+            state.isAuthenticated = true;
+            return state;
+        });
+    },
     // Clear tokens on logout
-    clearTokens: () => set((state) => {
-        state.accessToken = null;
-        state.refreshToken = null;
-        state.isAuthenticated = false;
-        return state;
-    }),
+    clearTokens: () => {
+        set((state) => {
+            state.accessToken = null;
+            state.refreshToken = null;
+            state.isAuthenticated = false;
+            return state;
+        });
+    },
     // Full logout
-    logout: () => set((state) => {
-        state.user = null;
-        state.accessToken = null;
-        state.refreshToken = null;
-        state.isAuthenticated = false;
-        return state;
-    }),
+    logout: () => {
+        set((state) => {
+            state.user = null;
+            state.accessToken = null;
+            state.refreshToken = null;
+            state.isAuthenticated = false;
+            return state;
+        });
+    },
     // Set loading state
-    setIsLoading: (isLoading) => set((state) => {
-        state.isLoading = isLoading;
-        return state;
-    }),
+    setIsLoading: (isLoading) => {
+        set((state) => {
+            state.isLoading = isLoading;
+            return state;
+        });
+    },
     // Set error message
-    setError: (error) => set((state) => {
-        state.error = error;
-        return state;
-    }),
+    setError: (error) => {
+        set((state) => {
+            state.error = error;
+            return state;
+        });
+    },
     // Set onboarding state
-    setIsOnboarded: (isOnboarded) => set((state) => {
-        state.isOnboarded = isOnboarded;
-        return state;
-    }),
+    setIsOnboarded: (isOnboarded) => {
+        set((state) => {
+            state.isOnboarded = isOnboarded;
+            return state;
+        });
+    },
 })), {
     name: 'auth-storage',
     partialize: (state) => ({
@@ -67,3 +81,4 @@ exports.useAuthStore = (0, zustand_1.create)()((0, middleware_1.persist)((0, imm
         user: state.user
     }),
 }));
+//# sourceMappingURL=useAuthStore.js.map

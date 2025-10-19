@@ -44,10 +44,20 @@ exports.removeAccessToken = removeAccessToken;
 exports.getRefreshToken = getRefreshToken;
 exports.setRefreshToken = setRefreshToken;
 exports.removeRefreshToken = removeRefreshToken;
+// Note: WebStorage and MobileStorage interfaces are defined inline in their implementations
+// to avoid unused interface warnings
+// Cross-platform storage interface
+const environment_1 = require("./environment");
 /**
  * Web storage implementation using localStorage with encryption
  */
 class WebStorageImpl {
+    getStorage;
+    getNavigator;
+    constructor(getStorage = environment_1.getLocalStorage, getNavigator = environment_1.getNavigatorObject) {
+        this.getStorage = getStorage;
+        this.getNavigator = getNavigator;
+    }
     encryptData(data, key) {
         try {
             let encrypted = '';
@@ -78,47 +88,55 @@ class WebStorageImpl {
         }
     }
     generateStorageKey() {
-        const baseKey = typeof window !== 'undefined'
-            ? window.navigator.userAgent + new Date().getTime()
-            : 'fallback_key';
+        const navigator = this.getNavigator();
+        const userAgent = navigator?.userAgent ?? 'unknown_agent';
+        const timestamp = Date.now().toString(36);
+        const baseKey = `${userAgent}-${timestamp}`;
         return btoa(baseKey).slice(0, 16);
     }
-    async getItem(key) {
-        if (typeof window === 'undefined')
-            return null;
+    getItem(key) {
+        const storage = this.getStorage();
+        if (storage == null)
+            return Promise.resolve(null);
         try {
-            const item = localStorage.getItem(key);
-            if (!item)
-                return null;
+            const item = storage.getItem(key);
+            if (item == null)
+                return Promise.resolve(null);
             const storageKey = this.generateStorageKey();
             const decrypted = this.decryptData(item, storageKey);
-            return decrypted || null;
+            return Promise.resolve(decrypted);
         }
         catch (error) {
             console.error('Web storage get error:', error);
-            return null;
+            return Promise.resolve(null);
         }
     }
-    async setItem(key, value) {
-        if (typeof window === 'undefined')
-            return;
+    setItem(key, value) {
+        const storage = this.getStorage();
+        if (storage == null)
+            return Promise.resolve();
         try {
             const storageKey = this.generateStorageKey();
             const encrypted = this.encryptData(value, storageKey);
-            localStorage.setItem(key, encrypted);
+            storage.setItem(key, encrypted);
+            return Promise.resolve();
         }
         catch (error) {
             console.error('Web storage set error:', error);
+            return Promise.resolve();
         }
     }
-    async removeItem(key) {
-        if (typeof window === 'undefined')
-            return;
+    removeItem(key) {
+        const storage = this.getStorage();
+        if (storage == null)
+            return Promise.resolve();
         try {
-            localStorage.removeItem(key);
+            storage.removeItem(key);
+            return Promise.resolve();
         }
         catch (error) {
             console.error('Web storage remove error:', error);
+            return Promise.resolve();
         }
     }
 }
@@ -138,7 +156,7 @@ class MobileStorageImpl {
     }
     async getItem(key) {
         try {
-            if (this.secureStore) {
+            if (this.secureStore !== null) {
                 return await this.secureStore.getItemAsync(key);
             }
             else {
@@ -162,7 +180,7 @@ class MobileStorageImpl {
     }
     async setItem(key, value) {
         try {
-            if (this.secureStore) {
+            if (this.secureStore !== null) {
                 await this.secureStore.setItemAsync(key, value);
             }
             else {
@@ -183,7 +201,7 @@ class MobileStorageImpl {
     }
     async removeItem(key) {
         try {
-            if (this.secureStore) {
+            if (this.secureStore !== null) {
                 await this.secureStore.deleteItemAsync(key);
             }
             else {
@@ -203,17 +221,13 @@ class MobileStorageImpl {
         }
     }
 }
-// Detect platform and provide appropriate implementation
-let storageImpl;
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-    // Web platform
-    storageImpl = new WebStorageImpl();
-}
-else {
-    // Mobile platform (React Native)
-    storageImpl = new MobileStorageImpl();
-}
-exports.secureStorage = storageImpl;
+const createStorageImplementation = () => {
+    if ((0, environment_1.isBrowserEnvironment)()) {
+        return new WebStorageImpl();
+    }
+    return new MobileStorageImpl();
+};
+exports.secureStorage = createStorageImplementation();
 // Convenience methods for auth tokens
 async function getAccessToken() {
     return await exports.secureStorage.getItem('accessToken');
@@ -233,3 +247,4 @@ async function setRefreshToken(token) {
 async function removeRefreshToken() {
     await exports.secureStorage.removeItem('refreshToken');
 }
+//# sourceMappingURL=storage.js.map

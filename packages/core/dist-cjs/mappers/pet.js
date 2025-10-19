@@ -8,15 +8,15 @@ function toCorePet(legacy) {
     const now = new Date().toISOString();
     // Handle various location formats
     let coordinates = [0, 0];
-    if (legacy.location) {
+    if (legacy.location != null) {
         if ('coordinates' in legacy.location && Array.isArray(legacy.location.coordinates)) {
             coordinates = legacy.location.coordinates;
         }
         else if ('latitude' in legacy.location && 'longitude' in legacy.location) {
-            coordinates = [legacy.location.longitude || 0, legacy.location.latitude || 0];
+            coordinates = [legacy.location.longitude ?? 0, legacy.location.latitude ?? 0];
         }
         else if ('lon' in legacy.location && 'lat' in legacy.location) {
-            coordinates = [legacy.location.lon || 0, legacy.location.lat || 0];
+            coordinates = [legacy.location.lon ?? 0, legacy.location.lat ?? 0];
         }
     }
     // Normalize size
@@ -28,7 +28,7 @@ function toCorePet(legacy) {
         'extra-large': 'extra-large',
         'xl': 'extra-large',
     };
-    const size = legacy.size ? (sizeMap[legacy.size.toLowerCase()] || 'medium') : 'medium';
+    const size = legacy.size != null && legacy.size.length > 0 ? (sizeMap[legacy.size.toLowerCase()] ?? 'medium') : 'medium';
     // Normalize species
     const speciesMap = {
         'dog': 'dog',
@@ -36,27 +36,27 @@ function toCorePet(legacy) {
         'bird': 'bird',
         'rabbit': 'rabbit',
     };
-    const species = legacy.species ? (speciesMap[legacy.species.toLowerCase()] || 'other') : 'dog';
+    const species = legacy.species != null && legacy.species.length > 0 ? (speciesMap[legacy.species.toLowerCase()] ?? 'other') : 'dog';
     // Convert photos
-    const photos = (legacy.photos || []).map((photo, index) => ({
+    const photos = (legacy.photos != null ? legacy.photos : []).map((photo, index) => ({
         url: typeof photo === 'string' ? photo : photo.url,
-        isPrimary: typeof photo === 'object' ? (photo.isPrimary || index === 0) : index === 0,
+        isPrimary: typeof photo === 'object' ? (photo.isPrimary != null ? photo.isPrimary : index === 0) : index === 0,
         caption: '',
     }));
     const corePet = {
         _id: legacy.id,
-        owner: legacy.ownerId || '',
-        name: legacy.name || 'Unknown',
+        owner: legacy.ownerId != null ? legacy.ownerId : '',
+        name: legacy.name.length > 0 ? legacy.name : 'Unknown',
         species,
-        breed: legacy.breed || 'Mixed',
-        age: legacy.age || 0,
-        gender: legacy.gender || 'male',
+        breed: legacy.breed.length > 0 ? legacy.breed : 'Mixed',
+        age: !isNaN(legacy.age) ? legacy.age : 0,
+        gender: legacy.gender != null ? legacy.gender : 'male',
         size,
-        ...(legacy.weight !== undefined && { weight: legacy.weight }),
+        ...(legacy.weight != null && !isNaN(legacy.weight) && { weight: legacy.weight }),
         photos,
         videos: [],
-        description: legacy.description || '',
-        personalityTags: legacy.temperament || [],
+        description: legacy.description != null && legacy.description.length > 0 ? legacy.description : '',
+        personalityTags: legacy.temperament != null ? legacy.temperament : [],
         intent: 'all',
         availability: {
             isAvailable: true,
@@ -108,29 +108,24 @@ function toLegacyPet(pet) {
     if (typeof pet.owner === 'string') {
         legacy.ownerId = pet.owner;
     }
-    else if (pet.owner) {
+    else if (typeof pet.owner === 'object' && '_id' in pet.owner) {
         legacy.ownerId = pet.owner._id;
     }
-    if (pet.species)
-        legacy.species = pet.species;
-    if (pet.gender)
-        legacy.gender = pet.gender;
-    if (pet.size)
-        legacy.size = pet.size;
-    if (pet.weight !== undefined)
+    legacy.species = pet.species;
+    legacy.gender = pet.gender;
+    legacy.size = pet.size;
+    if (pet.weight != null)
         legacy.weight = pet.weight;
-    if (pet.description)
+    if (pet.description != null)
         legacy.description = pet.description;
-    if (pet.personalityTags?.length)
-        legacy.temperament = pet.personalityTags;
-    if (pet.photos?.length) {
+    legacy.temperament = pet.personalityTags;
+    if (pet.photos.length > 0) {
         legacy.photos = pet.photos.map(p => ({ url: p.url, isPrimary: p.isPrimary }));
     }
-    if (pet.location?.coordinates) {
-        legacy.location = {
-            longitude: pet.location.coordinates[0],
-            latitude: pet.location.coordinates[1],
-        };
-    }
+    legacy.location = {
+        longitude: pet.location.coordinates[0],
+        latitude: pet.location.coordinates[1],
+    };
     return legacy;
 }
+//# sourceMappingURL=pet.js.map

@@ -27,13 +27,13 @@ export declare class PhotoAnalyzerService {
     /**
      * Analyze multiple photos and rank them
      */
-    analyzeMultiplePhotos(photoUrls: string[], petType?: string | undefined): Promise<Array<PhotoAnalysisResult & {
+    analyzeMultiplePhotos(photoUrls: string[], petType?: string): Promise<Array<PhotoAnalysisResult & {
         url: string;
     }>>;
     /**
      * Get best photo for profile
      */
-    getBestProfilePhoto(photoUrls: string[], petType?: string | undefined): Promise<string>;
+    getBestProfilePhoto(photoUrls: string[], petType?: string): Promise<string>;
     /**
      * Build analysis prompt
      */

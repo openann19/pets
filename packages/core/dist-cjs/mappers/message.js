@@ -1,16 +1,18 @@
 "use strict";
-// Removed empty import statement
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toCoreMessage = toCoreMessage;
 exports.toCoreMessages = toCoreMessages;
 function toCoreMessage(legacy) {
-    const messageId = legacy._id || legacy.id;
-    const content = legacy.content || legacy.text || legacy.message || '';
+    const messageId = legacy._id ?? legacy.id;
+    const contentCandidate = [legacy.content, legacy.text, legacy.message].find((value) => typeof value === 'string' && value.trim().length > 0);
+    const content = contentCandidate ?? '';
     // Handle sender - could be string ID or object
     let sender;
-    if (typeof legacy.sender === 'string' || !legacy.sender) {
+    if (typeof legacy.sender === 'string' || legacy.sender === undefined) {
         // Create minimal user object
-        const senderId = typeof legacy.sender === 'string' ? legacy.sender : legacy.senderId || messageId;
+        const senderId = typeof legacy.sender === 'string' && legacy.sender.length > 0
+            ? legacy.sender
+            : legacy.senderId ?? messageId;
         sender = {
             _id: senderId,
             id: senderId, // Alias for _id
@@ -61,17 +63,19 @@ function toCoreMessage(legacy) {
     }
     else {
         const senderObj = legacy.sender;
-        const senderName = senderObj.name || 'User';
-        const [firstName, ...lastNameParts] = senderName.split(' ');
+        const senderName = senderObj.name ?? 'User';
+        const nameParts = senderName.split(' ');
+        const firstName = nameParts[0] != null && nameParts[0].trim() !== '' ? nameParts[0] : 'User';
+        const lastName = nameParts.slice(1).join(' ').trim();
         sender = {
-            _id: senderObj._id || senderObj.id,
-            id: (senderObj.id || senderObj._id), // Alias for _id
-            email: senderObj.email || '',
-            firstName: firstName || 'User',
-            lastName: lastNameParts.join(' ') || '',
+            _id: senderObj._id ?? senderObj.id,
+            id: senderObj.id,
+            email: senderObj.email ?? '',
+            firstName,
+            lastName,
             dateOfBirth: '',
             age: 0,
-            ...(senderObj.avatar ? { avatar: senderObj.avatar } : {}),
+            ...(senderObj.avatar != null && senderObj.avatar.trim() !== '' ? { avatar: senderObj.avatar } : {}),
             location: {
                 type: 'Point',
                 coordinates: [0, 0],
@@ -113,34 +117,37 @@ function toCoreMessage(legacy) {
         };
     }
     // Normalize message type
-    const messageTypeMap = {
-        'text': 'text',
-        'image': 'image',
-        'location': 'location',
-        'system': 'system',
+    const rawType = legacy.messageType ?? legacy.type ?? 'text';
+    const isMessageType = (value) => {
+        return value === 'text' || value === 'image' || value === 'location' || value === 'system';
     };
-    const rawType = legacy.messageType || legacy.type || 'text';
-    const messageType = messageTypeMap[rawType.toLowerCase()] || 'text';
+    const normalizedType = rawType.toLowerCase();
+    const messageType = isMessageType(normalizedType) ? normalizedType : 'text';
     // Convert attachments
-    const attachments = (legacy.attachments || []).map(att => ({
-        type: att.type || att.fileType || 'file',
-        url: att.url,
-        ...(att.fileName ? { fileName: att.fileName } : {}),
-        ...(att.fileType || att.type ? { fileType: att.fileType || att.type } : {}),
-    }));
+    const attachments = (legacy.attachments ?? []).map(att => {
+        const fileName = att.fileName?.trim();
+        const fileNameObj = fileName != null && fileName.length > 0 ? { fileName } : {};
+        const resolvedFileType = att.fileType ?? att.type;
+        return {
+            type: att.type ?? att.fileType ?? 'file',
+            url: att.url,
+            ...fileNameObj,
+            ...(resolvedFileType != null ? { fileType: resolvedFileType } : {}),
+        };
+    });
     // Get timestamp
-    const sentAt = legacy.sentAt || legacy.timestamp || legacy.createdAt || new Date().toISOString();
+    const sentAt = legacy.sentAt ?? legacy.timestamp ?? legacy.createdAt ?? new Date().toISOString();
     return {
         _id: messageId,
         sender,
         content,
         messageType,
         ...(attachments.length > 0 ? { attachments } : {}),
-        readBy: legacy.readBy || [],
+        readBy: legacy.readBy ?? [],
         sentAt,
-        ...(legacy.editedAt ? { editedAt: legacy.editedAt } : {}),
-        isEdited: legacy.isEdited || false,
-        isDeleted: legacy.isDeleted || false,
+        ...(legacy.editedAt != null ? { editedAt: legacy.editedAt } : {}),
+        isEdited: legacy.isEdited ?? false,
+        isDeleted: legacy.isDeleted ?? false,
     };
 }
 /**
@@ -149,3 +156,4 @@ function toCoreMessage(legacy) {
 function toCoreMessages(legacyMessages) {
     return legacyMessages.map(toCoreMessage);
 }
+//# sourceMappingURL=message.js.map

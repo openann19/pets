@@ -35,6 +35,7 @@ exports.useAdminUpdateReport = useAdminUpdateReport;
 exports.useUnmuteUser = useUnmuteUser;
 const react_query_1 = require("@tanstack/react-query");
 const client_1 = require("./client");
+const environment_1 = require("../utils/environment");
 // Query hook factory
 function useApiQuery(queryKey, endpoint, options) {
     return (0, react_query_1.useQuery)({
@@ -55,9 +56,9 @@ function useApiMutation(endpoint, options) {
         },
         onSuccess: (...args) => {
             // Invalidate related queries
-            queryClient.invalidateQueries();
+            void queryClient.invalidateQueries();
             // Call the original onSuccess if provided
-            if (options?.onSuccess) {
+            if (options != null && options.onSuccess != null) {
                 options.onSuccess(...args);
             }
         },
@@ -67,10 +68,10 @@ function useApiMutation(endpoint, options) {
 function useLogin() {
     return useApiMutation('/auth/login', {
         onSuccess: (data) => {
-            if (data.success && data.data) {
+            if (data.success && data.data != null) {
                 const { accessToken, refreshToken } = data.data;
-                localStorage.setItem('accessToken', accessToken);
-                localStorage.setItem('refreshToken', refreshToken);
+                (0, environment_1.setLocalStorageValue)('accessToken', accessToken);
+                (0, environment_1.setLocalStorageValue)('refreshToken', refreshToken);
             }
         },
     });
@@ -78,10 +79,10 @@ function useLogin() {
 function useRegister() {
     return useApiMutation('/auth/register', {
         onSuccess: (data) => {
-            if (data.success && data.data) {
+            if (data.success && data.data != null) {
                 const { accessToken, refreshToken } = data.data;
-                localStorage.setItem('accessToken', accessToken);
-                localStorage.setItem('refreshToken', refreshToken);
+                (0, environment_1.setLocalStorageValue)('accessToken', accessToken);
+                (0, environment_1.setLocalStorageValue)('refreshToken', refreshToken);
             }
         },
     });
@@ -90,28 +91,29 @@ function useLogout() {
     const queryClient = (0, react_query_1.useQueryClient)();
     return useApiMutation('/auth/logout', {
         onSuccess: () => {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
+            (0, environment_1.removeLocalStorageValue)('accessToken');
+            (0, environment_1.removeLocalStorageValue)('refreshToken');
             queryClient.clear();
         },
     });
 }
-// User hooks
 function useUser(userId) {
-    return useApiQuery(['user', userId || 'me'], userId ? `/users/${userId}` : '/users/me');
+    const userIdStr = userId ?? 'me';
+    return useApiQuery(['user', userIdStr], userIdStr !== 'me' ? `/users/${userIdStr}` : '/users/me');
 }
 function useUpdateUser() {
     const queryClient = (0, react_query_1.useQueryClient)();
     return useApiMutation('/users/me', {
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['user'] });
+            void queryClient.invalidateQueries({ queryKey: ['user'] });
         },
     });
 }
 function usePets(filters) {
-    const queryKey = ['pets', JSON.stringify(filters || {})];
-    const queryString = filters
-        ? `?${new URLSearchParams(Object.fromEntries(Object.entries(filters).map(([k, v]) => [k, String(v)]))).toString()}`
+    const serializedFilters = JSON.stringify(filters ?? {});
+    const queryKey = ['pets', serializedFilters];
+    const queryString = filters != null
+        ? `?${new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([_k, v]) => v != null).map(([k, v]) => [k, String(v)]))).toString()}`
         : '';
     return useApiQuery(queryKey, `/pets${queryString}`);
 }
@@ -122,7 +124,7 @@ function useCreatePet() {
     const queryClient = (0, react_query_1.useQueryClient)();
     return useApiMutation('/pets', {
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['pets'] });
+            void queryClient.invalidateQueries({ queryKey: ['pets'] });
         },
     });
 }
@@ -130,8 +132,8 @@ function useUpdatePet() {
     const queryClient = (0, react_query_1.useQueryClient)();
     return useApiMutation('/pets', {
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['pets'] });
-            queryClient.invalidateQueries({ queryKey: ['pet'] });
+            void queryClient.invalidateQueries({ queryKey: ['pets'] });
+            void queryClient.invalidateQueries({ queryKey: ['pet'] });
         },
     });
 }
@@ -146,7 +148,7 @@ function useCreateMatch() {
     const queryClient = (0, react_query_1.useQueryClient)();
     return useApiMutation('/matches', {
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['matches'] });
+            void queryClient.invalidateQueries({ queryKey: ['matches'] });
         },
     });
 }
@@ -158,7 +160,7 @@ function useSendMessage() {
     const queryClient = (0, react_query_1.useQueryClient)();
     return useApiMutation('/chat', {
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['chat'] });
+            void queryClient.invalidateQueries({ queryKey: ['chat'] });
         },
     });
 }
@@ -194,7 +196,6 @@ function usePetAnalytics(petId) {
 function useMatchAnalytics(matchId) {
     return useApiQuery(['analytics', 'match', matchId], `/analytics/match/${matchId}`);
 }
-// Moderation hooks with optimistic updates
 function useReportUser() {
     const queryClient = (0, react_query_1.useQueryClient)();
     return (0, react_query_1.useMutation)({
@@ -203,7 +204,7 @@ function useReportUser() {
         },
         onSuccess: () => {
             // Invalidate admin reports list
-            queryClient.invalidateQueries({ queryKey: ['admin', 'moderation', 'reports'] });
+            void queryClient.invalidateQueries({ queryKey: ['admin', 'moderation', 'reports'] });
         },
     });
 }
@@ -221,18 +222,18 @@ function useBlockUser() {
             // Optimistically update
             queryClient.setQueryData(['moderation', 'state'], (old) => ({
                 ...old,
-                blocks: [...(old?.blocks || []), { blockedUserId: variables.blockedUserId }],
+                blocks: [...(old != null ? old.blocks : []), { blockedUserId: variables.blockedUserId }],
             }));
             return { previousState };
         },
         onError: (_err, _variables, context) => {
             // Rollback on error
-            if (context?.previousState) {
+            if (context != null && context.previousState != null) {
                 queryClient.setQueryData(['moderation', 'state'], context.previousState);
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
+            void queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
         },
     });
 }
@@ -248,17 +249,17 @@ function useUnblockUser() {
             const previousState = queryClient.getQueryData(['moderation', 'state']);
             queryClient.setQueryData(['moderation', 'state'], (old) => ({
                 ...old,
-                blocks: (old?.blocks || []).filter((b) => b.blockedUserId !== variables.blockedUserId),
+                blocks: (old != null ? old.blocks : []).filter((b) => b.blockedUserId !== variables.blockedUserId),
             }));
             return { previousState };
         },
         onError: (_err, _variables, context) => {
-            if (context?.previousState) {
+            if (context != null && context.previousState != null) {
                 queryClient.setQueryData(['moderation', 'state'], context.previousState);
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
+            void queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
         },
     });
 }
@@ -273,25 +274,25 @@ function useMuteUser() {
             const previousState = queryClient.getQueryData(['moderation', 'state']);
             queryClient.setQueryData(['moderation', 'state'], (old) => ({
                 ...old,
-                mutes: [...(old?.mutes || []), { mutedUserId: variables.mutedUserId, durationMinutes: variables.durationMinutes }],
+                mutes: [...(old != null ? old.mutes : []), { mutedUserId: variables.mutedUserId, durationMinutes: variables.durationMinutes }],
             }));
             return { previousState };
         },
         onError: (_err, _variables, context) => {
-            if (context?.previousState) {
+            if (context != null && context.previousState != null) {
                 queryClient.setQueryData(['moderation', 'state'], context.previousState);
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
+            void queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
         },
     });
 }
 function useAdminListReports(params = {}) {
     const query = new URLSearchParams(Object.fromEntries(Object.entries(params)
-        .filter(([, v]) => v !== undefined && v !== null)
+        .filter(([, v]) => Boolean(v))
         .map(([k, v]) => [k, String(v)]))).toString();
-    const path = `/admin/moderation/reports${query ? `?${query}` : ''}`;
+    const path = `/admin/moderation/reports${query.length > 0 ? `?${query}` : ''}`;
     return useApiQuery(['admin', 'moderation', 'reports', query], path);
 }
 function useAdminUpdateReport() {
@@ -314,17 +315,18 @@ function useUnmuteUser() {
             const previousState = queryClient.getQueryData(['moderation', 'state']);
             queryClient.setQueryData(['moderation', 'state'], (old) => ({
                 ...old,
-                mutes: (old?.mutes || []).filter((m) => m.mutedUserId !== variables.mutedUserId),
+                mutes: (old != null ? old.mutes : []).filter((m) => m.mutedUserId !== variables.mutedUserId),
             }));
             return { previousState };
         },
         onError: (_err, _variables, context) => {
-            if (context?.previousState) {
+            if (context != null && context.previousState != null) {
                 queryClient.setQueryData(['moderation', 'state'], context.previousState);
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
+            void queryClient.invalidateQueries({ queryKey: ['moderation', 'state'] });
         },
     });
 }
+//# sourceMappingURL=hooks.js.map

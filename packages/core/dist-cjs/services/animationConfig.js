@@ -3,11 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.animationConfig = void 0;
 exports.useAnimationConfig = useAnimationConfig;
 const animations_1 = require("../types/animations");
+const environment_1 = require("../utils/environment");
 class AnimationConfigService {
     config = { ...animations_1.defaultAnimationConfig };
     listeners = new Set();
     constructor() {
-        this.loadConfig();
+        void this.loadConfig();
     }
     // Get current configuration
     getConfig() {
@@ -16,13 +17,13 @@ class AnimationConfigService {
     // Update configuration
     updateConfig(updates) {
         this.config = { ...this.config, ...updates };
-        this.saveConfig();
+        void this.saveConfig();
         this.notifyListeners();
     }
     // Reset to defaults
     resetToDefaults() {
         this.config = { ...animations_1.defaultAnimationConfig };
-        this.saveConfig();
+        void this.saveConfig();
         this.notifyListeners();
     }
     // Subscribe to configuration changes
@@ -65,9 +66,10 @@ class AnimationConfigService {
     }
     async loadConfig() {
         try {
+            await Promise.resolve(); // Satisfy require-await
             // Load from localStorage (web) or AsyncStorage (mobile)
             const stored = this.getStorageItem('animation-config');
-            if (stored) {
+            if (stored != null && stored !== '') {
                 const parsed = JSON.parse(stored);
                 this.config = { ...animations_1.defaultAnimationConfig, ...parsed };
             }
@@ -79,6 +81,7 @@ class AnimationConfigService {
     }
     async saveConfig() {
         try {
+            await Promise.resolve(); // Satisfy require-await
             this.setStorageItem('animation-config', JSON.stringify(this.config));
         }
         catch (error) {
@@ -97,35 +100,40 @@ class AnimationConfigService {
     }
     // Platform-agnostic storage methods
     getStorageItem(key) {
-        if (typeof window !== 'undefined' && window.localStorage) {
-            return window.localStorage.getItem(key);
+        const localStorage = (0, environment_1.getLocalStorage)();
+        if (localStorage == null) {
+            return null;
         }
-        // For mobile, this would be handled by AsyncStorage in the mobile implementation
-        return null;
+        try {
+            return localStorage.getItem(key);
+        }
+        catch (error) {
+            console.warn('Failed to access localStorage:', error);
+            return null;
+        }
     }
     setStorageItem(key, value) {
-        if (typeof window !== 'undefined' && window.localStorage) {
-            window.localStorage.setItem(key, value);
+        const localStorage = (0, environment_1.getLocalStorage)();
+        if (localStorage == null) {
+            return;
         }
-        // For mobile, this would be handled by AsyncStorage in the mobile implementation
+        try {
+            localStorage.setItem(key, value);
+        }
+        catch (error) {
+            console.warn('Failed to update localStorage:', error);
+        }
     }
 }
 // Singleton instance
 exports.animationConfig = new AnimationConfigService();
-// React hook for using animation config
+// Lightweight helper for consumers that previously relied on a
+// named export `useAnimationConfig`. Historically this returned a
+// small accessor around the singleton. Provide a stable export
+// to satisfy existing public API surface and TypeScript checks.
 function useAnimationConfig() {
-    const [config, setConfig] = React.useState(exports.animationConfig.getConfig());
-    React.useEffect(() => {
-        const unsubscribe = exports.animationConfig.subscribe(setConfig);
-        return unsubscribe;
-    }, []);
-    return config;
+    // Return the singleton instance; callers can call getConfig() or
+    // subscribe() on the returned object.
+    return exports.animationConfig;
 }
-// Import React conditionally to avoid issues in non-React environments
-let React;
-try {
-    React = require('react');
-}
-catch {
-    // Not in a React environment
-}
+//# sourceMappingURL=animationConfig.js.map

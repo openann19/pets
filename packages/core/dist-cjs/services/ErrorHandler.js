@@ -4,7 +4,31 @@
  * Production-grade error handling with user notifications, logging, and recovery mechanisms
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.errorHandler = void 0;
+exports.errorHandler = exports.ErrorHandler = void 0;
+const environment_1 = require("../utils/environment");
+const isPromiseRejectionEvent = (event) => {
+    return 'reason' in event;
+};
+const isErrorEvent = (event) => {
+    return 'error' in event;
+};
+const stringifyUnknown = (value) => {
+    if (value instanceof Error) {
+        return value.message;
+    }
+    if (typeof value === 'object' && value !== null) {
+        try {
+            return JSON.stringify(value);
+        }
+        catch {
+            return '[unserializable object]';
+        }
+    }
+    return String(value);
+};
+const isRecordWithMessage = (value) => {
+    return typeof value === 'object' && value !== null && 'message' in value;
+};
 class ErrorHandlerService {
     errorQueue = [];
     notificationHandlers = [];
@@ -38,7 +62,7 @@ class ErrorHandlerService {
             this.logError(processedError);
         }
         // Show notification
-        if (options.showNotification !== false && processedError.notification) {
+        if (options.showNotification !== false && processedError.notification != null) {
             this.showNotification(processedError.notification);
         }
         return processedError;
@@ -50,7 +74,7 @@ class ErrorHandlerService {
         const apiContext = {
             ...context,
             component: 'API',
-            action: `${options.method || 'REQUEST'} ${options.endpoint || 'unknown'}`,
+            action: `${options.method ?? 'REQUEST'} ${options.endpoint ?? 'unknown'}`,
             metadata: {
                 ...context.metadata,
                 endpoint: options.endpoint,
@@ -73,7 +97,7 @@ class ErrorHandlerService {
         const authContext = {
             ...context,
             component: 'Authentication',
-            action: options.authMethod || 'authenticate',
+            action: options.authMethod ?? 'authenticate',
             severity: 'high',
             metadata: {
                 ...context.metadata,
@@ -154,13 +178,13 @@ class ErrorHandlerService {
         const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
         const recent = this.errorQueue.filter(error => error.timestamp >= oneHourAgo);
         const bySeverity = this.errorQueue.reduce((acc, error) => {
-            const severity = error.context.severity || 'medium';
-            acc[severity] = (acc[severity] || 0) + 1;
+            const severity = error.context.severity ?? 'medium';
+            acc[severity] = (acc[severity] ?? 0) + 1;
             return acc;
         }, {});
         const byComponent = this.errorQueue.reduce((acc, error) => {
-            const component = error.context.component || 'unknown';
-            acc[component] = (acc[component] || 0) + 1;
+            const component = error.context.component ?? 'unknown';
+            acc[component] = (acc[component] ?? 0) + 1;
             return acc;
         }, {});
         return {
@@ -188,7 +212,7 @@ class ErrorHandlerService {
             context: {
                 ...context,
                 timestamp: new Date(),
-                severity: options.severity || context.severity || 'medium',
+                severity: options.severity ?? context.severity ?? 'medium',
             },
             stack: errorStack,
             timestamp: new Date(),
@@ -249,14 +273,14 @@ class ErrorHandlerService {
      * Determine if notification should be shown
      */
     shouldShowNotification(error) {
-        const severity = error.context.severity || 'medium';
+        const severity = error.context.severity ?? 'medium';
         return severity === 'high' || severity === 'critical';
     }
     /**
      * Create user-friendly error notification
      */
     createErrorNotification(error) {
-        const severity = error.context.severity || 'medium';
+        const severity = error.context.severity ?? 'medium';
         switch (severity) {
             case 'critical':
                 return {
@@ -299,8 +323,8 @@ class ErrorHandlerService {
      * Create API-specific error notification
      */
     createApiErrorNotification(error, options) {
-        const statusCode = options.statusCode || 500;
-        if (statusCode >= 500) {
+        const statusCode = options.statusCode ?? 500;
+        if (!isNaN(statusCode) && statusCode >= 500) {
             return {
                 title: 'Server Error',
                 message: 'Our servers are experiencing issues. Please try again later.',
@@ -343,7 +367,7 @@ class ErrorHandlerService {
         else {
             return {
                 title: 'Request Failed',
-                message: error.message || 'An error occurred while processing your request.',
+                message: (error.message.trim() !== '') ? error.message : 'An error occurred while processing your request.',
                 type: 'error',
             };
         }
@@ -352,7 +376,7 @@ class ErrorHandlerService {
      * Create API error recovery options
      */
     createApiErrorRecovery(statusCode) {
-        if (statusCode && statusCode >= 500) {
+        if (statusCode != null && statusCode >= 500) {
             return {
                 canRetry: true,
                 retryDelay: 5000,
@@ -376,7 +400,7 @@ class ErrorHandlerService {
      * Get API error severity
      */
     getApiErrorSeverity(statusCode) {
-        if (!statusCode)
+        if (statusCode == null)
             return 'medium';
         if (statusCode >= 500)
             return 'high';
@@ -429,7 +453,7 @@ class ErrorHandlerService {
      */
     canRecover(error) {
         const { component } = error.context;
-        const severity = error.context.severity || 'medium';
+        const severity = error.context.severity ?? 'medium';
         // Critical errors usually can't be recovered
         if (severity === 'critical')
             return false;
@@ -475,42 +499,68 @@ class ErrorHandlerService {
      * Generate unique error ID
      */
     generateErrorId() {
-        return `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        return `error_${String(Date.now())}_${Math.random().toString(36).substring(2, 11)}`;
+    }
+    extractErrorMessage(source, fallback) {
+        if (typeof source === 'string') {
+            return source;
+        }
+        if (source instanceof Error && typeof source.message === 'string') {
+            return source.message;
+        }
+        if (isRecordWithMessage(source)) {
+            const { message } = source;
+            if (typeof message === 'string') {
+                return message;
+            }
+        }
+        return fallback;
     }
     /**
      * Setup global error handlers
      */
     setupGlobalErrorHandlers() {
-        // Handle unhandled promise rejections
-        if (typeof window !== 'undefined') {
-            window.addEventListener('unhandledrejection', (event) => {
-                this.handleError(new Error(event.reason?.message || 'Unhandled Promise Rejection'), {
-                    component: 'Global',
-                    action: 'unhandled_promise_rejection',
-                    severity: 'high',
-                    metadata: {
-                        reason: event.reason,
-                        promise: event.promise,
-                    },
-                });
-            });
-            // Handle global errors
-            window.addEventListener('error', (event) => {
-                this.handleError(new Error(event.error?.message || 'Global Error'), {
-                    component: 'Global',
-                    action: 'global_error',
-                    severity: 'high',
-                    metadata: {
-                        filename: event.filename,
-                        lineno: event.lineno,
-                        colno: event.colno,
-                        error: event.error,
-                    },
-                });
-            });
+        const browserWindow = (0, environment_1.getWindowObject)();
+        if (browserWindow == null) {
+            return;
         }
+        const handleUnhandledRejection = (event) => {
+            if (!isPromiseRejectionEvent(event)) {
+                return;
+            }
+            const message = this.extractErrorMessage(event.reason, 'Unhandled Promise Rejection');
+            this.handleError(new Error(message), {
+                component: 'Global',
+                action: 'unhandled_promise_rejection',
+                severity: 'high',
+                metadata: {
+                    reason: stringifyUnknown(event.reason),
+                },
+            });
+        };
+        const handleGlobalError = (event) => {
+            if (!isErrorEvent(event)) {
+                return;
+            }
+            const message = this.extractErrorMessage(event.error, 'Global Error');
+            this.handleError(new Error(message), {
+                component: 'Global',
+                action: 'global_error',
+                severity: 'high',
+                metadata: {
+                    filename: event.filename,
+                    lineno: event.lineno,
+                    colno: event.colno,
+                    error: stringifyUnknown(event.error),
+                },
+            });
+        };
+        (0, environment_1.addEventListenerSafely)(browserWindow, 'unhandledrejection', handleUnhandledRejection);
+        (0, environment_1.addEventListenerSafely)(browserWindow, 'error', handleGlobalError);
     }
 }
 // Export singleton instance
-exports.errorHandler = new ErrorHandlerService();
-exports.default = exports.errorHandler;
+exports.ErrorHandler = new ErrorHandlerService();
+exports.errorHandler = exports.ErrorHandler;
+exports.default = exports.ErrorHandler;
+//# sourceMappingURL=ErrorHandler.js.map

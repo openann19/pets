@@ -84,3 +84,4 @@ exports.defaultAnimationConfig = {
         respectSystemPreferences: true,
     },
 };
+//# sourceMappingURL=animations.js.map

@@ -19,6 +19,7 @@ exports._useAnalyticsStore = (0, zustand_1.create)()((set, get) => ({
                 timestamp: new Date().toISOString(),
                 data: { views: 123, matches: 45, likes: 67 }
             };
+            await Promise.resolve();
             set({ userAnalytics: analyticsData, isLoading: false });
         }
         catch {
@@ -46,6 +47,7 @@ exports._useAnalyticsStore = (0, zustand_1.create)()((set, get) => ({
                 timestamp: new Date().toISOString(),
                 data: { views: 89, likes: 34, superlikes: 12 }
             };
+            await Promise.resolve();
             set({
                 petAnalytics: {
                     ...get().petAnalytics,
@@ -79,6 +81,7 @@ exports._useAnalyticsStore = (0, zustand_1.create)()((set, get) => ({
                 timestamp: new Date().toISOString(),
                 data: { messageCount: 42, responseTime: 15, lastActivity: new Date().toISOString() }
             };
+            await Promise.resolve();
             set({
                 matchAnalytics: {
                     ...get().matchAnalytics,
@@ -103,3 +106,4 @@ exports._useAnalyticsStore = (0, zustand_1.create)()((set, get) => ({
         }
     },
 }));
+//# sourceMappingURL=useAnalyticsStore.js.map

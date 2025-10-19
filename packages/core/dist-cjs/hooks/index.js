@@ -23,3 +23,4 @@ __exportStar(require("./useFocusTrap"), exports);
 __exportStar(require("./useGesture"), exports);
 __exportStar(require("./useKeyboardShortcut"), exports);
 // export * from './useSwipeLogic'; // Removed due to missing dependencies
+//# sourceMappingURL=index.js.map

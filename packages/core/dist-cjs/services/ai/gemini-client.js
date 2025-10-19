@@ -14,10 +14,10 @@ class GeminiClient {
     apiKey;
     model;
     constructor(config) {
-        this.apiKey = config.apiKey;
-        this.model = config.model || 'gemini-pro';
+        this.apiKey = config.apiKey.length > 0 ? config.apiKey : '';
+        this.model = config.model != null && config.model.length > 0 ? config.model : 'gemini-pro';
         this.client = axios_1.default.create({
-            baseURL: config.baseURL || 'https://generativelanguage.googleapis.com/v1beta',
+            baseURL: config.baseURL != null && config.baseURL.length > 0 ? config.baseURL : 'https://generativelanguage.googleapis.com/v1beta',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -35,8 +35,13 @@ class GeminiClient {
                             }]
                     }]
             });
-            const text = response.data.candidates[0]?.content?.parts[0]?.text;
-            if (!text) {
+            const candidates = response.data.candidates;
+            if (candidates.length === 0) {
+                throw new Error('No candidates in response');
+            }
+            const candidate = candidates[0];
+            const text = candidate.content.parts[0]?.text;
+            if (text == null || text.length === 0) {
                 throw new Error('No content generated');
             }
             return text;
@@ -64,8 +69,13 @@ class GeminiClient {
                         ]
                     }]
             });
-            const text = response.data.candidates[0]?.content?.parts[0]?.text;
-            if (!text) {
+            const candidates = response.data.candidates;
+            if (candidates.length === 0) {
+                throw new Error('No candidates in response');
+            }
+            const candidate = candidates[0];
+            const text = candidate.content.parts[0]?.text;
+            if (text == null || text.length === 0) {
                 throw new Error('No analysis generated');
             }
             return text;
@@ -80,7 +90,7 @@ class GeminiClient {
      */
     async imageToBase64(url) {
         const response = await axios_1.default.get(url, { responseType: 'arraybuffer' });
-        return Buffer.from(response.data, 'binary').toString('base64');
+        return Buffer.from(response.data).toString('base64');
     }
 }
 exports.GeminiClient = GeminiClient;
@@ -91,9 +101,10 @@ const initializeGemini = (config) => {
 };
 exports.initializeGemini = initializeGemini;
 const _getGeminiClient = () => {
-    if (!geminiClient) {
+    if (geminiClient === null) {
         throw new Error('Gemini client not initialized. Call initializeGemini first.');
     }
     return geminiClient;
 };
 exports._getGeminiClient = _getGeminiClient;
+//# sourceMappingURL=gemini-client.js.map

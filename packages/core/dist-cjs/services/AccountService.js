@@ -24,7 +24,7 @@ class AccountService {
         });
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Failed to request account deletion');
+            throw new Error(error.message ?? 'Failed to request account deletion');
         }
         return await response.json();
     }
@@ -42,7 +42,7 @@ class AccountService {
         });
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Failed to cancel account deletion');
+            throw new Error(error.message ?? 'Failed to cancel account deletion');
         }
         return await response.json();
     }
@@ -60,7 +60,7 @@ class AccountService {
         });
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Failed to deactivate account');
+            throw new Error(error.message ?? 'Failed to deactivate account');
         }
         return await response.json();
     }
@@ -77,7 +77,7 @@ class AccountService {
         });
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Failed to reactivate account');
+            throw new Error(error.message ?? 'Failed to reactivate account');
         }
         return await response.json();
     }
@@ -95,7 +95,7 @@ class AccountService {
         });
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Failed to request data export');
+            throw new Error(error.message ?? 'Failed to request data export');
         }
         return await response.json();
     }
@@ -110,7 +110,7 @@ class AccountService {
         });
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Failed to get export status');
+            throw new Error(error.message ?? 'Failed to get export status');
         }
         return await response.json();
     }
@@ -125,9 +125,10 @@ class AccountService {
         });
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Failed to download data export');
+            throw new Error(error.message ?? 'Failed to download data export');
         }
         return await response.blob();
     }
 }
 exports.AccountService = AccountService;
+//# sourceMappingURL=AccountService.js.map

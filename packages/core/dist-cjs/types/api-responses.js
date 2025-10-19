@@ -20,5 +20,6 @@ function isApiSuccessResponse(response) {
     return (typeof response === 'object' &&
         response !== null &&
         'success' in response &&
-        response.success === true);
+        response.success);
 }
+//# sourceMappingURL=api-responses.js.map

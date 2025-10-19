@@ -163,11 +163,13 @@ declare class ErrorHandlerService {
      * Generate unique error ID
      */
     private generateErrorId;
+    private extractErrorMessage;
     /**
      * Setup global error handlers
      */
     private setupGlobalErrorHandlers;
 }
+export declare const ErrorHandler: ErrorHandlerService;
 export declare const errorHandler: ErrorHandlerService;
-export default errorHandler;
+export default ErrorHandler;
 //# sourceMappingURL=ErrorHandler.d.ts.map

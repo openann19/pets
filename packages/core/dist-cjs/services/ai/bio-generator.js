@@ -42,10 +42,10 @@ class BioGeneratorService {
         let prompt = `Write a ${tone} and engaging bio for a pet with the following details:\n\n`;
         prompt += `Name: ${petName}\n`;
         prompt += `Species: ${species}\n`;
-        if (breed)
+        if (breed != null && breed.length > 0)
             prompt += `Breed: ${breed}\n`;
-        if (age)
-            prompt += `Age: ${age} years old\n`;
+        if (age != null && !isNaN(age) && age > 0)
+            prompt += `Age: ${String(age)} years old\n`;
         if (personality.length > 0)
             prompt += `Personality: ${personality.join(', ')}\n`;
         if (keywords.length > 0)
@@ -66,19 +66,20 @@ class BioGeneratorService {
     extractBio(response) {
         // Remove tags section
         const bioText = response.split('TAGS:')[0]?.trim();
-        return bioText || '';
+        return bioText ?? '';
     }
     /**
      * Extract suggested tags from AI response
      */
     extractTags(response) {
         const tagsSection = response.split('TAGS:')[1];
-        if (!tagsSection)
+        if (tagsSection == null || tagsSection.length === 0)
             return [];
         // Extract hashtags
-        const tags = tagsSection
-            .match(/#\w+/g)
-            ?.map(tag => tag.replace('#', '')) || [];
+        const matchResult = tagsSection.match(/#\w+/g);
+        const tags = matchResult != null
+            ? matchResult.map(tag => tag.replace('#', ''))
+            : [];
         return tags.slice(0, 5); // Max 5 tags
     }
     /**
@@ -86,7 +87,7 @@ class BioGeneratorService {
      */
     generateFallbackBio(request) {
         const { petName, species, personality = [], age } = request;
-        let bio = `Meet ${petName}, a wonderful ${age ? `${age}-year-old ` : ''}${species}! `;
+        let bio = `Meet ${petName}, a wonderful ${age != null && !isNaN(age) ? `${String(age)}-year-old ` : ''}${species}! `;
         if (personality.length > 0) {
             bio += `${petName} is known for being ${personality.join(', ')}. `;
         }
@@ -100,3 +101,4 @@ class BioGeneratorService {
 exports.BioGeneratorService = BioGeneratorService;
 // Export singleton
 exports._bioGeneratorService = new BioGeneratorService();
+//# sourceMappingURL=bio-generator.js.map

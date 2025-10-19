@@ -3,5 +3,8 @@ export interface Pet {
     name: string;
     breed: string;
     age: number;
+    bio: string;
+    photos?: string[];
+    uri?: string;
 }
 //# sourceMappingURL=pet.d.ts.map
