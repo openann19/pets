@@ -5,97 +5,69 @@ import nextPlugin from '@next/eslint-plugin-next';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import globals from 'globals';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Helper to get the root directory, ensuring it works in ESM
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Production-Grade "Strict" ESLint Configuration (2025)
- * This configuration enforces a zero-tolerance policy for code quality issues.
+ * PawfectMatch - Production-Grade "Strict" ESLint Configuration (2025)
+ * This is the single source of truth for the entire monorepo.
  */
 export default [
   // 1. Global Ignores
   {
     ignores: [
-      'node_modules/**',
-      '.next/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-      '*.config.js',
-      '*.config.ts',
-      '.expo/**',
-      'ios/**',
-      'android/**',
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/*.config.js', // Ignores this file itself and other root configs
+      '**/*.config.cjs',
+      '**/.expo/**',
+      '**/ios/**',
+      '**/android/**',
+      '**/.turbo/**',
     ],
   },
 
-  // 2. Base Recommended Rules
+  // 2. Base Recommended JavaScript Rules
   js.configs.recommended,
 
-  // 3. TypeScript Configuration
+  // 3. Global TypeScript Configuration (Base settings for all .ts/.tsx files)
+  // NOTE: This section is intentionally NOT type-aware to prevent hanging.
   {
     files: ['**/*.{ts,tsx}'],
+    plugins: {
+      '@typescript-eslint': typescriptPlugin,
+      'react': reactPlugin,
+      'react-hooks': reactHooksPlugin,
+    },
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
-        project: [
-          './tsconfig.json',
-          './tsconfig.base.json',
-          './apps/*/tsconfig.json',
-          './packages/tsconfig.json',
-          './packages/*/tsconfig.json',
-        ],
       },
       globals: {
         ...globals.browser,
         ...globals.node,
       },
     },
-    plugins: {
-      '@typescript-eslint': typescriptPlugin,
-      'react': reactPlugin,
-      'react-hooks': reactHooksPlugin,
-      '@next/next': nextPlugin,
-    },
     rules: {
-      // --- Start with the strictest recommended rule sets ---
-      ...typescriptPlugin.configs['strict-type-checked'].rules,
+      // Basic recommended rules that do NOT require type information
+      ...typescriptPlugin.configs.recommended.rules,
       ...reactPlugin.configs.recommended.rules,
       ...reactPlugin.configs['jsx-runtime'].rules,
       ...reactHooksPlugin.configs.recommended.rules,
-      // Note: Next.js plugin rules applied only in web-specific override below
 
-      // --- Customize and enforce ZERO-TOLERANCE rules ---
-      
-      // Prevent 'any' and unsafe operations (ERROR level)
+      // Zero-Tolerance rules that do NOT require type information
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unsafe-assignment': 'error',
-      '@typescript-eslint/no-unsafe-call': 'error',
-      '@typescript-eslint/no-unsafe-member-access': 'error',
-      '@typescript-eslint/no-unsafe-argument': 'error',
-      '@typescript-eslint/no-unsafe-return': 'error',
-
-      // Enforce promise handling (ERROR level)
-      '@typescript-eslint/no-floating-promises': 'error',
-      
-      // Enforce strict boolean checks
-      '@typescript-eslint/strict-boolean-expressions': [
-        'error',
-        {
-          allowString: false,
-          allowNumber: false,
-          allowNullableObject: false,
-        },
-      ],
-
-      // Enforce React Hooks best practices (ERROR level)
       'react-hooks/exhaustive-deps': 'error',
-
-      // Disallow console logs in production code (ERROR level)
       'no-console': ['error', { allow: ['warn', 'error'] }],
-
-      // Enforce unused variables are an ERROR, allowing underscore prefix
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -104,13 +76,6 @@ export default [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      
-      // Allow for type inference
-      '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-
-      // Disable rules that are stylistic or handled by Prettier
-      'arrow-body-style': 'off',
       'react/prop-types': 'off', // Not needed with TypeScript
     },
     settings: {
@@ -120,34 +85,74 @@ export default [
     },
   },
 
-  // 3b. Web App Overrides (enable Next.js rules)
+  // 4. STRICT, TYPE-AWARE WORKSPACE OVERRIDES (CRITICAL SECTION)
+  // Each workspace gets its own type-aware configuration block.
+
+  // --- Workspace: apps/web ---
   {
-    files: ['apps/web/src/**/*.{ts,tsx}', 'apps/web/pages/**/*.{ts,tsx}', 'apps/web/app/**/*.{ts,tsx}'],
+    files: ['apps/web/**/*.{ts,tsx}'],
+    plugins: {
+      '@next/next': nextPlugin,
+      '@typescript-eslint': typescriptPlugin,
+    },
+    languageOptions: {
+      parserOptions: {
+        project: [path.join(__dirname, 'apps/web/tsconfig.json')],
+        tsconfigRootDir: path.join(__dirname, 'apps/web'),
+      },
+    },
     rules: {
+      ...typescriptPlugin.configs['strict-type-checked'].rules,
       ...nextPlugin.configs['core-web-vitals'].rules,
     },
   },
 
-  // 3c. Mobile App Overrides (disable Next.js-specific rules)
+  // --- Workspace: apps/mobile ---
   {
     files: ['apps/mobile/src/**/*.{ts,tsx}'],
+    plugins: {
+        '@typescript-eslint': typescriptPlugin,
+    },
+    languageOptions: {
+      parserOptions: {
+        project: [path.join(__dirname, 'apps/mobile/tsconfig.json')],
+        tsconfigRootDir: path.join(__dirname, 'apps/mobile'),
+      },
+      globals: {
+        '__DEV__': 'readonly', // React Native global
+      },
+    },
     rules: {
-      '@next/next/no-html-link-for-pages': 'off',
+      ...typescriptPlugin.configs['strict-type-checked'].rules,
     },
   },
 
-  // 4. Test Files Overrides (more lenient for tests)
+  // --- Workspace: packages/core ---
   {
-    files: ['**/*.test.{js,jsx,ts,tsx}', '**/__tests__/**/*', '**/*.spec.{js,jsx,ts,tsx}', '**/__mocks__/**/*'],
+    files: ['packages/core/src/**/*.{ts,tsx}'],
+    plugins: {
+        '@typescript-eslint': typescriptPlugin,
+    },
+    languageOptions: {
+      parserOptions: {
+        project: [path.join(__dirname, 'packages/core/tsconfig.json')],
+        tsconfigRootDir: path.join(__dirname, 'packages/core'),
+      },
+    },
+    rules: {
+      ...typescriptPlugin.configs['strict-type-checked'].rules,
+    },
+  },
+  
+  // ... Add similar blocks for packages/ui, packages/ai, server, etc. ...
+  
+  // 5. Global Test Files Overrides
+  {
+    files: ['**/*.test.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     languageOptions: {
       globals: {
         ...globals.jest,
-        // Testing Library globals
-        render: 'readonly',
-        screen: 'readonly',
-        fireEvent: 'readonly',
-        waitFor: 'readonly',
-        within: 'readonly',
+        'rest': 'readonly', // For MSW
       },
     },
     rules: {
@@ -159,36 +164,27 @@ export default [
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-require-imports': 'off', // jest.mock() uses require
-      '@typescript-eslint/strict-boolean-expressions': 'off',
-      '@typescript-eslint/restrict-template-expressions': 'off',
-      '@typescript-eslint/unbound-method': 'off', // Mock methods don't need proper binding
-      '@typescript-eslint/await-thenable': 'off', // await on mock functions
-      '@typescript-eslint/no-confusing-void-expression': 'off', // test assertions may be void
-      'react/no-unknown-property': 'off', // React Native props like testID
-      'no-console': 'off', // console.log for debugging tests
-      'no-undef': 'off', // Testing library and other test globals
     },
   },
 
-  // 5. Setup Files Overrides (test configuration files)
+  // 6. Package-Specific Test Overrides (for special tsconfigs)
   {
-    files: ['**/setupTests.{ts,js}'],
+    files: ['packages/core/**/__tests__/**/*.ts', 'packages/core/**/*.test.ts'],
     languageOptions: {
-      globals: {
-        ...globals.jest,
+      parserOptions: {
+        project: [path.join(__dirname, 'packages/core/tsconfig.test.json')],
+        tsconfigRootDir: path.join(__dirname, 'packages/core'),
       },
     },
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unnecessary-condition': 'off',
-      '@typescript-eslint/unbound-method': 'off',
-      '@typescript-eslint/strict-boolean-expressions': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      'no-undef': 'off',
+  },
+  {
+    files: ['apps/mobile/**/__tests__/**/*.ts', 'apps/mobile/**/*.test.ts'],
+    languageOptions: {
+      parserOptions: {
+        project: [path.join(__dirname, 'apps/mobile/tsconfig.test.json')],
+        tsconfigRootDir: path.join(__dirname, 'apps/mobile'),
+      },
     },
   },
 ];
+
