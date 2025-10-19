@@ -8,10 +8,20 @@ import { MessageAttachment, SocketMessageData, SocketNotificationData, SocketUse
 
 interface SocketServiceConfig {
   url: string;
-  token?: string;
-  autoConnect?: boolean;
+  token?: string | undefined;
+  autoConnect?: boolean | undefined;
 }
 
+interface MessageData {
+  matchId: string;
+  userId: string;
+  content: string;
+  timestamp: string;
+  messageType: string;
+  attachments?: MessageAttachment[] | undefined;
+}
+
+type EventHandler = (data?: unknown) => void;
 
 class SocketService {
   private socket: Socket | null = null;
@@ -20,7 +30,7 @@ class SocketService {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private isConnected = false;
-  private eventHandlers: Map<string, Function[]> = new Map();
+  private eventHandlers: Map<string, EventHandler[]> = new Map();
 
   constructor(config: SocketServiceConfig) {
     this.config = {
@@ -28,7 +38,7 @@ class SocketService {
       ...config,
     };
 
-    if (this.config.autoConnect) {
+    if (this.config.autoConnect === true) {
       this.connect();
     }
   }
@@ -50,6 +60,7 @@ class SocketService {
 
       this.setupEventListeners();
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to connect to WebSocket:', error);
       this.handleReconnect();
     }
@@ -64,9 +75,10 @@ class SocketService {
   }
 
   private setupEventListeners(): void {
-    if (!this.socket) return;
+    if (this.socket === null) return;
 
     this.socket.on('connect', () => {
+      // eslint-disable-next-line no-console
       console.log('WebSocket connected');
       this.isConnected = true;
       this.reconnectAttempts = 0;
@@ -74,6 +86,7 @@ class SocketService {
     });
 
     this.socket.on('disconnect', (reason) => {
+      // eslint-disable-next-line no-console
       console.log('WebSocket disconnected:', reason);
       this.isConnected = false;
       this.emit('disconnected', reason);
@@ -85,6 +98,7 @@ class SocketService {
     });
 
     this.socket.on('connect_error', (error) => {
+      // eslint-disable-next-line no-console
       console.error('WebSocket connection error:', error);
       this.emit('error', error);
       this.handleReconnect();
@@ -145,6 +159,7 @@ class SocketService {
 
     // Error handling
     this.socket.on('error', (error: SocketError) => {
+      // eslint-disable-next-line no-console
       console.error('WebSocket error:', error);
       this.emit('error', error);
     });
@@ -152,6 +167,7 @@ class SocketService {
 
   private handleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      // eslint-disable-next-line no-console
       console.error('Max reconnection attempts reached');
       this.emit('reconnect_failed');
       return;
@@ -160,7 +176,8 @@ class SocketService {
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
     
-    console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    // eslint-disable-next-line no-console
+    console.log(`Attempting to reconnect in ${delay.toString()}ms (attempt ${this.reconnectAttempts.toString()})`);
     
     setTimeout(() => {
       this.connect();
@@ -168,21 +185,26 @@ class SocketService {
   }
 
   // Event handling
-  on(event: string, handler: Function): void {
+  on(event: string, handler: EventHandler): void {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, []);
     }
-    this.eventHandlers.get(event)!.push(handler);
+    const handlers = this.eventHandlers.get(event);
+    if (handlers !== undefined) {
+      handlers.push(handler);
+    }
   }
 
-  off(event: string, handler?: Function): void {
+  off(event: string, handler?: EventHandler): void {
     if (!this.eventHandlers.has(event)) return;
     
-    if (handler) {
-      const handlers = this.eventHandlers.get(event)!;
-      const index = handlers.indexOf(handler);
-      if (index > -1) {
-        handlers.splice(index, 1);
+    if (handler !== undefined) {
+      const handlers = this.eventHandlers.get(event);
+      if (handlers !== undefined) {
+        const index = handlers.indexOf(handler);
+        if (index > -1) {
+          handlers.splice(index, 1);
+        }
       }
     } else {
       this.eventHandlers.delete(event);
@@ -198,75 +220,75 @@ class SocketService {
 
   // Chat methods
   joinMatch(matchId: string): void {
-    if (this.socket?.connected) {
+    if (this.socket?.connected === true) {
       this.socket.emit('join_match', matchId);
     }
   }
 
   leaveMatch(matchId: string): void {
-    if (this.socket?.connected) {
+    if (this.socket?.connected === true) {
       this.socket.emit('leave_match', matchId);
     }
   }
 
   sendMessage(matchId: string, content: string, attachments?: MessageAttachment[]): void {
-    if (this.socket?.connected) {
+    if (this.socket?.connected === true) {
       this.socket.emit('send_message', {
         matchId,
         content,
         messageType: 'text',
-        attachments: attachments || []
+        attachments: attachments ?? []
       });
     }
   }
 
   startTyping(matchId: string): void {
-    if (this.socket?.connected) {
+    if (this.socket?.connected === true) {
       this.socket.emit('typing', { matchId, isTyping: true });
     }
   }
 
   stopTyping(matchId: string): void {
-    if (this.socket?.connected) {
+    if (this.socket?.connected === true) {
       this.socket.emit('typing', { matchId, isTyping: false });
     }
   }
 
   // Match methods
   swipePet(petId: string, action: 'like' | 'pass' | 'superlike'): void {
-    if (this.socket?.connected) {
+    if (this.socket?.connected === true) {
       this.socket.emit('swipe', { petId, action });
     }
   }
 
   // Call methods
   initiateCall(matchId: string, type: 'audio' | 'video'): void {
-    if (this.socket?.connected) {
+    if (this.socket?.connected === true) {
       this.socket.emit('call_initiate', { matchId, type });
     }
   }
 
   acceptCall(callId: string): void {
-    if (this.socket?.connected) {
+    if (this.socket?.connected === true) {
       this.socket.emit('call_accept', { callId });
     }
   }
 
   rejectCall(callId: string): void {
-    if (this.socket?.connected) {
+    if (this.socket?.connected === true) {
       this.socket.emit('call_reject', { callId });
     }
   }
 
   endCall(callId: string): void {
-    if (this.socket?.connected) {
+    if (this.socket?.connected === true) {
       this.socket.emit('call_end', { callId });
     }
   }
 
   // Status methods
   updateStatus(status: 'online' | 'offline' | 'away'): void {
-    if (this.socket?.connected) {
+    if (this.socket?.connected === true) {
       this.socket.emit('status_update', { status });
     }
   }

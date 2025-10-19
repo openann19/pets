@@ -70,31 +70,31 @@ interface Match {
  */
 export function createMatch(overrides: Partial<Match> = {}): Match {
     const baseMatch: Match = {
-        id: `match-${Math.random().toString(36).substr(2, 9)}`,
+        id: `match-${Math.random().toString(36).substring(2, 11)}`,
         users: {
             user1: {
-                id: `user-${Math.random().toString(36).substr(2, 9)}`,
-                name: `User ${Math.random().toString(36).substr(2, 3)}`,
-                avatar: `https://example.com/avatar-1-${Math.random().toString(36).substr(2, 5)}.jpg`,
+                id: `user-${Math.random().toString(36).substring(2, 11)}`,
+                name: `User ${Math.random().toString(36).substring(2, 5)}`,
+                avatar: `https://example.com/avatar-1-${Math.random().toString(36).substring(2, 7)}.jpg`,
             },
             user2: {
-                id: `user-${Math.random().toString(36).substr(2, 9)}`,
-                name: `User ${Math.random().toString(36).substr(2, 3)}`,
-                avatar: `https://example.com/avatar-2-${Math.random().toString(36).substr(2, 5)}.jpg`,
+                id: `user-${Math.random().toString(36).substring(2, 11)}`,
+                name: `User ${Math.random().toString(36).substring(2, 5)}`,
+                avatar: `https://example.com/avatar-2-${Math.random().toString(36).substring(2, 7)}.jpg`,
             },
         },
         pets: {
             pet1: {
-                id: `pet-${Math.random().toString(36).substr(2, 9)}`,
-                name: `Pet ${Math.random().toString(36).substr(2, 3)}`,
-                photos: [`https://example.com/pet-1-${Math.random().toString(36).substr(2, 5)}.jpg`],
+                id: `pet-${Math.random().toString(36).substring(2, 11)}`,
+                name: `Pet ${Math.random().toString(36).substring(2, 5)}`,
+                photos: [`https://example.com/pet-1-${Math.random().toString(36).substring(2, 7)}.jpg`],
                 species: 'dog',
                 breed: 'Golden Retriever',
             },
             pet2: {
-                id: `pet-${Math.random().toString(36).substr(2, 9)}`,
-                name: `Pet ${Math.random().toString(36).substr(2, 3)}`,
-                photos: [`https://example.com/pet-2-${Math.random().toString(36).substr(2, 5)}.jpg`],
+                id: `pet-${Math.random().toString(36).substring(2, 11)}`,
+                name: `Pet ${Math.random().toString(36).substring(2, 5)}`,
+                photos: [`https://example.com/pet-2-${Math.random().toString(36).substring(2, 7)}.jpg`],
                 species: 'dog',
                 breed: 'Labrador',
             },
@@ -120,8 +120,8 @@ export function createMatch(overrides: Partial<Match> = {}): Match {
         messages: {
             count: Math.floor(Math.random() * 20),
             lastMessage: {
-                id: `msg-${Math.random().toString(36).substr(2, 9)}`,
-                senderId: `user-${Math.random().toString(36).substr(2, 9)}`,
+                id: `msg-${Math.random().toString(36).substring(2, 11)}`,
+                senderId: `user-${Math.random().toString(36).substring(2, 11)}`,
                 content: 'Hey! Our pets look like they would get along great!',
                 timestamp: new Date().toISOString(),
                 read: Math.random() > 0.5,
@@ -159,8 +159,8 @@ export function createActiveMatch(overrides: Partial<Match> = {}): Match {
         messages: {
             count: Math.floor(Math.random() * 50) + 5, // 5-55 messages
             lastMessage: {
-                id: `msg-${Math.random().toString(36).substr(2, 9)}`,
-                senderId: `user-${Math.random().toString(36).substr(2, 9)}`,
+                id: `msg-${Math.random().toString(36).substring(2, 11)}`,
+                senderId: `user-${Math.random().toString(36).substring(2, 11)}`,
                 content: 'Would you like to set up a playdate this weekend?',
                 timestamp: new Date(Date.now() - Math.random() * 6 * 60 * 60 * 1000).toISOString(), // Within last 6 hours
                 read: false,
@@ -185,8 +185,8 @@ export function createMatchWithMeetup(overrides: Partial<Match> = {}): Match {
         messages: {
             count: 15,
             lastMessage: {
-                id: `msg-${Math.random().toString(36).substr(2, 9)}`,
-                senderId: `user-${Math.random().toString(36).substr(2, 9)}`,
+                id: `msg-${Math.random().toString(36).substring(2, 11)}`,
+                senderId: `user-${Math.random().toString(36).substring(2, 11)}`,
                 content: 'I proposed a meetup for this Saturday at Central Park!',
                 timestamp: new Date().toISOString(),
                 read: false,

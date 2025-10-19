@@ -17,7 +17,6 @@ try {
     ({ createStorySchema, replySchema } = require('../src/schemas/storySchemas'));
 }
 const { authenticateToken } = require('../src/middleware/auth');
-const { validateRequest } = require('../src/middleware/inputValidator');
 const { uploadRateLimiter, strictRateLimiter } = require('../src/middleware/globalRateLimit');
 const { storyDailyLimiter } = require('../src/middleware/storyDailyLimiter');
 const storiesController = require('../src/controllers/storiesController');

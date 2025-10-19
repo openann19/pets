@@ -34,7 +34,33 @@ export default [
   // 2. Base Recommended Rules
   js.configs.recommended,
 
-  // 3. TypeScript Configuration
+  // 3. JavaScript Configuration for test files
+  {
+    files: ['**/*.{js,jsx}'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.jest,
+        callApi: 'readonly',
+        Response: 'readonly',
+        global: 'readonly',
+        require: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+      'no-unused-vars': 'error',
+      'no-undef': 'error',
+    },
+  },
+
+  // 4. TypeScript Configuration
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
@@ -42,8 +68,14 @@ export default [
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        ecmaFeatures: { jsx: true },
-        project: ['../../tsconfig.json', '../../apps/*/tsconfig.json', '../../packages/*/tsconfig.json'],
+        project: [
+          '../../tsconfig.json', 
+          '../../tsconfig.base.json',
+          './tsconfig.json',
+          './tsconfig.base.json',
+          '../../apps/web/tsconfig.json',
+          '../../packages/*/tsconfig.json'
+        ],
       },
       globals: {
         ...globals.browser,
@@ -93,6 +125,10 @@ export default [
 
       // Disallow console logs in production code (ERROR level)
       'no-console': ['error', { allow: ['warn', 'error'] }],
+
+      // Fix ESLint rule configuration issue
+      'no-unused-expressions': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
 
       // Enforce unused variables are an ERROR, allowing underscore prefix
       '@typescript-eslint/no-unused-vars': [

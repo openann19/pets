@@ -2,7 +2,7 @@
  * Base Jest configuration for PawfectMatch monorepo
  * Common settings shared across all packages and apps
  */
-export default {
+module.exports = {
   // Common test settings
   testTimeout: 10000,
   verbose: true,

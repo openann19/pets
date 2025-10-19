@@ -403,7 +403,7 @@ export function useVoiceControl() {
         setIsListening(true);
       };
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: unknown) => {
         let finalTranscript = '';
         let interimTranscript = '';
 
@@ -419,7 +419,7 @@ export function useVoiceControl() {
         setTranscript(finalTranscript || interimTranscript);
       };
 
-      recognition.onerror = (event: any) => {
+      recognition.onerror = (event: unknown) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
       };

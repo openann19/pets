@@ -55,32 +55,33 @@ const createCacheKey = (query: AdminUsersQuery = {}): string => {
 
 const mapUser = (user: Record<string, unknown>): AdminUserSummary => {
   return {
-    id: typeof user._id === 'string' ? user._id : '',
-    firstName: typeof user.firstName === 'string' ? user.firstName : 'Unknown',
-    lastName: typeof user.lastName === 'string' ? user.lastName : 'User',
-    email: typeof user.email === 'string' ? user.email : 'unknown@example.com',
-    role: typeof user.role === 'string' ? user.role : 'user',
-    status: (['active', 'suspended', 'banned', 'pending'] as const).includes(user.status) ? user.status : 'pending',
-    verified: Boolean(user.isVerified ?? user.verified),
-    createdAt: typeof user.createdAt === 'string' ? user.createdAt : new Date().toISOString(),
-    lastLoginAt: typeof user.lastLoginAt === 'string' ? user.lastLoginAt : undefined,
-    petsCount: Array.isArray(user.pets) ? user.pets.length : Number(user.petsCount ?? 0),
-    matchesCount: Number(user.matchesCount ?? 0),
-    messagesCount: Number(user.messagesCount ?? 0),
+    id: typeof user['_id'] === 'string' ? user['_id'] : '',
+    firstName: typeof user['firstName'] === 'string' ? user['firstName'] : 'Unknown',
+    lastName: typeof user['lastName'] === 'string' ? user['lastName'] : 'User',
+    email: typeof user['email'] === 'string' ? user['email'] : 'unknown@example.com',
+    role: typeof user['role'] === 'string' ? user['role'] : 'user',
+    status: (['active', 'suspended', 'banned', 'pending'] as const).includes(user['status'] as AdminUserStatus) ? (user['status'] as AdminUserStatus) : 'pending',
+    verified: Boolean(user['isVerified'] ?? user['verified']),
+    createdAt: typeof user['createdAt'] === 'string' ? user['createdAt'] : new Date().toISOString(),
+    lastLoginAt: typeof user['lastLoginAt'] === 'string' ? user['lastLoginAt'] : undefined,
+    petsCount: Array.isArray(user['pets']) ? user['pets'].length : Number(user['petsCount'] ?? 0),
+    matchesCount: Number(user['matchesCount'] ?? 0),
+    messagesCount: Number(user['messagesCount'] ?? 0),
   };
 };
 
 const mapResponse = (response: Record<string, unknown>): AdminUsersResult => {
-  const users = Array.isArray(response.data?.users) ? (response.data.users as Record<string, unknown>[]).map(mapUser) : [];
-  const pagination = response.data?.pagination as Record<string, unknown> | undefined;
+  const data = response['data'] as Record<string, unknown> | undefined;
+  const users = Array.isArray(data?.['users']) ? (data['users'] as Record<string, unknown>[]).map(mapUser) : [];
+  const pagination = data?.['pagination'] as Record<string, unknown> | undefined;
   const paginationData = pagination ?? {};
   return {
     users,
     pagination: {
-      page: Number(paginationData.page ?? 1),
-      limit: Number(paginationData.limit ?? users.length),
-      total: Number(paginationData.total ?? users.length),
-      pages: Number(paginationData.pages ?? 1),
+      page: Number(paginationData['page'] ?? 1),
+      limit: Number(paginationData['limit'] ?? users.length),
+      total: Number(paginationData['total'] ?? users.length),
+      pages: Number(paginationData['pages'] ?? 1),
     },
   };
 };
@@ -97,7 +98,7 @@ export const invalidateAdminUsersCache = (): void => {
 export const fetchAdminUsers = async (query: AdminUsersQuery = {}): Promise<AdminUsersResult> => {
   const cacheKey = createCacheKey(query);
   const cached = cache.get(cacheKey);
-  if (isCacheValid(cached)) {
+  if (isCacheValid(cached) && cached !== undefined) {
     return cached.data;
   }
 
@@ -120,7 +121,7 @@ export const fetchAdminUsers = async (query: AdminUsersQuery = {}): Promise<Admi
 
     const response = await adminAPI.getUsers(params);
 
-    const mapped = mapResponse(response);
+    const mapped = mapResponse(response as unknown as Record<string, unknown>);
     cache.set(cacheKey, { timestamp: Date.now(), data: mapped });
     return mapped;
   } catch (error: unknown) {

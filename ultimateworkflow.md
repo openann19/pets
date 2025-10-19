@@ -12,10 +12,9 @@
 - Risk assessment: blockers, high-risk god components
 - Success criteria checklist
 
-**Setup security infrastructure**:
+**Setup security infrastructure**:222
 
-- Install `gitleaks`: Add to devDependencies, create `.gitleaks.toml` config
-- Run: `pnpm exec gitleaks detect --source . --report-path=reports/gitleaks-baseline.json`
+
 - Document findings in `docs/security/secrets-scan.md`
 
 **Files Created/Modified**:
@@ -1094,3 +1093,92 @@ pnpm test --coverage --coverageReporters=text-summary
 - Small, atomic commits per file/cluster
 - PR per phase for team review
 - Squash merge to main after approval
+
+
+
+The Prompt: The Configuration Unification Mandate
+
+ROLE: You are the Guardian of the Codebase, acting as the project's Lead Site Reliability Engineer (SRE).
+
+CONTEXT: The configuration snapshot of the PawfectMatch monorepo has been analyzed. It reveals a critical state of configuration chaos.
+
+A modern, strict root eslint.config.js is being actively undermined by a legacy, lenient .eslintrc.json file in apps/web.
+
+Multiple tsconfig.json files contain redundant rules instead of inheriting from the strict tsconfig.base.json.
+
+Jest configurations are fragmented and inconsistent.
+
+The CI/CD pipelines are running commands against these weak configurations, creating a false sense of security. This must be rectified before any further code refactoring can occur.
+
+MISSION: Your mission is to execute a Configuration Unification Mandate. You will audit, consolidate, and unify every single configuration file in the repository, establishing a single source of truth for all rules. You will enforce the strictest, most secure, and most performant settings for each tool, ensuring they all work together seamlessly.
+
+THE UNIFICATION DIRECTIVES:
+
+You will now systematically execute the following five phases to purge all configuration debt.
+
+Phase 1: Purge Legacy Configs & Establish a Single ESLint Source of Truth (Highest Priority)
+
+Objective: Eliminate all conflicting and lenient configurations.
+
+Delete Legacy ESLint Configs: The .eslintrc.json file in apps/web is a legacy config that is actively overriding our strict rules. It must be deleted.
+
+Action: Delete apps/web/.eslintrc.json.
+
+Unify All ESLint Logic into the Root Config: The root eslint.config.js must become the single source of truth.
+
+Action: You have already created a solid, strict eslint.config.js. Verify that it includes the necessary package-specific overrides for apps/mobile (React Native plugin/globals) and that the parserOptions.project paths are correctly resolved for each workspace.
+
+Phase 2: Unify TypeScript & Jest Configurations
+
+Objective: Enforce a strict, inherited configuration model.
+
+Unify All TypeScript Configurations: The package-level tsconfig.json files are redundant and inconsistent.
+
+Action: Audit every tsconfig.json in apps/* and packages/*. Each one must extend the root tsconfig.base.json.
+
+Action: Remove all duplicated strictness rules from the child configs. The only rules left in child configs should be those specific to that package (e.g., jsx, lib, paths, outDir).
+
+Unify Jest Configurations: The project has multiple jest.config.js files with significant duplication.
+
+Action: You have a jest.config.base.js file. Ensure that every other jest.config.js (in server, apps/web, apps/mobile, packages/core, etc.) requires and extends this base config.
+
+Action: The package-level Jest configs should be minimal, containing only the settings that are unique to that package (e.g., preset: 'jest-expo', testEnvironment: 'node', or a specific moduleNameMapper).
+
+Phase 3: Consolidate Environment Variables
+
+Objective: Remove ambiguity in environment configuration.
+
+Eliminate Duplicate .env.example: The server directory contains two conflicting .env.example files.
+
+Action: Consolidate server/.env.example and server/src/models/.env.example into a single, comprehensive server/.env.example file. Delete the duplicate file from the models directory.
+
+Phase 4: Harden the CI/CD Quality Gates
+
+Objective: Ensure the automated workflows are strict and cannot be bypassed.
+
+Audit GitHub Actions Workflows: Review ci.yml and quality-gate.yml.
+
+Action: Confirm that the lint step in all workflows is now running the correct command: pnpm run lint:check. This command, defined in your package.json, correctly uses --max-warnings 0 and will fail the build on any warning, enforcing our zero-tolerance policy.
+
+Action: Ensure all quality gate jobs (type-check, test, build, security-audit) are set to continue-on-error: false to block a pull request from merging if any job fails.
+
+Phase 5: Final Verification & Resumption of the Phoenix Mandate
+
+Objective: Confirm that the entire configuration landscape is unified and stable.
+
+Perform a "Fresh Start" Validation: Execute the full clean-slate workflow from the project root:
+
+Bash
+git clean -dfx
+rm pnpm-lock.yaml
+pnpm install
+pnpm audit
+pnpm build
+pnpm test
+pnpm type-check
+pnpm lint
+Final Report: Confirm that this entire sequence completes with zero errors.
+
+Resume the Mandate: Once the configuration is unified and all checks pass, you are authorized to resume Phase 2 (System-Wide Stabilization), followed by Phase 3 (Architectural Perfection) of the Phoenix Mandate. You will now begin refactoring the application code, confident that the foundation is rock-solid.
+
+INITIATION COMMAND: "Begin the Configuration Unification Mandate now. Your first action is to delete apps/web/.eslintrc.json."

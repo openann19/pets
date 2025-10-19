@@ -322,9 +322,9 @@ export interface MoonPhaseData {
 
 export interface ARWeatherData {
   cloudModel: string;
-  precipitationParticles: any;
-  windVectors: any;
-  temperatureHeatmap: any;
+  precipitationParticles: unknown;
+  windVectors: unknown;
+  temperatureHeatmap: unknown;
   enabled: boolean;
 }
 
@@ -583,7 +583,7 @@ class EnhancedWeatherService {
     }
   }
 
-  private mapOpenWeatherData(current: any, forecast: any, air: any): EnhancedWeatherData {
+  private mapOpenWeatherData(current: unknown, forecast: unknown, air: unknown): EnhancedWeatherData {
     const sunrise = new Date(current.sys.sunrise * 1000).toISOString();
     const sunset = new Date(current.sys.sunset * 1000).toISOString();
     
@@ -722,7 +722,7 @@ class EnhancedWeatherService {
     };
   }
 
-  private mapWeatherAPIData(data: any): EnhancedWeatherData {
+  private mapWeatherAPIData(data: unknown): EnhancedWeatherData {
     const current = data.current;
     const location = data.location;
     const forecast = data.forecast;
@@ -829,7 +829,7 @@ class EnhancedWeatherService {
       },
       
       // Alerts
-      alerts: data.alerts?.alert?.map((alert: any) => ({
+      alerts: data.alerts?.alert?.map((alert: unknown) => ({
         id: alert.id || '0',
         title: alert.headline,
         description: alert.desc,
@@ -847,7 +847,7 @@ class EnhancedWeatherService {
       })),
       
       // Forecast data
-      hourlyForecast: forecast.forecastday[0].hour.map((hour: any) => ({
+      hourlyForecast: forecast.forecastday[0].hour.map((hour: unknown) => ({
         time: hour.time,
         temperature: Math.round(hour.temp_c),
         feelsLike: Math.round(hour.feelslike_c),
@@ -869,7 +869,7 @@ class EnhancedWeatherService {
         animatedIcon: `https:${hour.condition.icon}`
       })),
       
-      dailyForecast: forecast.forecastday.map((day: any) => ({
+      dailyForecast: forecast.forecastday.map((day: unknown) => ({
         date: day.date,
         dayOfWeek: new Date(day.date).toLocaleDateString('en-US', { weekday: 'long' }),
         tempMin: Math.round(day.day.mintemp_c),
@@ -960,7 +960,7 @@ class EnhancedWeatherService {
     };
   }
 
-  private mapNOAAData(forecast: any, grid: any): EnhancedWeatherData {
+  private mapNOAAData(forecast: unknown, grid: unknown): EnhancedWeatherData {
     const current = forecast.properties.periods[0];
     const location = grid.properties.relativeLocation.properties;
     
@@ -1066,7 +1066,7 @@ class EnhancedWeatherService {
       },
       
       // Forecast data
-      dailyForecast: forecast.properties.periods.filter((_: any, i: number) => i % 2 === 0).slice(0, 7).map((period: any) => ({
+      dailyForecast: forecast.properties.periods.filter((_: unknown, i: number) => i % 2 === 0).slice(0, 7).map((period: unknown) => ({
         date: new Date(period.startTime).toISOString().split('T')[0],
         dayOfWeek: new Date(period.startTime).toLocaleDateString('en-US', { weekday: 'long' }),
         tempMin: Math.round((period.temperature - 32) * 5/9),
@@ -1153,7 +1153,7 @@ class EnhancedWeatherService {
     };
   }
 
-  private calculatePetSafety(current: any, forecast: any, air: any): EnhancedPetSafetyInfo {
+  private calculatePetSafety(current: unknown, forecast: unknown, air: unknown): EnhancedPetSafetyInfo {
     const temp = current.temp_c || current.main?.temp || 20;
     const humidity = current.humidity || current.main?.humidity || 50;
     const uv = current.uv || forecast?.list?.[0]?.uvi || 5;
@@ -1508,7 +1508,7 @@ class EnhancedWeatherService {
     return c1 + c2*T + c3*R + c4*T*R + c5*T*T + c6*R*R + c7*T*T*R + c8*T*R*R + c9*T*T*R*R;
   }
 
-  private calculateBestWalkTimes(temp: number, uv: number, forecast: any): string[] {
+  private calculateBestWalkTimes(temp: number, uv: number, forecast: unknown): string[] {
     const times: string[] = [];
     
     if (temp > 25 || uv > 6) {
@@ -1526,10 +1526,10 @@ class EnhancedWeatherService {
     return times;
   }
 
-  private mapHourlyForecast(forecast: any): HourlyForecast[] | undefined {
+  private mapHourlyForecast(forecast: unknown): HourlyForecast[] | undefined {
     if (!forecast?.list) return undefined;
     
-    return forecast.list.slice(0, 24).map((item: any) => ({
+    return forecast.list.slice(0, 24).map((item: unknown) => ({
       time: new Date(item.dt * 1000).toISOString(),
       temperature: Math.round(item.main.temp),
       feelsLike: Math.round(item.main.feels_like),
@@ -1541,12 +1541,12 @@ class EnhancedWeatherService {
     }));
   }
 
-  private mapDailyForecast(forecast: any): EnhancedDailyForecast[] | undefined {
+  private mapDailyForecast(forecast: unknown): EnhancedDailyForecast[] | undefined {
     if (!forecast?.list) return undefined;
     
     const dailyMap = new Map();
     
-    forecast.list.forEach((item: any) => {
+    forecast.list.forEach((item: unknown) => {
       const date = new Date(item.dt * 1000).toISOString().split('T')[0];
       const dayOfWeek = new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'long' });
       
@@ -1614,7 +1614,7 @@ class EnhancedWeatherService {
     return Array.from(dailyMap.values()).slice(0, 7) as EnhancedDailyForecast[];
   }
 
-  private mapAirQuality(air: any): EnhancedAirQuality | undefined {
+  private mapAirQuality(air: unknown): EnhancedAirQuality | undefined {
     if (!air?.list?.[0]) return undefined;
     
     const data = air.list[0];
@@ -1651,7 +1651,7 @@ class EnhancedWeatherService {
     };
   }
 
-  private mapWeatherAPIAirQuality(air: any): EnhancedAirQuality | undefined {
+  private mapWeatherAPIAirQuality(air: unknown): EnhancedAirQuality | undefined {
     if (!air) return undefined;
     
     return {

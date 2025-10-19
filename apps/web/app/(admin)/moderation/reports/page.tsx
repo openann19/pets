@@ -1,7 +1,7 @@
 'use client';
 
 import PremiumButton from '@/components/ui/PremiumButton';
-import { useAdminListReports, useAdminUpdateReport } from '@pawfectmatch/core/src/api/hooks';
+import { useAdminListReports, useAdminUpdateReport } from '@pawfectmatch/core/api';
 import { useMemo, useState } from 'react';
 
 export default function AdminReportsPage() {

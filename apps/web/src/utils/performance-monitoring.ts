@@ -246,7 +246,7 @@ class PerformanceMonitor {
     });
   }
 
-  private addMetric(name: string, value: number, metadata?: any): void {
+  private addMetric(name: string, value: number, metadata?: unknown): void {
     if (!this.isEnabled) return;
 
     const metric: PerformanceMetric = {

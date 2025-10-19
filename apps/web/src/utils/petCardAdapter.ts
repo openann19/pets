@@ -11,35 +11,25 @@ import type { Pet } from '@/types';
  */
 export const adaptPetToCardData = (pet: Pet): PetCardData => {
   // Calculate distance (placeholder - would need actual user location)
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   const distanceKm = pet.owner?.location !== undefined ? 2.5 : 0; // Placeholder distance
   
   // Get photos array
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
   const photos = pet.photos.map((photo) => photo.url);
   
   // Calculate compatibility score (placeholder - would use AI service)
   const compatibility = Math.floor(Math.random() * 40) + 60; // 60-100% range
   
   return {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     id: pet._id,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     name: pet.name,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     breed: pet.breed ?? 'Mixed',
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     age: pet.age,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     size: pet.size as 'tiny' | 'small' | 'medium' | 'large' | 'extra-large',
     distanceKm,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     bio: pet.description ?? 'Super friendly and loves to play!',
     photos,
     compatibility,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     gender: pet.gender,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     species: pet.species as 'dog' | 'cat' | 'bird' | 'rabbit' | 'other',
   };
 };
@@ -67,7 +57,7 @@ export const generateMockPetCardData = (): PetCardData => {
   ];
 
   return {
-    id: Math.random().toString(36).substr(2, 9),
+    id: Math.random().toString(36).substring(2, 11),
     name: names[Math.floor(Math.random() * names.length)],
     breed: breeds[Math.floor(Math.random() * breeds.length)],
     age: Math.random() * 10 + 1,

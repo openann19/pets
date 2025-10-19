@@ -75,7 +75,7 @@ export function useAdminAnalytics() {
 
       const data = await response.json()
       setAnalytics(data.analytics)
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Failed to fetch analytics', error)
       setError(error.message)
       // Set fallback data for development

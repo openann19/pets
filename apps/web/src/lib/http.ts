@@ -27,9 +27,9 @@ class HttpClient {
 
   constructor(options: HttpClientOptions = {}) {
     this.baseURL = options.baseURL || '';
-    this.defaultTimeout = options.timeout || 30000;
-    this.defaultRetries = options.retries || 0;
-    this.defaultHeaders = {
+    this.timeout = options.timeout || 30000;
+    this.retries = options.retries || 0;
+    this.headers = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
@@ -74,7 +74,7 @@ class HttpClient {
     url: string,
     options: FetchOptions
   ): Promise<Response> {
-    const timeout = options.timeout || this.defaultTimeout;
+    const timeout = options.timeout || this.default as anyTimeout;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -101,7 +101,7 @@ class HttpClient {
     url: string,
     options: FetchOptions
   ): Promise<Response> {
-    const retries = options.retries ?? this.defaultRetries;
+    const retries = options.retries ?? this.default as anyRetries;
     const retryDelay = options.retryDelay || 1000;
     const isIdempotent = !options.method || ['GET', 'HEAD', 'OPTIONS'].includes(options.method);
 
@@ -151,7 +151,7 @@ class HttpClient {
     const csrfToken = this.getCsrfToken();
     
     const headersObj: Record<string, string> = {
-      ...this.defaultHeaders,
+      ...this.default as anyHeaders,
       ...this.normalizeHeaders(options.headers),
     };
 

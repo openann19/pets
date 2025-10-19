@@ -18,7 +18,7 @@ interface PushNotification {
   badge?: string;
   image?: string;
   tag?: string;
-  data?: any;
+  data?: unknown;
   requireInteraction?: boolean;
   actions?: NotificationAction[];
   vibrate?: number[];
@@ -300,7 +300,7 @@ class NotificationService {
     };
   }
 
-  private handleNotificationClick(data: any) {
+  private handleNotificationClick(data: unknown) {
     this.analytics.clicked++;
     logger.info('Notification clicked', data);
 
@@ -314,7 +314,7 @@ class NotificationService {
     }
   }
 
-  private handleNotificationClose(data: any) {
+  private handleNotificationClose(data: unknown) {
     this.analytics.dismissed++;
     logger.info('Notification closed', data);
   }
@@ -359,7 +359,7 @@ class NotificationService {
   }
 
   // Specific notification types
-  async sendMatchNotification(matchData: any) {
+  async sendMatchNotification(matchData: unknown) {
     await this.sendNotification({
       title: '💕 New Match!',
       body: `You matched with ${matchData.petName}!`,
@@ -374,7 +374,7 @@ class NotificationService {
     });
   }
 
-  async sendMessageNotification(messageData: any) {
+  async sendMessageNotification(messageData: unknown) {
     await this.sendNotification({
       title: `💬 ${messageData.senderName}`,
       body: messageData.message,
@@ -388,7 +388,7 @@ class NotificationService {
     });
   }
 
-  async sendLikeNotification(likeData: any) {
+  async sendLikeNotification(likeData: unknown) {
     await this.sendNotification({
       title: '❤️ Someone likes your pet!',
       body: 'Check who liked your furry friend',
@@ -401,7 +401,7 @@ class NotificationService {
     });
   }
 
-  async sendReminderNotification(reminder: any) {
+  async sendReminderNotification(reminder: unknown) {
     await this.sendNotification({
       title: '🔔 Reminder',
       body: reminder.message,

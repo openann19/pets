@@ -6,13 +6,13 @@ import { logger } from '@pawfectmatch/core';
  */
 
 export interface ErrorContext {
-  userId?: string;
-  sessionId?: string;
-  component?: string;
-  action?: string;
-  metadata?: Record<string, unknown>;
-  timestamp?: Date;
-  severity?: 'low' | 'medium' | 'high' | 'critical';
+  userId?: string | undefined;
+  sessionId?: string | undefined;
+  component?: string | undefined;
+  action?: string | undefined;
+  metadata?: Record<string, unknown> | undefined;
+  timestamp?: Date | undefined;
+  severity?: 'low' | 'medium' | 'high' | 'critical' | undefined;
 }
 
 export interface ErrorNotification {
@@ -22,10 +22,10 @@ export interface ErrorNotification {
   action?: {
     label: string;
     handler: () => void;
-  };
-  dismissible?: boolean;
-  autoHide?: boolean;
-  duration?: number;
+  } | undefined;
+  dismissible?: boolean | undefined;
+  autoHide?: boolean | undefined;
+  duration?: number | undefined;
 }
 
 class ErrorHandlerService {
@@ -35,9 +35,9 @@ class ErrorHandlerService {
     error: Error | string,
     context: ErrorContext = {},
     options: {
-      showNotification?: boolean;
-      logError?: boolean;
-      severity?: 'low' | 'medium' | 'high' | 'critical';
+      showNotification?: boolean | undefined;
+      logError?: boolean | undefined;
+      severity?: 'low' | 'medium' | 'high' | 'critical' | undefined;
     } = {},
   ): void {
     const errorMessage = typeof error === 'string' ? error : error.message;
@@ -54,7 +54,7 @@ class ErrorHandlerService {
     // Show notification if needed
     if (
       options.showNotification !== false &&
-      this.shouldShowNotification(context.severity || 'medium')
+      this.shouldShowNotification(context.severity ?? 'medium')
     ) {
       this.showNotification({
         title: 'Error',
@@ -71,16 +71,16 @@ class ErrorHandlerService {
     error: Error,
     context: ErrorContext = {},
     options: {
-      endpoint?: string;
-      method?: string;
-      statusCode?: number;
-      showNotification?: boolean;
+      endpoint?: string | undefined;
+      method?: string | undefined;
+      statusCode?: number | undefined;
+      showNotification?: boolean | undefined;
     } = {},
   ): void {
     const apiContext: ErrorContext = {
       ...context,
       component: 'API',
-      action: `${options.method || 'REQUEST'} ${options.endpoint || 'unknown'}`,
+      action: `${options.method ?? 'REQUEST'} ${options.endpoint ?? 'unknown'}`,
       metadata: {
         ...context.metadata,
         endpoint: options.endpoint,
@@ -99,8 +99,8 @@ class ErrorHandlerService {
     error: Error,
     context: ErrorContext = {},
     options: {
-      showNotification?: boolean;
-      retryable?: boolean;
+      showNotification?: boolean | undefined;
+      retryable?: boolean | undefined;
     } = {},
   ): void {
     const networkContext: ErrorContext = {
@@ -130,8 +130,8 @@ class ErrorHandlerService {
     logger.warn('Notification:', { notification });
   }
 
-  private getApiErrorSeverity(statusCode?: number): 'low' | 'medium' | 'high' | 'critical' {
-    if (!statusCode) return 'medium';
+  private getApiErrorSeverity(statusCode?: number | undefined): 'low' | 'medium' | 'high' | 'critical' {
+    if (statusCode === undefined) return 'medium';
 
     if (statusCode >= 500) return 'high';
     if (statusCode === 404) return 'low';

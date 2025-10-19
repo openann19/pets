@@ -87,7 +87,7 @@ class OfflineSyncService {
       type: 'api',
       endpoint,
       method,
-      data,
+      data: data ?? {},
       timestamp: Date.now(),
       retryCount: 0,
       priority,

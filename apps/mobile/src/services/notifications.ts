@@ -46,12 +46,12 @@ class NotificationService {
       let finalStatus = existingStatus;
 
       // Request permission if not granted
-      if ((existingStatus as string) !== 'granted') {
+      if (existingStatus !== Notifications.PermissionStatus.GRANTED) {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
-      if ((finalStatus as string) !== 'granted') {
+      if (finalStatus !== Notifications.PermissionStatus.GRANTED) {
         logger.warn('Failed to get push token for push notification!');
         return null;
       }
@@ -381,64 +381,6 @@ class NotificationService {
 
   // ===== SECURITY CONTROLS =====
 
-  /**
-   * Validate Expo push token format
-   */
-  private validateExpoPushToken(token: string): boolean {
-    // Basic validation: should be non-empty string, reasonable length for Expo tokens
-    return typeof token === 'string' && token.length > 0 && token.length < 200 && token.startsWith('ExponentPushToken[');
-  }
-
-  /**
-   * Rate limiting for notification scheduling
-   */
-  private lastScheduledTime: number = 0;
-  private readonly SCHEDULE_RATE_LIMIT_MS = 5000; // 5 seconds between scheduled notifications
-
-  private checkScheduleRateLimit(): boolean {
-    const now = Date.now();
-    if (now - this.lastScheduledTime < this.SCHEDULE_RATE_LIMIT_MS) {
-      logger.warn('Notification schedule rate limit exceeded');
-      return false;
-    }
-    this.lastScheduledTime = now;
-    return true;
-  }
-
-  /**
-   * Validate notification data for security
-   */
-  private validateNotificationData(data: NotificationData): boolean {
-    // Validate type
-    const validTypes = ['match', 'message', 'like', 'super_like', 'premium', 'reminder'];
-    if (!validTypes.includes(data.type)) {
-      return false;
-    }
-
-    // Validate title and body length
-    if (data.title.length > 100 || data.body.length > 500) {
-      return false;
-    }
-
-    // Validate data object if present
-    if (data.data !== undefined) {
-      const dataSize = JSON.stringify(data.data).length;
-      if (dataSize > 2048) { // 2KB limit for notification data
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Secure token storage reference
-   */
-  private storeExpoPushTokenSecurely(_token: string): void {
-    // This should use secureStorage instead of AsyncStorage
-    // await secureStorage.setItem('expo_push_token', token);
-    logger.debug('Expo push token should be stored securely');
-  }
 }
 
 // Export a singleton instance

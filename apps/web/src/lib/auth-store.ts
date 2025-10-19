@@ -125,7 +125,7 @@ export const useAuthStore = create<AuthState>()(
         // Sync with API service if available
         if (typeof window !== 'undefined') {
           try {
-            const apiService = require('../services/api').default;
+            const apiService = require('../services/api').default as any;
             if (apiService && apiService.setAuthToken) {
               apiService.setAuthToken(accessToken);
             }
@@ -191,7 +191,7 @@ export const useAuthStore = create<AuthState>()(
 
               // Sync with API service
               try {
-                const apiService = require('../services/api').default;
+                const apiService = require('../services/api').default as any;
                 if (apiService && apiService.setAuthToken) {
                   apiService.setAuthToken(storedToken);
                 }

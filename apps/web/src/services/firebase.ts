@@ -17,7 +17,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Check if Firebase Messaging is supported
-let messaging: any = null;
+let messaging: unknown = null;
 isSupported().then((supported) => {
   if (supported) {
     messaging = getMessaging(app);

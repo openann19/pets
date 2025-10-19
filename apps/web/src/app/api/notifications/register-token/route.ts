@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       data
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Token registration error:', error)
     return NextResponse.json(
       { success: false, message: 'Internal server error' },

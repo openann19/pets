@@ -8,22 +8,34 @@ import type { PetProfile } from '@/components/Profile/PetProfileEditor';
 import type { PetCareReminder } from '@/components/Reminders/PetCareReminders';
 
 // Base API URL from environment variable
-const API_BASE_URL = process.env['NEXT_PUBLIC_API_URL'] || '/api';
+const API_BASE_URL = process.env['NEXT_PUBLIC_API_URL'] ?? '/api';
+
+interface ApiError {
+  message?: string;
+  status?: number;
+}
+
+interface FetchOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  [key: string]: unknown;
+}
 
 /**
  * Generic fetch wrapper with error handling and authorization
  */
-async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
+  const token = typeof window !== 'undefined' ? window.localStorage.getItem('auth_token') : null;
 
   const { headers: optionHeaders, ...restOptions } = options;
-  const headers = new Headers(optionHeaders as HeadersInit | undefined);
+  const headers = new Headers(optionHeaders);
 
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
-  if (token) {
+  if (token !== null) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
@@ -33,8 +45,8 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `API error: ${response.status}`);
+    const errorData = await response.json().catch((): ApiError => ({})) as ApiError;
+    throw new Error(errorData.message ?? `API error: ${response.status.toString()}`);
   }
 
   if (response.status === 204) {
@@ -115,13 +127,13 @@ export const communityApi = {
   getFeed: (params: { page?: number; limit?: number; packId?: string; type?: string } = {}) => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
+      if (value !== undefined && value !== null) {
         searchParams.append(key, String(value));
       }
     });
 
     const query = searchParams.toString();
-    return fetchApi<CommunityFeedResponse>(`/community/posts${query ? `?${query}` : ''}`);
+    return fetchApi<CommunityFeedResponse>(`/community/posts${query !== '' ? `?${query}` : ''}`);
   },
 
   createPost: (payload: { content: string; images?: string[]; packId?: string; type?: string; activityDetails?: Record<string, unknown> }) =>
@@ -144,14 +156,14 @@ export const communityApi = {
   getComments: (postId: string, params: { page?: number; limit?: number } = {}) => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && `${value}` !== '') {
+      if (value !== undefined && value !== null) {
         searchParams.append(key, String(value));
       }
     });
 
     const query = searchParams.toString();
     return fetchApi<{ success: boolean; comments: CommunityComment[]; pagination: CommunityPagination }>(
-      `/community/posts/${postId}/comments${query ? `?${query}` : ''}`,
+      `/community/posts/${postId}/comments${query !== '' ? `?${query}` : ''}`,
     );
   },
 
@@ -211,11 +223,11 @@ export const petsApi = {
     }),
 
   delete: (id: string) =>
-    fetchApi<void>(`/pets/${id}`, {
+    fetchApi<Record<string, never>>(`/pets/${id}`, {
       method: 'DELETE',
     }),
 
-  uploadPhoto: async (id: string, photoBlob: Blob) => {
+  uploadPhoto: async (id: string, photoBlob: Blob): Promise<Record<string, unknown>> => {
     const formData = new FormData();
     formData.append('photo', photoBlob);
 
@@ -228,7 +240,7 @@ export const petsApi = {
       throw new Error('Failed to upload photo');
     }
 
-    return response.json();
+    return response.json() as Promise<Record<string, unknown>>;
   },
 };
 
@@ -253,7 +265,7 @@ export const remindersApi = {
     }),
 
   delete: (id: string) =>
-    fetchApi<void>(`/reminders/${id}`, {
+    fetchApi<Record<string, never>>(`/reminders/${id}`, {
       method: 'DELETE',
     }),
 
@@ -285,7 +297,7 @@ export const calendarApi = {
     }),
 
   deleteEvent: (id: string) =>
-    fetchApi<void>(`/events/${id}`, {
+    fetchApi<Record<string, never>>(`/events/${id}`, {
       method: 'DELETE',
     }),
 };
@@ -294,10 +306,10 @@ export const calendarApi = {
  * Playgrounds API
  */
 export const playgroundsApi = {
-  getAll: (filters?: unknown) =>
+  getAll: (filters?: Record<string, unknown>) =>
     fetchApi<PetPlayground[]>('/playgrounds', {
       method: 'POST',
-      body: JSON.stringify(filters || {}),
+      body: JSON.stringify(filters ?? {}),
     }),
 
   getById: (id: string) => fetchApi<PetPlayground>(`/playgrounds/${id}`),

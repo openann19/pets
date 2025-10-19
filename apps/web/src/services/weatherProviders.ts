@@ -269,7 +269,7 @@ export class WeatherProviders {
   /**
    * Map Visual Crossing data to EnhancedWeatherData
    */
-  private static mapVisualCrossingData(data: any): EnhancedWeatherData {
+  private static mapVisualCrossingData(data: unknown): EnhancedWeatherData {
     const current = data.currentConditions;
     
     // Similar mapping as Tomorrow.io but using Visual Crossing's data structure
@@ -303,10 +303,10 @@ export class WeatherProviders {
   /**
    * Map Meteomatics data to EnhancedWeatherData
    */
-  private static mapMeteomaticsData(data: any): EnhancedWeatherData {
+  private static mapMeteomaticsData(data: unknown): EnhancedWeatherData {
     // Extract values from Meteomatics response
     const getValue = (parameter: string) => {
-      const item = data.data.find((d: any) => d.parameter === parameter);
+      const item = data.data.find((d: unknown) => d.parameter === parameter);
       return item?.coordinates[0]?.dates[0]?.value || 0;
     };
 
@@ -422,7 +422,7 @@ export class WeatherProviders {
     return 'extreme';
   }
 
-  private static generatePetSafetyInfo(values: any): any {
+  private static generatePetSafetyInfo(values: unknown): unknown {
     const temp = values.temperature;
     const humidity = values.humidity;
     const uv = values.uvIndex;
@@ -456,7 +456,7 @@ export class WeatherProviders {
     };
   }
 
-  private static generateRiskLevel(level: string): any {
+  private static generateRiskLevel(level: string): unknown {
     return {
       level: level as any,
       score: level === 'high' ? 80 : level === 'moderate' ? 50 : 20,
@@ -465,7 +465,7 @@ export class WeatherProviders {
     };
   }
 
-  private static generateActivityBlock(time: string): any {
+  private static generateActivityBlock(time: string): unknown {
     return {
       timeRange: { 
         start: time === 'morning' ? '06:00' : time === 'afternoon' ? '12:00' : time === 'evening' ? '18:00' : '22:00',

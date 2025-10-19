@@ -92,7 +92,7 @@ class WebRTCService extends EventEmitter {
         InCallManager.setForceSpeakerphoneOn(false);
       }
     } catch (error) {
-      logger.warn('InCallManager not available', { error });
+      logger.warn('InCallManager not available', { error: error instanceof Error ? error : new Error(String(error)) });
     }
   }
 
@@ -194,7 +194,7 @@ class WebRTCService extends EventEmitter {
       
       return true;
     } catch (error) {
-      logger.error('Error starting call', { error });
+      logger.error('Error starting call', { error: error instanceof Error ? error : new Error(String(error)) });
       this.emit('callError', error);
       return false;
     }
@@ -258,7 +258,7 @@ class WebRTCService extends EventEmitter {
 
       return true;
     } catch (error) {
-      logger.error('Error answering call', { error });
+      logger.error('Error answering call', { error: error instanceof Error ? error : new Error(String(error)) });
       this.emit('callError', error);
       return false;
     }
@@ -292,7 +292,7 @@ class WebRTCService extends EventEmitter {
         this.localStream = null;
       }
     } catch (error) {
-      logger.error('Error ending local stream', { error });
+      logger.error('Error ending local stream', { error: error instanceof Error ? error : new Error(String(error)) });
     }
 
     // Stop remote stream
@@ -302,7 +302,7 @@ class WebRTCService extends EventEmitter {
         this.remoteStream = null;
       }
     } catch (error) {
-      logger.error('Error ending remote stream', { error });
+      logger.error('Error ending remote stream', { error: error instanceof Error ? error : new Error(String(error)) });
     }
 
     // Reset call state
@@ -339,9 +339,11 @@ class WebRTCService extends EventEmitter {
       const audioTracks = this.localStream.getAudioTracks();
       if (audioTracks.length > 0) {
         const audioTrack = audioTracks[0];
-        audioTrack.enabled = !audioTrack.enabled;
-        this.callState.isMuted = !audioTrack.enabled;
-        this.emit('callStateChanged', this.callState);
+        if (audioTrack !== undefined) {
+          audioTrack.enabled = !audioTrack.enabled;
+          this.callState.isMuted = !audioTrack.enabled;
+          this.emit('callStateChanged', this.callState);
+        }
       }
     }
   }
@@ -352,9 +354,11 @@ class WebRTCService extends EventEmitter {
       const videoTracks = this.localStream.getVideoTracks();
       if (videoTracks.length > 0) {
         const videoTrack = videoTracks[0];
-        videoTrack.enabled = !videoTrack.enabled;
-        this.callState.isVideoEnabled = videoTrack.enabled;
-        this.emit('callStateChanged', this.callState);
+        if (videoTrack !== undefined) {
+          videoTrack.enabled = !videoTrack.enabled;
+          this.callState.isVideoEnabled = videoTrack.enabled;
+          this.emit('callStateChanged', this.callState);
+        }
       }
     }
   }
@@ -366,7 +370,9 @@ class WebRTCService extends EventEmitter {
       if (videoTracks.length > 0) {
         const videoTrack = videoTracks[0];
         // React Native WebRTC specific method
-        (videoTrack as Record<string, unknown> & { _switchCamera: () => void })._switchCamera();
+        if ('_switchCamera' in videoTrack && typeof (videoTrack as any)._switchCamera === 'function') {
+          (videoTrack as any)._switchCamera();
+        }
       }
     }
   }
@@ -383,7 +389,7 @@ class WebRTCService extends EventEmitter {
   private setupPeerConnectionListeners() {
     if (this.peerConnection === null) return;
 
-    this.peerConnection.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+    this.peerConnection.addEventListener('icecandidate', (event: RTCPeerConnectionIceEvent) => {
       if (event.candidate !== null) {
         if (this.socket !== null) {
           this.socket.emit('webrtc-ice-candidate', {
@@ -392,17 +398,17 @@ class WebRTCService extends EventEmitter {
           });
         }
       }
-    };
+    });
 
-    this.peerConnection.ontrack = (event: RTCTrackEvent) => {
+    this.peerConnection.addEventListener('track', (event: RTCTrackEvent) => {
       if (event.streams.length > 0) {
-        this.remoteStream = event.streams[0] as MediaStream;
+        this.remoteStream = event.streams[0] as any;
         this.callState.remoteStream = this.remoteStream;
         this.emit('callStateChanged', this.callState);
       }
-    };
+    });
 
-    this.peerConnection.onconnectionstatechange = () => {
+    this.peerConnection.addEventListener('connectionstatechange', () => {
       const state = this.peerConnection?.connectionState;
       if (state === 'connected') {
         this.callState.isConnected = true;
@@ -411,7 +417,7 @@ class WebRTCService extends EventEmitter {
       } else if (state === 'disconnected' || state === 'failed') {
         this.endCall();
       }
-    };
+    });
   }
 
   private handleIncomingCall(callData: CallData) {
@@ -434,7 +440,7 @@ class WebRTCService extends EventEmitter {
   private async handleCallAnswered(data: CallAnsweredData) {
     // Create offer when call is answered
     if (this.peerConnection !== null && data.accepted) {
-      const offer = await this.peerConnection.createOffer() as RTCSessionDescriptionInit;
+      const offer = await this.peerConnection.createOffer();
       await this.peerConnection.setLocalDescription(offer);
       
       if (this.socket !== null) {
@@ -449,9 +455,9 @@ class WebRTCService extends EventEmitter {
   private async handleOffer(data: WebRTCSignalingData) {
     if (this.peerConnection !== null) {
       if (data.offer !== undefined) {
-        await this.peerConnection.setRemoteDescription(new RTCSessionDescriptionImpl(data.offer));
+        await this.peerConnection.setRemoteDescription(data.offer as any);
       }
-      const answer = await this.peerConnection.createAnswer() as RTCSessionDescriptionInit;
+      const answer = await this.peerConnection.createAnswer();
       await this.peerConnection.setLocalDescription(answer);
       
       if (this.socket !== null) {
@@ -466,7 +472,7 @@ class WebRTCService extends EventEmitter {
   private async handleAnswer(data: WebRTCSignalingData) {
     if (this.peerConnection !== null) {
       if (data.answer !== undefined) {
-        await this.peerConnection.setRemoteDescription(new RTCSessionDescriptionImpl(data.answer));
+        await this.peerConnection.setRemoteDescription(data.answer as any);
       }
     }
   }

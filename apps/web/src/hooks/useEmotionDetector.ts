@@ -258,7 +258,7 @@ export const useEmotionDetector = (config: EmotionDetectorConfig) => {
     if (emotionHistory.length < 3) return null;
 
     const recent = emotionHistory.slice(-10);
-    const patterns: any = {
+    const patterns: unknown = {
       moodStability: 0,
       emotionalRange: 0,
       dominantEmotions: new Set<string>(),

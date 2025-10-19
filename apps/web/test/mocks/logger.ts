@@ -13,7 +13,7 @@ interface LogLevel {
 interface LogEntry {
     level: keyof LogLevel;
     message: string;
-    meta?: any;
+    meta?: Record<string, unknown>;
     timestamp: number;
 }
 
@@ -31,7 +31,7 @@ export class MockLogger {
 
     constructor() {
         // Set up mock implementations that also track logs
-        this.debug.mockImplementation((message: string, meta?: any) => {
+        this.debug.mockImplementation((message: string, meta?: Record<string, unknown>) => {
             this.logs.push({
                 level: 'DEBUG',
                 message,
@@ -40,7 +40,7 @@ export class MockLogger {
             });
         });
 
-        this.info.mockImplementation((message: string, meta?: any) => {
+        this.info.mockImplementation((message: string, meta?: Record<string, unknown>) => {
             this.logs.push({
                 level: 'INFO',
                 message,
@@ -49,7 +49,7 @@ export class MockLogger {
             });
         });
 
-        this.warn.mockImplementation((message: string, meta?: any) => {
+        this.warn.mockImplementation((message: string, meta?: Record<string, unknown>) => {
             this.logs.push({
                 level: 'WARN',
                 message,
@@ -58,7 +58,7 @@ export class MockLogger {
             });
         });
 
-        this.error.mockImplementation((message: string, meta?: any) => {
+        this.error.mockImplementation((message: string, meta?: Record<string, unknown>) => {
             this.logs.push({
                 level: 'ERROR',
                 message,
@@ -95,7 +95,7 @@ export class MockLogger {
     wasLogged(message: string, level?: keyof LogLevel): boolean {
         return this.logs.some(log =>
             log.message.includes(message) &&
-            (!level || log.level === level.toUpperCase())
+            (level === undefined || log.level === level.toUpperCase())
         );
     }
 
@@ -121,7 +121,7 @@ export class MockLogger {
      * Get count of logs by level
      */
     getLogCount(level?: keyof LogLevel): number {
-        if (!level) return this.logs.length;
+        if (level === undefined) return this.logs.length;
         return this.logs.filter(log => log.level === level.toUpperCase()).length;
     }
 }
@@ -185,7 +185,7 @@ export const loggerAssertions = {
         const errorCount = logger.getLogCount('ERROR');
         if (errorCount > 0) {
             const errors = logger.getLogsByLevel('ERROR');
-            throw new Error(`Expected no errors, but found ${errorCount}: ${errors.map(e => e.message).join(', ')}`);
+            throw new Error(`Expected no errors, but found ${errorCount.toString()}: ${errors.map(e => e.message).join(', ')}`);
         }
     },
 
@@ -196,7 +196,7 @@ export const loggerAssertions = {
         const warnCount = logger.getLogCount('WARN');
         if (warnCount > 0) {
             const warnings = logger.getLogsByLevel('WARN');
-            throw new Error(`Expected no warnings, but found ${warnCount}: ${warnings.map(w => w.message).join(', ')}`);
+            throw new Error(`Expected no warnings, but found ${warnCount.toString()}: ${warnings.map(w => w.message).join(', ')}`);
         }
     },
 
@@ -206,7 +206,7 @@ export const loggerAssertions = {
     expectLogCount: (logger: MockLogger, level: keyof LogLevel, expectedCount: number) => {
         const actualCount = logger.getLogCount(level);
         if (actualCount !== expectedCount) {
-            throw new Error(`Expected ${expectedCount} ${level} logs, but found ${actualCount}`);
+            throw new Error(`Expected ${expectedCount.toString()} ${level} logs, but found ${actualCount.toString()}`);
         }
     },
 };

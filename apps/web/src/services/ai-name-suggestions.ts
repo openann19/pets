@@ -80,7 +80,7 @@ class AINameSuggestionService {
         generatedAt: new Date().toISOString()
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Name suggestion generation failed', error)
       
       // Fallback to predefined suggestions
@@ -176,7 +176,7 @@ Make sure names are:
       const jsonMatch = aiResponse.match(/\[[\s\S]*\]/)
       if (jsonMatch) {
         const suggestions = JSON.parse(jsonMatch[0])
-        return suggestions.map((suggestion: any) => ({
+        return suggestions.map((suggestion: unknown) => ({
           name: suggestion.name || 'Unknown',
           meaning: suggestion.meaning || 'No meaning provided',
           category: suggestion.category || 'classic',
@@ -357,7 +357,7 @@ export function useNameSuggestions() {
       const response = await aiNameSuggestionService.generateNameSuggestions(petInfo, count, categories)
       setSuggestions(response.suggestions)
       return response
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message)
       return null
     } finally {
@@ -373,7 +373,7 @@ export function useNameSuggestions() {
       const names = await aiNameSuggestionService.getTrendingNames(species, count)
       setSuggestions(names)
       return names
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message)
       return []
     } finally {
@@ -389,7 +389,7 @@ export function useNameSuggestions() {
       const names = await aiNameSuggestionService.getUniqueNames(species, count)
       setSuggestions(names)
       return names
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message)
       return []
     } finally {

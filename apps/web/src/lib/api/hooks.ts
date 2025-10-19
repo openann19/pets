@@ -44,7 +44,7 @@ export function useApiMutation<TData = unknown, TVariables = void, TError = Erro
 // Auth hooks
 export function useLogin() {
   return useApiMutation('/auth/login', {
-    onSuccess: (data: any) => {
+    onSuccess: (data: unknown) => {
       if (data.success && data.data) {
         const { accessToken, refreshToken } = data.data;
         localStorage.setItem('accessToken', accessToken);
@@ -56,7 +56,7 @@ export function useLogin() {
 
 export function useRegister() {
   return useApiMutation('/auth/register', {
-    onSuccess: (data: any) => {
+    onSuccess: (data: unknown) => {
       if (data.success && data.data) {
         const { accessToken, refreshToken } = data.data;
         localStorage.setItem('accessToken', accessToken);

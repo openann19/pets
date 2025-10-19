@@ -7,7 +7,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
 const { createServer } = require('http');
-const { Server } = require('socket.io');
+const { Server: _Server } = require('socket.io');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 require('dotenv').config();
@@ -342,7 +342,7 @@ const apiLimiter = rateLimit({
 });
 
 // Premium features rate limiter - more generous limits for paying customers
-const premiumLimiter = rateLimit({
+const _premiumLimiter = rateLimit({
   ...rateLimitConfig,
   max: parseInt(process.env.RATE_LIMIT_PREMIUM_MAX) || 300, // Higher limit for premium users
   keyGenerator: (req) => {
@@ -356,7 +356,7 @@ const premiumLimiter = rateLimit({
 });
 
 // Webhook rate limiter - different rules for external services
-const webhookLimiter = rateLimit({
+const _webhookLimiter = rateLimit({
   ...rateLimitConfig,
   max: 60, // Allow more frequent webhook calls
   message: {

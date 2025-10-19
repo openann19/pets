@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist, PersistStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import type { PersistStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { createSecureStorage } from '../utils/secureStorage';
 
@@ -83,7 +84,12 @@ export const useAuthStore = create<AuthState>()(
     })),
     {
       name: 'auth-storage-secure',
-      storage: createSecureStorage() as PersistStorage<AuthState>,
+      storage: createSecureStorage() as PersistStorage<{
+        accessToken: string | null;
+        refreshToken: string | null;
+        user: User | null;
+        isAuthenticated: boolean;
+      }>,
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,

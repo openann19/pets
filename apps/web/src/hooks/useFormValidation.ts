@@ -2,7 +2,7 @@ import { useForm, FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 // Simplified hook for form validation with Zod
-export function useFormValidation(schema: any, defaultValues?: any) {
+export function useFormValidation(schema: unknown, defaultValues?: unknown) {
   return useForm({
     resolver: zodResolver(schema),
     defaultValues,
@@ -14,7 +14,7 @@ export function useFormValidation(schema: any, defaultValues?: any) {
 export function useAsyncSubmit<T>(
   onSubmit: (data: T) => Promise<void>,
   onSuccess?: () => void,
-  onError?: (error: any) => void
+  onError?: (error: unknown) => void
 ) {
   const handleSubmit = async (data: T) => {
     try {

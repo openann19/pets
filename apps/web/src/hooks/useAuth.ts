@@ -18,7 +18,7 @@ interface RegisterData extends LoginCredentials {
 }
 
 interface AuthResponse {
-  user: any;
+  user: unknown;
   accessToken: string;
   refreshToken: string;
 }
@@ -111,7 +111,7 @@ export function useAuth() {
       logger.info('User logged in successfully', { userId: data.user.id });
       
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Login error', error);
       setError(error.message || 'Failed to login');
       return false;
@@ -155,7 +155,7 @@ export function useAuth() {
       logger.info('User registered successfully', { userId: responseData.user.id });
       
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Registration error', error);
       setError(error.message || 'Failed to register');
       return false;
@@ -275,7 +275,7 @@ export function useAuth() {
       
       logger.info('Profile updated successfully');
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Profile update error', error);
       setError(error.message || 'Failed to update profile');
       return false;

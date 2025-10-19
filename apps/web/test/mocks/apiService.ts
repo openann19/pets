@@ -3,7 +3,7 @@
  * Provides typed mocks that align with the actual API service interface
  */
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
     data: T;
     status: number;
     statusText: string;
@@ -21,15 +21,15 @@ interface ApiError {
  */
 export class MockApiService {
     // Mock data storage
-    private data: Map<string, any> = new Map();
-    private responses: Map<string, any> = new Map();
+    private data: Map<string, unknown> = new Map();
+    private responses: Map<string, unknown> = new Map();
     private errors: Map<string, ApiError> = new Map();
 
     // Request tracking for assertions
     public requests: Array<{
         method: string;
         url: string;
-        data?: any;
+        data?: unknown;
         headers?: Record<string, string>;
         timestamp: number;
     }> = [];
@@ -37,70 +37,85 @@ export class MockApiService {
     /**
      * Mock GET request
      */
-    async get<T = any>(url: string, config?: any): Promise<ApiResponse<T>> {
+    async get<T = unknown>(url: string, config?: { headers?: Record<string, string> }): Promise<ApiResponse<T>> {
         this.trackRequest('GET', url, undefined, config?.headers);
 
         if (this.errors.has(url)) {
-            throw this.errors.get(url);
+            const error = this.errors.get(url);
+            if (error !== undefined) {
+                throw new Error(error.message);
+            }
         }
 
-        const data = this.responses.get(url) || this.data.get(url) || {};
-        return this.createResponse(data);
+        const data = (this.responses.get(url) ?? this.data.get(url)) ?? {};
+        return this.createResponse(data as T);
     }
 
     /**
      * Mock POST request
      */
-    async post<T = any>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> {
+    async post<T = unknown>(url: string, data?: unknown, config?: { headers?: Record<string, string> }): Promise<ApiResponse<T>> {
         this.trackRequest('POST', url, data, config?.headers);
 
         if (this.errors.has(url)) {
-            throw this.errors.get(url);
+            const error = this.errors.get(url);
+            if (error !== undefined) {
+                throw new Error(error.message);
+            }
         }
 
-        const responseData = this.responses.get(url) || { id: this.generateId(), ...data };
+        const responseData = (this.responses.get(url) as T) ?? { id: this.generateId(), ...data } as T;
         return this.createResponse(responseData);
     }
 
     /**
      * Mock PUT request
      */
-    async put<T = any>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> {
+    async put<T = unknown>(url: string, data?: unknown, config?: { headers?: Record<string, string> }): Promise<ApiResponse<T>> {
         this.trackRequest('PUT', url, data, config?.headers);
 
         if (this.errors.has(url)) {
-            throw this.errors.get(url);
+            const error = this.errors.get(url);
+            if (error !== undefined) {
+                throw new Error(error.message);
+            }
         }
 
-        const responseData = this.responses.get(url) || { ...data };
+        const responseData = (this.responses.get(url) as T) ?? { ...data } as T;
         return this.createResponse(responseData);
     }
 
     /**
      * Mock DELETE request
      */
-    async delete<T = any>(url: string, config?: any): Promise<ApiResponse<T>> {
+    async delete<T = unknown>(url: string, config?: { headers?: Record<string, string> }): Promise<ApiResponse<T>> {
         this.trackRequest('DELETE', url, undefined, config?.headers);
 
         if (this.errors.has(url)) {
-            throw this.errors.get(url);
+            const error = this.errors.get(url);
+            if (error !== undefined) {
+                throw new Error(error.message);
+            }
         }
 
-        const responseData = this.responses.get(url) || { success: true };
+        const responseData = (this.responses.get(url) as T) ?? { success: true } as T;
         return this.createResponse(responseData);
     }
 
     /**
      * Mock PATCH request
      */
-    async patch<T = any>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> {
+    async patch<T = unknown>(url: string, data?: unknown, config?: { headers?: Record<string, string> }): Promise<ApiResponse<T>> {
         this.trackRequest('PATCH', url, data, config?.headers);
 
         if (this.errors.has(url)) {
-            throw this.errors.get(url);
+            const error = this.errors.get(url);
+            if (error !== undefined) {
+                throw new Error(error.message);
+            }
         }
 
-        const responseData = this.responses.get(url) || { ...data };
+        const responseData = (this.responses.get(url) as T) ?? { ...data } as T;
         return this.createResponse(responseData);
     }
 
@@ -109,7 +124,7 @@ export class MockApiService {
     /**
      * Set mock response for a specific URL
      */
-    mockResponse(url: string, data: any): void {
+    mockResponse(url: string, data: unknown): void {
         this.responses.set(url, data);
     }
 
@@ -118,10 +133,10 @@ export class MockApiService {
      */
     mockError(url: string, error: Partial<ApiError>): void {
         const apiError: ApiError = {
-            message: error.message || 'API Error',
-            status: error.status || 500,
+            message: error.message ?? 'API Error',
+            status: error.status ?? 500,
         };
-        if (error.code) {
+        if (error.code !== undefined) {
             apiError.code = error.code;
         }
         this.errors.set(url, apiError);
@@ -130,7 +145,7 @@ export class MockApiService {
     /**
      * Set persistent data that will be returned if no specific response is set
      */
-    setData(key: string, data: any): void {
+    setData(key: string, data: unknown): void {
         this.data.set(key, data);
     }
 
@@ -150,11 +165,11 @@ export class MockApiService {
     getRequests(method?: string, url?: string): typeof this.requests {
         let filtered = this.requests;
 
-        if (method) {
+        if (method !== undefined) {
             filtered = filtered.filter(req => req.method === method);
         }
 
-        if (url) {
+        if (url !== undefined) {
             filtered = filtered.filter(req => req.url.includes(url));
         }
 
@@ -177,8 +192,14 @@ export class MockApiService {
 
     // Private helper methods
 
-    private trackRequest(method: string, url: string, data?: any, headers?: Record<string, string>): void {
-        const request: any = {
+    private trackRequest(method: string, url: string, data?: unknown, headers?: Record<string, string>): void {
+        const request: {
+            method: string;
+            url: string;
+            data?: unknown;
+            headers?: Record<string, string>;
+            timestamp: number;
+        } = {
             method,
             url,
             timestamp: Date.now(),
@@ -201,7 +222,7 @@ export class MockApiService {
     }
 
     private generateId(): string {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).substring(2, 11);
     }
 }
 
@@ -235,21 +256,21 @@ export const apiMocks = {
     /**
      * Mock successful user profile fetch
      */
-    mockUserProfile: (apiService: MockApiService, userData: any) => {
+    mockUserProfile: (apiService: MockApiService, userData: Record<string, unknown>) => {
         apiService.mockResponse('/user/profile', userData);
     },
 
     /**
      * Mock successful pets list fetch
      */
-    mockPetsList: (apiService: MockApiService, petsData: any[]) => {
+    mockPetsList: (apiService: MockApiService, petsData: Record<string, unknown>[]) => {
         apiService.mockResponse('/pets', petsData);
     },
 
     /**
      * Mock successful match creation
      */
-    mockCreateMatch: (apiService: MockApiService, matchData: any) => {
+    mockCreateMatch: (apiService: MockApiService, matchData: Record<string, unknown>) => {
         apiService.mockResponse('/matches', matchData);
     },
 

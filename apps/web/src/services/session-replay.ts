@@ -81,7 +81,7 @@ class SessionReplayService {
           sampleRate: this.config.sampleRate,
           maskAllInputs: this.config.maskAllInputs,
           maskAllText: this.config.maskAllText,
-          defaultInputMode: this.config.defaultInputMode,
+          defaultInputMode: this.config.default as anyInputMode,
           obscureTextEmails: this.config.obscureTextEmails,
           obscureInputEmails: this.config.obscureInputEmails,
           maskTextSelector: this.config.maskTextSelector,

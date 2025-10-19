@@ -47,7 +47,7 @@ export interface SwipeCardProps {
   onSwipeUp: (pet: Pet) => void | Promise<void>;
   isTopCard?: boolean;
   disabled?: boolean;
-  style?: any;
+  style?: unknown;
 }
 
 export interface SwipeGestureConfig {

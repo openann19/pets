@@ -183,10 +183,7 @@ const nextConfig = {
   // Experimental features
   experimental: {
     // Enable server components
-    serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
-    
-    // Optimize CSS
-    optimizeCss: true
+    serverComponentsExternalPackages: ['sharp', 'onnxruntime-node']
   },
 
   // Compiler options
@@ -242,4 +239,4 @@ const nextConfig = {
   }
 };
 
-module.exports = nextConfig;
+export default nextConfig;

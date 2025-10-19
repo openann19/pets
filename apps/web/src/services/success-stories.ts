@@ -61,7 +61,7 @@ class SuccessStoriesService {
       } else {
         return await this.getStoriesFromDatabase({ limit, featured, tags, cursor })
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Failed to fetch success stories', error)
       return this.getFallbackStories(options.limit || 10)
     }
@@ -115,7 +115,7 @@ class SuccessStoriesService {
 
       const data = await response.json()
       return data.story
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Failed to submit success story', error)
       return null
     }
@@ -186,7 +186,7 @@ class SuccessStoriesService {
   /**
    * Transform CMS story to our format
    */
-  private transformCMSStory(cmsStory: any): SuccessStory {
+  private transformCMSStory(cmsStory: unknown): SuccessStory {
     return {
       id: cmsStory.id,
       title: cmsStory.title,
@@ -320,7 +320,7 @@ export function useSuccessStories() {
       setStories(response.stories)
       setHasMore(response.hasMore)
       return response
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message)
       return null
     } finally {
@@ -336,7 +336,7 @@ export function useSuccessStories() {
       const featuredStories = await successStoriesService.getFeaturedStories(limit)
       setStories(featuredStories)
       return featuredStories
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message)
       return []
     } finally {
@@ -354,7 +354,7 @@ export function useSuccessStories() {
         setStories(prev => [newStory, ...prev])
       }
       return newStory
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message)
       return null
     } finally {

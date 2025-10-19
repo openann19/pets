@@ -15,7 +15,7 @@ interface NotificationOptions {
     image?: string;
     badge?: string;
     tag?: string;
-    data?: any;
+    data?: Record<string, unknown>;
     requireInteraction?: boolean;
     silent?: boolean;
     actions?: Array<{
@@ -68,7 +68,7 @@ export class MockNotificationService {
                 id: this.generateId(),
             };
 
-            if (options) {
+            if (options !== undefined) {
                 notification.options = options;
             }
 
@@ -83,13 +83,13 @@ export class MockNotificationService {
 
             const notification: SentNotification = {
                 title,
-                timestamp: Date.now() + (options?.delay || 0),
+                timestamp: Date.now() + (options?.delay ?? 0),
                 id: this.generateId(),
             };
 
-            if (options) {
+            if (options !== undefined) {
                 // Remove delay from options before storing
-                const { delay, ...notificationOptions } = options;
+                const { delay: _delay, ...notificationOptions } = options;
                 notification.options = notificationOptions;
             }
 
@@ -190,7 +190,7 @@ export class MockNotificationService {
     }
 
     private generateId(): string {
-        return Math.random().toString(36).substr(2, 9);
+        return Math.random().toString(36).substring(2, 11);
     }
 }
 
@@ -221,26 +221,31 @@ export function mockBrowserNotifications(): void {
             addEventListener: jest.fn(),
             removeEventListener: jest.fn(),
         };
-    }) as any;
+    }) as unknown as typeof Notification;
 
     // Mock static methods
-    (global.Notification as any).permission = 'default';
-    (global.Notification as any).requestPermission = jest.fn().mockResolvedValue('granted');
+    Object.defineProperty(global.Notification, 'permission', {
+        value: 'default',
+        writable: true,
+    });
+    Object.defineProperty(global.Notification, 'requestPermission', {
+        value: jest.fn().mockResolvedValue('granted'),
+        writable: true,
+    });
 
-    // Mock navigator.serviceWorker if needed
-    if (!global.navigator) {
-        (global as any).navigator = {};
-    }
-
-    if (!global.navigator.serviceWorker) {
-        (global.navigator as any).serviceWorker = {
-            ready: Promise.resolve({
-                showNotification: jest.fn(),
-                getNotifications: jest.fn().mockResolvedValue([]),
-            }),
-            register: jest.fn().mockResolvedValue({}),
-        };
-    }
+    // Mock navigator.serviceWorker
+    Object.defineProperty(global, 'navigator', {
+        value: {
+            serviceWorker: {
+                ready: Promise.resolve({
+                    showNotification: jest.fn(),
+                    getNotifications: jest.fn().mockResolvedValue([]),
+                }),
+                register: jest.fn().mockResolvedValue({}),
+            },
+        },
+        writable: true,
+    });
 }
 
 /**
@@ -251,7 +256,7 @@ export const notificationAssertions = {
      * Assert that a notification was shown with specific title
      */
     expectNotificationShown: (service: MockNotificationService, title: string) => {
-        if (!service.wasNotificationSent(title)) {
+        if (service.wasNotificationSent(title) === false) {
             throw new Error(`Expected notification with title "${title}" to be sent`);
         }
     },
@@ -262,7 +267,7 @@ export const notificationAssertions = {
     expectNoNotifications: (service: MockNotificationService) => {
         const count = service.getNotificationCount();
         if (count > 0) {
-            throw new Error(`Expected no notifications, but ${count} were sent`);
+            throw new Error(`Expected no notifications, but ${count.toString()} were sent`);
         }
     },
 
@@ -272,7 +277,7 @@ export const notificationAssertions = {
     expectNotificationCount: (service: MockNotificationService, expectedCount: number) => {
         const actualCount = service.getNotificationCount();
         if (actualCount !== expectedCount) {
-            throw new Error(`Expected ${expectedCount} notifications, but ${actualCount} were sent`);
+            throw new Error(`Expected ${expectedCount.toString()} notifications, but ${actualCount.toString()} were sent`);
         }
     },
 
@@ -280,7 +285,7 @@ export const notificationAssertions = {
      * Assert that permission was requested
      */
     expectPermissionRequested: (service: MockNotificationService) => {
-        if (!service.requestPermission.mock.calls.length) {
+        if (service.requestPermission.mock.calls.length === 0) {
             throw new Error('Expected permission to be requested');
         }
     },
@@ -295,15 +300,18 @@ export const notificationAssertions = {
         }
 
         const notification = notifications[notifications.length - 1];
-        if (!notification) {
+        if (notification === undefined) {
             throw new Error('No notification found');
         }
 
-        const options = notification.options || {};
+        const options = notification.options ?? {};
 
         Object.entries(expectedOptions).forEach(([key, value]) => {
-            if ((options as any)[key] !== value) {
-                throw new Error(`Expected notification option "${key}" to be "${value}", but got "${(options as any)[key]}"`);
+            const optionValue = (options as Record<string, unknown>)[key];
+            if (optionValue !== value) {
+                const valueStr = JSON.stringify(value);
+                const optionValueStr = JSON.stringify(optionValue);
+                throw new Error(`Expected notification option "${key}" to be "${valueStr}", but got "${optionValueStr}"`);
             }
         });
     },

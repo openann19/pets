@@ -65,13 +65,13 @@ export function createPet(overrides: Partial<Pet> = {}): Pet {
         other: ['Guinea Pig', 'Hamster', 'Ferret', 'Chinchilla', 'Hedgehog'],
     };
 
-    const species = overrides.species || 'dog';
+    const species = overrides.species ?? 'dog';
     const breedOptions = breeds[species];
-    const randomBreed = breedOptions[Math.floor(Math.random() * breedOptions.length)] || 'Mixed Breed';
+    const randomBreed = breedOptions[Math.floor(Math.random() * breedOptions.length)] ?? 'Mixed Breed';
 
     const basePet: Pet = {
-        id: `pet-${Math.random().toString(36).substr(2, 9)}`,
-        name: `Pet ${Math.random().toString(36).substr(2, 3)}`,
+        id: `pet-${Math.random().toString(36).substring(2, 11)}`,
+        name: `Pet ${Math.random().toString(36).substring(2, 5)}`,
         species,
         breed: randomBreed,
         age: Math.floor(Math.random() * 12) + 1,
@@ -81,11 +81,11 @@ export function createPet(overrides: Partial<Pet> = {}): Pet {
         temperament: ['friendly', 'playful'],
         description: 'A wonderful pet looking for a loving home.',
         photos: [
-            `https://example.com/pet-photo-1-${Math.random().toString(36).substr(2, 5)}.jpg`,
-            `https://example.com/pet-photo-2-${Math.random().toString(36).substr(2, 5)}.jpg`,
+            `https://example.com/pet-photo-1-${Math.random().toString(36).substring(2, 7)}.jpg`,
+            `https://example.com/pet-photo-2-${Math.random().toString(36).substring(2, 7)}.jpg`,
         ],
         videos: [
-            `https://example.com/pet-video-${Math.random().toString(36).substr(2, 5)}.mp4`,
+            `https://example.com/pet-video-${Math.random().toString(36).substring(2, 7)}.mp4`,
         ],
         location: {
             city: 'San Francisco',
@@ -94,9 +94,9 @@ export function createPet(overrides: Partial<Pet> = {}): Pet {
             coordinates: { lat: 37.7749, lng: -122.4194 },
         },
         owner: {
-            id: `owner-${Math.random().toString(36).substr(2, 9)}`,
-            name: `Owner ${Math.random().toString(36).substr(2, 3)}`,
-            avatar: `https://example.com/owner-avatar-${Math.random().toString(36).substr(2, 5)}.jpg`,
+            id: `owner-${Math.random().toString(36).substring(2, 11)}`,
+            name: `Owner ${Math.random().toString(36).substring(2, 5)}`,
+            avatar: `https://example.com/owner-avatar-${Math.random().toString(36).substring(2, 7)}.jpg`,
         },
         health: {
             vaccinated: true,
@@ -132,7 +132,7 @@ export function createPet(overrides: Partial<Pet> = {}): Pet {
  */
 export function createDog(breed?: string, overrides: Partial<Pet> = {}): Pet {
     const dogBreeds = ['Golden Retriever', 'Labrador', 'German Shepherd', 'Bulldog', 'Poodle', 'Chihuahua', 'Beagle'];
-    const selectedBreed = breed || dogBreeds[Math.floor(Math.random() * dogBreeds.length)] || 'Mixed Breed';
+    const selectedBreed = breed ?? dogBreeds[Math.floor(Math.random() * dogBreeds.length)] ?? 'Mixed Breed';
 
     return createPet({
         species: 'dog',
@@ -154,7 +154,7 @@ export function createDog(breed?: string, overrides: Partial<Pet> = {}): Pet {
  */
 export function createCat(breed?: string, overrides: Partial<Pet> = {}): Pet {
     const catBreeds = ['Persian', 'Siamese', 'Maine Coon', 'British Shorthair', 'Ragdoll', 'Tabby'];
-    const selectedBreed = breed || catBreeds[Math.floor(Math.random() * catBreeds.length)] || 'Mixed Breed';
+    const selectedBreed = breed ?? catBreeds[Math.floor(Math.random() * catBreeds.length)] ?? 'Mixed Breed';
 
     return createPet({
         species: 'cat',
@@ -200,7 +200,7 @@ export function createSpecialNeedsPet(overrides: Partial<Pet> = {}): Pet {
 export function createPets(count: number, overrides: Partial<Pet> = {}): Pet[] {
     return Array.from({ length: count }, (_, index) =>
         createPet({
-            name: `Pet ${index + 1}`,
+            name: `Pet ${(index + 1).toString()}`,
             ...overrides,
         })
     );

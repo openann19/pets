@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json", // Use the base config as our source of truth
   "compilerOptions": {
     "outDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",

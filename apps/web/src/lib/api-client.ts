@@ -169,7 +169,7 @@ class WebSocketManager {
   }
 
   // Send a message in a match
-  sendMessage(matchId: string, content: string, messageType: string = 'text', attachments: any[] = []): void {
+  sendMessage(matchId: string, content: string, messageType: string = 'text', attachments: unknown[] = []): void {
     if (this.socket?.connected) {
       console.log('[WebSocket] Sending message to match:', matchId);
       this.socket.emit('send_message', {
@@ -242,7 +242,7 @@ const apiClient = {
     webSocketManager.leaveMatch(matchId);
   },
 
-  sendChatMessage: (matchId: string, content: string, messageType: string = 'text', attachments: any[] = []): void => {
+  sendChatMessage: (matchId: string, content: string, messageType: string = 'text', attachments: unknown[] = []): void => {
     webSocketManager.sendMessage(matchId, content, messageType, attachments);
   },
 
@@ -259,7 +259,7 @@ const apiClient = {
   },
 
   // Event listener helpers
-  onWebSocketEvent: (eventName: string, callback: (data: any) => void): () => void => {
+  onWebSocketEvent: (eventName: string, callback: (data: unknown) => void): () => void => {
     const handler = (event: CustomEvent) => callback(event.detail);
     window.addEventListener(`websocket:${eventName}`, handler as EventListener);
     

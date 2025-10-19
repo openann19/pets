@@ -259,7 +259,7 @@ export const breedUtils = {
   /**
    * Generate filter query parameters from UI state
    */
-  generateQueryParams(filterState: any) {
+  generateQueryParams(filterState: unknown) {
     const params: Record<string, any> = {};
     
     // Convert arrays to comma-separated strings
@@ -289,7 +289,7 @@ export const breedUtils = {
   /**
    * Parse response data and extract pet information
    */
-  parsePetResponse(response: any) {
+  parsePetResponse(response: unknown) {
     return {
       pets: response.data?.pets || [],
       recommendations: response.data?.recommendations || [],

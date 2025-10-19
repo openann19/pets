@@ -501,68 +501,6 @@ class OfflineService {
 
   // ===== SECURITY CONTROLS =====
 
-  /**
-   * Validate offline data integrity
-   */
-  private validateOfflineData(data: unknown): boolean {
-    if (typeof data !== 'object' || data === null) {
-      return false;
-    }
-
-    const obj = data as Record<string, unknown>;
-
-    // Validate required fields exist and have correct types
-    if (!Array.isArray(obj['pets']) || typeof obj['user'] !== 'object' || !Array.isArray(obj['matches']) || !Array.isArray(obj['messages'])) {
-      return false;
-    }
-
-    // Validate data size limits to prevent storage abuse
-    const dataSize = JSON.stringify(data).length;
-    return dataSize < 10 * 1024 * 1024; // 10MB limit
-  }
-
-  /**
-   * Rate limiting for sync operations
-   */
-  private lastSyncTime: number = 0;
-  private readonly SYNC_RATE_LIMIT_MS = 10000; // 10 seconds between syncs
-
-  private checkSyncRateLimit(): boolean {
-    const now = Date.now();
-    if (now - this.lastSyncTime < this.SYNC_RATE_LIMIT_MS) {
-      logger.warn('Sync rate limit exceeded');
-      return false;
-    }
-    this.lastSyncTime = now;
-    return true;
-  }
-
-  /**
-   * Sanitize pending actions data
-   */
-  private sanitizePendingActionData(data: unknown): unknown {
-    if (typeof data !== 'object' || data === null) {
-      return {};
-    }
-
-    // Remove potentially dangerous properties
-    const sanitized = { ...data as Record<string, unknown> };
-    delete sanitized['__proto__'];
-    delete sanitized['constructor'];
-    delete sanitized['prototype'];
-
-    return sanitized;
-  }
-
-  /**
-   * Secure storage encryption reference
-   * Note: Implementation should use encrypted storage
-   */
-  private storeOfflineDataSecurely(_data: OfflineData): void {
-    // This should use encrypted AsyncStorage or secure storage
-    // await encryptedStorage.setItem('offline_data', JSON.stringify(data));
-    logger.debug('Offline data should be stored securely');
-  }
 }
 
 export const offlineService = new OfflineService();

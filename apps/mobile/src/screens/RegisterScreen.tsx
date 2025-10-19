@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -31,10 +31,24 @@ const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
     dateOfBirth: '',
   });
   
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+    firstName?: string;
+    lastName?: string;
+    dateOfBirth?: string;
+  }>({});
   
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: {
+      email?: string;
+      password?: string;
+      confirmPassword?: string;
+      firstName?: string;
+      lastName?: string;
+      dateOfBirth?: string;
+    } = {};
     
     // Email validation
     if (!formData.email.trim()) {

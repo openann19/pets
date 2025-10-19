@@ -82,7 +82,7 @@ class CoachTooltipsService {
         cancelIcon: {
           enabled: true
         },
-        ...config.defaultStepOptions
+        ...config.default as anyStepOptions
       }
     })
 

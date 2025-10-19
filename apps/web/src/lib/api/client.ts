@@ -57,34 +57,34 @@ class ApiClient {
     try {
       const response = await this.client.get<ApiClientResponse<T>>(url, config);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(error.response?.data?.message || error.message || 'Request failed');
     }
   }
 
-  async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async post<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.post<ApiClientResponse<T>>(url, data, config);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(error.response?.data?.message || error.message || 'Request failed');
     }
   }
 
-  async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async put<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.put<ApiClientResponse<T>>(url, data, config);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(error.response?.data?.message || error.message || 'Request failed');
     }
   }
 
-  async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
+  async patch<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiClientResponse<T>> {
     try {
       const response = await this.client.patch<ApiClientResponse<T>>(url, data, config);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(error.response?.data?.message || error.message || 'Request failed');
     }
   }
@@ -93,7 +93,7 @@ class ApiClient {
     try {
       const response = await this.client.delete<ApiClientResponse<T>>(url, config);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(error.response?.data?.message || error.message || 'Request failed');
     }
   }
@@ -117,7 +117,7 @@ class ApiClient {
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(error.response?.data?.message || error.message || 'Upload failed');
     }
   }

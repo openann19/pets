@@ -4,8 +4,8 @@
  */
 
 import React from 'react';
-import { ComponentType } from 'react';
-import { RouteProp, NavigationProp } from '@react-navigation/native';
+import type { ComponentType } from 'react';
+import type { RouteProp, NavigationProp } from '@react-navigation/native';
 
 // Navigation Types
 export interface RootStackParamList {
@@ -40,13 +40,13 @@ export interface RootStackParamList {
 
 // Screen Props Types
 export interface BaseScreenProps {
-  navigation: NavigationProp<keyof RootStackParamList>;
-  route?: RouteProp<keyof RootStackParamList>;
+  navigation: NavigationProp<RootStackParamList>;
+  route?: RouteProp<RootStackParamList>;
 }
 
 export interface ScreenProps<T extends keyof RootStackParamList = keyof RootStackParamList> {
-  navigation: NavigationProp<T>;
-  route: RouteProp<T>;
+  navigation: NavigationProp<RootStackParamList, T>;
+  route: RouteProp<RootStackParamList, T>;
 }
 
 // Component Props Types

@@ -14,7 +14,7 @@ interface Message {
   timestamp: string;
   read: boolean;
   type: 'text' | 'image' | 'emoji' | 'gift';
-  metadata?: any;
+  metadata?: unknown;
 }
 
 interface ChatConfig {
@@ -158,7 +158,7 @@ export const useOptimizedChat = (
   }, [socket, matchId, retryCount, maxRetries, retryDelay, triggerHaptic, triggerSound, onConnectionChange]);
 
   // Optimized message sending
-  const sendMessage = useCallback(async (content: string, type: 'text' | 'image' | 'emoji' = 'text', metadata?: any) => {
+  const sendMessage = useCallback(async (content: string, type: 'text' | 'image' | 'emoji' = 'text', metadata?: unknown) => {
     if (!content.trim() || !socket) return;
 
     const newMessage: Message = {

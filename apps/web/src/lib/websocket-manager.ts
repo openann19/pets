@@ -8,7 +8,7 @@ export interface WebSocketConfig {
 
 interface QueuedMessage {
   event: string;
-  data: any;
+  data: unknown;
   timestamp: number;
 }
 
@@ -256,7 +256,7 @@ export class WebSocketManager {
 
   // Public methods
 
-  emit(event: string, data: any) {
+  emit(event: string, data: unknown) {
     if (this.socket?.connected) {
       this.socket.emit(event, data);
     } else {
@@ -342,7 +342,7 @@ export class WebSocketManager {
     }));
   }
 
-  private dispatchCustomEvent(type: string, data: any) {
+  private dispatchCustomEvent(type: string, data: unknown) {
     if (typeof window === 'undefined') return;
     
     window.dispatchEvent(new CustomEvent(`websocket_${type}`, {

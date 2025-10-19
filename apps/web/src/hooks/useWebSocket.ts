@@ -9,7 +9,7 @@ interface UseWebSocketOptions {
   onConnect?: () => void;
   onDisconnect?: () => void;
   onReconnect?: () => void;
-  onError?: (error: any) => void;
+  onError?: (error: unknown) => void;
 }
 
 interface WebSocketState {
@@ -130,7 +130,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   }, []);
 
   // Emit event
-  const emit = useCallback((event: string, data: any) => {
+  const emit = useCallback((event: string, data: unknown) => {
     if (!managerRef.current) {
       console.warn('[useWebSocket] Cannot emit: manager not initialized');
       return;
@@ -270,7 +270,7 @@ export function useChatWebSocket() {
     enableLogging: process.env.NODE_ENV === 'development'
   });
 
-  const sendMessage = useCallback((matchId: string, message: string, attachments?: any[]) => {
+  const sendMessage = useCallback((matchId: string, message: string, attachments?: unknown[]) => {
     websocket.emit('send_message', {
       matchId,
       message,
@@ -334,7 +334,7 @@ export function useVideoWebSocket() {
     });
   }, [websocket]);
 
-  const sendSignal = useCallback((callId: string, targetUserId: string, signal: any) => {
+  const sendSignal = useCallback((callId: string, targetUserId: string, signal: unknown) => {
     websocket.emit('webrtc_signal', {
       callId,
       targetUserId,
@@ -373,7 +373,7 @@ export function useNotificationWebSocket() {
   useEffect(() => {
     if (!websocket.connected) return;
 
-    const handleNotification = (notification: any) => {
+    const handleNotification = (notification: unknown) => {
       setNotifications(prev => [notification, ...prev].slice(0, 50)); // Keep last 50
       
       // Show browser notification if permitted

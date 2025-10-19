@@ -190,7 +190,7 @@ export function useMobileAnalytics(config: Partial<MobileAnalyticsConfig> = {}) 
     // Cumulative Layout Shift
     const clsEntries = performance.getEntriesByType('layout-shift');
     let cls = 0;
-    clsEntries.forEach((entry: any) => {
+    clsEntries.forEach((entry: unknown) => {
       if (!entry.hadRecentInput) {
         cls += entry.value;
       }

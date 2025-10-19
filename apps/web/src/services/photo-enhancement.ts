@@ -116,7 +116,7 @@ class PhotoEnhancementService {
         }
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Photo enhancement failed', error)
       throw new Error(`Photo enhancement failed: ${error.message}`)
     }
@@ -176,7 +176,7 @@ class PhotoEnhancementService {
       }
 
       return analysis
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Photo analysis failed', error)
       throw new Error(`Photo analysis failed: ${error.message}`)
     }
@@ -279,7 +279,7 @@ export function usePhotoEnhancement() {
     try {
       const result = await photoEnhancementService.enhancePhoto(imageUrl, options)
       return result
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message)
       return null
     } finally {
@@ -297,7 +297,7 @@ export function usePhotoEnhancement() {
     try {
       const results = await photoEnhancementService.enhancePhotos(imageUrls, options)
       return results
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message)
       return []
     } finally {

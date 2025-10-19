@@ -46,15 +46,15 @@ interface UltraFilterState {
 }
 
 interface UltraFilterResult {
-  pets: any[];
-  recommendations?: any[];
+  pets: unknown[];
+  recommendations?: unknown[];
   pagination: {
     page: number;
     limit: number;
     total: number;
     hasMore: boolean;
   };
-  analytics?: any;
+  analytics?: unknown;
   appliedFilters: number;
   performanceMetrics?: {
     queryTime?: number;
@@ -128,7 +128,7 @@ export const useUltraBreedFiltering = () => {
   // Toggle array filter values
   const toggleArrayFilter = useCallback(<K extends keyof UltraFilterState>(
     key: K, 
-    value: any
+    value: unknown
   ) => {
     setFilters(prev => {
       const currentArray = Array.isArray(prev[key]) ? prev[key] as any[] : [];
@@ -218,7 +218,7 @@ export const useUltraBreedFiltering = () => {
       } else {
         throw new Error(response.message || 'Failed to discover pets');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Failed to load pets');
       console.error('Pet discovery error:', err);
     } finally {
@@ -227,7 +227,7 @@ export const useUltraBreedFiltering = () => {
   }, [filters]);
 
   // Advanced pet matching
-  const matchPetsAdvanced = useCallback(async (userProfile: any) => {
+  const matchPetsAdvanced = useCallback(async (userProfile: unknown) => {
     setIsLoading(true);
     setError(null);
 
@@ -244,7 +244,7 @@ export const useUltraBreedFiltering = () => {
       } else {
         throw new Error(response.message || 'Failed to match pets');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message || 'Failed to match pets');
       console.error('Pet matching error:', err);
     } finally {

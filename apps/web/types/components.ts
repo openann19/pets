@@ -5,41 +5,7 @@
  */
 
 import React from 'react';
-
-// Local type definitions for design tokens (can be imported from @pawfectmatch/design-tokens when available)
-const _COLORS = {
-  primary: '#000',
-  secondary: '#000',
-  success: '#000',
-  warning: '#000',
-  error: '#000',
-  info: '#000',
-} as const;
-
-const _SPACING = {
-  none: '0',
-  xs: '0.25rem',
-  sm: '0.5rem',
-  md: '1rem',
-  lg: '1.5rem',
-  xl: '2rem',
-} as const;
-
-const _TYPOGRAPHY = {
-  fontSizes: {
-    xs: '0.75rem',
-    sm: '0.875rem',
-    md: '1rem',
-    lg: '1.125rem',
-    xl: '1.25rem',
-  },
-  fontWeights: {
-    normal: 400,
-    medium: 500,
-    semibold: 600,
-    bold: 700,
-  },
-} as const;
+import { COLORS, SPACING, TYPOGRAPHY, SHADOWS, RADIUS } from '@pawfectmatch/design-tokens';
 
 // Base Component Props (shared across all components)
 export interface BaseComponentProps {

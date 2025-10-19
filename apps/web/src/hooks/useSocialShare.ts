@@ -56,7 +56,7 @@ export function useSocialShare() {
       }
 
       logger.info('Content shared successfully', { platform, url: data.url })
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Share failed', error)
       throw error
     } finally {

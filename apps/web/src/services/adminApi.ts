@@ -403,7 +403,7 @@ class AdminApiService {
   async getModerationQueue(): Promise<Array<{
     id: string;
     type: 'pet_profile' | 'user_profile' | 'message' | 'photo';
-    content: any;
+    content: unknown;
     reportedBy: string;
     reason: string;
     status: 'pending' | 'approved' | 'rejected';

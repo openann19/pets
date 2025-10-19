@@ -97,7 +97,7 @@ Object.defineProperty(MockNotification, 'requestPermission', {
   value: jest.fn().mockResolvedValue('granted'),
 });
 
-global.Notification = MockNotification as any;
+global.Notification = MockNotification as unknown as typeof Notification;
 
 // === Storage Mocks ===
 const createStorageMock = () => {
@@ -193,7 +193,7 @@ Object.defineProperty(MockFileReader, 'EMPTY', { value: 0 });
 Object.defineProperty(MockFileReader, 'LOADING', { value: 1 });
 Object.defineProperty(MockFileReader, 'DONE', { value: 2 });
 
-global.FileReader = MockFileReader as any;
+global.FileReader = MockFileReader as unknown as typeof FileReader;
 
 // === Web Workers Mock ===
 global.Worker = jest.fn().mockImplementation(() => ({

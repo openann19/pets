@@ -7,7 +7,14 @@ import notifee, { AndroidImportance, AndroidVisibility } from '@notifee/react-na
 import { logger } from '@pawfectmatch/core';
 import messaging, { AuthorizationStatus } from '@react-native-firebase/messaging';
 import { Linking } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import { RateLimiter } from '@pawfectmatch/core';
 // import { api } from './api';
+
+interface NotificationError extends Error {
+  code: 'TOKEN_INVALID' | 'TOKEN_EXPIRED' | 'RATE_LIMIT_EXCEEDED' | 'VALIDATION_ERROR';
+  details?: Record<string, unknown>;
+}
 
 interface NotificationData {
   type: 'match' | 'message' | 'like' | 'superlike' | 'reminder' | 'promotion';
@@ -51,7 +58,15 @@ interface NotificationSettings {
 }
 
 class PushNotificationService {
+  private static readonly TOKEN_STORAGE_KEY = 'fcm_token';
+  private static readonly TOKEN_EXPIRY_DAYS = 30;
+  private static readonly MAX_NOTIFICATIONS_PER_HOUR = 60;
+  
   private fcmToken: string | null = null;
+  private rateLimiter = new RateLimiter({
+    points: PushNotificationService.MAX_NOTIFICATIONS_PER_HOUR,
+    duration: 3600 // 1 hour in seconds
+  });
   private notificationSettings: NotificationSettings = {
     enabled: true,
     matchNotifications: true,
@@ -122,11 +137,27 @@ class PushNotificationService {
   }
 
   /**
-   * Get FCM token
+   * Get FCM token with validation and secure storage
    */
   private async fetchAndRegisterFCMToken(): Promise<string | null> {
     try {
       const token = await messaging().getToken();
+      if (!this.isValidToken(token)) {
+        const error = new Error('Invalid FCM token') as NotificationError;
+        error.code = 'TOKEN_INVALID';
+        throw error;
+      }
+
+      // Store token securely with timestamp
+      const tokenData = {
+        token,
+        timestamp: Date.now()
+      };
+      await SecureStore.setItemAsync(
+        PushNotificationService.TOKEN_STORAGE_KEY, 
+        JSON.stringify(tokenData)
+      );
+      
       this.fcmToken = token;
 
       // Send token to server (fire and forget, but handle errors)
@@ -136,11 +167,40 @@ class PushNotificationService {
         logger.error('Failed to send FCM token to server', { error: String(error) });
       }
 
-      logger.info('FCM token obtained', { tokenPrefix: token.substring(0, 8) });
+      logger.info('FCM token obtained and stored securely', { 
+        tokenPrefix: token.substring(0, 8) 
+      });
       return token;
     } catch (error) {
-      logger.error('Failed to get FCM token', { error: String(error) });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to get FCM token', { error: errorMessage });
       return null;
+    }
+  }
+
+  /**
+   * Validate FCM token format and expiry
+   */
+  private async isValidToken(token: string): Promise<boolean> {
+    if (typeof token !== 'string' || token.length < 32) {
+      return false;
+    }
+
+    try {
+      const storedData = await SecureStore.getItemAsync(
+        PushNotificationService.TOKEN_STORAGE_KEY
+      );
+      
+      if (storedData === null) {
+        return true; // First token is always valid
+      }
+
+      const { timestamp } = JSON.parse(storedData) as { timestamp: number };
+      const ageInDays = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
+      
+      return ageInDays <= PushNotificationService.TOKEN_EXPIRY_DAYS;
+    } catch {
+      return false;
     }
   }
 
@@ -317,12 +377,61 @@ class PushNotificationService {
   /**
    * Handle background message
    */
+  /**
+   * Validate and process incoming message
+   */
+  private async validateAndProcessMessage(remoteMessage: FCMRemoteMessage): Promise<NotificationData> {
+    // Check rate limiting
+    if (!this.rateLimiter.tryRemoveTokens(1)) {
+      const error = new Error('Rate limit exceeded') as NotificationError;
+      error.code = 'RATE_LIMIT_EXCEEDED';
+      throw error;
+    }
+
+    // Validate deep links in message data
+    const deepLink = remoteMessage.data?.['deepLink'];
+    if (deepLink !== undefined && 
+        !this.isValidDeepLink(String(deepLink))) {
+      const error = new Error('Invalid deep link in message') as NotificationError;
+      error.code = 'VALIDATION_ERROR';
+      error.details = { deepLink };
+      throw error;
+    }
+
+    // Parse and validate notification data
+    const notificationData = this.parseNotificationData(remoteMessage);
+
+    // Validate token expiry
+    const storedToken = await SecureStore.getItemAsync(
+      PushNotificationService.TOKEN_STORAGE_KEY
+    );
+    if (storedToken !== null) {
+      const { timestamp } = JSON.parse(storedToken) as { timestamp: number };
+      const ageInDays = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
+      if (ageInDays > PushNotificationService.TOKEN_EXPIRY_DAYS) {
+        const error = new Error('Token expired') as NotificationError;
+        error.code = 'TOKEN_EXPIRED';
+        throw error;
+      }
+    }
+
+    return notificationData;
+  }
+
+  /**
+   * Handle background message
+   */
   private async handleBackgroundMessage(remoteMessage: FCMRemoteMessage): Promise<void> {
     try {
-      const notificationData = this.parseNotificationData(remoteMessage);
+      const notificationData = await this.validateAndProcessMessage(remoteMessage);
       await this.showNotification(notificationData);
     } catch (error) {
-      logger.error('Failed to handle background message', { error: String(error) });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to handle background message', {
+        error: errorMessage,
+        code: (error as NotificationError)?.code,
+        details: (error as NotificationError)?.details
+      });
     }
   }
 
@@ -331,7 +440,7 @@ class PushNotificationService {
    */
   private async handleForegroundMessage(remoteMessage: FCMRemoteMessage): Promise<void> {
     try {
-      const notificationData = this.parseNotificationData(remoteMessage);
+      const notificationData = await this.validateAndProcessMessage(remoteMessage);
 
       // Check if notifications are enabled for this type
       if (!this.isNotificationEnabled(notificationData.type)) {
@@ -345,7 +454,26 @@ class PushNotificationService {
 
       await this.showNotification(notificationData);
     } catch (error) {
-      logger.error('Failed to handle foreground message', { error: String(error) });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to handle foreground message', {
+        error: errorMessage,
+        code: (error as NotificationError)?.code,
+        details: (error as NotificationError)?.details
+      });
+    }
+  }
+
+  /**
+   * Validate deep link format and scheme
+   */
+  private isValidDeepLink(url: string): boolean {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'pawfectmatch:' && 
+             parsed.pathname.length > 0 &&
+             /^\/[a-zA-Z0-9-_/]+$/.test(parsed.pathname);
+    } catch {
+      return false;
     }
   }
 
@@ -494,18 +622,23 @@ class PushNotificationService {
     return hours * 60 + minutes;
   }
 
+  private static readonly SETTINGS_STORAGE_KEY = 'secure_notification_settings';
+  
   /**
    * Load notification settings
    */
   private async loadNotificationSettings(): Promise<void> {
     try {
-      // Load from AsyncStorage first, then sync with server
-      const AsyncStorage = await import('@react-native-async-storage/async-storage');
-      const storage = AsyncStorage.default;
-
-      const storedSettings = await storage.getItem('notificationSettings');
-      if (storedSettings !== null && storedSettings !== '') {
-        this.notificationSettings = JSON.parse(storedSettings) as NotificationSettings;
+      // Load from SecureStore first, then sync with server
+      const storedSettings = await SecureStore.getItemAsync(
+        PushNotificationService.SETTINGS_STORAGE_KEY
+      );
+      
+      if (storedSettings !== null) {
+        const parsed = JSON.parse(storedSettings) as NotificationSettings;
+        if (this.validateSettings(parsed)) {
+          this.notificationSettings = parsed;
+        }
       }
 
       // Sync with server to get latest settings
@@ -514,7 +647,7 @@ class PushNotificationService {
       //   const serverSettings = await api.getNotificationSettings();
       //   if (serverSettings !== null && serverSettings !== undefined) {
       //     const quiet = serverSettings.quietHours as Record<string, unknown> | undefined;
-      //     this.notificationSettings = {
+      //     const mergedSettings = {
       //       ...this.notificationSettings,
       //       ...serverSettings,
       //       quietHours: quiet !== null && quiet !== undefined
@@ -525,27 +658,74 @@ class PushNotificationService {
       //         }
       //         : this.notificationSettings.quietHours,
       //     };
-      //     await storage.setItem('notificationSettings', JSON.stringify(this.notificationSettings));
+      //     
+      //     if (this.validateSettings(mergedSettings)) {
+      //       this.notificationSettings = mergedSettings;
+      //       await SecureStore.setItemAsync(
+      //         PushNotificationService.SETTINGS_STORAGE_KEY,
+      //         JSON.stringify(this.notificationSettings)
+      //       );
+      //     }
       //   }
       // } catch (error) {
-      //   logger.warn('Failed to fetch notification settings from server', { error: error instanceof Error ? error.message : String(error) });
+      //   logger.warn('Failed to fetch notification settings from server', {
+      //     error: error instanceof Error ? error.message : String(error)
+      //   });
       // }
 
-      logger.info('Notification settings loaded');
+      logger.info('Notification settings loaded securely');
     } catch (error) {
-      logger.error('Failed to load notification settings', { error: String(error) });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to load notification settings', { error: errorMessage });
     }
   }
 
   /**
-   * Update notification settings
+   * Validate notification settings object structure
    */
-  public updateNotificationSettings(settings: Partial<NotificationSettings>): void {
-    try {
-      this.notificationSettings = { ...this.notificationSettings, ...settings };
+  private validateSettings(settings: unknown): settings is NotificationSettings {
+    if (settings === null || typeof settings !== 'object') {
+      return false;
+    }
 
-      // Save to storage
-      // await AsyncStorage.setItem('notification_settings', JSON.stringify(this.notificationSettings));
+    const s = settings as Partial<NotificationSettings>;
+    return typeof s.enabled === 'boolean' &&
+           typeof s.matchNotifications === 'boolean' &&
+           typeof s.messageNotifications === 'boolean' &&
+           typeof s.likeNotifications === 'boolean' &&
+           typeof s.reminderNotifications === 'boolean' &&
+           typeof s.promotionNotifications === 'boolean' &&
+           typeof s.soundEnabled === 'boolean' &&
+           typeof s.vibrationEnabled === 'boolean' &&
+           s.quietHours !== undefined &&
+           typeof s.quietHours.enabled === 'boolean' &&
+           typeof s.quietHours.startTime === 'string' &&
+           typeof s.quietHours.endTime === 'string' &&
+           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(s.quietHours.startTime) &&
+           /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(s.quietHours.endTime);
+  }
+
+  /**
+   * Update notification settings with validation
+   */
+  public async updateNotificationSettings(settings: Partial<NotificationSettings>): Promise<void> {
+    try {
+      const mergedSettings = { ...this.notificationSettings, ...settings };
+      
+      // Validate merged settings
+      if (!this.validateSettings(mergedSettings)) {
+        const error = new Error('Invalid notification settings') as NotificationError;
+        error.code = 'VALIDATION_ERROR';
+        throw error;
+      }
+
+      this.notificationSettings = mergedSettings;
+
+      // Save to secure storage
+      await SecureStore.setItemAsync(
+        PushNotificationService.SETTINGS_STORAGE_KEY,
+        JSON.stringify(this.notificationSettings)
+      );
 
       // Send to server (convert to API format)
       // Note: updateNotificationSettings method not implemented in api module yet
@@ -559,9 +739,14 @@ class PushNotificationService {
       // };
       // await api.updateNotificationSettings(settingsForApi as Record<string, unknown>);
 
-      logger.info('Notification settings updated');
+      logger.info('Notification settings updated securely');
     } catch (error) {
-      logger.error('Failed to update notification settings', { error: String(error) });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to update notification settings', {
+        error: errorMessage,
+        code: (error as NotificationError)?.code
+      });
+      throw error;
     }
   }
 
@@ -632,52 +817,6 @@ class PushNotificationService {
 
   // ===== SECURITY CONTROLS =====
 
-  /**
-   * Validate FCM token format and security
-   */
-  private validateFCMToken(token: string): boolean {
-    // Basic validation: should be non-empty string, reasonable length
-    return typeof token === 'string' && token.length > 0 && token.length < 500;
-  }
-
-  /**
-   * Rate limiting for notification requests
-   */
-  private lastNotificationTime: number = 0;
-  private readonly NOTIFICATION_RATE_LIMIT_MS = 1000; // 1 second between notifications
-
-  private checkRateLimit(): boolean {
-    const now = Date.now();
-    if (now - this.lastNotificationTime < this.NOTIFICATION_RATE_LIMIT_MS) {
-      logger.warn('Notification rate limit exceeded');
-      return false;
-    }
-    this.lastNotificationTime = now;
-    return true;
-  }
-
-  /**
-   * Validate deep link URLs for security
-   */
-  private validateDeepLink(url: string): boolean {
-    try {
-      // Only allow pawfectmatch:// scheme
-      return url.startsWith('pawfectmatch://') && url.length < 200;
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Secure token storage reference
-   * Note: Implementation should use secure storage (Keychain/Keystore)
-   * This is a reference - actual implementation in secureStorage.ts
-   */
-  private storeFCMTokenSecurely(_token: string): void {
-    // This should use secureStorage instead of AsyncStorage
-    // await secureStorage.setItem('fcm_token', token);
-    logger.debug('FCM token should be stored securely');
-  }
 }
 
 export const pushNotificationService = new PushNotificationService();

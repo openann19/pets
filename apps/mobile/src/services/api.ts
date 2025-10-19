@@ -119,7 +119,7 @@ export const request = async <T = unknown>(
       return headers;
     }
 
-    if (!hasContentTypeHeader(headers) && body !== undefined) {
+    if (!hasContentTypeHeader(headers) && body !== undefined && body !== null) {
       return {
         ...headers,
         'Content-Type': 'application/json',
@@ -503,7 +503,7 @@ const checkRateLimit = (): boolean => {
   const now = Date.now();
 
   // Remove old timestamps outside the window
-  while (requestTimestamps.length > 0 && requestTimestamps[0] < now - RATE_LIMIT_WINDOW_MS) {
+  while (requestTimestamps.length > 0 && (requestTimestamps[0] ?? 0) < now - RATE_LIMIT_WINDOW_MS) {
     requestTimestamps.shift();
   }
 

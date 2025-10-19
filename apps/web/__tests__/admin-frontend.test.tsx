@@ -298,7 +298,7 @@ describe('🎨 ULTRA DEEP FRONTEND ADMIN TESTS', () => {
 
   describe('📊 Admin Dashboard Component', () => {
     test('Shows loading state initially', async () => {
-      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default;
+      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default as React.ComponentType;
 
       render(<Dashboard />);
 
@@ -325,7 +325,7 @@ describe('🎨 ULTRA DEEP FRONTEND ADMIN TESTS', () => {
         }),
       });
 
-      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default;
+      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default as React.ComponentType;
 
       render(<Dashboard />);
 
@@ -338,7 +338,7 @@ describe('🎨 ULTRA DEEP FRONTEND ADMIN TESTS', () => {
     test('Handles API errors gracefully', async () => {
       (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('API Error'));
 
-      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default;
+      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default as React.ComponentType;
 
       render(<Dashboard />);
 
@@ -350,7 +350,7 @@ describe('🎨 ULTRA DEEP FRONTEND ADMIN TESTS', () => {
     test('Shows retry button on error', async () => {
       (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('API Error'));
 
-      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default;
+      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default as React.ComponentType;
 
       render(<Dashboard />);
 
@@ -372,7 +372,7 @@ describe('🎨 ULTRA DEEP FRONTEND ADMIN TESTS', () => {
           }),
         });
 
-      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default;
+      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default as React.ComponentType;
 
       render(<Dashboard />);
 
@@ -428,7 +428,7 @@ describe('🎨 ULTRA DEEP FRONTEND ADMIN TESTS', () => {
 
   describe('♿ Accessibility', () => {
     test('Dashboard has proper ARIA labels', async () => {
-      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default;
+      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default as React.ComponentType;
 
       const { container } = render(<Dashboard />);
 
@@ -439,7 +439,7 @@ describe('🎨 ULTRA DEEP FRONTEND ADMIN TESTS', () => {
     });
 
     test('Navigation is keyboard accessible', async () => {
-      const Layout = (await import('@/app/(admin)/layout')).default;
+      const Layout = (await import('@/app/(admin)/layout')).default as React.ComponentType;
 
       render(
         <Layout>
@@ -471,7 +471,7 @@ describe('🎨 ULTRA DEEP FRONTEND ADMIN TESTS', () => {
         }),
       });
 
-      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default;
+      const Dashboard = (await import('@/app/(admin)/dashboard/page')).default as React.ComponentType;
 
       render(<Dashboard />);
 

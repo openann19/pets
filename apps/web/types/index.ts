@@ -7,6 +7,7 @@
 import React from 'react';
 import type { ComponentType } from 'react';
 import type { NextPage } from 'next';
+import { COLORS, SPACING, TYPOGRAPHY, SHADOWS, RADIUS } from '@pawfectmatch/design-tokens';
 
 // Local color and spacing type definitions
 export type ColorScheme = 'primary' | 'secondary' | 'neutral' | 'success' | 'warning' | 'error' | 'info';

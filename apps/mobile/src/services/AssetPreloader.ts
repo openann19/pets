@@ -8,7 +8,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { Image } from 'react-native';
 
 // Critical assets that should be preloaded
-const CRITICAL_IMAGES = [
+const CRITICAL_IMAGES: string[] = [
   // App icons and logos
   // require('../assets/icon.png'),
   // require('../assets/splash.png'),
@@ -97,12 +97,17 @@ class AssetPreloader {
    */
   private async preloadImage(source: unknown): Promise<void> {
     return new Promise((resolve) => {
-      Image.prefetch(Image.resolveAssetSource(source).uri)
-        .then(() => { resolve(); })
-        .catch((error: unknown) => {
-          logger.warn('Image preload failed', { source, error });
-          resolve(); // Don't fail on individual image errors
-        });
+      const imageSource = Image.resolveAssetSource(source as any);
+      if (imageSource?.uri) {
+        Image.prefetch(imageSource.uri)
+          .then(() => { resolve(); })
+          .catch((error: unknown) => {
+            logger.warn('Image preload failed', { source, error });
+            resolve(); // Don't fail on individual image errors
+          });
+      } else {
+        resolve(); // Skip invalid sources
+      }
     });
   }
 
@@ -159,7 +164,7 @@ class AssetPreloader {
 
       // Load screen-specific fonts
       if (assets.fonts !== undefined && Object.keys(assets.fonts).length > 0) {
-        const fontPromise = Font.loadAsync(assets.fonts);
+        const fontPromise = Font.loadAsync(assets.fonts as Record<string, any>);
         promises.push(fontPromise);
       }
 

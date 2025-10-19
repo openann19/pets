@@ -50,13 +50,13 @@ export const useConfetti = () => {
       const particleCount = 50 * (timeLeft / duration);
 
       confetti({
-        ...defaults,
+        ...defaultConfettiOptions,
         particleCount,
         origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
         colors: ['#FF6B6B', '#4ECDC4', '#FFD700'],
       });
       confetti({
-        ...defaults,
+        ...defaultConfettiOptions,
         particleCount,
         origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
         colors: ['#9C27B0', '#FF9800', '#4ECDC4'],

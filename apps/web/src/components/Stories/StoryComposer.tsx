@@ -294,6 +294,7 @@ export default function StoryComposer({
                       filter: `sepia(${selectedFilter.intensity * 100}%) saturate(${selectedFilter.intensity * 150}%) hue-rotate(${selectedFilter.intensity * 30}deg)`
                     }}
                   />
+                )}
 
                 {/* Stickers */}
                 {stickers.map((sticker) => (

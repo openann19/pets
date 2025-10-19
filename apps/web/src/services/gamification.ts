@@ -62,7 +62,7 @@ class GamificationService {
 
       const data = await response.json()
       return data.gamification
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Failed to get user gamification data', error)
       return null
     }
@@ -88,7 +88,7 @@ class GamificationService {
           timestamp: new Date().toISOString()
         })
       })
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Failed to record activity', error)
     }
   }
@@ -112,7 +112,7 @@ class GamificationService {
 
       const data = await response.json()
       return data.newBadges || []
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Failed to check badge unlocks', error)
       return []
     }
@@ -131,7 +131,7 @@ class GamificationService {
 
       const data = await response.json()
       return data.badges || []
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Failed to get available badges', error)
       return this.getFallbackBadges()
     }
@@ -156,7 +156,7 @@ class GamificationService {
 
       const data = await response.json()
       return data.leaderboard || []
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Failed to get leaderboard', error)
       return []
     }
@@ -314,7 +314,7 @@ export function useGamification(userId?: string) {
     try {
       const data = await gamificationService.getUserGamification(userId)
       setGamification(data)
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message)
     } finally {
       setIsLoading(false)
@@ -334,7 +334,7 @@ export function useGamification(userId?: string) {
         // Refresh gamification data
         await fetchGamification()
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message)
     }
   }

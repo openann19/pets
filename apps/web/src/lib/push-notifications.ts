@@ -342,7 +342,7 @@ export class PushNotificationManager {
 
   // Service worker communication
 
-  async sendMessageToServiceWorker(message: any): Promise<any> {
+  async sendMessageToServiceWorker(message: unknown): Promise<any> {
     if (!this.registration || !this.registration.active) {
       console.warn('[Push] No active service worker');
       return null;
@@ -359,7 +359,7 @@ export class PushNotificationManager {
     });
   }
 
-  async queueMessageForSync(message: any): Promise<void> {
+  async queueMessageForSync(message: unknown): Promise<void> {
     await this.sendMessageToServiceWorker({
       type: 'queue-message',
       message

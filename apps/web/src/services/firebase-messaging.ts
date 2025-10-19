@@ -22,8 +22,8 @@ const firebaseConfig = {
 const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
 
 // Initialize Firebase
-let app: any = null
-let messaging: any = null
+let app: unknown = null
+let messaging: unknown = null
 
 if (typeof window !== 'undefined') {
   if (!getApps().length) {
@@ -60,7 +60,7 @@ class FirebaseMessagingService {
   private token: string | null = null
   private isSupported: boolean = false
   private permission: NotificationPermission = 'default'
-  private messageHandlers: Array<(payload: any) => void> = []
+  private messageHandlers: Array<(payload: unknown) => void> = []
 
   async initialize(): Promise<NotificationPermission> {
     try {
@@ -97,7 +97,7 @@ class FirebaseMessagingService {
         token: this.token,
         error: null
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('[FCM] Initialization failed', error)
       return {
         permission: 'denied',
@@ -124,7 +124,7 @@ class FirebaseMessagingService {
       // Request permission
       const permission = await Notification.requestPermission()
       return permission
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('[FCM] Permission request failed', error)
       return 'denied'
     }
@@ -147,7 +147,7 @@ class FirebaseMessagingService {
       }
 
       return null
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('[FCM] Token generation failed', error)
       return null
     }
@@ -168,7 +168,7 @@ class FirebaseMessagingService {
       }
 
       logger.info('[FCM] Token registered with server')
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('[FCM] Failed to register token', error)
     }
   }
@@ -187,7 +187,7 @@ class FirebaseMessagingService {
     })
   }
 
-  private showNotification(payload: any): void {
+  private showNotification(payload: unknown): void {
     if (this.permission !== 'granted') return
 
     const { notification, data } = payload
@@ -253,7 +253,7 @@ class FirebaseMessagingService {
     return this.isSupported
   }
 
-  onMessage(handler: (payload: any) => void): () => void {
+  onMessage(handler: (payload: unknown) => void): () => void {
     this.messageHandlers.push(handler)
     
     // Return unsubscribe function
@@ -269,7 +269,7 @@ class FirebaseMessagingService {
     try {
       this.token = await this.getFCMToken()
       return this.token
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('[FCM] Token refresh failed', error)
       return null
     }
@@ -332,7 +332,7 @@ export function useFirebaseMessaging() {
             isInitialized: true
           })
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (isMounted) {
           setState(prev => ({
             ...prev,
@@ -360,7 +360,7 @@ export function useFirebaseMessaging() {
         error: result.error
       }))
       return result
-    } catch (error: any) {
+    } catch (error: unknown) {
       setState(prev => ({
         ...prev,
         error: error.message
@@ -381,7 +381,7 @@ export function useFirebaseMessaging() {
         token
       }))
       return token
-    } catch (error: any) {
+    } catch (error: unknown) {
       setState(prev => ({
         ...prev,
         error: error.message

@@ -18,8 +18,8 @@ interface UseChatReturn {
   hasMoreMessages: boolean;
   // Derived/computed values
   otherUser: User | null;
-  otherPet: any | null;
-  currentUserPet: any | null;
+  otherPet: unknown | null;
+  currentUserPet: unknown | null;
   typingUsers: string[];
 }
 

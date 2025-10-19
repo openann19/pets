@@ -43,10 +43,10 @@ interface User {
  */
 export function createUser(overrides: Partial<User> = {}): User {
     const baseUser: User = {
-        id: `user-${Math.random().toString(36).substr(2, 9)}`,
-        email: `test-${Math.random().toString(36).substr(2, 5)}@example.com`,
-        name: `Test User ${Math.random().toString(36).substr(2, 3)}`,
-        avatar: `https://example.com/avatar-${Math.random().toString(36).substr(2, 5)}.jpg`,
+        id: `user-${Math.random().toString(36).substring(2, 11)}`,
+        email: `test-${Math.random().toString(36).substring(2, 7)}@example.com`,
+        name: `Test User ${Math.random().toString(36).substring(2, 5)}`,
+        avatar: `https://example.com/avatar-${Math.random().toString(36).substring(2, 7)}.jpg`,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         verified: true,
@@ -126,8 +126,8 @@ export function createAdminUser(overrides: Partial<User> = {}): User {
 export function createUsers(count: number, overrides: Partial<User> = {}): User[] {
     return Array.from({ length: count }, (_, index) =>
         createUser({
-            name: `Test User ${index + 1}`,
-            email: `test-user-${index + 1}@example.com`,
+            name: `Test User ${(index + 1).toString()}`,
+            email: `test-user-${(index + 1).toString()}@example.com`,
             ...overrides,
         })
     );

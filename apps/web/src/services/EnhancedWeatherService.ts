@@ -64,38 +64,38 @@ interface RateLimitEntry {
 
 // Enhanced logging interface
 interface Logger {
-  info(message: string, meta?: any): void;
-  warn(message: string, meta?: any): void;
-  error(message: string, error?: any, meta?: any): void;
-  debug(message: string, meta?: any): void;
+  info(message: string, meta?: unknown): void;
+  warn(message: string, meta?: unknown): void;
+  error(message: string, error?: unknown, meta?: unknown): void;
+  debug(message: string, meta?: unknown): void;
 }
 
 class ProductionLogger implements Logger {
   private isDevelopment = process.env.NODE_ENV === 'development';
   
-  info(message: string, meta?: any) {
+  info(message: string, meta?: unknown) {
     console.log(`[WeatherService] ${message}`, meta);
     // In production: send to monitoring service
     this.sendToMonitoring('info', message, meta);
   }
   
-  warn(message: string, meta?: any) {
+  warn(message: string, meta?: unknown) {
     console.warn(`[WeatherService] ${message}`, meta);
     this.sendToMonitoring('warn', message, meta);
   }
   
-  error(message: string, error?: any, meta?: any) {
+  error(message: string, error?: unknown, meta?: unknown) {
     console.error(`[WeatherService] ${message}`, error, meta);
     this.sendToMonitoring('error', message, { error, ...meta });
   }
   
-  debug(message: string, meta?: any) {
+  debug(message: string, meta?: unknown) {
     if (this.isDevelopment) {
       console.debug(`[WeatherService] ${message}`, meta);
     }
   }
   
-  private sendToMonitoring(level: string, message: string, meta?: any) {
+  private sendToMonitoring(level: string, message: string, meta?: unknown) {
     // Integration point for Sentry, LogRocket, DataDog, etc.
     if (typeof window !== 'undefined' && (window as any).Sentry) {
       (window as any).Sentry.addBreadcrumb({
@@ -159,7 +159,7 @@ class OpenWeatherMapProvider implements WeatherProvider {
     }
   }
   
-  private mapOneCallData(data: any, units: 'metric' | 'imperial'): WeatherData {
+  private mapOneCallData(data: unknown, units: 'metric' | 'imperial'): WeatherData {
     const current = data.current;
     const timezone = data.timezone;
     const localTime = DateTime.fromSeconds(current.dt).setZone(timezone);
@@ -186,8 +186,8 @@ class OpenWeatherMapProvider implements WeatherProvider {
       sunset: DateTime.fromSeconds(current.sunset).setZone(timezone).toISO() || new Date(current.sunset * 1000).toISOString(),
       icon: `https://openweathermap.org/img/wn/${current.weather?.[0]?.icon || '01d'}@2x.png`,
       alerts: data.alerts?.map(this.mapAlert) || [],
-      hourlyForecast: data.hourly?.slice(0, 48).map((hour: any) => this.mapHourlyData(hour, timezone, units)),
-      dailyForecast: data.daily?.slice(0, 7).map((day: any) => this.mapDailyData(day, timezone, units)),
+      hourlyForecast: data.hourly?.slice(0, 48).map((hour: unknown) => this.mapHourlyData(hour, timezone, units)),
+      dailyForecast: data.daily?.slice(0, 7).map((day: unknown) => this.mapDailyData(day, timezone, units)),
       petSafety: this.calculateAdvancedPetSafety(current, data.daily?.[0], data.alerts),
       dataSource: this.name,
       lastUpdated: new Date().toISOString(),
@@ -195,7 +195,7 @@ class OpenWeatherMapProvider implements WeatherProvider {
     };
   }
   
-  private mapBasicWeatherData(current: any, forecast: any, units: 'metric' | 'imperial'): WeatherData {
+  private mapBasicWeatherData(current: unknown, forecast: unknown, units: 'metric' | 'imperial'): WeatherData {
     const timezone = `UTC${current.timezone >= 0 ? '+' : ''}${current.timezone / 3600}`;
     
     return {
@@ -226,7 +226,7 @@ class OpenWeatherMapProvider implements WeatherProvider {
     };
   }
   
-  private mapAlert(alert: any): WeatherAlert {
+  private mapAlert(alert: unknown): WeatherAlert {
     return {
       title: alert.event || 'Weather Alert',
       description: alert.description || '',
@@ -246,7 +246,7 @@ class OpenWeatherMapProvider implements WeatherProvider {
     return severityMap[tag.toLowerCase()] || 'minor';
   }
   
-  private mapHourlyData(hour: any, timezone: string, units: 'metric' | 'imperial'): HourlyForecast {
+  private mapHourlyData(hour: unknown, timezone: string, units: 'metric' | 'imperial'): HourlyForecast {
     return {
       time: DateTime.fromSeconds(hour.dt).setZone(timezone).toISO() || new Date(hour.dt * 1000).toISOString(),
       temperature: Math.round(hour.temp),
@@ -259,7 +259,7 @@ class OpenWeatherMapProvider implements WeatherProvider {
     };
   }
   
-  private mapDailyData(day: any, timezone: string, units: 'metric' | 'imperial'): DailyForecast {
+  private mapDailyData(day: unknown, timezone: string, units: 'metric' | 'imperial'): DailyForecast {
     return {
       date: DateTime.fromSeconds(day.dt).setZone(timezone).toISODate() || new Date(day.dt * 1000).toISOString(),
       tempMin: Math.round(day.temp?.min || day.temp?.night || 0),
@@ -286,7 +286,7 @@ class OpenWeatherMapProvider implements WeatherProvider {
     return 'waning_crescent';
   }
   
-  private calculateAdvancedPetSafety(current: any, daily: any, alerts: any[]): PetSafetyInfo {
+  private calculateAdvancedPetSafety(current: unknown, daily: unknown, alerts: unknown[]): PetSafetyInfo {
     const temp = current.temp || 20;
     const humidity = current.humidity || 50;
     const uv = current.uvi || 5;
@@ -387,7 +387,7 @@ class OpenWeatherMapProvider implements WeatherProvider {
     humidity: number, 
     uv: number, 
     windSpeed: number, 
-    alerts: any[]
+    alerts: unknown[]
   ): string[] {
     const recommendations: string[] = [];
     
@@ -439,7 +439,7 @@ class OpenWeatherMapProvider implements WeatherProvider {
     return recommendations;
   }
   
-  private calculateOptimalWalkTimes(daily: any, current: any): string[] {
+  private calculateOptimalWalkTimes(daily: unknown, current: unknown): string[] {
     const times: string[] = [];
     const temp = current.temp || 20;
     const uv = current.uvi || 5;

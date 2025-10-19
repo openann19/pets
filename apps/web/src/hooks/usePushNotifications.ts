@@ -8,7 +8,7 @@ interface UsePushNotificationsOptions {
   onPermissionDenied?: () => void;
   onSubscribed?: () => void;
   onUnsubscribed?: () => void;
-  onNotificationReceived?: (notification: any) => void;
+  onNotificationReceived?: (notification: unknown) => void;
   onUpdateAvailable?: () => void;
 }
 
@@ -180,7 +180,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
   }, [manager]);
 
   // Queue message for background sync
-  const queueMessage = useCallback(async (message: any) => {
+  const queueMessage = useCallback(async (message: unknown) => {
     if (!manager) return;
     await manager.queueMessageForSync(message);
   }, [manager]);

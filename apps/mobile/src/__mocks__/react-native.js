@@ -3,18 +3,18 @@
  * Provides basic implementations for React Native components and APIs used in tests
  */
 
-export const Platform = {
+const Platform = {
   OS: 'ios',
   select: jest.fn((obj) => obj.ios || obj.default),
 };
 
-export const Dimensions = {
+const Dimensions = {
   get: jest.fn(() => ({ width: 375, height: 812 })),
   addEventListener: jest.fn(),
   removeEventListener: jest.fn(),
 };
 
-export const StyleSheet = {
+const StyleSheet = {
   create: jest.fn((styles) => styles),
   flatten: jest.fn((style) => style),
   absoluteFill: {},
@@ -22,23 +22,23 @@ export const StyleSheet = {
   hairlineWidth: 1,
 };
 
-export const View = 'View';
-export const Text = 'Text';
-export const ScrollView = 'ScrollView';
-export const TouchableOpacity = 'TouchableOpacity';
-export const TouchableHighlight = 'TouchableHighlight';
-export const TouchableWithoutFeedback = 'TouchableWithoutFeedback';
-export const TextInput = 'TextInput';
-export const Image = 'Image';
-export const FlatList = 'FlatList';
-export const SectionList = 'SectionList';
-export const ActivityIndicator = 'ActivityIndicator';
-export const Alert = {
+const View = 'View';
+const Text = 'Text';
+const ScrollView = 'ScrollView';
+const TouchableOpacity = 'TouchableOpacity';
+const TouchableHighlight = 'TouchableHighlight';
+const TouchableWithoutFeedback = 'TouchableWithoutFeedback';
+const TextInput = 'TextInput';
+const Image = 'Image';
+const FlatList = 'FlatList';
+const SectionList = 'SectionList';
+const ActivityIndicator = 'ActivityIndicator';
+const Alert = {
   alert: jest.fn(),
   prompt: jest.fn(),
 };
 
-export const Animated = {
+const Animated = {
   View: 'Animated.View',
   Text: 'Animated.Text',
   Image: 'Animated.Image',
@@ -71,7 +71,7 @@ export const Animated = {
   createAnimatedComponent: jest.fn((component) => component),
 };
 
-export const Linking = {
+const Linking = {
   openURL: jest.fn(),
   canOpenURL: jest.fn(),
   addEventListener: jest.fn(),
@@ -79,49 +79,49 @@ export const Linking = {
   getInitialURL: jest.fn(),
 };
 
-export const AppState = {
+const AppState = {
   currentState: 'active',
   addEventListener: jest.fn(),
   removeEventListener: jest.fn(),
 };
 
-export const NetInfo = {
+const NetInfo = {
   addEventListener: jest.fn(),
   removeEventListener: jest.fn(),
   fetch: jest.fn(() => Promise.resolve({ isConnected: true })),
 };
 
-export const Keyboard = {
+const Keyboard = {
   addListener: jest.fn(),
   removeListener: jest.fn(),
   removeAllListeners: jest.fn(),
   dismiss: jest.fn(),
 };
 
-export const StatusBar = {
+const StatusBar = {
   setBarStyle: jest.fn(),
   setBackgroundColor: jest.fn(),
   setHidden: jest.fn(),
   setTranslucent: jest.fn(),
 };
 
-export const SafeAreaView = 'SafeAreaView';
+const SafeAreaView = 'SafeAreaView';
 
-export const PixelRatio = {
+const PixelRatio = {
   get: jest.fn(() => 2),
   getFontScale: jest.fn(() => 1),
   getPixelSizeForLayoutSize: jest.fn((size) => size * 2),
   roundToNearestPixel: jest.fn((size) => Math.round(size)),
 };
 
-export const DeviceInfo = {
+const DeviceInfo = {
   getModel: jest.fn(() => 'iPhone'),
   getSystemVersion: jest.fn(() => '16.0'),
   getBrand: jest.fn(() => 'Apple'),
   getDeviceId: jest.fn(() => 'test-device-id'),
 };
 
-export default {
+module.exports = {
   Platform,
   Dimensions,
   StyleSheet,

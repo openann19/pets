@@ -13,7 +13,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 
-/* eslint-disable no-undef */
+// Global variables are available in Jest test environment
 
 let mongoServer;
 

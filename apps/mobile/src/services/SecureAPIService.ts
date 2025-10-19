@@ -5,7 +5,7 @@
 import { fetch as sslFetch } from 'react-native-ssl-pinning';
 import { logger } from '../services/logger';
 
-const BASE_URL = process.env['EXPO_PUBLIC_API_URL'] ?? (global.__DEV__ === true ? 'http://localhost:3001/api' : 'https://api.pawfectmatch.com/api');
+const BASE_URL = process.env['EXPO_PUBLIC_API_URL'] ?? ((global as any).__DEV__ === true ? 'http://localhost:3001/api' : 'https://api.pawfectmatch.com/api');
 
 // Certificate fingerprints for SSL pinning
 // In production, these should be obtained from your server certificates
@@ -29,12 +29,6 @@ interface SSLConfig {
   timeout?: number;
   retries?: number;
   retryDelay?: number;
-}
-
-interface SSLResponse {
-  status: number;
-  statusText: string;
-  json: () => Promise<unknown>;
 }
 
 interface SSLRequestConfig {
@@ -81,7 +75,7 @@ class SecureAPIService {
     const certs = SSL_CERTIFICATES[domain];
     if (certs === undefined || certs.length === 0) {
       // In development, allow untrusted certificates
-      if (global.__DEV__ === true) {
+      if ((global as any).__DEV__ === true) {
         return {
           sslPinning: {
             certs: 'public'
@@ -147,11 +141,11 @@ class SecureAPIService {
           method: requestConfig.method
         });
 
-        const response = await sslFetch(url, requestConfig) as SSLResponse;
+        const response = await sslFetch(url, requestConfig as any);
         const status = response.status;
         const ok = status >= 200 && status < 300;
         if (!ok) {
-          const statusText = response.statusText !== '' ? response.statusText : '';
+          const statusText = (response as any).statusText !== '' ? (response as any).statusText : '';
           throw new Error(`HTTP ${String(status)}: ${statusText}`);
         }
 
@@ -164,7 +158,7 @@ class SecureAPIService {
 
         logger.warn(`Secure API request attempt ${String(attempt + 1)} failed`, {
           url,
-          error: lastError.message,
+          error: lastError,
           attempt: attempt + 1,
           maxRetries: retries
         });
@@ -179,7 +173,7 @@ class SecureAPIService {
     // All retries failed
     logger.error('Secure API request failed after all retries', {
       url,
-      error: lastError?.message,
+      error: lastError ?? undefined,
       retries
     });
 
@@ -236,10 +230,10 @@ class SecureAPIService {
         method: 'HEAD',
         timeoutInterval: 5000,
         ...sslConfig,
-      } as SSLRequestConfig);
+      } as any);
       return true;
     } catch (error) {
-      logger.error('SSL certificate validation failed', { domain, error });
+      logger.error('SSL certificate validation failed', { domain, error: error instanceof Error ? error : new Error(String(error)) });
       return false;
     }
   }

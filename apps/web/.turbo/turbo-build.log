@@ -1,29 +1,9 @@
 
-> @pawfectmatch/web@0.1.0 build /home/ben/Downloads/pawfectmatch-premium/apps/web
+
+> pawfectmatch-web@0.1.0 build /Users/elvira/Downloads/pets-pr-1/apps/web
 > next build
 
   [1m[38;2;173;127;168m▲ Next.js 14.2.33[39m[22m
   - Environments: .env.local, .env.production
 
  [37m[1m [22m[39m Creating an optimized production build ...
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack failed from /home/ben/Downloads/pawfectmatch-premium/apps/web/.next/cache/webpack/server-production.pack: Error: Empty file false
-Failed to compile.
-
-./app/(protected)/map/page.tsx
-Module not found: Can't resolve '@/components/Map/MapView'
-
-https://nextjs.org/docs/messages/module-not-found
-
-./app/(protected)/map/page.tsx
-Module not found: Can't resolve '@/components/Map/AIMapFeatures'
-
-https://nextjs.org/docs/messages/module-not-found
-
-./app/(protected)/map/page.tsx
-Module not found: Can't resolve '@/services/GeofencingService'
-
-https://nextjs.org/docs/messages/module-not-found
-
-
-> Build failed because of webpack errors
-[41m[30m ELIFECYCLE [39m[49m [31mCommand failed with exit code 1.[39m

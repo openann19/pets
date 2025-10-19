@@ -16,31 +16,31 @@ export const isInDocument = (element: Element | null): boolean => {
 };
 
 // Assertion adapters
-export const expectEqual = <T>(actual: T, expected: T, message?: string): void => {
+export const expectEqual = <T>(actual: T, expected: T, _message?: string): void => {
     expect(actual).toEqual(expected);
 };
 
-export const expectDeepEqual = <T>(actual: T, expected: T, message?: string): void => {
+export const expectDeepEqual = <T>(actual: T, expected: T, _message?: string): void => {
     expect(actual).toEqual(expected);
 };
 
-export const expectInDocument = (element: Element | null, message?: string): void => {
+export const expectInDocument = (element: Element | null, _message?: string): void => {
     expect(isInDocument(element)).toBe(true);
 };
 
-export const expectHasClass = (element: Element | null, className: string, message?: string): void => {
+export const expectHasClass = (element: Element | null, className: string, _message?: string): void => {
     expect(hasClass(element, className)).toBe(true);
 };
 
 export const expectThrows = (fn: () => unknown, expectedError?: string | RegExp | Error): void => {
-    if (expectedError) {
+    if (expectedError !== undefined) {
         expect(fn).toThrow(expectedError);
     } else {
         expect(fn).toThrow();
     }
 };
 
-export const expectContains = (container: string | any[] | null, value: any, message?: string): void => {
+export const expectContains = (container: string | unknown[] | null, value: unknown, _message?: string): void => {
     if (Array.isArray(container)) {
         expect(container).toContain(value);
     } else if (typeof container === 'string') {
@@ -50,23 +50,23 @@ export const expectContains = (container: string | any[] | null, value: any, mes
     }
 };
 
-export const expectNotEqual = <T>(actual: T, expected: T, message?: string): void => {
+export const expectNotEqual = <T>(actual: T, expected: T, _message?: string): void => {
     expect(actual).not.toEqual(expected);
 };
 
-export const expectNotInDocument = (element: Element | null, message?: string): void => {
+export const expectNotInDocument = (element: Element | null, _message?: string): void => {
     expect(isInDocument(element)).toBe(false);
 };
 
-export const expectNotHasClass = (element: Element | null, className: string, message?: string): void => {
+export const expectNotHasClass = (element: Element | null, className: string, _message?: string): void => {
     expect(hasClass(element, className)).toBe(false);
 };
 
-export const expectNotThrows = (fn: () => unknown, message?: string): void => {
+export const expectNotThrows = (fn: () => unknown, _message?: string): void => {
     expect(fn).not.toThrow();
 };
 
-export const expectNotContains = (container: string | any[] | null, value: any, message?: string): void => {
+export const expectNotContains = (container: string | unknown[] | null, value: unknown, _message?: string): void => {
     if (Array.isArray(container)) {
         expect(container).not.toContain(value);
     } else if (typeof container === 'string') {

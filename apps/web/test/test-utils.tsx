@@ -117,7 +117,7 @@ export const renderWithProviders = (
 
 // Mock implementations
 export const mockNotification = {
-  permission: 'granted' as NotificationPermission,
+  permission: 'granted' as 'default' | 'granted' | 'denied',
   requestPermission: jest.fn().mockResolvedValue('granted'),
   showNotification: jest.fn(),
   close: jest.fn(),

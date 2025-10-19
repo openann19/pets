@@ -1,10 +1,28 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json", // <-- Inherits all strict rules
   "compilerOptions": {
-    "jsx": "preserve",
+    // --- Overrides & additions for this specific package ---
+    "lib": ["ES2023", "DOM", "DOM.Iterable"], // Add DOM types for the browser
+    "allowJs": true,
+    "noEmit": true, // Next.js handles emitting files
+    "module": "ESNext", // Next.js requirement
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "jsx": "preserve", // Next.js requirement
+
+    // --- Path Mapping for this app ---
     "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] },
-    "plugins": [{ "name": "next" }]
+    "paths": {
+      "@/*": ["src/*"],
+      "@pawfectmatch/ui": ["../../packages/ui/src/index.ts"],
+      "@pawfectmatch/ui/*": ["../../packages/ui/src/*"],
+      "@pawfectmatch/core": ["../../packages/core/dist/index.d.ts"],
+      "@pawfectmatch/core/*": ["../../packages/core/dist/*"]
+    },
+    
+    // --- Next.js Plugin ---
+    "plugins": [{ "name": "next" }],
+    "types": ["node", "jest"]
   },
   "include": [
     "next-env.d.ts",
@@ -12,5 +30,11 @@
     "**/*.ts",
     "**/*.tsx"
   ],
-  "exclude": ["cypress", "public/app-components/**"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "**/*.test.ts" // Exclude test files from the main build
+  ]
 }

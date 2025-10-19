@@ -19,11 +19,11 @@ interface AuthConfig {
 }
 
 interface AuthCallbacks {
-  onLoginSuccess?: (user: any) => void;
+  onLoginSuccess?: (user: unknown) => void;
   onLoginError?: (error: Error) => void;
   onLogoutSuccess?: () => void;
   onLogoutError?: (error: Error) => void;
-  onRegisterSuccess?: (user: any) => void;
+  onRegisterSuccess?: (user: unknown) => void;
   onRegisterError?: (error: Error) => void;
 }
 

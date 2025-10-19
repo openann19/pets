@@ -83,18 +83,18 @@ export function usePWA(config: Partial<PWAConfig> = {}) {
         scope: '/',
       });
 
-      console.log('[PWA] Service Worker registered:', registration);
+      console.warn('[PWA] Service Worker registered:', registration);
       
       setState(prev => ({ ...prev, serviceWorkerRegistered: true }));
 
       // Check for updates
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
-        if (newWorker) {
+        if (newWorker !== null) {
           newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller !== null) {
               // New version available
-              console.log('[PWA] New version available');
+              console.warn('[PWA] New version available');
             }
           });
         }
@@ -126,12 +126,16 @@ export function usePWA(config: Partial<PWAConfig> = {}) {
 
   // Initialize PWA
   useEffect(() => {
-    checkInstallation();
-    checkCapabilities();
-    
-    if (finalConfig.enableServiceWorker) {
-      registerServiceWorker();
-    }
+    const initializePWA = async (): Promise<void> => {
+      checkInstallation();
+      checkCapabilities();
+      
+      if (finalConfig.enableServiceWorker) {
+        await registerServiceWorker();
+      }
+    };
+
+    void initializePWA();
 
     // Listen for online/offline events
     window.addEventListener('online', handleOnlineStatus);
@@ -166,7 +170,7 @@ export function useOfflineActions() {
   const addOfflineAction = useCallback((action: Omit<OfflineAction, 'id' | 'timestamp' | 'retryCount'>) => {
     const newAction: OfflineAction = {
       ...action,
-      id: `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `action_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       timestamp: Date.now(),
       retryCount: 0,
     };
@@ -178,7 +182,7 @@ export function useOfflineActions() {
     
     // Register for background sync
     if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-      navigator.serviceWorker.ready.then(registration => {
+      void navigator.serviceWorker.ready.then(registration => {
         return registration.sync.register('background-sync');
       });
     }
@@ -193,9 +197,9 @@ export function useOfflineActions() {
   }, []);
 
   // Retry offline action
-  const retryOfflineAction = useCallback(async (actionId: string) => {
+  const retryOfflineAction = useCallback(async (actionId: string): Promise<boolean> => {
     const action = actions.find(a => a.id === actionId);
-    if (!action) return;
+    if (action === undefined) return false;
 
     try {
       const response = await fetch(action.url, {
@@ -226,7 +230,7 @@ export function useOfflineActions() {
 
   // Load offline actions from storage
   useEffect(() => {
-    loadOfflineActions().then(setActions);
+    void loadOfflineActions().then(setActions);
   }, []);
 
   return {
@@ -241,7 +245,7 @@ export function useOfflineActions() {
  * Hook for push notifications
  */
 export function usePushNotifications() {
-  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [permission, setPermission] = useState<'default' | 'granted' | 'denied'>('default');
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
 
   // Request notification permission
@@ -301,7 +305,7 @@ export function usePushNotifications() {
   // Check current permission
   useEffect(() => {
     if ('Notification' in window) {
-      setPermission(Notification.permission);
+      setPermission(Notification.permission as 'default' | 'granted' | 'denied');
     }
   }, []);
 
@@ -319,7 +323,7 @@ export function usePushNotifications() {
  */
 
 // Store offline action in IndexedDB
-async function storeOfflineAction(action: OfflineAction) {
+async function storeOfflineAction(action: OfflineAction): Promise<void> {
   try {
     const db = await openIndexedDB();
     const transaction = db.transaction(['offlineActions'], 'readwrite');
@@ -331,7 +335,7 @@ async function storeOfflineAction(action: OfflineAction) {
 }
 
 // Remove offline action from IndexedDB
-async function removeStoredOfflineAction(actionId: string) {
+async function removeStoredOfflineAction(actionId: string): Promise<void> {
   try {
     const db = await openIndexedDB();
     const transaction = db.transaction(['offlineActions'], 'readwrite');
@@ -383,7 +387,7 @@ function getVapidPublicKey(): string {
 }
 
 // Send subscription to server
-async function sendSubscriptionToServer(subscription: PushSubscription) {
+async function sendSubscriptionToServer(subscription: PushSubscription): Promise<void> {
   try {
     await fetch('/api/push/subscribe', {
       method: 'POST',
@@ -402,7 +406,7 @@ async function sendSubscriptionToServer(subscription: PushSubscription) {
  */
 export const pwaUtils = {
   // Show install prompt
-  showInstallPrompt: async () => {
+  showInstallPrompt: async (): Promise<boolean> => {
     if ('getInstalledRelatedApps' in navigator) {
       const relatedApps = await navigator.getInstalledRelatedApps();
       if (relatedApps.length > 0) {
@@ -420,13 +424,13 @@ export const pwaUtils = {
   },
 
   // Check if app is installable
-  isInstallable: () => {
+  isInstallable: (): boolean => {
     return 'getInstalledRelatedApps' in navigator || 
            window.matchMedia('(display-mode: standalone)').matches;
   },
 
   // Get app installation status
-  getInstallationStatus: () => {
+  getInstallationStatus: (): { isStandalone: boolean; isInstalled: boolean; canInstall: boolean } => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isInstalled = 'getInstalledRelatedApps' in navigator;
     
@@ -438,7 +442,7 @@ export const pwaUtils = {
   },
 
   // Clear all caches
-  clearAllCaches: async () => {
+  clearAllCaches: async (): Promise<void> => {
     if ('caches' in window) {
       const cacheNames = await caches.keys();
       await Promise.all(
@@ -448,7 +452,7 @@ export const pwaUtils = {
   },
 
   // Get cache usage
-  getCacheUsage: async () => {
+  getCacheUsage: async (): Promise<{ used: number; quota: number; usage: number } | null> => {
     if (!('storage' in navigator && 'estimate' in navigator.storage)) {
       return null;
     }
@@ -457,7 +461,7 @@ export const pwaUtils = {
     return {
       used: estimate.usage || 0,
       quota: estimate.quota || 0,
-      usage: estimate.usage ? (estimate.usage / estimate.quota!) * 100 : 0,
+      usage: estimate.usage !== undefined && estimate.quota !== undefined ? (estimate.usage / estimate.quota) * 100 : 0,
     };
   },
 };
