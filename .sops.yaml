@@ -1,0 +1,5 @@
+# Encrypt only real secrets. Keep configs readable; they are signed above.
+creation_rules:
+  - paths_regex: '(^|/)\.env\.production(\..*)?$'
+    encrypted_regex: '^(.*)$'
+    age: ['age1e0ynu37jsnyvyyh3gym9jylrgmww97l0x505hhm0j94xgylu0p4q4cj7hc']

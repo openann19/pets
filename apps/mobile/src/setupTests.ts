@@ -3,8 +3,6 @@ import { jest } from '@jest/globals';
 
 // Declare global variables and types for tests
 declare global {
-  const __DEV__: boolean;
-  
   namespace jest {
     interface Matchers<R> {
       toHaveAnimatedStyle: (style: object) => R;
@@ -48,8 +46,8 @@ jest.mock('react-native-gesture-handler', () => ({
 }));
 
 beforeAll(() => {
-  if (typeof global.self === 'undefined') {
-    global.self = global;
+  if (typeof (global as any).self === 'undefined') {
+    (global as any).self = global;
   }
 });
 

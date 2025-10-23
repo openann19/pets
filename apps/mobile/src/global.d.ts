@@ -12,6 +12,55 @@ declare global {
     env: Record<string, string | undefined>;
   };
 
+  // NodeJS namespace
+  namespace NodeJS {
+    interface ProcessEnv {
+      [key: string]: string | undefined;
+    }
+    interface Global {
+      __DEV__: boolean;
+    }
+  }
+
+  // Fetch API types
+  interface RequestInit {
+    method?: string;
+    headers?: HeadersInit;
+    body?: BodyInit | null;
+    mode?: RequestMode;
+    credentials?: RequestCredentials;
+    cache?: RequestCache;
+    redirect?: RequestRedirect;
+    referrer?: string;
+    referrerPolicy?: ReferrerPolicy;
+    integrity?: string;
+    keepalive?: boolean;
+    signal?: AbortSignal | null;
+  }
+
+  interface HeadersInit {
+    [key: string]: string;
+  }
+
+  type BodyInit = Blob | BufferSource | FormData | URLSearchParams | string;
+
+  type RequestMode = 'cors' | 'no-cors' | 'same-origin' | 'navigate';
+
+  type RequestCredentials = 'omit' | 'same-origin' | 'include';
+
+  type RequestCache = 'default' | 'no-store' | 'reload' | 'no-cache' | 'force-cache' | 'only-if-cached';
+
+  type RequestRedirect = 'follow' | 'error' | 'manual';
+
+  type ReferrerPolicy = 'no-referrer' | 'no-referrer-when-downgrade' | 'origin' | 'origin-when-cross-origin' | 'same-origin' | 'strict-origin' | 'strict-origin-when-cross-origin' | 'unsafe-url';
+
+  interface AbortSignal {
+    readonly aborted: boolean;
+    onabort: ((this: AbortSignal, ev: Event) => any) | null;
+    addEventListener(type: 'abort', listener: (this: AbortSignal, ev: Event) => any, options?: boolean | AddEventListenerOptions): void;
+    removeEventListener(type: 'abort', listener: (this: AbortSignal, ev: Event) => any, options?: boolean | EventListenerOptions): void;
+  }
+
   // Jest globals
   const jest: {
     mock: (moduleName: string, factory?: () => unknown) => void;
@@ -101,12 +150,6 @@ declare global {
     currentDirection: 'sendrecv' | 'sendonly' | 'recvonly' | 'inactive' | null;
   }
 
-  // React Native globals
-  namespace NodeJS {
-    interface Global {
-      __DEV__: boolean;
-    }
-  }
 
   // Expo globals
   namespace Expo {

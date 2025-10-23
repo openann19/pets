@@ -3,7 +3,7 @@ import type { NavigationProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Animated, Easing, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type RootStackParamList = {
@@ -13,24 +13,24 @@ type RootStackParamList = {
 };
 
 const AnimatedCheckmark = () => {
-  const animatedValue = useRef(new Animated.Value(0)).current;
+  const animatedValue = useRef(new Animated.Value(0));
 
   useEffect(() => {
     // Run the animation when component mounts
     Animated.sequence([
-      Animated.timing(animatedValue, {
+      Animated.timing(animatedValue.current, {
         toValue: 1,
         duration: 600,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.timing(animatedValue, {
+      Animated.timing(animatedValue.current, {
         toValue: 0.9,
         duration: 200,
         easing: Easing.inOut(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.timing(animatedValue, {
+      Animated.timing(animatedValue.current, {
         toValue: 1,
         duration: 300,
         easing: Easing.out(Easing.cubic),
@@ -39,20 +39,28 @@ const AnimatedCheckmark = () => {
     ]).start(() => {
       // Provide haptic feedback when animation completes
       if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     });
-  }, [animatedValue]);
+  }, []);
 
-  const scale = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.5, 1],
-  });
+  // Use useMemo to avoid accessing ref during render
+  const animatedStyle = useMemo(() => {
+    const scale = animatedValue.current.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.5, 1],
+    });
 
-  const opacity = animatedValue.interpolate({
-    inputRange: [0, 0.7, 1],
-    outputRange: [0, 0.9, 1],
-  });
+    const opacity = animatedValue.current.interpolate({
+      inputRange: [0, 0.7, 1],
+      outputRange: [0, 0.9, 1],
+    });
+
+    return {
+      transform: [{ scale }],
+      opacity,
+    };
+  }, []);
 
   return (
     <View style={styles.checkmarkContainer}>
@@ -60,10 +68,7 @@ const AnimatedCheckmark = () => {
       <Animated.View
         style={[
           styles.checkmarkCircle,
-          {
-            transform: [{ scale }],
-            opacity,
-          } as any,
+          animatedStyle,
         ]}
       >
         <LinearGradient
@@ -99,7 +104,7 @@ export const SubscriptionSuccessScreen: React.FC = () => {
     };
 
     if (sessionId) {
-      trackSubscriptionSuccess();
+      void trackSubscriptionSuccess();
     }
   }, [sessionId]);
 

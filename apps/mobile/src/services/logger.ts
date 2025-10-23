@@ -71,12 +71,12 @@ export interface LogMetadata {
   }
 
   export interface AuditLogFilters {
-    startDate: string;
+    startDate: string | undefined;
     endDate: string;
     levels: LogLevel[];
     includeMetrics: boolean;
-    contentHash: string;
-    totalEntries: number;
+    contentHash: string | undefined;
+    totalEntries: number | undefined;
   }
 
   interface ExportMetadata {
@@ -109,7 +109,7 @@ export interface LogMetadata {
 /**
  * Storage key type
  */
-type StorageKey = string;
+type StorageKey = string & { readonly __storageKey: unique symbol };
 
 /**
  * Interface for encrypted log storage item
@@ -121,40 +121,6 @@ interface EncryptedLogStorageItem {
   hash: string;
 }
 
-  /** 
-   * Type for working with storage keys
-   * @private
-   */
-  type StorageKey = string & { readonly __storageKey: unique symbol };
-
-  /**
-   * Interface for encrypted log storage item
-   * @private
-   */
-  interface EncryptedLogStorageItem {
-    data: EncryptedData;
-    timestamp: string;
-    level: LogLevel;
-    hash: string;
-  }
-
-  /**
-   * Interface for Keychain options
-   * @private
-   */
-  interface KeychainOptions {
-    accessible?: Keychain.ACCESSIBLE;
-    accessControl?: Keychain.ACCESS_CONTROL;
-  }
-
-  /**
-   * Interface for encryption keys
-   * @private
-   */
-  interface EncryptionKeys {
-    key: string;
-    salt: string;
-  }
 
   /**
    * Core log entry structure
@@ -175,10 +141,6 @@ interface EncryptedData {
   tag?: string;
 }
 
-interface EncryptionKeys {
-  key: string;
-  salt: string;
-}
 
 interface LogBufferMetrics {
   totalEntries: number;
@@ -242,8 +204,8 @@ class MobileLogger {
   private async initializeEncryption(): Promise<void> {
     try {
       // Try to retrieve existing encryption keys
-      const storedKey = await Keychain.getGenericPassword(this.ENCRYPTION_KEY_STORAGE_KEY);
-      const storedSalt = await Keychain.getGenericPassword(this.ENCRYPTION_SALT_STORAGE_KEY);
+      const storedKey = await Keychain.getGenericPassword({ service: this.ENCRYPTION_KEY_STORAGE_KEY });
+      const storedSalt = await Keychain.getGenericPassword({ service: this.ENCRYPTION_SALT_STORAGE_KEY });
 
       if (storedKey && storedSalt) {
         this.encryptionKey = storedKey.password;
@@ -737,96 +699,6 @@ class MobileLogger {
   }
 
   /**
-   * Load persisted offline logs from secure storage
-   */
-  /**
-   * Load persisted logs from secure storage on initialization
-   * @private
-   */
-  private async loadOfflineLogs(): Promise<void> {
-    try {
-      // Get all stored keys
-      const allKeys = Object.keys(await EncryptedStorage.getItem('__keys__') || {});
-      const offlineLogKeys = allKeys.filter((key: string): key is StorageKey => 
-        key.startsWith('offline_log_')
-      );
-
-      // Load and decrypt all logs
-      const encryptedLogs = await Promise.all(
-        offlineLogKeys.map(async (key: StorageKey) => {
-          try {
-            const encrypted = await EncryptedStorage.getItem(key);
-            if (!encrypted) return null;
-
-            const parsedItem = JSON.parse(encrypted) as EncryptedLogStorageItem;
-            return { key, ...parsedItem };
-          } catch (error) {
-            // Clean up corrupted entries
-            await EncryptedStorage.removeItem(key);
-            return null;
-          }
-        })
-      );
-
-      // Process valid logs
-      for (const log of encryptedLogs) {
-        if (!log) continue;
-
-        try {
-          const decrypted = await this.decryptData(log.data);
-          const entry = JSON.parse(decrypted) as StructuredLogEntry;
-
-          // Verify integrity
-          const calculatedHash = await this.generateHMAC(JSON.stringify(entry));
-          if (calculatedHash !== log.hash) {
-            this.error('Offline log integrity check failed', {
-              error: new Error('Log tampering detected'),
-              component: 'Logger',
-              action: 'loadOfflineLogs',
-              key: log.key
-            });
-            await EncryptedStorage.removeItem(log.key);
-            continue;
-          }
-
-          this.offlineBuffer.push(entry);
-        } catch (decryptError) {
-          // Remove corrupted log
-          await EncryptedStorage.removeItem(log.key);
-          // Log error details
-          const errorMessage = decryptError instanceof Error ? decryptError.message : String(decryptError);
-          this.error('Failed to decrypt offline log', {
-            error: new Error(errorMessage),
-            component: 'Logger',
-            action: 'loadOfflineLogs',
-            key: log.key
-          });
-        }
-      }
-
-      // Sort and trim buffer
-      this.offlineBuffer.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-      if (this.offlineBuffer.length > this.MAX_OFFLINE_BUFFER_SIZE) {
-        this.offlineBuffer = this.offlineBuffer.slice(-this.MAX_OFFLINE_BUFFER_SIZE);
-      }
-
-      // Log success
-      this.info('Offline logs loaded successfully', {
-        component: 'Logger',
-        action: 'loadOfflineLogs',
-        logsLoaded: this.offlineBuffer.length
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      this.error('Failed to load offline logs', { 
-        error: new Error(errorMessage),
-        component: 'Logger',
-        action: 'loadOfflineLogs'
-      });
-    }
-  }
-
-  /**
    * Get buffer metrics for monitoring
    */
   private getBufferMetrics(): LogBufferMetrics {
@@ -1115,7 +987,6 @@ class MobileLogger {
 
   async exportAuditLogs(options: AuditLogRequest = {}): Promise<AuditLogExport> {
     try {
-    try {
       const {
         startDate,
         endDate = new Date(),
@@ -1181,6 +1052,14 @@ class MobileLogger {
       });
 
       return exportData;
+    } catch (error) {
+      this.error('Failed to export audit logs', {
+        error: error instanceof Error ? error : new Error(String(error)),
+        component: 'Logger',
+        action: 'exportAuditLogs'
+      });
+      throw error;
+    }
   }
 
   /**

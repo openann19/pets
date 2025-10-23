@@ -1,3 +1,20 @@
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+
+function verifyLockAtBuild() {
+  if (process.env.NODE_ENV !== "production") return;
+  const root = path.resolve(__dirname, "..", "..");
+  const lock = JSON.parse(fs.readFileSync(path.join(root, "config-lock.json"), "utf8"));
+  for (const e of lock.entries) {
+    const p = path.join(root, e.path);
+    const got = crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex");
+    if (got !== e.sha256) throw new Error(`Config tamper: ${e.path}`);
+  }
+  console.log("config-lock verified at Next build ✓");
+}
+verifyLockAtBuild();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,

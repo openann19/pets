@@ -4,10 +4,12 @@ import contentType from 'content-type';
 import type { Request } from 'express';
 
 export interface MultipartFile {
-  filename: string;
+  fieldname: string;
+  originalname: string;
   encoding: string;
-  mime: string;
-  data: Buffer;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
 }
 
 export interface SecureParserOptions {
@@ -47,7 +49,7 @@ export function parse(req: Request, options: SecureParserOptions): void {
       }
     });
 
-    bb.on('file', (_fieldname: string, stream: Readable, fileInfo: FileMetadata) => {
+    bb.on('file', (fieldname: string, stream: Readable, fileInfo: FileMetadata) => {
       const chunks: Buffer[] = [];
       let fileSize = 0;
 
@@ -63,10 +65,12 @@ export function parse(req: Request, options: SecureParserOptions): void {
       stream.on('end', () => {
         const fileData = Buffer.concat(chunks);
         options.onFile({
-          filename: fileInfo.filename,
+          fieldname: fieldname,
+          originalname: fileInfo.filename,
           encoding: fileInfo.encoding,
-          mime: fileInfo.mime,
-          data: fileData
+          mimetype: fileInfo.mime,
+          size: fileSize,
+          buffer: fileData
         });
       });
 

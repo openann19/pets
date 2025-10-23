@@ -43,7 +43,9 @@
     "ci:full": "pnpm run code:quality && pnpm run test:all && pnpm run security:audit && pnpm run lighthouse",
     "deploy:validate": "node scripts/validate-deployment.cjs",
     "deploy:check": "pnpm run deploy:validate",
-    "god-phase:complete": "echo '🎉 God-Phase Production Hardening Complete! All quality gates passed.'"
+    "god-phase:complete": "echo '🎉 God-Phase Production Hardening Complete! All quality gates passed.'",
+    "config:gen": "node tools/config-lock/gen-lock.mjs",
+    "config:verify": "node tools/config-lock/verify-lock.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",

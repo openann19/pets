@@ -1,16 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
+import type { MultipartFile } from './secure-multipart-parser';
 
 /**
  * Validated file interface for multipart uploads
  */
-export interface ValidatedFile {
-  fieldname: string;
-  originalname: string;
-  encoding: string;
-  mimetype: string;
-  size: number;
-  buffer: Buffer;
-}
+export type ValidatedFile = MultipartFile;
 
 /**
  * Extended Request interface with validated files
